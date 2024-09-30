@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1680368887754,
+      "tag": "0000_zippy_captain_midlands",
+      "breakpoints": false
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1727454131519,
+      "tag": "0001_flippant_devos",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1727455088011,
+      "tag": "0002_lazy_phalanx",
+      "breakpoints": true
+    }
+  ]
+}
