@@ -1,9 +1,18 @@
 import * as cheerio from 'cheerio'
 import { URL } from 'node:url'
 
-function extractEmails(text: string): string[] {
+function extractEmails(
+  text: string,
+  excludeList: string[] = ['sentry', 'datadog']
+): string[] {
   const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
-  return text.match(emailPattern) || []
+  const allEmails = text.match(emailPattern) || []
+  return allEmails.filter(
+    (email) =>
+      !excludeList.some((exclude) =>
+        email.toLowerCase().includes(exclude.toLowerCase())
+      )
+  )
 }
 
 function getDomainFromUrl(url: string): string {
@@ -11,69 +20,89 @@ function getDomainFromUrl(url: string): string {
   return parsedUrl.hostname.replace(/^www\./, '')
 }
 
-async function getWebsiteContent(url: string): Promise<string> {
+async function getWebsiteContent(
+  url: string,
+  subdomains: string[] = ['about', 'faq', 'a-propos', 'contact']
+): Promise<{
+  AIOptimizedText: string
+  leadStructuredData: Record<string, unknown>
+} | null> {
   try {
     const mainUrl = new URL(url)
-    const aboutUrl = new URL('/about', url)
+    const urlsToFetch = [
+      mainUrl.href,
+      ...subdomains.map((subdomain) => new URL(`/${subdomain}`, url).href)
+    ]
 
-    const [mainResponse, aboutResponse] = await Promise.all([
-      fetch(mainUrl.href),
-      fetch(aboutUrl.href)
-    ])
+    const responses = await Promise.all(urlsToFetch.map((u) => fetch(u)))
 
-    if (!mainResponse.ok && !aboutResponse.ok) {
+    if (responses.every((response) => !response.ok)) {
       throw new Error(
-        `HTTP error! Main page status: ${mainResponse.status}, About page status: ${aboutResponse.status}`
+        `HTTP error! All pages failed. Statuses: ${responses
+          .map((r) => r.status)
+          .join(', ')}`
       )
     }
 
-    const [mainHtml, aboutHtml] = await Promise.all([
-      mainResponse.text(),
-      aboutResponse.text()
-    ])
+    const htmlContents = await Promise.all(
+      responses.map((response) => response.text())
+    )
 
-    const $main = cheerio.load(mainHtml)
-    const $about = cheerio.load(aboutHtml)
+    const domain = getDomainFromUrl(url)
+    const pageContents = htmlContents.map((html, index) => {
+      const $ = cheerio.load(html)
+      const elementsToRemove =
+        'script, style, nav, header, footer, .menu, #menu, .navigation, #navigation, img, svg, iframe, video, audio, canvas, object, embed'
+      $(elementsToRemove).remove()
+      const structuredContent = extractStructuredContent($)
+      const emails = extractEmails(html)
+      const emailMatchWithDomainName = findEmailMatchWithDomainName(
+        emails,
+        domain
+      )
+      return {
+        ...structuredContent,
+        url: urlsToFetch[index],
+        emails,
+        emailMatchWithDomainName
+      }
+    })
 
-    // Remove script, style, and navigation elements from both pages
-    $main(
-      'script, style, nav, header, footer, .menu, #menu, .navigation, #navigation'
-    ).remove()
-    $about(
-      'script, style, nav, header, footer, .menu, #menu, .navigation, #navigation'
-    ).remove()
-
-    // Extract structured content from both pages
-    const mainContent = extractStructuredContent($main)
-    const aboutContent = extractStructuredContent($about)
-
-    // Combine the structured content from both pages
-    const combinedContent = {
-      title: mainContent.title || aboutContent.title,
-      description: mainContent.description || aboutContent.description,
-      mainPageContent: mainContent.content,
-      aboutPageContent: aboutContent.content
+    const leadStructuredData = {
+      title: pageContents.find((content) => content.title)?.title || '',
+      description:
+        pageContents.find((content) => content.description)?.description || '',
+      pageContents: pageContents.map((content) => ({
+        url: content.url,
+        content: content.content
+      })),
+      emails: [...new Set(pageContents.flatMap((content) => content.emails))],
+      emailMatchWithDomainName:
+        pageContents.find((content) => content.emailMatchWithDomainName)
+          ?.emailMatchWithDomainName || null
     }
 
-    // Convert the structured content to a string optimized for LLMs
-    const optimizedText = `
+    const AIOptimizedText = `
       Website: ${url}
-      Title: ${combinedContent.title}
-      Description: ${combinedContent.description}
+      Title: ${leadStructuredData.title}
+      Description: ${leadStructuredData.description}
       
-      Main Page Content:
-      ${combinedContent.mainPageContent}
-      
-      About Page Content:
-      ${combinedContent.aboutPageContent}
+      ${leadStructuredData.pageContents
+        .map(
+          (page) => `
+      ${page.url} Content:
+      ${page.content}
+      `
+        )
+        .join('\n')}
     `
       .trim()
       .replace(/\n\s+/g, '\n')
 
-    return optimizedText
+    return { AIOptimizedText, leadStructuredData }
   } catch (error) {
     console.error(`Error fetching content from ${url}:`, error)
-    return ''
+    return null
   }
 }
 
@@ -101,25 +130,10 @@ function extractStructuredContent($: cheerio.CheerioAPI) {
   return { title, description, content }
 }
 
-async function scrapePageForEmail(
-  url: string,
+function findEmailMatchWithDomainName(
+  emails: string[],
   domain: string
-): Promise<string | null> {
-  try {
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    const html = await response.text()
-    const emails = extractEmails(html)
-    return findMatchingEmail(emails, domain)
-  } catch (error) {
-    console.error(`Error scraping ${url}: ${error}`)
-    return null
-  }
-}
-
-function findMatchingEmail(emails: string[], domain: string): string | null {
+): string | null {
   return (
     emails.find((email) =>
       email.toLowerCase().includes(domain.toLowerCase())
@@ -127,52 +141,18 @@ function findMatchingEmail(emails: string[], domain: string): string | null {
   )
 }
 
-export async function scrapeContactEmail(url: string): Promise<string | null> {
+export async function scrapeLeadDataFromWebsiteUrl(url: string): Promise<{
+  AIOptimizedText: string
+  leadStructuredData: Record<string, unknown>
+} | null> {
   try {
-    const domain = getDomainFromUrl(url)
-
     const websiteContent = await getWebsiteContent(url)
-    console.log('websiteContent ->', url, websiteContent)
 
-    // Fetch the main page
-    const mainPageEmail = await scrapePageForEmail(url, domain)
-    if (mainPageEmail) {
-      return mainPageEmail
-    }
-
-    // If no email found on main page, check the /contact page
-    const contactUrl = new URL('/contact', url).href
-    const contactPageEmail = await scrapePageForEmail(contactUrl, domain)
-    if (contactPageEmail) {
-      return contactPageEmail
-    }
-
-    // If still no email found, look for other contact links
-    const response = await fetch(url)
-    const html = await response.text()
-    const $ = cheerio.load(html)
-    const contactLinks = $('a').filter((_, element) => {
-      return (
-        /contact/i.test($(element).text()) &&
-        $(element).attr('href') !== undefined
-      )
-    })
-    for (let i = 0; i < contactLinks.length; i++) {
-      const href = $(contactLinks[i]).attr('href')
-      if (href) {
-        const linkUrl = new URL(href, url).href
-        const linkPageEmail = await scrapePageForEmail(linkUrl, domain)
-        if (linkPageEmail) {
-          return linkPageEmail
-        }
-      }
-    }
-
-    console.log('No matching email found')
-    return null
+    return websiteContent
   } catch (error) {
     if (error instanceof Error) {
-      return `Error: ${error.message}`
+      console.error(`Error: ${error.message}`)
+      return null
     }
     console.log('An unknown error occurred')
     return null

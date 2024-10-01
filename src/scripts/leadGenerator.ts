@@ -3,7 +3,7 @@ import { searchGoogleMaps } from '../services/gmap'
 import { db } from 'src/db/db'
 import { lead, queryParam } from 'src/db/schema'
 import { sql } from 'drizzle-orm'
-import { scrapeContactEmail } from './getEmail'
+import { scrapeLeadDataFromWebsiteUrl } from './getEmail'
 
 const RESEARCH_QUERY = 'Label musique'
 const PARIS_LAT = 48.8566
@@ -48,7 +48,7 @@ async function generateGmapLeads() {
   process.exit(0)
 }
 
-async function getWebsiteContentWithJina() {
+async function getLeadsContent() {
   const leadsWithWebsites = await db
     .select({
       id: lead.id,
@@ -56,7 +56,8 @@ async function getWebsiteContentWithJina() {
     })
     .from(lead)
     .where(sql`${lead.queryParamId} = 1`)
-    .limit(3)
+    .limit(20)
+    .offset(0)
     .execute()
 
   if (leadsWithWebsites.length === 0) {
@@ -64,25 +65,30 @@ async function getWebsiteContentWithJina() {
     return
   }
 
-  const emails = await Promise.all(
+  const leadData = await Promise.all(
     leadsWithWebsites.map(async (leadWithWebsite) => {
       const { id, website } = leadWithWebsite
       if (!website) return // TypeScript safety check
 
-      const email = await scrapeContactEmail(website)
-      return { id, website, email }
+      const leadData = await scrapeLeadDataFromWebsiteUrl(website)
+      return { id, website, leadData }
     })
   )
-  console.log('emails', emails)
+  console.log('leadData', leadData)
 
-  // const response = await fetch(`https://r.jina.ai/${website}`, {
-  //   headers: {
-  //     Authorization: `Bearer ${process.env.JINA_API_KEY}`
-  //   }
-  // })
-  // const data = await response.json()
-  // return data
+  const leadConsoleData = leadData.map((lead) => {
+    return {
+      website: lead?.website,
+      description: lead?.leadData?.leadStructuredData.description,
+      email: lead?.leadData?.leadStructuredData.emails,
+      emailMatchWithDomainName:
+        lead?.leadData?.leadStructuredData.emailMatchWithDomainName
+    }
+  })
+
+  console.log('leadConsoleData', leadConsoleData)
+
   process.exit(0)
 }
 
-getWebsiteContentWithJina()
+getLeadsContent()
