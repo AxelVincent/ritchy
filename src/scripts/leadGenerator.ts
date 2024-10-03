@@ -1,11 +1,11 @@
 import 'dotenv/config'
 import { searchGoogleMaps } from '../services/gmap'
 import { db } from 'src/db/db'
-import { lead, queryParam } from 'src/db/schema'
+import { lead, leadEmail, queryParam } from 'src/db/schema'
 import { sql } from 'drizzle-orm'
 import { scrapeLeadDataFromWebsiteUrl } from './getEmail'
 
-const RESEARCH_QUERY = 'Label musique'
+const RESEARCH_QUERY = 'salle de sport'
 const PARIS_LAT = 48.8566
 const PARIS_LON = 2.3522
 const ZOOM = '12z'
@@ -55,11 +55,12 @@ async function getLeadsContent() {
       website: lead.website
     })
     .from(lead)
-    .where(sql`${lead.queryParamId} = 1`)
+    .where(sql`${lead.queryParamId} = 5`)
     .limit(20)
     .offset(0)
     .execute()
 
+  // const leadsWithWebsites = [{ id: 1, website: 'https://www.procope.com/' }]
   if (leadsWithWebsites.length === 0) {
     console.log('No leads with websites found.')
     return
@@ -71,24 +72,37 @@ async function getLeadsContent() {
       if (!website) return // TypeScript safety check
 
       const leadData = await scrapeLeadDataFromWebsiteUrl(website)
+
+      console.log('leadData', leadData?.leadStructuredData)
+      if (!leadData?.leadStructuredData.emails.length) return
+
+      await db
+        .insert(leadEmail)
+        .values(
+          leadData.leadStructuredData.emails.map((email) => ({
+            leadId: id,
+            email: email.email,
+            isMatchingDomain: email.isMatchingDomain
+          }))
+        )
+        .onConflictDoNothing()
       return { id, website, leadData }
     })
   )
-  console.log('leadData', leadData)
+  // console.log('leadData', leadData)
 
   const leadConsoleData = leadData.map((lead) => {
     return {
       website: lead?.website,
       description: lead?.leadData?.leadStructuredData.description,
-      email: lead?.leadData?.leadStructuredData.emails,
-      emailMatchWithDomainName:
-        lead?.leadData?.leadStructuredData.emailMatchWithDomainName
+      emails: lead?.leadData?.leadStructuredData.emails
     }
   })
 
-  console.log('leadConsoleData', leadConsoleData)
+  const leadEmails = leadConsoleData.flatMap((lead) => lead.emails)
 
   process.exit(0)
 }
 
+// generateGmapLeads()
 getLeadsContent()

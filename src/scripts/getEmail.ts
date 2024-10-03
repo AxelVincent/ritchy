@@ -6,8 +6,10 @@ function extractEmails(
   excludeList: string[] = ['sentry', 'datadog']
 ): string[] {
   const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
-  const allEmails = text.match(emailPattern) || []
-  return allEmails.filter(
+  const imagePattern = /\.(png|jpe?g|gif|bmp|webp)$/i
+  const allMatches = text.match(emailPattern) || []
+  const validEmails = allMatches.filter((match) => !imagePattern.test(match))
+  return validEmails.filter(
     (email) =>
       !excludeList.some((exclude) =>
         email.toLowerCase().includes(exclude.toLowerCase())
@@ -20,12 +22,21 @@ function getDomainFromUrl(url: string): string {
   return parsedUrl.hostname.replace(/^www\./, '')
 }
 
+type LeadStructuredData = {
+  title: string
+  description: string
+  emails: Array<{
+    email: string
+    isMatchingDomain: boolean
+  }>
+}
+
 async function getWebsiteContent(
   url: string,
   subdomains: string[] = ['about', 'faq', 'a-propos', 'contact']
 ): Promise<{
   AIOptimizedText: string
-  leadStructuredData: Record<string, unknown>
+  leadStructuredData: LeadStructuredData
 } | null> {
   try {
     const mainUrl = new URL(url)
@@ -56,17 +67,21 @@ async function getWebsiteContent(
       $(elementsToRemove).remove()
       const structuredContent = extractStructuredContent($)
       const emails = extractEmails(html)
-      const emailMatchWithDomainName = findEmailMatchWithDomainName(
-        emails,
-        domain
-      )
+
       return {
         ...structuredContent,
         url: urlsToFetch[index],
-        emails,
-        emailMatchWithDomainName
+        emails
       }
     })
+
+    const emails = [
+      ...new Set(pageContents.flatMap((content) => content.emails))
+    ]
+    const emailMatchWithDomainName = findEmailMatchWithDomainName(
+      emails,
+      domain
+    )
 
     const leadStructuredData = {
       title: pageContents.find((content) => content.title)?.title || '',
@@ -76,10 +91,10 @@ async function getWebsiteContent(
         url: content.url,
         content: content.content
       })),
-      emails: [...new Set(pageContents.flatMap((content) => content.emails))],
-      emailMatchWithDomainName:
-        pageContents.find((content) => content.emailMatchWithDomainName)
-          ?.emailMatchWithDomainName || null
+      emails: emails.map((email) => ({
+        email,
+        isMatchingDomain: email === emailMatchWithDomainName
+      }))
     }
 
     const AIOptimizedText = `
@@ -143,7 +158,7 @@ function findEmailMatchWithDomainName(
 
 export async function scrapeLeadDataFromWebsiteUrl(url: string): Promise<{
   AIOptimizedText: string
-  leadStructuredData: Record<string, unknown>
+  leadStructuredData: LeadStructuredData
 } | null> {
   try {
     const websiteContent = await getWebsiteContent(url)
