@@ -47,7 +47,7 @@ A powerful lead generation tool that leverages Google Maps research and website 
 3. Set up environment variables:
    - Copy the example environment file:
      ```bash
-     cp ex.env .env
+     cp .env.example .env
      ```
    - Open the `.env` file and replace the dummy data with your actual configuration values.
 
