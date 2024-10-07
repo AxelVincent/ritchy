@@ -1,23 +1,23 @@
-import "dotenv/config";
-import { sql } from "drizzle-orm";
-import { db } from "src/db/db";
-import { lead, leadEmail, queryParam } from "src/db/schema";
-import { searchGoogleMaps } from "../services/gmap";
-import { scrapeLeadDataFromWebsiteUrl } from "./getEmail";
+import 'dotenv/config'
+import { sql } from 'drizzle-orm'
+import { db } from 'src/db/db'
+import { lead, leadEmail, queryParam } from 'src/db/schema'
+import { searchGoogleMaps } from 'src/external/google_maps'
+import { scrapeLeadDataFromWebsiteUrl } from 'src/services/scrapeWebsiteData'
 
-const RESEARCH_QUERY = "salle de sport";
-const PARIS_LAT = 48.8566;
-const PARIS_LON = 2.3522;
-const ZOOM = "12z";
+const RESEARCH_QUERY = 'salle de sport'
+const PARIS_LAT = 48.8566
+const PARIS_LON = 2.3522
+const ZOOM = '12z'
 
-async function generateGmapLeads() {
+async function getGmapLeads() {
 	try {
 		const results = await searchGoogleMaps(
 			RESEARCH_QUERY,
 			PARIS_LAT,
 			PARIS_LON,
-			ZOOM,
-		);
+			ZOOM
+		)
 
 		const queryParamResult = await db
 			.insert(queryParam)
@@ -25,9 +25,9 @@ async function generateGmapLeads() {
 				researchQuery: RESEARCH_QUERY,
 				latitude: PARIS_LAT,
 				longitude: PARIS_LON,
-				zoom: ZOOM,
+				zoom: ZOOM
 			})
-			.returning({ id: queryParam.id });
+			.returning({ id: queryParam.id })
 
 		const leads = results.local_results.map((result) => {
 			return {
@@ -36,45 +36,44 @@ async function generateGmapLeads() {
 				address: result.address,
 				phone: result.phone,
 				website: result.website,
+				description: result.description,
 				latitude: result.gps_coordinates.latitude,
-				longitude: result.gps_coordinates.longitude,
-			};
-		});
+				longitude: result.gps_coordinates.longitude
+			}
+		})
 
-		await db.insert(lead).values(leads);
+		await db.insert(lead).values(leads)
 	} catch (error) {
-		console.error("Error generating leads:", error);
+		console.error('Error generating leads:', error)
 	}
-	process.exit(0);
+	process.exit(0)
 }
 
 async function getLeadsContent() {
 	const leadsWithWebsites = await db
 		.select({
 			id: lead.id,
-			website: lead.website,
+			website: lead.website
 		})
 		.from(lead)
 		.where(sql`${lead.queryParamId} = 5`)
 		.limit(20)
 		.offset(0)
-		.execute();
+		.execute()
 
-	// const leadsWithWebsites = [{ id: 1, website: 'https://www.procope.com/' }]
 	if (leadsWithWebsites.length === 0) {
-		console.log("No leads with websites found.");
-		return;
+		console.log('No leads with websites found.')
+		return
 	}
 
 	const leadData = await Promise.all(
 		leadsWithWebsites.map(async (leadWithWebsite) => {
-			const { id, website } = leadWithWebsite;
-			if (!website) return; // TypeScript safety check
+			const { id, website } = leadWithWebsite
+			if (!website) return // TypeScript safety check
 
-			const leadData = await scrapeLeadDataFromWebsiteUrl(website);
+			const leadData = await scrapeLeadDataFromWebsiteUrl(website)
 
-			console.log("leadData", leadData?.leadStructuredData);
-			if (!leadData?.leadStructuredData.emails.length) return;
+			if (!leadData?.leadStructuredData.emails.length) return
 
 			await db
 				.insert(leadEmail)
@@ -82,27 +81,16 @@ async function getLeadsContent() {
 					leadData.leadStructuredData.emails.map((email) => ({
 						leadId: id,
 						email: email.email,
-						isMatchingDomain: email.isMatchingDomain,
-					})),
+						isMatchingDomain: email.isMatchingDomain
+					}))
 				)
-				.onConflictDoNothing();
-			return { id, website, leadData };
-		}),
-	);
-	// console.log('leadData', leadData)
+				.onConflictDoNothing()
+			return { id, website, leadData }
+		})
+	)
 
-	const leadConsoleData = leadData.map((lead) => {
-		return {
-			website: lead?.website,
-			description: lead?.leadData?.leadStructuredData.description,
-			emails: lead?.leadData?.leadStructuredData.emails,
-		};
-	});
-
-	const leadEmails = leadConsoleData.flatMap((lead) => lead.emails);
-
-	process.exit(0);
+	process.exit(0)
 }
 
-// generateGmapLeads()
-getLeadsContent();
+// getGmapLeads()
+getLeadsContent()
