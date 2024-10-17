@@ -24,7 +24,7 @@
 		"url": "0.11.4"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "1.9.3",
+		"@biomejs/biome": "1.9.4",
 		"@types/node": "20.16.12",
 		"drizzle-kit": "0.26.2",
 		"tsx": "4.19.1",
