@@ -25,7 +25,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"@types/node": "20.16.13",
+		"@types/node": "20.17.0",
 		"drizzle-kit": "0.26.2",
 		"tsx": "4.19.1",
 		"typescript": "5.6.3"
