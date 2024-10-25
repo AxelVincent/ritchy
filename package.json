@@ -20,7 +20,7 @@
 		"cheerio": "1.0.0",
 		"dotenv": "16.4.5",
 		"drizzle-orm": "0.35.3",
-		"postgres": "3.4.4",
+		"postgres": "3.4.5",
 		"url": "0.11.4"
 	},
 	"devDependencies": {
