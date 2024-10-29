@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base", ":semanticCommits", ":enablePreCommit"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "all major dependencies",
+      "groupSlug": "all-major"
+    },
+    {
+      "matchPackageNames": ["@types/node"],
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "type definitions",
+      "groupSlug": "types"
+    }
+  ],
+  "ignoreDependencies": ["node"],
+  "rangeStrategy": "pin",
+  "schedule": ["after 10pm and before 5am every day"],
+  "timezone": "UTC",
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "updateInternalDeps": true,
+  "ignorePaths": ["**/node_modules/**"],
+  "postUpdateOptions": ["yarnDedupeHighest"]
+}
