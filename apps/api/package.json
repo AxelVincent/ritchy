@@ -7,7 +7,7 @@
 	"author": "",
 	"license": "ISC",
 	"scripts": {
-		"dev": "tsx src/index.ts",
+		"dev": "tsx watch src/index.ts",
 		"scripts:example": "tsx src/scripts/example.ts",
 		"scripts:leadGenerator": "tsx src/scripts/leadGenerator.ts",
 		"db:generate": "drizzle-kit generate",
@@ -19,15 +19,18 @@
 		"check:fix": "biome check --write ./src"
 	},
 	"dependencies": {
+		"@types/cors": "2.8.17",
 		"cheerio": "1.0.0",
+		"cors": "2.8.5",
 		"dotenv": "16.4.5",
 		"drizzle-orm": "0.35.3",
 		"postgres": "3.4.4",
-		"url": "0.11.4"
+		"url": "0.11.4",
+		"zod": "3.23.8"
 	},
 	"devDependencies": {
-		"@ritchy/types": "workspace:*",
 		"@biomejs/biome": "1.9.4",
+		"@ritchy/types": "workspace:*",
 		"@types/node": "20.17.1",
 		"drizzle-kit": "0.26.2",
 		"tsx": "4.19.2",

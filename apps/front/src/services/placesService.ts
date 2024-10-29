@@ -1,4 +1,4 @@
-import type { PlacesApiResponse } from '@ritchy/types/places'
+import type { SearchResponse } from '@ritchy/types/src/places.ts'
 
 // Remove hardcoded API key and use environment variable
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
@@ -59,7 +59,6 @@ export async function textSearch(
 			throw new Error(`HTTP error! status: ${response.status}`)
 		}
 		const data = await response.json()
-		console.log(data.nextPageToken)
 		return data
 	} catch (error) {
 		console.error('Error calling Text Search API:', error)
@@ -87,8 +86,8 @@ export async function textSearch(
 // Updated function for the legacy text search
 export const legacyTextSearch = async (
 	params: LegacySearchParams
-): Promise<PlacesApiResponse['results']> => {
-	const response = await fetch('http://localhost:8000/api/places/search', {
+): Promise<SearchResponse> => {
+	const response = await fetch('http://localhost:3030/api/places/search', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'

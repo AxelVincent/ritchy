@@ -1,8 +1,8 @@
 import { legacyTextSearch } from '@/services/placesService'
 import { Loader } from '@googlemaps/js-api-loader'
+import type { SearchResponse } from '@ritchy/types/src/places.ts'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PlacesApiResponse } from '../../../types/places'
 import { PlacesDataTable } from './PlacesDataTable'
 
 // Types for our places results
@@ -20,9 +20,10 @@ declare global {
 
 // Function to get or create the Loader
 const getLoader = (): Loader => {
+	console.log('Getting loader...', import.meta.env.VITE_GOOGLE_MAPS_API_KEY)
 	if (!window.googleMapsLoader) {
 		window.googleMapsLoader = new Loader({
-			apiKey: 'AIzaSyDr2HD-EFi8dhuuchPePV41hgR6aK2Fhlc',
+			apiKey: String(import.meta.env.VITE_GOOGLE_MAPS_API_KEY),
 			version: 'beta',
 			libraries: ['places', 'marker', 'geometry']
 		})
@@ -34,7 +35,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 13 }) => {
 	const mapRef = useRef<HTMLDivElement>(null)
 	const searchInputRef = useRef<HTMLInputElement>(null)
 	const mapInstance = useRef<google.maps.Map | null>(null)
-	const [places, setPlaces] = useState<PlacesApiResponse['results']>([])
+	const [places, setPlaces] = useState<SearchResponse>([])
 	const [loading, setLoading] = useState(false)
 	const [mapLoaded, setMapLoaded] = useState(false)
 	const [selectedPlace, setSelectedPlace] = useState<string | null>(null)
@@ -50,7 +51,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 13 }) => {
 	const [geolocationRequested, setGeolocationRequested] = useState(false)
 
 	const createMarker = useCallback(
-		(place: PlacesApiResponse['results'][number]) => {
+		(place: SearchResponse[number]) => {
 			if (!mapInstance.current) return null
 
 			const markerView = new google.maps.marker.PinElement({
@@ -247,7 +248,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom = 13 }) => {
 		}
 	}, [markers])
 
-	const handlePlaceClick = (place: PlacesApiResponse['results'][number]) => {
+	const handlePlaceClick = (place: SearchResponse[number]) => {
 		setSelectedPlace(place.place_id)
 		// Close all open infowindows
 		for (const window of infoWindows.values()) {

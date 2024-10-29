@@ -2,14 +2,16 @@
   "name": "@ritchy/types",
   "type": "module",
   "scripts": {
-    "dev": "tsc --watch",
     "build": "tsc"
   },
   "exports": {
-    "./places": "./src/places.ts"
+    "./src/*": "./src/*"
   },
   "devDependencies": {
     "@ritchy/ts-config": "workspace:*",
     "typescript": "latest"
+  },
+  "dependencies": {
+    "zod": "3.23.8"
   }
 }

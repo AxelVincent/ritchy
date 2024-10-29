@@ -324,7 +324,7 @@ export default function EnhancedSalesMapTool() {
 	const inputRef = useRef<HTMLInputElement | null>(null)
 
 	const { isLoaded, loadError } = useJsApiLoader({
-		googleMapsApiKey: 'AIzaSyDr2HD-EFi8dhuuchPePV41hgR6aK2Fhlc',
+		googleMapsApiKey: String(import.meta.env.VITE_GOOGLE_MAPS_API_KEY),
 		libraries: ['places']
 	})
 
