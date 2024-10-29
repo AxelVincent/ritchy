@@ -77,42 +77,42 @@ const API_KEY = String(process.env.GOOGLE_PLACES_API_KEY)
 // }
 
 export async function legacyTextSearch(
-  query: string,
-  bias: { center: { lat: number; lng: number }; radius: number },
-  nextPageToken?: string
+	query: string,
+	bias: { center: { lat: number; lng: number }; radius: number },
+	nextPageToken?: string
 ): Promise<PlacesApiResponse['results']> {
-  const location = `${bias.center.lat},${bias.center.lng}`
-  console.log(location)
-  const url = new URL(
-    'https://maps.googleapis.com/maps/api/place/textsearch/json'
-  )
-  url.searchParams.append('query', query)
-  url.searchParams.append('location', location)
-  url.searchParams.append('radius', bias.radius.toString())
-  url.searchParams.append('key', API_KEY)
-  if (nextPageToken) {
-    url.searchParams.append('pagetoken', nextPageToken)
-  }
+	const location = `${bias.center.lat},${bias.center.lng}`
+	console.log(location)
+	const url = new URL(
+		'https://maps.googleapis.com/maps/api/place/textsearch/json'
+	)
+	url.searchParams.append('query', query)
+	url.searchParams.append('location', location)
+	url.searchParams.append('radius', bias.radius.toString())
+	url.searchParams.append('key', API_KEY)
+	if (nextPageToken) {
+		url.searchParams.append('pagetoken', nextPageToken)
+	}
 
-  try {
-    console.log(url.toString())
-    const response = await fetch(url.toString(), {
-      headers: {
-        'X-Goog-Api-Key': API_KEY
-      },
-      method: 'GET'
-    })
+	try {
+		console.log(url.toString())
+		const response = await fetch(url.toString(), {
+			headers: {
+				'X-Goog-Api-Key': API_KEY
+			},
+			method: 'GET'
+		})
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`)
+		}
 
-    const data: PlacesApiResponse = await response.json()
-    console.log(data)
+		const data: PlacesApiResponse = await response.json()
+		console.log(data)
 
-    return data.results
-  } catch (error) {
-    console.error('Error calling Legacy Text Search API:', error)
-    throw error
-  }
+		return data.results
+	} catch (error) {
+		console.error('Error calling Legacy Text Search API:', error)
+		throw error
+	}
 }
