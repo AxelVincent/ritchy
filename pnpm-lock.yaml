@@ -28,8 +28,8 @@ importers:
         specifier: 1.9.4
         version: 1.9.4
       '@types/node':
-        specifier: 20.17.1
-        version: 20.17.1
+        specifier: 22.8.2
+        version: 22.8.2
       drizzle-kit:
         specifier: 0.26.2
         version: 0.26.2
@@ -528,8 +528,8 @@ packages:
   '@libsql/core@0.14.0':
     resolution: {integrity: sha512-nhbuXf7GP3PSZgdCY2Ecj8vz187ptHlZQ0VRc751oB2C1W8jQUXKKklvt7t1LJiUTQBVJuadF628eUk+3cRi4Q==}
 
-  '@types/node@20.17.1':
-    resolution: {integrity: sha512-j2VlPv1NnwPJbaCNv69FO/1z4lId0QmGvpT41YxitRtWlg96g/j8qcv2RKsLKe2F6OJgyXhupN1Xo17b2m139Q==}
+  '@types/node@22.8.2':
+    resolution: {integrity: sha512-NzaRNFV+FZkvK/KLCsNdTvID0SThyrs5SHB6tsD/lajr22FGC73N2QeDPM2wHtVde8mgcXuSsHQkH5cX1pbPLw==}
 
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
@@ -1102,7 +1102,7 @@ snapshots:
     dependencies:
       js-base64: 3.7.7
 
-  '@types/node@20.17.1':
+  '@types/node@22.8.2':
     dependencies:
       undici-types: 6.19.8
 
