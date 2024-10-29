@@ -1,0 +1,24 @@
+{
+  "name": "ritchy",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "format": "turbo run format",
+    "check": "turbo run check",
+    "check:fix": "turbo run check:fix",
+    "format:fix": "turbo run format:fix",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "prettier": "^3.2.5",
+    "turbo": "^2.2.3",
+    "typescript": "5.5.4"
+  },
+  "packageManager": "pnpm@8.15.6",
+  "engines": {
+    "node": ">=18"
+  }
+}
