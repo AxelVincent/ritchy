@@ -1,0 +1,209 @@
+#=============================================================================
+# MONOREPO DEVELOPMENT GUIDELINES
+#=============================================================================
+
+#-----------------------------------------------------------------------------
+# TECHNOLOGY STACK
+#-----------------------------------------------------------------------------
+
+# Frontend Core
+# ------------
+# - React 18+ with TypeScript
+# - TanStack Query for data fetching
+# - TanStack Router for routing
+# - Tailwind + Shadcn/UI for styling
+# - Vite for build tooling
+# - Zod for runtime validation
+
+# Backend Core
+# -----------
+# - Node.js with Express
+# - TypeScript for type safety
+# - Drizzle ORM with PostgreSQL
+# - Zod for API validation
+
+# Development Tools
+# ---------------
+# - Turborepo for monorepo management
+# - pnpm for package management
+# - Biome for formatting
+
+#-----------------------------------------------------------------------------
+# CORE PRINCIPLES
+#-----------------------------------------------------------------------------
+
+# Type Safety & Validation
+# ----------------------
+# - Strict TypeScript configuration
+# - Zod validators for API contracts
+# - Shared types between frontend and backend
+# - No any types allowed
+# - Runtime type validation
+
+# Code Quality
+# -----------
+# - Functional programming approach
+# - No JavaScript classes (use functions and closures)
+# - Pure functions when possible
+# - Immutable data structures
+# - Single responsibility principle
+# - No dead code
+# - Comprehensive logging
+# - Clear error handling
+# - Self-documenting code
+
+# Feature Organization
+# ------------------
+# - Self-contained features
+# - Clear boundaries
+# - Shared utilities
+# - Minimal cross-feature dependencies
+
+#-----------------------------------------------------------------------------
+# PROJECT STRUCTURE
+#-----------------------------------------------------------------------------
+
+# Shared Types Package
+# ------------------
+**/packages/types/src/
+    index.ts            # Main export file
+    api/               # API-related schemas and types
+        auth.ts       # Authentication types
+        users.ts      # User-related types
+        places.ts    # Place-related types
+    schemas.ts        # Shared Zod schemas
+    types.ts         # Shared TypeScript types
+
+# Frontend Application
+# ------------------
+**/apps/front/src/
+    main.tsx                # Entry point
+    App.tsx                # Root component
+    features/              # Feature-based modules
+        [feature]/
+            components/    # Feature components
+            hooks/        # Feature hooks
+            services/     # Feature services
+            types.ts     # Feature-specific types
+    components/           # Shared components
+        ui/              # Shadcn components
+        common/          # Common components
+    lib/                 # Core infrastructure
+        api/            # API client
+    providers/           # React providers
+    routes/              # Application routes
+    hooks/              # Global hooks
+    types/              # Global types
+    utils/              # Utilities
+
+# Backend Application
+# -----------------
+**/apps/api/src/
+    index.ts             # Entry point
+    controllers/         # Request handlers
+    routes/             # Route definitions
+    services/           # Business logic
+    db/                 # Database
+        schema/         # Drizzle schema
+        migrations/     # Migrations
+    external/           # External services
+    utils/             # Utilities
+
+#-----------------------------------------------------------------------------
+# CODE STYLE RULES
+#-----------------------------------------------------------------------------
+
+# Naming Conventions
+# ----------------
+# - PascalCase: Components, Types, Interfaces
+# - camelCase: Functions, Variables, Properties
+# - kebab-case: Files, Folders
+# - SCREAMING_SNAKE_CASE: Constants
+
+# Function Rules
+# ------------
+# ✅ Good:
+#   export const getUserData = async (id: string): Promise<User> => {
+#     if (!id) throw new Error('ID required')
+#     return await fetchUser(id)
+#   }
+#
+# ❌ Bad:
+#   export default function getData(a) {
+#     return a ? fetchData(a) : null
+#   }
+
+# Component Rules
+# -------------
+# ✅ Good:
+#   export const UserProfile = ({ id }: { id: string }) => {
+#     const { data } = useQuery(['user', id], () => getUser(id))
+#     return data ? <div>{data.name}</div> : null
+#   }
+#
+# ❌ Bad:
+#   class Profile extends React.Component {
+#     render() { return <div>{this.props.name}</div> }
+#   }
+
+#-----------------------------------------------------------------------------
+# CONFIGURATION FILES
+#-----------------------------------------------------------------------------
+
+# Root Configuration
+# ----------------
+tsconfig.json
+turbo.json
+package.json
+pnpm-workspace.yaml
+
+# Frontend Configuration
+# -------------------
+**/apps/front/
+    vite.config.ts
+    tailwind.config.js
+    tsconfig.json
+    components.json
+
+# Backend Configuration
+# ------------------
+**/apps/api/
+    drizzle.config.ts
+    tsconfig.json
+
+#-----------------------------------------------------------------------------
+# TESTING STRUCTURE
+#-----------------------------------------------------------------------------
+
+**/tests/
+    unit/              # Unit tests
+    integration/       # Integration tests
+    e2e/              # End-to-end tests
+    fixtures/         # Test data
+    utils/           # Test utilities
+
+#-----------------------------------------------------------------------------
+# EXCLUDE PATTERNS
+#-----------------------------------------------------------------------------
+
+# Dependencies & Builds
+!node_modules/
+!dist/
+!build/
+!.turbo/
+!coverage/
+
+# Sensitive Files
+!.env
+!.env.*
+!secrets.*
+!*password*
+!*credential*
+
+# Artifacts
+!*.log
+!*.lock
+!pnpm-lock.yaml
+!*.min.js
+!*.min.css
+!*.map 
