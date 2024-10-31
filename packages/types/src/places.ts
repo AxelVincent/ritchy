@@ -67,3 +67,4 @@ export const SearchResponseSchema = PlaceResultSchema.array()
 export type SearchRequestBody = z.infer<typeof SearchRequestBodySchema>
 export type SearchResponse = z.infer<typeof SearchResponseSchema>
 export type PlaceResult = z.infer<typeof PlaceResultSchema>
+export type PlacesApiResponse = z.infer<typeof PlacesApiResponseSchema>
