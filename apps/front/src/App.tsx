@@ -1,12 +1,16 @@
 import './App.css'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // import EnhancedSalesMapTool from './components/enhanced-sales-map-tool-with-gmap-and-places'
-import GmapTest from './components/gmap-test'
+import { MapDisplay } from './features/MapDisplay/MapDisplay'
+
+// Create a client
+const queryClient = new QueryClient()
 
 function App() {
 	return (
-		<div className="h-screen">
-			<GmapTest center={{ lat: 48.8566, lng: 2.3522 }} />
-		</div>
+		<QueryClientProvider client={queryClient}>
+			<MapDisplay />
+		</QueryClientProvider>
 	)
 }
 
