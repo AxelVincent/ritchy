@@ -1,16 +1,16 @@
-import type { ApiResponse } from '@/api/queries/googleMaps/mock/mockTextSearch'
 import { useTextSearch } from '@/api/queries/googleMaps/useTextSearch'
+import type { TextSearchResponse } from '@ritchy/types/src/places.js'
 import { useEffect, useState } from 'react'
 
 interface LocationParams {
   latitude: number
   longitude: number
-  radius?: number
+  radius: number
 }
 
 interface PlaceSearchProps {
   location: LocationParams
-  onResultsChange: (results: ApiResponse) => void
+  onResultsChange: (results: TextSearchResponse) => void
 }
 
 export const PlaceSearch = ({
@@ -19,15 +19,12 @@ export const PlaceSearch = ({
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
   const [pageSize, setPageSize] = useState(20)
-  const [searchQuery, setSearchQuery] = useState('')
 
-  const { data, isLoading } = useTextSearch({
-    query: searchQuery,
+  const { data, isLoading, refetch } = useTextSearch({
+    query: searchText,
     pageSize,
     location
   })
-
-  console.log('query', { query: searchQuery, pageSize, location })
 
   useEffect(() => {
     if (data) {
@@ -35,9 +32,11 @@ export const PlaceSearch = ({
     }
   }, [data, onResultsChange])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSearchQuery(searchText)
+    if (searchText.length >= 3) {
+      await refetch()
+    }
   }
 
   return (
@@ -65,14 +64,14 @@ export const PlaceSearch = ({
             <input
               id="results"
               type="number"
-              min={1}
+              min={0}
               max={20}
               value={pageSize}
               onChange={(e) =>
                 setPageSize(
                   Math.min(
                     20,
-                    Math.max(1, Number.parseInt(e.target.value) || 1)
+                    Math.max(0, Number.parseInt(e.target.value) || 0)
                   )
                 )
               }

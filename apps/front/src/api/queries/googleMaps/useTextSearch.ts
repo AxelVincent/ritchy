@@ -1,18 +1,13 @@
+import type { TextSearchResponse } from '@ritchy/types/src/places.js'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
-import {
-  type ApiResponse,
-  createMockTextSearchAPI
-} from './mock/mockTextSearch'
-
-const mockAPI = createMockTextSearchAPI()
 
 interface UseTextSearchOptions {
   query: string
-  pageSize?: number
-  location?: {
+  pageSize: number
+  location: {
     latitude: number
     longitude: number
-    radius?: number
+    radius: number
   }
 }
 
@@ -20,26 +15,43 @@ export const useTextSearch = ({
   query,
   pageSize = 20,
   location
-}: UseTextSearchOptions): UseQueryResult<ApiResponse> => {
+}: UseTextSearchOptions): UseQueryResult<TextSearchResponse> => {
   return useQuery({
     queryKey: ['places', 'text-search', query, pageSize, location],
-    queryFn: () =>
-      mockAPI.textSearch({
-        textQuery: query,
-        pageSize,
-        ...(location && {
-          locationBias: {
-            circle: {
-              center: {
-                latitude: location.latitude,
-                longitude: location.longitude
-              },
-              radius: location.radius ?? 500 // Default 500m radius if not specified
-            }
-          }
-        })
-      }),
-    enabled: !!query, // Only run query if search text is provided
-    staleTime: 1000 * 60 * 5 // Consider data stale after 5 minutes
+    queryFn: async () => {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_WEB_BASE_URL}/places/search`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            textQuery: query,
+            pageSize,
+            ...(location && {
+              locationBias: {
+                circle: {
+                  center: {
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                  },
+                  radius: location.radius ?? 500
+                }
+              }
+            })
+          })
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch places')
+      }
+
+      return response.json()
+    },
+    enabled: false,
+    staleTime: 1000 * 60 * 5,
+    retry: false
   })
 }
