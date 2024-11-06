@@ -7,11 +7,11 @@ import { MapDisplay } from './features/MapDisplay/MapDisplay'
 const queryClient = new QueryClient()
 
 function App() {
-	return (
-		<QueryClientProvider client={queryClient}>
-			<MapDisplay />
-		</QueryClientProvider>
-	)
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MapDisplay />
+    </QueryClientProvider>
+  )
 }
 
 export default App
