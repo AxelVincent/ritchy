@@ -7,11 +7,25 @@ import type { Request, Response } from 'express'
 import { postTextSearchV1 } from 'src/external/google_maps/text_search_V1'
 import { z } from 'zod'
 
+/**
+ * Searches for places based on text query and location bias
+ * @param req Express request
+ * @param res Express response
+ * @returns Promise<ApiResponse<TextSearchResponse>>
+ */
 export const searchPlaces = async (req: Request, res: Response) => {
   try {
+    console.log('Processing place search request', {
+      body: req.body,
+      locationBias: req.body.locationBias
+    })
+
+    // Add request validation
+    if (!req.body) {
+      return res.status(400).json({ error: 'Request body is required' })
+    }
+
     // Validate request body
-    console.log('req.body', req.body)
-    console.log('LocationBias', req.body.locationBias)
     const parsedBody = SearchRequestBodySchema.parse(req.body)
 
     const requestBody: SearchRequestBody = {
@@ -19,7 +33,6 @@ export const searchPlaces = async (req: Request, res: Response) => {
       locationBias: parsedBody.locationBias,
       pageSize: parsedBody.pageSize
     }
-
     const results = await postTextSearchV1(requestBody)
 
     // Validate response
