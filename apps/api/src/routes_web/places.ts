@@ -1,6 +1,7 @@
 import {
   type SearchRequestBody,
   SearchRequestBodySchema,
+  type TextSearchApiResponse,
   TextSearchResponseSchema
 } from '@ritchy/types/src/places'
 import type { Request, Response } from 'express'
@@ -13,7 +14,10 @@ import { z } from 'zod'
  * @param res Express response
  * @returns Promise<ApiResponse<TextSearchResponse>>
  */
-export const searchPlaces = async (req: Request, res: Response) => {
+export const searchPlaces = async (
+  req: Request<Record<string, never>, TextSearchApiResponse, SearchRequestBody>,
+  res: Response<TextSearchApiResponse>
+): Promise<void> => {
   try {
     console.log('Processing place search request', {
       body: req.body,
@@ -22,7 +26,7 @@ export const searchPlaces = async (req: Request, res: Response) => {
 
     // Add request validation
     if (!req.body) {
-      return res.status(400).json({ error: 'Request body is required' })
+      res.status(400).json({ error: 'Request body is required' })
     }
 
     // Validate request body
@@ -45,7 +49,6 @@ export const searchPlaces = async (req: Request, res: Response) => {
         error: 'Invalid request data',
         details: error.errors
       })
-      return
     }
 
     console.error('Search error:', error)

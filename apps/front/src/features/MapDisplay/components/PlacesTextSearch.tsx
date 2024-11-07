@@ -18,12 +18,14 @@ export const PlaceSearch = ({
   onResultsChange
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(2)
+  const [currentLocation, setCurrentLocation] =
+    useState<LocationParams>(location)
 
   const { data, isLoading, refetch } = useTextSearch({
     query: searchText,
     pageSize,
-    location
+    location: currentLocation
   })
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export const PlaceSearch = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (searchText.length >= 3) {
+      setCurrentLocation(location)
       await refetch()
     }
   }
