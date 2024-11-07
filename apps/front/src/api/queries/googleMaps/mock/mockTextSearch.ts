@@ -18,7 +18,7 @@ interface TextSearchRequest {
   locationBias?: LocationBias
 }
 
-export interface ApiResponse {
+interface ApiResponse {
   places: Place[]
   contextualContents: ContextualContent[]
   nextPageToken: string

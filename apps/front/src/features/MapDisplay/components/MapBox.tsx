@@ -5,14 +5,25 @@ import { useMapInitialization } from '../hooks/useMapInitialization'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
 import { RadiusSlider } from './RadiusSlider'
 
-export const MapBox: FC = () => {
+interface MapBoxProps {
+  onLocationChange: (location: {
+    latitude: number
+    longitude: number
+    radius: number
+  }) => void
+  initialRadius?: number
+}
+
+export const MapBox: FC<MapBoxProps> = ({
+  onLocationChange,
+  initialRadius = RADIUS_SETTINGS.initial
+}) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const initialCenter = useMemo(
     () => [-79.4512, 43.6568] as [number, number],
     []
   )
-  const [sliderValue, setSliderValue] = useState(RADIUS_SETTINGS.initial)
-  const [radius, setRadius] = useState(RADIUS_SETTINGS.initial)
+  const [radius, setRadius] = useState(initialRadius)
 
   const mapRef = useMapInitialization(
     mapContainerRef,
@@ -29,7 +40,7 @@ export const MapBox: FC = () => {
         type: 'geojson',
         data: {
           type: 'Feature',
-          properties: { radius_m: sliderValue },
+          properties: { radius_m: radius },
           geometry: {
             type: 'Point',
             coordinates: [
@@ -73,17 +84,27 @@ export const MapBox: FC = () => {
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
         marker.setLngLat(center)
-        updateCircleData(center, sliderValue)
+        updateCircleData(center, radius)
+        onLocationChange({
+          latitude: center.lat,
+          longitude: center.lng,
+          radius
+        })
       }
     })
-  }, [sliderValue, mapRef, updateCircleData])
+  }, [radius, mapRef, updateCircleData, onLocationChange])
 
   const handleChange = (newValue: number) => {
-    setSliderValue(newValue)
     setRadius(newValue)
 
     if (mapRef.current) {
-      updateCircleData(mapRef.current.getCenter(), sliderValue)
+      const center = mapRef.current.getCenter()
+      updateCircleData(center, newValue)
+      onLocationChange({
+        latitude: center.lat,
+        longitude: center.lng,
+        radius: newValue
+      })
     }
   }
 

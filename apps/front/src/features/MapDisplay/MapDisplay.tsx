@@ -1,9 +1,16 @@
-import type { ApiResponse } from '@/api/queries/googleMaps/mock/mockTextSearch'
+import type { TextSearchResponse } from '@ritchy/types/src/places.js'
+import { useState } from 'react'
 import { MapBox } from './components/MapBox'
 import { PlaceSearch } from './components/PlacesTextSearch'
 
 export const MapDisplay = () => {
-  const handleResults = (results: ApiResponse) => {
+  const [location, setLocation] = useState({
+    latitude: 43.6568,
+    longitude: -79.4512,
+    radius: 1000
+  })
+
+  const handleResults = (results: TextSearchResponse) => {
     console.log('Search results:', results)
     // Handle the results
   }
@@ -11,17 +18,13 @@ export const MapDisplay = () => {
   return (
     <div className="relative h-screen w-screen flex">
       <div className="w-1/2">
-        <MapBox />
+        <MapBox
+          onLocationChange={setLocation}
+          initialRadius={location.radius}
+        />
       </div>
       <div className="w-1/2">
-        <PlaceSearch
-          location={{
-            latitude: 37.7749,
-            longitude: -122.4194,
-            radius: 1000
-          }}
-          onResultsChange={handleResults}
-        />
+        <PlaceSearch location={location} onResultsChange={handleResults} />
       </div>
     </div>
   )
