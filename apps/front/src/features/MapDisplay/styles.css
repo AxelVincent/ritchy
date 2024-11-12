@@ -1,0 +1,10 @@
+.place-popup .mapboxgl-popup-content {
+  border-radius: 0.5rem;
+  padding: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.place-popup .mapboxgl-popup-close-button {
+  padding: 0.5rem;
+  font-size: 1.25rem;
+}

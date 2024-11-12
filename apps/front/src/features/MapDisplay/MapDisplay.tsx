@@ -10,9 +10,12 @@ export const MapDisplay = () => {
     radius: 1000
   })
 
+  const [searchResults, setSearchResults] = useState<TextSearchResponse | null>(
+    null
+  )
+
   const handleResults = (results: TextSearchResponse) => {
-    console.log('Search results:', results)
-    // Handle the results
+    setSearchResults(results)
   }
 
   return (
@@ -21,6 +24,7 @@ export const MapDisplay = () => {
         <MapBox
           onLocationChange={setLocation}
           initialRadius={location.radius}
+          searchResults={searchResults}
         />
       </div>
       <div className="w-1/2">
