@@ -33,7 +33,7 @@
     "@biomejs/biome": "1.9.4",
     "@ritchy/types": "workspace:*",
     "@types/express": "5.0.0",
-    "@types/node": "20.17.1",
+    "@types/node": "22.9.0",
     "drizzle-kit": "0.26.2",
     "tsx": "4.19.2",
     "typescript": "5.6.3"
