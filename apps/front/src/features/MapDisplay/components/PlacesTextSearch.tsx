@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 interface LocationParams {
   latitude: number
   longitude: number
-  radius: number
+  radiusInMeters: number
 }
 
 interface PlaceSearchProps {

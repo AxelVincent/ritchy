@@ -7,7 +7,7 @@ export const MapDisplay = () => {
   const [location, setLocation] = useState({
     latitude: 43.6568,
     longitude: -79.4512,
-    radius: 1000
+    radiusInMeters: 1000
   })
 
   const [searchResults, setSearchResults] = useState<TextSearchResponse | null>(
@@ -23,7 +23,7 @@ export const MapDisplay = () => {
       <div className="w-1/2">
         <MapBox
           onLocationChange={setLocation}
-          initialRadius={location.radius}
+          initialRadiusInMeters={location.radiusInMeters}
           searchResults={searchResults}
         />
       </div>

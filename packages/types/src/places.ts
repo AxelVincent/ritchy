@@ -187,7 +187,7 @@ export const SearchRequestBodySchema = z.object({
   locationBias: z.object({
     circle: z.object({
       center: LocationSchema,
-      radius: z.number().positive()
+      radiusInMeters: z.number().positive()
     })
   }),
   nextPageToken: z.string().optional(),
@@ -203,7 +203,7 @@ export const TextSearchResponseSchema = z.object({
       photos: z.array(PhotoSchema).optional()
     })
   ),
-  nextPageToken: z.string(),
+  nextPageToken: z.string().optional(),
   searchUri: z.string()
 })
 

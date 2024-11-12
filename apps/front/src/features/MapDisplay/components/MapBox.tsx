@@ -10,15 +10,15 @@ interface MapBoxProps {
   onLocationChange: (location: {
     latitude: number
     longitude: number
-    radius: number
+    radiusInMeters: number
   }) => void
-  initialRadius?: number
+  initialRadiusInMeters?: number
   searchResults: TextSearchResponse | null
 }
 
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
-  initialRadius = RADIUS_SETTINGS.initial,
+  initialRadiusInMeters = RADIUS_SETTINGS.initial,
   searchResults
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -26,7 +26,7 @@ export const MapBox: FC<MapBoxProps> = ({
     () => [-79.4512, 43.6568] as [number, number],
     []
   )
-  const [radius, setRadius] = useState(initialRadius)
+  const [radiusInMeters, setRadiusInMeters] = useState(initialRadiusInMeters)
   const markersRef = useRef<mapboxgl.Marker[]>([])
 
   const mapRef = useMapInitialization(
@@ -44,7 +44,7 @@ export const MapBox: FC<MapBoxProps> = ({
         type: 'geojson',
         data: {
           type: 'Feature',
-          properties: { radius_m: radius },
+          properties: { radius_m: radiusInMeters },
           geometry: {
             type: 'Point',
             coordinates: [
@@ -63,7 +63,7 @@ export const MapBox: FC<MapBoxProps> = ({
         paint: {
           'circle-radius': [
             'interpolate',
-            ['exponential', 2],
+            ['exponential', 1.75],
             ['zoom'],
             0,
             ['/', ['*', ['number', ['get', 'radius_m']], 1], 111319.9],
@@ -88,15 +88,15 @@ export const MapBox: FC<MapBoxProps> = ({
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
         marker.setLngLat(center)
-        updateCircleData(center, radius)
+        updateCircleData(center, radiusInMeters)
         onLocationChange({
           latitude: center.lat,
           longitude: center.lng,
-          radius
+          radiusInMeters
         })
       }
     })
-  }, [radius, mapRef, updateCircleData, onLocationChange])
+  }, [radiusInMeters, mapRef, updateCircleData, onLocationChange])
 
   useEffect(() => {
     console.log('🔄 Markers useEffect triggered', {
@@ -149,7 +149,7 @@ export const MapBox: FC<MapBoxProps> = ({
   }, [searchResults, mapRef])
 
   const handleChange = (newValue: number) => {
-    setRadius(newValue)
+    setRadiusInMeters(newValue)
 
     if (mapRef.current) {
       const center = mapRef.current.getCenter()
@@ -157,7 +157,7 @@ export const MapBox: FC<MapBoxProps> = ({
       onLocationChange({
         latitude: center.lat,
         longitude: center.lng,
-        radius: newValue
+        radiusInMeters: newValue
       })
     }
   }
@@ -166,7 +166,7 @@ export const MapBox: FC<MapBoxProps> = ({
     <div style={{ height: '100%', position: 'relative' }}>
       <div ref={mapContainerRef} className="h-full w-full" />
       <RadiusSlider
-        value={radius}
+        value={radiusInMeters}
         onChange={handleChange}
         settings={RADIUS_SETTINGS}
       />

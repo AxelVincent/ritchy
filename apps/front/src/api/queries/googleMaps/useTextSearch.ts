@@ -7,7 +7,7 @@ interface UseTextSearchOptions {
   location: {
     latitude: number
     longitude: number
-    radius: number
+    radiusInMeters: number
   }
 }
 
@@ -36,7 +36,7 @@ export const useTextSearch = ({
                     latitude: location.latitude,
                     longitude: location.longitude
                   },
-                  radius: location.radius ?? 500
+                  radiusInMeters: location.radiusInMeters ?? 500
                 }
               }
             })

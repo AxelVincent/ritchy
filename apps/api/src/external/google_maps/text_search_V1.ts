@@ -14,7 +14,7 @@ const searchRequestSchema = z.object({
         latitude: z.number(),
         longitude: z.number()
       }),
-      radius: z.number().positive()
+      radiusInMeters: z.number().positive()
     })
   }),
   pageSize: z.number().int().positive().optional()
@@ -26,17 +26,33 @@ export async function postTextSearchV1(
   const validatedRequest = searchRequestSchema.parse(requestBody)
   const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places:searchText`)
 
+  const radiusInDegrees =
+    validatedRequest.locationBias.circle.radiusInMeters / 111139 // Earth's radius in meters
+
+  const locationRestriction = {
+    rectangle: {
+      low: {
+        latitude:
+          validatedRequest.locationBias.circle.center.latitude -
+          radiusInDegrees,
+        longitude:
+          validatedRequest.locationBias.circle.center.longitude -
+          radiusInDegrees
+      },
+      high: {
+        latitude:
+          validatedRequest.locationBias.circle.center.latitude +
+          radiusInDegrees,
+        longitude:
+          validatedRequest.locationBias.circle.center.longitude +
+          radiusInDegrees
+      }
+    }
+  }
+
   const formattedRequest = {
     textQuery: validatedRequest.textQuery,
-    locationBias: {
-      circle: {
-        center: {
-          latitude: validatedRequest.locationBias.circle.center.latitude,
-          longitude: validatedRequest.locationBias.circle.center.longitude
-        },
-        radius: validatedRequest.locationBias.circle.radius
-      }
-    },
+    locationRestriction,
     maxResultCount: validatedRequest.pageSize
   }
 
