@@ -197,14 +197,16 @@ export const SearchRequestBodySchema = z.object({
 export const SearchResponseSchema = PlaceResultSchema.array()
 
 export const TextSearchResponseSchema = z.object({
-  places: z.array(PlaceSchema),
-  contextualContents: z.array(
-    z.object({
-      photos: z.array(PhotoSchema).optional()
-    })
-  ),
+  places: z.array(PlaceSchema).optional(),
+  contextualContents: z
+    .array(
+      z.object({
+        photos: z.array(PhotoSchema).optional()
+      })
+    )
+    .optional(),
   nextPageToken: z.string().optional(),
-  searchUri: z.string()
+  searchUri: z.string().optional()
 })
 
 export const TextSearchApiResponseSchema = z.union([

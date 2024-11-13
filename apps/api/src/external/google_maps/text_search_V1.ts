@@ -4,6 +4,7 @@ import type {
 } from '@ritchy/types/src/places'
 import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from 'src/config/google_maps'
+import { getLargestSquareInCircle } from 'src/utils/geo_utils'
 import { z } from 'zod'
 
 const searchRequestSchema = z.object({
@@ -26,26 +27,20 @@ export async function postTextSearchV1(
   const validatedRequest = searchRequestSchema.parse(requestBody)
   const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places:searchText`)
 
-  const radiusInDegrees =
-    validatedRequest.locationBias.circle.radiusInMeters / 111139 // Earth's radius in meters
+  const largestSquare = getLargestSquareInCircle(
+    validatedRequest.locationBias.circle.center,
+    validatedRequest.locationBias.circle.radiusInMeters
+  )
 
   const locationRestriction = {
     rectangle: {
       low: {
-        latitude:
-          validatedRequest.locationBias.circle.center.latitude -
-          radiusInDegrees,
-        longitude:
-          validatedRequest.locationBias.circle.center.longitude -
-          radiusInDegrees
+        latitude: largestSquare.southWest.latitude,
+        longitude: largestSquare.southWest.longitude
       },
       high: {
-        latitude:
-          validatedRequest.locationBias.circle.center.latitude +
-          radiusInDegrees,
-        longitude:
-          validatedRequest.locationBias.circle.center.longitude +
-          radiusInDegrees
+        latitude: largestSquare.northEast.latitude,
+        longitude: largestSquare.northEast.longitude
       }
     }
   }

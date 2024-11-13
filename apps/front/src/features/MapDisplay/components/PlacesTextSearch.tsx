@@ -98,7 +98,7 @@ export const PlaceSearch = ({
           <div>
             <h3 className="text-lg font-medium mb-2">Results</h3>
             <div className="space-y-2">
-              {data.places.map((place) => (
+              {data.places?.map((place) => (
                 <div
                   key={place.id}
                   className="p-4 border rounded-lg hover:shadow-md transition-shadow space-y-2"
