@@ -1,1 +1,1 @@
-export * from './places'
+export * from './api/places'

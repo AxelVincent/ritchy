@@ -1,5 +1,5 @@
 import { useTextSearch } from '@/api/queries/googleMaps/useTextSearch'
-import type { TextSearchResponse } from '@ritchy/types/src/places.js'
+import type { PlacesSearchResponse } from '@ritchy/types/src/api/places.ts'
 import { useEffect, useState } from 'react'
 
 interface LocationParams {
@@ -10,7 +10,7 @@ interface LocationParams {
 
 interface PlaceSearchProps {
   location: LocationParams
-  onResultsChange: (results: TextSearchResponse) => void
+  onResultsChange: (results: PlacesSearchResponse) => void
 }
 
 export const PlaceSearch = ({
@@ -18,14 +18,22 @@ export const PlaceSearch = ({
   onResultsChange
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
-  const [pageSize, setPageSize] = useState(2)
+  const [resultsQuantity, setResultsQuantity] = useState(2)
   const [currentLocation, setCurrentLocation] =
     useState<LocationParams>(location)
 
   const { data, isLoading, refetch } = useTextSearch({
-    query: searchText,
-    pageSize,
-    location: currentLocation
+    textQuery: searchText,
+    resultsQuantity,
+    locationBias: {
+      circle: {
+        center: {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude
+        },
+        radiusInMeters: currentLocation.radiusInMeters
+      }
+    }
   })
 
   useEffect(() => {
@@ -69,9 +77,9 @@ export const PlaceSearch = ({
               type="number"
               min={0}
               max={20}
-              value={pageSize}
+              value={resultsQuantity}
               onChange={(e) =>
-                setPageSize(
+                setResultsQuantity(
                   Math.min(
                     20,
                     Math.max(0, Number.parseInt(e.target.value) || 0)
@@ -98,7 +106,7 @@ export const PlaceSearch = ({
           <div>
             <h3 className="text-lg font-medium mb-2">Results</h3>
             <div className="space-y-2">
-              {data.places?.map((place) => (
+              {data.map((place) => (
                 <div
                   key={place.id}
                   className="p-4 border rounded-lg hover:shadow-md transition-shadow space-y-2"
@@ -106,7 +114,7 @@ export const PlaceSearch = ({
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-semibold text-lg">
-                        {place.displayName.text}
+                        {place.displayName}
                       </h4>
                       <p className="text-sm text-gray-600">
                         {place.shortFormattedAddress}

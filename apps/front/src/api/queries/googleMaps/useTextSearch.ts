@@ -1,23 +1,22 @@
-import type { TextSearchResponse } from '@ritchy/types/src/places.js'
+import type {
+  PlacesSearchRequestBody,
+  PlacesSearchResponse
+} from '@ritchy/types/src/api/places.ts'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
-interface UseTextSearchOptions {
-  query: string
-  pageSize: number
-  location: {
-    latitude: number
-    longitude: number
-    radiusInMeters: number
-  }
-}
-
 export const useTextSearch = ({
-  query,
-  pageSize = 20,
-  location
-}: UseTextSearchOptions): UseQueryResult<TextSearchResponse> => {
+  textQuery,
+  resultsQuantity,
+  locationBias
+}: PlacesSearchRequestBody): UseQueryResult<PlacesSearchResponse> => {
   return useQuery({
-    queryKey: ['places', 'text-search', query, pageSize, location],
+    queryKey: [
+      'places',
+      'text-search',
+      textQuery,
+      resultsQuantity,
+      locationBias
+    ],
     queryFn: async () => {
       const response = await fetch(
         `${import.meta.env.VITE_API_WEB_BASE_URL}/places/search`,
@@ -27,19 +26,9 @@ export const useTextSearch = ({
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            textQuery: query,
-            pageSize,
-            ...(location && {
-              locationBias: {
-                circle: {
-                  center: {
-                    latitude: location.latitude,
-                    longitude: location.longitude
-                  },
-                  radiusInMeters: location.radiusInMeters ?? 500
-                }
-              }
-            })
+            textQuery,
+            resultsQuantity,
+            locationBias
           })
         }
       )

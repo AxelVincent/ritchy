@@ -1,4 +1,7 @@
-import type { Place, TextSearchResponse } from '@ritchy/types/src/places.js'
+import type {
+  Place,
+  PlacesSearchResponse
+} from '@ritchy/types/src/api/places.ts'
 import mapboxgl from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef, useState } from 'react'
 import { useMapCircle } from '../hooks/useMapCircle'
@@ -13,7 +16,7 @@ interface MapBoxProps {
     radiusInMeters: number
   }) => void
   initialRadiusInMeters?: number
-  searchResults: TextSearchResponse | null
+  searchResults: PlacesSearchResponse | null
 }
 
 export const MapBox: FC<MapBoxProps> = ({
@@ -101,7 +104,7 @@ export const MapBox: FC<MapBoxProps> = ({
   useEffect(() => {
     console.log('🔄 Markers useEffect triggered', {
       hasMap: !!mapRef.current,
-      resultsCount: searchResults?.places?.length ?? 0,
+      resultsCount: searchResults?.length ?? 0,
       existingMarkers: markersRef.current.length
     })
 
@@ -112,24 +115,20 @@ export const MapBox: FC<MapBoxProps> = ({
     }
     markersRef.current = []
 
-    if (!mapRef.current || !searchResults?.places) {
+    if (!mapRef.current || !searchResults) {
       console.log('⚠️ Exiting early - missing map or search results', {
         map: !mapRef.current,
-        results: searchResults?.places
+        results: searchResults
       })
       return
     }
 
     // Create new markers for each result
-    console.log(
-      '📍 Creating new markers for',
-      searchResults.places.length,
-      'places'
-    )
-    for (const place of searchResults.places) {
+    console.log('📍 Creating new markers for', searchResults.length, 'places')
+    for (const place of searchResults) {
       if (place.location) {
         const marker = new mapboxgl.Marker({
-          color: place.currentOpeningHours?.openNow ? '#22c55e' : '#ef4444', // Green if open, red if closed
+          color: '#22c55e',
           scale: 0.8 // Slightly smaller markers
         })
           .setLngLat([place.location.longitude, place.location.latitude])
@@ -177,7 +176,7 @@ export const MapBox: FC<MapBoxProps> = ({
 const createPopupContent = (place: Place) => {
   return `
     <div class="p-3 max-w-sm">
-      <h3 class="font-bold text-lg mb-2">${place.displayName.text}</h3>
+      <h3 class="font-bold text-lg mb-2">${place.displayName}</h3>
       ${
         place.rating
           ? `

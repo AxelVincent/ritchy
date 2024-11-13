@@ -1,12 +1,7 @@
+import { LocationSchema } from '@ritchy/types/src/api/places'
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from './common'
 
 // Basic/Common Schemas
-export const LocationSchema = z.object({
-  latitude: z.number(),
-  longitude: z.number()
-})
-
 export const DisplayNameSchema = z.object({
   text: z.string(),
   languageCode: z.string()
@@ -95,48 +90,6 @@ export const GoogleMapsLinksSchema = z.object({
   photosUri: z.string()
 })
 
-// Legacy Place Result Schema (for compatibility)
-export const PlaceResultSchema = z.object({
-  business_status: z.string(),
-  formatted_address: z.string(),
-  geometry: z.object({
-    location: LocationSchema,
-    viewport: z.object({
-      northeast: LocationSchema,
-      southwest: LocationSchema
-    })
-  }),
-  icon: z.string(),
-  icon_background_color: z.string(),
-  icon_mask_base_uri: z.string(),
-  name: z.string(),
-  opening_hours: z
-    .object({
-      open_now: z.boolean()
-    })
-    .optional(),
-  photos: z
-    .array(
-      z.object({
-        height: z.number(),
-        html_attributions: z.array(z.string()),
-        photo_reference: z.string(),
-        width: z.number()
-      })
-    )
-    .optional(),
-  place_id: z.string(),
-  plus_code: z.object({
-    compound_code: z.string(),
-    global_code: z.string()
-  }),
-  price_level: z.number().optional(),
-  rating: z.number().optional(),
-  reference: z.string(),
-  types: z.array(z.string()),
-  user_ratings_total: z.number().optional()
-})
-
 // Main Place Schema
 export const PlaceSchema = z.object({
   name: z.string(),
@@ -182,7 +135,7 @@ export const PlaceSchema = z.object({
 })
 
 // API Request/Response Schemas
-export const SearchRequestBodySchema = z.object({
+export const TextSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
   locationBias: z.object({
     circle: z.object({
@@ -193,8 +146,6 @@ export const SearchRequestBodySchema = z.object({
   nextPageToken: z.string().optional(),
   pageSize: z.number().positive()
 })
-
-export const SearchResponseSchema = PlaceResultSchema.array()
 
 export const TextSearchResponseSchema = z.object({
   places: z.array(PlaceSchema).optional(),
@@ -209,15 +160,18 @@ export const TextSearchResponseSchema = z.object({
   searchUri: z.string().optional()
 })
 
-export const TextSearchApiResponseSchema = z.union([
-  TextSearchResponseSchema,
-  ApiErrorResponseSchema
-])
-
-// Type exports (grouped at the end)
-export type SearchRequestBody = z.infer<typeof SearchRequestBodySchema>
-export type SearchResponse = z.infer<typeof SearchResponseSchema>
-export type PlaceResult = z.infer<typeof PlaceResultSchema>
-export type TextSearchResponse = z.infer<typeof TextSearchResponseSchema>
+// Type Inference
+export type DisplayName = z.infer<typeof DisplayNameSchema>
+export type Viewport = z.infer<typeof ViewportSchema>
+export type TimeSlot = z.infer<typeof TimeSlotSchema>
+export type Period = z.infer<typeof PeriodSchema>
+export type OpeningHours = z.infer<typeof OpeningHoursSchema>
+export type AuthorAttribution = z.infer<typeof AuthorAttributionSchema>
+export type Photo = z.infer<typeof PhotoSchema>
+export type AddressComponent = z.infer<typeof AddressComponentSchema>
+export type Landmark = z.infer<typeof LandmarkSchema>
+export type Review = z.infer<typeof ReviewSchema>
+export type GoogleMapsLinks = z.infer<typeof GoogleMapsLinksSchema>
 export type Place = z.infer<typeof PlaceSchema>
-export type TextSearchApiResponse = z.infer<typeof TextSearchApiResponseSchema>
+export type TextSearchRequestBody = z.infer<typeof TextSearchRequestBodySchema>
+export type TextSearchResponse = z.infer<typeof TextSearchResponseSchema>

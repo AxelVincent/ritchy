@@ -1,4 +1,4 @@
-import type { TextSearchResponse } from '@ritchy/types/src/places.js'
+import type { PlacesSearchResponse } from '@ritchy/types/src/api/places.ts'
 import { useState } from 'react'
 import { MapBox } from './components/MapBox'
 import { PlaceSearch } from './components/PlacesTextSearch'
@@ -10,11 +10,10 @@ export const MapDisplay = () => {
     radiusInMeters: 1000
   })
 
-  const [searchResults, setSearchResults] = useState<TextSearchResponse | null>(
-    null
-  )
+  const [searchResults, setSearchResults] =
+    useState<PlacesSearchResponse | null>(null)
 
-  const handleResults = (results: TextSearchResponse) => {
+  const handleResults = (results: PlacesSearchResponse) => {
     setSearchResults(results)
   }
 

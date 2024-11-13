@@ -1,30 +1,50 @@
-import type {
-  SearchRequestBody,
-  TextSearchResponse
-} from '@ritchy/types/src/places'
 import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from 'src/config/google_maps'
 import { getLargestSquareInCircle } from 'src/utils/geo_utils'
-import { z } from 'zod'
 
-const searchRequestSchema = z.object({
-  textQuery: z.string().min(1),
-  locationBias: z.object({
-    circle: z.object({
-      center: z.object({
-        latitude: z.number(),
-        longitude: z.number()
-      }),
-      radiusInMeters: z.number().positive()
-    })
-  }),
-  pageSize: z.number().int().positive().optional()
-})
+import type { PlacesSearchResponse } from '@ritchy/types/src/api/places'
+import {
+  type TextSearchRequestBody,
+  TextSearchRequestBodySchema,
+  type TextSearchResponse
+} from './types'
+
+function mapToPlacesSearchResult(
+  response: TextSearchResponse
+): PlacesSearchResponse {
+  if (!response.places) return []
+
+  return response.places.map((place) => ({
+    id: place.id,
+    websiteUri: place.websiteUri,
+    displayName: place.displayName?.text || '',
+    location: {
+      latitude: place.location?.latitude || 0,
+      longitude: place.location?.longitude || 0
+    },
+    types: place.types || [],
+    formattedAddress: place.formattedAddress || '',
+    rating: place.rating,
+    userRatingCount: place.userRatingCount,
+    shortFormattedAddress: place.shortFormattedAddress,
+    googleMapsUri: place.googleMapsUri,
+    currentOpeningHours: place.currentOpeningHours
+      ? {
+          openNow: place.currentOpeningHours.openNow,
+          periods: place.currentOpeningHours.periods.map((period) => ({
+            open: {
+              time: `${period.open?.hour?.toString().padStart(2, '0')}:${period.open?.minute?.toString().padStart(2, '0')}`
+            }
+          }))
+        }
+      : undefined
+  }))
+}
 
 export async function postTextSearchV1(
-  requestBody: SearchRequestBody
-): Promise<TextSearchResponse> {
-  const validatedRequest = searchRequestSchema.parse(requestBody)
+  requestBody: TextSearchRequestBody
+): Promise<PlacesSearchResponse> {
+  const validatedRequest = TextSearchRequestBodySchema.parse(requestBody)
   const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places:searchText`)
 
   const largestSquare = getLargestSquareInCircle(
@@ -75,7 +95,7 @@ export async function postTextSearchV1(
       query: requestBody.textQuery,
       resultCount: data.places?.length ?? 0
     })
-    return data
+    return mapToPlacesSearchResult(data)
   } catch (error) {
     console.log('Google Places API request failed', {
       error,

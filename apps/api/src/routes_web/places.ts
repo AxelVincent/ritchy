@@ -1,9 +1,9 @@
 import {
-  type SearchRequestBody,
-  SearchRequestBodySchema,
-  type TextSearchApiResponse,
-  TextSearchResponseSchema
-} from '@ritchy/types/src/places'
+  type PlacesSearchApiResponse,
+  type PlacesSearchRequestBody,
+  PlacesSearchRequestBodySchema,
+  PlacesSearchResponseSchema
+} from '@ritchy/types/src/api/places'
 import type { Request, Response } from 'express'
 import { postTextSearchV1 } from 'src/external/google_maps/text_search_V1'
 import { z } from 'zod'
@@ -15,8 +15,12 @@ import { z } from 'zod'
  * @returns Promise<ApiResponse<TextSearchResponse>>
  */
 export const searchPlaces = async (
-  req: Request<Record<string, never>, TextSearchApiResponse, SearchRequestBody>,
-  res: Response<TextSearchApiResponse>
+  req: Request<
+    Record<string, never>,
+    PlacesSearchApiResponse,
+    PlacesSearchRequestBody
+  >,
+  res: Response<PlacesSearchApiResponse>
 ): Promise<void> => {
   try {
     console.log('Processing place search request', {
@@ -30,17 +34,17 @@ export const searchPlaces = async (
     }
 
     // Validate request body
-    const parsedBody = SearchRequestBodySchema.parse(req.body)
+    const parsedBody = PlacesSearchRequestBodySchema.parse(req.body)
 
-    const requestBody: SearchRequestBody = {
+    const requestBody = {
       textQuery: parsedBody.textQuery,
       locationBias: parsedBody.locationBias,
-      pageSize: parsedBody.pageSize
+      pageSize: parsedBody.resultsQuantity
     }
     const results = await postTextSearchV1(requestBody)
 
     // Validate response
-    const validatedResults = TextSearchResponseSchema.parse(results)
+    const validatedResults = PlacesSearchResponseSchema.parse(results)
     res.json(validatedResults)
   } catch (error) {
     if (error instanceof z.ZodError) {
