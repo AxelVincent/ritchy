@@ -22,7 +22,7 @@ export const PlacesSearchRequestBodySchema = z.object({
 export const PlaceSchema = z.object({
   id: z.string(),
   displayName: z.string(),
-  websiteUri: z.string().optional(),
+  websiteUri: z.string(),
   location: LocationSchema,
   types: z.array(z.string()),
   rating: z.number().optional(),
@@ -41,7 +41,7 @@ export const PlaceSchema = z.object({
       )
     })
     .optional(),
-  googleMapsUri: z.string().optional()
+  googleMapsUri: z.string()
 })
 
 export const PlacesSearchResponseSchema = z.array(PlaceSchema)

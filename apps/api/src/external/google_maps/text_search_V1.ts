@@ -16,7 +16,7 @@ function mapToPlacesSearchResult(
 
   return response.places.map((place) => ({
     id: place.id,
-    websiteUri: place.websiteUri,
+    websiteUri: place.websiteUri || '',
     displayName: place.displayName?.text || '',
     location: {
       latitude: place.location?.latitude || 0,
@@ -27,7 +27,7 @@ function mapToPlacesSearchResult(
     rating: place.rating,
     userRatingCount: place.userRatingCount,
     shortFormattedAddress: place.shortFormattedAddress,
-    googleMapsUri: place.googleMapsUri,
+    googleMapsUri: place.googleMapsUri || '',
     currentOpeningHours: place.currentOpeningHours
       ? {
           openNow: place.currentOpeningHours.openNow,

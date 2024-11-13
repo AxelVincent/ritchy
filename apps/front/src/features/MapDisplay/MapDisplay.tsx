@@ -1,5 +1,7 @@
 import type { PlacesSearchResponse } from '@ritchy/types/src/api/places.ts'
 import { useState } from 'react'
+import { columns } from './components/Columns'
+import { DataTable } from './components/DataTable'
 import { MapBox } from './components/MapBox'
 import { PlaceSearch } from './components/PlacesTextSearch'
 
@@ -10,8 +12,7 @@ export const MapDisplay = () => {
     radiusInMeters: 1000
   })
 
-  const [searchResults, setSearchResults] =
-    useState<PlacesSearchResponse | null>(null)
+  const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
 
   const handleResults = (results: PlacesSearchResponse) => {
     setSearchResults(results)
@@ -28,6 +29,7 @@ export const MapDisplay = () => {
       </div>
       <div className="w-1/2">
         <PlaceSearch location={location} onResultsChange={handleResults} />
+        <DataTable columns={columns} data={searchResults} />
       </div>
     </div>
   )

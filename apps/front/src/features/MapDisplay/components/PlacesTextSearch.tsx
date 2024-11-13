@@ -22,7 +22,7 @@ export const PlaceSearch = ({
   const [currentLocation, setCurrentLocation] =
     useState<LocationParams>(location)
 
-  const { data, isLoading, refetch } = useTextSearch({
+  const { data, refetch } = useTextSearch({
     textQuery: searchText,
     resultsQuantity,
     locationBias: {
@@ -51,7 +51,7 @@ export const PlaceSearch = ({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       <div className="flex-shrink-0 p-4 border-b">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -99,7 +99,7 @@ export const PlaceSearch = ({
         </form>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* <div className="flex-1 overflow-y-auto p-4">
         {isLoading && <div>Searching...</div>}
 
         {data && (
@@ -170,7 +170,7 @@ export const PlaceSearch = ({
             </div>
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   )
 }
