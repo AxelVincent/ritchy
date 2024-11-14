@@ -1,4 +1,6 @@
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowUpDown, ExternalLink, MoreHorizontal } from 'lucide-react'
-
+import { useEffect, useRef, useState } from 'react'
 // 1. Nom - done
 // 2. Phone
 // 3. Email
@@ -24,7 +26,7 @@ export type SearchResult = {
   displayName: string
   websiteUri: string
   googleMapsUri: string
-  //   types: string[]
+  types: string[]
   //   formattedAddress: string
   //   nationalPhoneNumber: string
   //   internationalPhoneNumber: string
@@ -35,6 +37,32 @@ export type SearchResult = {
 }
 
 export const columns: ColumnDef<SearchResult>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <div className="flex h-6 w-6 items-center justify-center">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="flex h-6 w-6 items-center justify-center">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false
+  },
   {
     accessorKey: 'displayName',
     header: ({ column }) => {
@@ -49,7 +77,64 @@ export const columns: ColumnDef<SearchResult>[] = [
       )
     },
     cell: ({ row }) => {
-      return <div className="text-left">{row.original.displayName}</div>
+      const textRef = useRef<HTMLDivElement>(null)
+      const [isTruncated, setIsTruncated] = useState(false)
+
+      useEffect(() => {
+        const element = textRef.current
+        if (element) {
+          setIsTruncated(element.scrollWidth > element.clientWidth)
+        }
+      }, [])
+
+      return (
+        <div className="text-left max-w-[200px] group relative">
+          <div
+            ref={textRef}
+            className="truncate"
+            title={isTruncated ? row.original.displayName : undefined}
+          >
+            {row.original.displayName}
+          </div>
+          {isTruncated && (
+            <div className="fixed mt-2 hidden rounded-md border bg-background p-2 shadow-md group-hover:flex group-hover:flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
+              {row.original.displayName}
+            </div>
+          )}
+        </div>
+      )
+    }
+  },
+  {
+    accessorKey: 'types',
+    header: () => 'Types',
+    cell: ({ row }) => {
+      const types = row.original.types
+      const displayCount = 2
+      const remainingCount = types.length - displayCount
+
+      return (
+        <div className="flex gap-2 whitespace-nowrap">
+          {types.slice(0, displayCount).map((type) => (
+            <Badge variant="secondary" key={type} className="shrink-0">
+              {type}
+            </Badge>
+          ))}
+          {remainingCount > 0 && (
+            <div className="relative group shrink-0">
+              <Badge variant="outline">+{remainingCount}</Badge>
+
+              <div className="fixed mt-2 hidden rounded-md border bg-background p-2 shadow-md group-hover:flex group-hover:flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
+                {types.slice(displayCount).map((type) => (
+                  <Badge variant="secondary" key={type}>
+                    {type}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )
     }
   },
   {

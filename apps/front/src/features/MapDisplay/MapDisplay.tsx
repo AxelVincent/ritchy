@@ -28,8 +28,12 @@ export const MapDisplay = () => {
         />
       </div>
       <div className="w-1/2">
-        <PlaceSearch location={location} onResultsChange={handleResults} />
-        <DataTable columns={columns} data={searchResults} />
+        <div className="h-[25%]">
+          <PlaceSearch location={location} onResultsChange={handleResults} />
+        </div>
+        <div className="h-[75%]">
+          <DataTable columns={columns} data={searchResults} />
+        </div>
       </div>
     </div>
   )
