@@ -8,12 +8,12 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, Link, MoreHorizontal } from 'lucide-react'
+import { ArrowUpDown, ExternalLink, MoreHorizontal } from 'lucide-react'
 
-// 1. Nom
+// 1. Nom - done
 // 2. Phone
 // 3. Email
-// 4. Website
+// 4. Website - done
 // 5. Social Media (Insta, Linkedin)
 // 6. Nom du proriétaire (dispo sur Scrape IO)
 // 7. Avis
@@ -23,11 +23,11 @@ export type SearchResult = {
   id: string
   displayName: string
   websiteUri: string
+  googleMapsUri: string
   //   types: string[]
   //   formattedAddress: string
   //   nationalPhoneNumber: string
   //   internationalPhoneNumber: string
-  googleMapsUri: string
   //   rating: number
   //   userRatingCount: number
   //   description: string
@@ -56,9 +56,18 @@ export const columns: ColumnDef<SearchResult>[] = [
     accessorKey: 'websiteUri',
     header: () => 'Website',
     cell: ({ row }) => {
+      const website = row.original.websiteUri
       return (
         <div className="text-left">
-          <Link href={row.original.websiteUri}>{row.original.websiteUri}</Link>
+          <a
+            href={website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:underline"
+          >
+            website
+            <ExternalLink className="h-4 w-4" />
+          </a>
         </div>
       )
     }
