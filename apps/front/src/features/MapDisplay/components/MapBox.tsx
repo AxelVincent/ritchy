@@ -2,8 +2,15 @@ import type {
   Place,
   PlacesSearchResponse
 } from '@ritchy/types/src/api/places.ts'
-import mapboxgl from 'mapbox-gl'
-import { type FC, useEffect, useMemo, useRef, useState } from 'react'
+import mapboxgl, { type Marker as MapboxMarker } from 'mapbox-gl'
+import {
+  type FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { useMapCircle } from '../hooks/useMapCircle'
 import { useMapInitialization } from '../hooks/useMapInitialization'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
@@ -17,21 +24,37 @@ interface MapBoxProps {
   }) => void
   initialRadiusInMeters?: number
   searchResults: PlacesSearchResponse | null
+  hoveredPlaceId: string | null
+  // onMarkerHover: (placeId: string | null) => void
+}
+
+type MarkerData = {
+  marker: MapboxMarker
+  place: Place
 }
 
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
   initialRadiusInMeters = RADIUS_SETTINGS.initial,
-  searchResults
+  searchResults,
+  hoveredPlaceId
+  // onMarkerHover
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null)
+  // Refs for DOM elements and state management
+  const mapContainerRef = useRef<HTMLDivElement>(null) // Container div for map
+  const markersMapRef = useRef(new Map<string, MarkerData>()) // Stores active markers
+  const currentHoveredPlaceIdRef = useRef<string | null>(null) // Tracks currently hovered place
+
+  // Default center coordinates for Toronto
   const initialCenter = useMemo(
     () => [-79.4512, 43.6568] as [number, number],
     []
   )
-  const [radiusInMeters, setRadiusInMeters] = useState(initialRadiusInMeters)
-  const markersRef = useRef<mapboxgl.Marker[]>([])
 
+  // State for radius control
+  const [radiusInMeters, setRadiusInMeters] = useState(initialRadiusInMeters)
+
+  // Initialize map and circle functionality
   const mapRef = useMapInitialization(
     mapContainerRef,
     initialCenter,
@@ -39,10 +62,12 @@ export const MapBox: FC<MapBoxProps> = ({
   )
   const { updateCircleData } = useMapCircle(mapRef)
 
+  // Effect: Initialize map circle and center marker
   useEffect(() => {
     if (!mapRef.current) return
 
     mapRef.current.on('load', () => {
+      // Add circle source for radius visualization
       mapRef.current?.addSource('circle', {
         type: 'geojson',
         data: {
@@ -58,12 +83,13 @@ export const MapBox: FC<MapBoxProps> = ({
         }
       })
 
-      // Add the layer with the circle
+      // Add circle layer with zoom-based radius scaling
       mapRef.current?.addLayer({
         id: 'center-circle',
         type: 'circle',
         source: 'circle',
         paint: {
+          // Complex radius calculation based on zoom level
           'circle-radius': [
             'interpolate',
             ['exponential', 1.75],
@@ -83,10 +109,12 @@ export const MapBox: FC<MapBoxProps> = ({
       })
     })
 
+    // Add center marker and handle map movement
     const marker = new mapboxgl.Marker()
       .setLngLat(mapRef.current.getCenter())
       .addTo(mapRef.current)
 
+    // Update marker position and notify parent of location changes
     mapRef.current.on('move', () => {
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
@@ -101,65 +129,81 @@ export const MapBox: FC<MapBoxProps> = ({
     })
   }, [radiusInMeters, mapRef, updateCircleData, onLocationChange])
 
+  // Effect: Manage search result markers
   useEffect(() => {
-    console.log('🔄 Markers useEffect triggered', {
-      hasMap: !!mapRef.current,
-      resultsCount: searchResults?.length ?? 0,
-      existingMarkers: markersRef.current.length
-    })
-
-    // Clear existing result markers
-    console.log('🗑️ Clearing existing markers:', markersRef.current.length)
-    for (const marker of markersRef.current) {
+    // Clean up existing markers
+    for (const { marker } of markersMapRef.current.values()) {
       marker.remove()
     }
-    markersRef.current = []
+    markersMapRef.current.clear()
 
-    if (!mapRef.current || !searchResults) {
-      console.log('⚠️ Exiting early - missing map or search results', {
-        map: !mapRef.current,
-        results: searchResults
-      })
+    if (!mapRef.current || !searchResults) return
+
+    // Create new markers for search results
+    for (const place of searchResults) {
+      if (place.location) {
+        const marker = createMarkerWithPopup(place, '#22c55e')
+        marker.addTo(mapRef.current)
+        markersMapRef.current.set(place.id, { marker, place })
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      for (const { marker } of markersMapRef.current.values()) {
+        marker.remove()
+      }
+      markersMapRef.current.clear()
+    }
+  }, [searchResults, mapRef])
+
+  // Effect: Handle hover state and popup visibility
+  useEffect(() => {
+    console.log('🔄 hoveredPlaceId useEffect triggered', hoveredPlaceId)
+    if (!mapRef.current) return
+
+    // Close previous popup if exists
+    if (currentHoveredPlaceIdRef.current) {
+      const previousMarkerData = markersMapRef.current.get(
+        currentHoveredPlaceIdRef.current
+      )
+      if (previousMarkerData?.marker.getPopup()?.isOpen()) {
+        previousMarkerData.marker.togglePopup()
+      }
+    }
+
+    // Handle new hover state
+    if (!hoveredPlaceId) {
+      currentHoveredPlaceIdRef.current = null
       return
     }
 
-    // Create new markers for each result
-    console.log('📍 Creating new markers for', searchResults.length, 'places')
-    for (const place of searchResults) {
-      if (place.location) {
-        const marker = new mapboxgl.Marker({
-          color: '#22c55e',
-          scale: 0.8 // Slightly smaller markers
+    // Show popup for newly hovered place
+    const markerData = markersMapRef.current.get(hoveredPlaceId)
+    if (!markerData?.marker.getLngLat()) return
+    if (markerData.marker.getPopup()?.isOpen()) return
+
+    markerData.marker.togglePopup()
+    currentHoveredPlaceIdRef.current = hoveredPlaceId
+  }, [hoveredPlaceId, mapRef])
+
+  // Handler for radius slider changes
+  const handleChange = useCallback(
+    (newValue: number) => {
+      setRadiusInMeters(newValue)
+
+      if (mapRef.current) {
+        const center = mapRef.current.getCenter()
+        updateCircleData(center, newValue)
+        onLocationChange({
+          latitude: center.lat,
+          longitude: center.lng,
+          radiusInMeters: newValue
         })
-          .setLngLat([place.location.longitude, place.location.latitude])
-          .setPopup(
-            new mapboxgl.Popup({
-              offset: 25,
-              maxWidth: '300px',
-              className: 'place-popup'
-            }).setHTML(createPopupContent(place))
-          )
-          .addTo(mapRef.current)
-
-        markersRef.current.push(marker)
       }
-    }
-    console.log('✅ Finished creating markers:', markersRef.current.length)
-  }, [searchResults, mapRef])
-
-  const handleChange = (newValue: number) => {
-    setRadiusInMeters(newValue)
-
-    if (mapRef.current) {
-      const center = mapRef.current.getCenter()
-      updateCircleData(center, newValue)
-      onLocationChange({
-        latitude: center.lat,
-        longitude: center.lng,
-        radiusInMeters: newValue
-      })
-    }
-  }
+    },
+    [updateCircleData, onLocationChange, mapRef]
+  )
 
   return (
     <div style={{ height: '100%', position: 'relative' }}>
@@ -171,6 +215,20 @@ export const MapBox: FC<MapBoxProps> = ({
       />
     </div>
   )
+}
+
+const createMarkerWithPopup = (place: Place, color: string) => {
+  const popup = new mapboxgl.Popup({
+    offset: 25,
+    maxWidth: '300px',
+    className: 'place-popup'
+  }).setHTML(createPopupContent(place))
+  return new mapboxgl.Marker({
+    color: color,
+    scale: 0.8
+  })
+    .setLngLat([place.location.longitude, place.location.latitude])
+    .setPopup(popup)
 }
 
 const createPopupContent = (place: Place) => {

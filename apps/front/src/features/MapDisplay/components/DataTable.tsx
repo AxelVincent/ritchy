@@ -31,11 +31,15 @@ import { useState } from 'react'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  hoveredPlaceId: string | null
+  onRowHover: (id: string | null) => void
 }
 
 export const DataTable = <TData, TValue>({
   columns,
-  data
+  data,
+  hoveredPlaceId,
+  onRowHover
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -129,6 +133,20 @@ export const DataTable = <TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && 'selected'}
+                    onMouseEnter={() => {
+                      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                      onRowHover((row.original as any).id)
+                    }}
+                    onMouseLeave={() => {
+                      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                      onRowHover(null)
+                    }}
+                    className={
+                      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                      hoveredPlaceId === (row.original as any).id
+                        ? 'bg-muted'
+                        : ''
+                    }
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell

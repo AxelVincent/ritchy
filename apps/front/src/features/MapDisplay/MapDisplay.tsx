@@ -14,6 +14,8 @@ export const MapDisplay = () => {
 
   const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
 
+  const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null)
+
   const handleResults = (results: PlacesSearchResponse) => {
     setSearchResults(results)
   }
@@ -25,6 +27,8 @@ export const MapDisplay = () => {
           onLocationChange={setLocation}
           initialRadiusInMeters={location.radiusInMeters}
           searchResults={searchResults}
+          hoveredPlaceId={hoveredPlaceId}
+          onMarkerHover={setHoveredPlaceId}
         />
       </div>
       <div className="w-1/2">
@@ -32,7 +36,12 @@ export const MapDisplay = () => {
           <PlaceSearch location={location} onResultsChange={handleResults} />
         </div>
         <div className="h-[75%]">
-          <DataTable columns={columns} data={searchResults} />
+          <DataTable
+            columns={columns}
+            data={searchResults}
+            hoveredPlaceId={hoveredPlaceId}
+            onRowHover={setHoveredPlaceId}
+          />
         </div>
       </div>
     </div>
