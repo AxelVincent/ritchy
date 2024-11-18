@@ -5,12 +5,20 @@ import { DataTable } from './components/DataTable'
 import { MapBox } from './components/MapBox'
 import { PlaceSearch } from './components/PlacesTextSearch'
 
+interface Location {
+  latitude: number
+  longitude: number
+  radiusInMeters: number
+}
+
+export const DEFAULT_LOCATION: Location = {
+  latitude: 48.8566,
+  longitude: 2.3522,
+  radiusInMeters: 1000
+}
+
 export const MapDisplay = () => {
-  const [location, setLocation] = useState({
-    latitude: 43.6568,
-    longitude: -79.4512,
-    radiusInMeters: 1000
-  })
+  const [location, setLocation] = useState<Location>(DEFAULT_LOCATION)
 
   const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
 
@@ -26,7 +34,6 @@ export const MapDisplay = () => {
       <div className="w-1/2">
         <MapBox
           onLocationChange={setLocation}
-          initialRadiusInMeters={location.radiusInMeters}
           searchResults={searchResults}
           hoveredPlaceId={hoveredPlaceId}
           setSelectedPlaceId={setSelectedPlaceId}

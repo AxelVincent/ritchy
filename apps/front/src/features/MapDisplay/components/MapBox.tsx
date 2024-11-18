@@ -11,6 +11,7 @@ import {
   useRef,
   useState
 } from 'react'
+import { DEFAULT_LOCATION } from '../MapDisplay'
 import { useMapCircle } from '../hooks/useMapCircle'
 import { useMapInitialization } from '../hooks/useMapInitialization'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
@@ -22,7 +23,6 @@ interface MapBoxProps {
     longitude: number
     radiusInMeters: number
   }) => void
-  initialRadiusInMeters?: number
   searchResults: PlacesSearchResponse | null
   hoveredPlaceId: string | null
   setSelectedPlaceId: (placeId: string | null) => void
@@ -35,7 +35,6 @@ type MarkerData = {
 
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
-  initialRadiusInMeters = RADIUS_SETTINGS.initial,
   searchResults,
   hoveredPlaceId,
   setSelectedPlaceId
@@ -46,14 +45,20 @@ export const MapBox: FC<MapBoxProps> = ({
   const markersMapRef = useRef(new Map<string, MarkerData>()) // Stores active markers
   const currentHoveredPlaceIdRef = useRef<string | null>(null) // Tracks currently hovered place
 
-  // Default center coordinates for Toronto
+  // Default center coordinates
   const initialCenter = useMemo(
-    () => [-79.4512, 43.6568] as [number, number],
+    () =>
+      [DEFAULT_LOCATION.longitude, DEFAULT_LOCATION.latitude] as [
+        number,
+        number
+      ],
     []
   )
 
   // State for radius control
-  const [radiusInMeters, setRadiusInMeters] = useState(initialRadiusInMeters)
+  const [radiusInMeters, setRadiusInMeters] = useState(
+    DEFAULT_LOCATION.radiusInMeters
+  )
 
   // Initialize map and circle functionality
   const mapRef = useMapInitialization(
