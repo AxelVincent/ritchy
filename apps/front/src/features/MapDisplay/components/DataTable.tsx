@@ -32,16 +32,17 @@ import type { SearchResult } from './Columns'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  hoveredPlaceId: string | null
   onRowHover: (id: string | null) => void
   selectedPlaceId: string | null
+  mapBoxHoveredPlaceId: string | null
 }
 
 export const DataTable = <TData, TValue>({
   columns,
   data,
   selectedPlaceId,
-  onRowHover
+  onRowHover,
+  mapBoxHoveredPlaceId
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -141,11 +142,10 @@ export const DataTable = <TData, TValue>({
                     onMouseLeave={() => {
                       onRowHover(null)
                     }}
-                    className={
-                      selectedPlaceId === (row.original as SearchResult).id
-                        ? 'bg-muted'
-                        : ''
-                    }
+                    className={`
+                      ${selectedPlaceId === (row.original as SearchResult).id ? 'bg-muted' : ''}
+                      ${mapBoxHoveredPlaceId === (row.original as SearchResult).id ? 'bg-accent' : ''}
+                    `}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell

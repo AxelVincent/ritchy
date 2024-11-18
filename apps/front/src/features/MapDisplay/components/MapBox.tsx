@@ -24,8 +24,10 @@ interface MapBoxProps {
     radiusInMeters: number
   }) => void
   searchResults: PlacesSearchResponse | null
-  hoveredPlaceId: string | null
+  dataTableHoveredPlaceId: string | null
   setSelectedPlaceId: (placeId: string | null) => void
+  viewMode: 'map' | 'data' | 'equal'
+  setMapBoxHoveredPlaceId: (placeId: string | null) => void
 }
 
 type MarkerData = {
@@ -36,9 +38,10 @@ type MarkerData = {
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
   searchResults,
-  hoveredPlaceId,
-  setSelectedPlaceId
-  // onMarkerHover,
+  dataTableHoveredPlaceId,
+  setSelectedPlaceId,
+  viewMode,
+  setMapBoxHoveredPlaceId
 }) => {
   // Refs for DOM elements and state management
   const mapContainerRef = useRef<HTMLDivElement>(null) // Container div for map
@@ -67,6 +70,13 @@ export const MapBox: FC<MapBoxProps> = ({
     MAP_SETTINGS
   )
   const { updateCircleData } = useMapCircle(mapRef)
+
+  // Step 2: Update map size on view mode change
+  useEffect(() => {
+    if (!mapRef.current) return
+    console.log('🔄 viewMode useEffect triggered', viewMode)
+    mapRef.current.resize() // Resize the map to fit the new container size
+  }, [viewMode, mapRef]) // Step 3: Add viewMode as a dependency
 
   // Effect: Initialize map circle and center marker
   useEffect(() => {
@@ -148,8 +158,11 @@ export const MapBox: FC<MapBoxProps> = ({
     // Create new markers for search results
     for (const place of searchResults) {
       if (place.location) {
-        const marker = createMarkerWithPopup(place, '#22c55e', () =>
-          setSelectedPlaceId(place.id)
+        const marker = createMarkerWithPopup(
+          place,
+          '#22c55e',
+          setSelectedPlaceId,
+          setMapBoxHoveredPlaceId
         )
         marker.addTo(mapRef.current)
         markersMapRef.current.set(place.id, { marker, place })
@@ -163,11 +176,14 @@ export const MapBox: FC<MapBoxProps> = ({
       }
       markersMapRef.current.clear()
     }
-  }, [searchResults, mapRef, setSelectedPlaceId])
+  }, [searchResults, mapRef, setSelectedPlaceId, setMapBoxHoveredPlaceId])
 
   // Effect: Handle hover state and popup visibility
   useEffect(() => {
-    console.log('🔄 hoveredPlaceId useEffect triggered', hoveredPlaceId)
+    console.log(
+      '🔄 hoveredPlaceId useEffect triggered',
+      dataTableHoveredPlaceId
+    )
     if (!mapRef.current) return
 
     // Close previous popup if exists
@@ -181,19 +197,19 @@ export const MapBox: FC<MapBoxProps> = ({
     }
 
     // Handle new hover state
-    if (!hoveredPlaceId) {
+    if (!dataTableHoveredPlaceId) {
       currentHoveredPlaceIdRef.current = null
       return
     }
 
     // Show popup for newly hovered place
-    const markerData = markersMapRef.current.get(hoveredPlaceId)
+    const markerData = markersMapRef.current.get(dataTableHoveredPlaceId)
     if (!markerData?.marker.getLngLat()) return
     if (markerData.marker.getPopup()?.isOpen()) return
 
     markerData.marker.togglePopup()
-    currentHoveredPlaceIdRef.current = hoveredPlaceId
-  }, [hoveredPlaceId, mapRef])
+    currentHoveredPlaceIdRef.current = dataTableHoveredPlaceId
+  }, [dataTableHoveredPlaceId, mapRef])
 
   // Handler for radius slider changes
   const handleChange = useCallback(
@@ -228,7 +244,8 @@ export const MapBox: FC<MapBoxProps> = ({
 const createMarkerWithPopup = (
   place: Place,
   color: string,
-  onMouseEnter: () => void
+  setSelectedPlaceId: (placeId: string | null) => void,
+  setMapBoxHoveredPlaceId: (placeId: string | null) => void
 ) => {
   const popup = new mapboxgl.Popup({
     offset: 25,
@@ -243,21 +260,26 @@ const createMarkerWithPopup = (
     .setLngLat([place.location.longitude, place.location.latitude])
     .setPopup(popup)
 
-  // Track popup open/close events
-  // popup.on('open', () => {
-  //   console.log('🔄 popup opened', place.id)
-  //   onMouseEnter() // Set the current place ID when popup opens
-  // })
-
-  // popup.on('close', () => {
-  //   console.log('🔄 popup closed', place.id)
-  //   onMouseLeave() // Clear the current place ID when popup closes
-  // })
+  const element = marker.getElement()
+  // Add hover handlers to marker element
+  element.addEventListener('mouseenter', () => {
+    console.log('🎯 marker hovered', place.id)
+    setMapBoxHoveredPlaceId(place.id)
+  })
 
   // Add click handler to marker element
-  marker.getElement().addEventListener('click', () => {
+  element.addEventListener('click', () => {
     console.log('🎯 marker clicked', place.id)
-    onMouseEnter()
+    setSelectedPlaceId(place.id)
+  })
+
+  // Add click handler for the popup close button
+  popup.on('open', () => {
+    const closeButton = document.querySelector('.mapboxgl-popup-close-button')
+    closeButton?.addEventListener('click', () => {
+      console.log('🎯 popup close button clicked', place.id)
+      setSelectedPlaceId(null)
+    })
   })
 
   return marker
