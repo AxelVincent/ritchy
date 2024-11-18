@@ -27,18 +27,20 @@ import {
   useReactTable
 } from '@tanstack/react-table'
 import { useState } from 'react'
+import type { SearchResult } from './Columns'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   hoveredPlaceId: string | null
   onRowHover: (id: string | null) => void
+  selectedPlaceId: string | null
 }
 
 export const DataTable = <TData, TValue>({
   columns,
   data,
-  hoveredPlaceId,
+  selectedPlaceId,
   onRowHover
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
@@ -134,16 +136,13 @@ export const DataTable = <TData, TValue>({
                     key={row.id}
                     data-state={row.getIsSelected() && 'selected'}
                     onMouseEnter={() => {
-                      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-                      onRowHover((row.original as any).id)
+                      onRowHover((row.original as SearchResult).id)
                     }}
                     onMouseLeave={() => {
-                      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                       onRowHover(null)
                     }}
                     className={
-                      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-                      hoveredPlaceId === (row.original as any).id
+                      selectedPlaceId === (row.original as SearchResult).id
                         ? 'bg-muted'
                         : ''
                     }

@@ -25,7 +25,7 @@ interface MapBoxProps {
   initialRadiusInMeters?: number
   searchResults: PlacesSearchResponse | null
   hoveredPlaceId: string | null
-  // onMarkerHover: (placeId: string | null) => void
+  setSelectedPlaceId: (placeId: string | null) => void
 }
 
 type MarkerData = {
@@ -37,8 +37,9 @@ export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
   initialRadiusInMeters = RADIUS_SETTINGS.initial,
   searchResults,
-  hoveredPlaceId
-  // onMarkerHover
+  hoveredPlaceId,
+  setSelectedPlaceId
+  // onMarkerHover,
 }) => {
   // Refs for DOM elements and state management
   const mapContainerRef = useRef<HTMLDivElement>(null) // Container div for map
@@ -142,7 +143,9 @@ export const MapBox: FC<MapBoxProps> = ({
     // Create new markers for search results
     for (const place of searchResults) {
       if (place.location) {
-        const marker = createMarkerWithPopup(place, '#22c55e')
+        const marker = createMarkerWithPopup(place, '#22c55e', () =>
+          setSelectedPlaceId(place.id)
+        )
         marker.addTo(mapRef.current)
         markersMapRef.current.set(place.id, { marker, place })
       }
@@ -155,7 +158,7 @@ export const MapBox: FC<MapBoxProps> = ({
       }
       markersMapRef.current.clear()
     }
-  }, [searchResults, mapRef])
+  }, [searchResults, mapRef, setSelectedPlaceId])
 
   // Effect: Handle hover state and popup visibility
   useEffect(() => {
@@ -217,18 +220,42 @@ export const MapBox: FC<MapBoxProps> = ({
   )
 }
 
-const createMarkerWithPopup = (place: Place, color: string) => {
+const createMarkerWithPopup = (
+  place: Place,
+  color: string,
+  onMouseEnter: () => void
+) => {
   const popup = new mapboxgl.Popup({
     offset: 25,
     maxWidth: '300px',
     className: 'place-popup'
   }).setHTML(createPopupContent(place))
-  return new mapboxgl.Marker({
+
+  const marker = new mapboxgl.Marker({
     color: color,
     scale: 0.8
   })
     .setLngLat([place.location.longitude, place.location.latitude])
     .setPopup(popup)
+
+  // Track popup open/close events
+  // popup.on('open', () => {
+  //   console.log('🔄 popup opened', place.id)
+  //   onMouseEnter() // Set the current place ID when popup opens
+  // })
+
+  // popup.on('close', () => {
+  //   console.log('🔄 popup closed', place.id)
+  //   onMouseLeave() // Clear the current place ID when popup closes
+  // })
+
+  // Add click handler to marker element
+  marker.getElement().addEventListener('click', () => {
+    console.log('🎯 marker clicked', place.id)
+    onMouseEnter()
+  })
+
+  return marker
 }
 
 const createPopupContent = (place: Place) => {
