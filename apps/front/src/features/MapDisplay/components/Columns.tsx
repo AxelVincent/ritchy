@@ -27,13 +27,46 @@ export type SearchResult = {
   websiteUri: string
   googleMapsUri: string
   types: string[]
+  internationalPhoneNumber?: string
   //   formattedAddress: string
   //   nationalPhoneNumber: string
-  //   internationalPhoneNumber: string
   //   rating: number
   //   userRatingCount: number
   //   description: string
   //   priceLevel: number
+}
+
+interface CellWrapperProps {
+  children: React.ReactNode
+  copyValue?: string
+}
+
+const CellWrapper = ({ children, copyValue }: CellWrapperProps) => {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    if (!copyValue) return
+    navigator.clipboard.writeText(copyValue)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 500)
+  }
+
+  if (!copyValue) {
+    return <div className="px-4 py-2">{children}</div>
+  }
+
+  return (
+    <div className="px-4 py-2">
+      <div
+        className="cursor-pointer hover:text-primary transition-colors relative"
+        onClick={handleCopy}
+        onKeyDown={(e) => e.key === 'Enter' && handleCopy()}
+        title="Click to copy"
+      >
+        {copied ? <span className="text-green-500">Copied!</span> : children}
+      </div>
+    </div>
+  )
 }
 
 export const columns: ColumnDef<SearchResult>[] = [
@@ -67,13 +100,15 @@ export const columns: ColumnDef<SearchResult>[] = [
     accessorKey: 'displayName',
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <CellWrapper>
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Name
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </CellWrapper>
       )
     },
     cell: ({ row }) => {
@@ -88,74 +123,89 @@ export const columns: ColumnDef<SearchResult>[] = [
       }, [])
 
       return (
-        <div className="text-left max-w-[200px] group relative">
-          <div
-            ref={textRef}
-            className="truncate"
-            title={isTruncated ? row.original.displayName : undefined}
-          >
-            {row.original.displayName}
-          </div>
-          {isTruncated && (
-            <div className="fixed mt-2 hidden rounded-md border bg-background p-2 shadow-md group-hover:flex group-hover:flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
+        <CellWrapper>
+          <div className="text-left max-w-[200px] group relative">
+            <div
+              ref={textRef}
+              className="truncate"
+              title={isTruncated ? row.original.displayName : undefined}
+            >
               {row.original.displayName}
             </div>
-          )}
-        </div>
+            {isTruncated && (
+              <div className="fixed mt-2 hidden rounded-md border bg-background p-2 shadow-md group-hover:flex group-hover:flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
+                {row.original.displayName}
+              </div>
+            )}
+          </div>
+        </CellWrapper>
       )
     }
   },
   {
     accessorKey: 'types',
-    header: () => 'Types',
+    header: () => <CellWrapper>Types</CellWrapper>,
     cell: ({ row }) => {
       const types = row.original.types
       const displayCount = 2
       const remainingCount = types.length - displayCount
 
       return (
-        <div className="flex gap-2 whitespace-nowrap">
-          {types.slice(0, displayCount).map((type) => (
-            <Badge variant="secondary" key={type} className="shrink-0">
-              {type}
-            </Badge>
-          ))}
-          {remainingCount > 0 && (
-            <div className="relative group shrink-0">
-              <Badge variant="outline">+{remainingCount}</Badge>
+        <CellWrapper>
+          <div className="flex gap-2 whitespace-nowrap">
+            {types.slice(0, displayCount).map((type) => (
+              <Badge variant="secondary" key={type} className="shrink-0">
+                {type}
+              </Badge>
+            ))}
+            {remainingCount > 0 && (
+              <div className="relative group shrink-0">
+                <Badge variant="outline">+{remainingCount}</Badge>
 
-              <div className="fixed mt-2 hidden rounded-md border bg-background p-2 shadow-md group-hover:flex group-hover:flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
-                {types.slice(displayCount).map((type) => (
-                  <Badge variant="secondary" key={type}>
-                    {type}
-                  </Badge>
-                ))}
+                <div className="fixed mt-2 hidden rounded-md border bg-background p-2 shadow-md group-hover:flex group-hover:flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
+                  {types.slice(displayCount).map((type) => (
+                    <Badge variant="secondary" key={type}>
+                      {type}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </CellWrapper>
       )
     }
   },
   {
     accessorKey: 'websiteUri',
-    header: () => 'Website',
+    header: () => <CellWrapper>Website</CellWrapper>,
     cell: ({ row }) => {
       const website = row.original.websiteUri
       return (
-        <div className="text-left">
-          <a
-            href={website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:underline"
-          >
-            website
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        </div>
+        <CellWrapper>
+          <div className="text-left">
+            <a
+              href={website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 hover:underline"
+            >
+              website
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
+        </CellWrapper>
       )
     }
+  },
+  {
+    accessorKey: 'internationalPhoneNumber',
+    header: () => <CellWrapper>Phone</CellWrapper>,
+    cell: ({ row }) => (
+      <CellWrapper copyValue={row.original.internationalPhoneNumber}>
+        {row.original.internationalPhoneNumber}
+      </CellWrapper>
+    )
   },
   {
     id: 'actions',
@@ -163,30 +213,32 @@ export const columns: ColumnDef<SearchResult>[] = [
       const place = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(place.id)}
-            >
-              Copy place ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                window.open(place.googleMapsUri, '_blank')
-              }}
-            >
-              View on Maps
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CellWrapper>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(place.id)}
+              >
+                Copy place ID
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  window.open(place.googleMapsUri, '_blank')
+                }}
+              >
+                View on Maps
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CellWrapper>
       )
     }
   }

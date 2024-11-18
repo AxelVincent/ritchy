@@ -28,6 +28,7 @@ function mapToPlacesSearchResult(
     userRatingCount: place.userRatingCount,
     shortFormattedAddress: place.shortFormattedAddress,
     googleMapsUri: place.googleMapsUri || '',
+    internationalPhoneNumber: place.internationalPhoneNumber,
     currentOpeningHours: place.currentOpeningHours
       ? {
           openNow: place.currentOpeningHours.openNow,

@@ -41,7 +41,8 @@ export const PlaceSchema = z.object({
       )
     })
     .optional(),
-  googleMapsUri: z.string()
+  googleMapsUri: z.string(),
+  internationalPhoneNumber: z.string().optional()
 })
 
 export const PlacesSearchResponseSchema = z.array(PlaceSchema)

@@ -9,7 +9,7 @@ const queryClient = new QueryClient()
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <QueryClientProvider client={queryClient}>
         <MapDisplay />
       </QueryClientProvider>
