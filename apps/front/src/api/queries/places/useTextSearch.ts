@@ -40,7 +40,7 @@ export const useTextSearch = ({
       return response.json()
     },
     enabled: false,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false
   })
 }
