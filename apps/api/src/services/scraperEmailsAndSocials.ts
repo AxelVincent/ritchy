@@ -369,14 +369,15 @@ async function scrapeFromOptimizedUrls(
     socialLinks: mapSocialLinks(aggregatedSocialLinks)
   }
 }
-// Example usage
-;(async () => {
-  const baseUrl = 'https://www.lerempartbastille.fr/'
 
-  const { emails, socialLinks } = await scrapeFromOptimizedUrls(baseUrl, 5)
+// // Example usage
+// ;(async () => {
+//   const baseUrl = 'https://www.lerempartbastille.fr/'
 
-  console.log('Emails found:', emails)
-  console.log('Social Links found:', socialLinks)
-})()
+//   const { emails, socialLinks } = await scrapeFromOptimizedUrls(baseUrl, 5)
+
+//   console.log('Emails found:', emails)
+//   console.log('Social Links found:', socialLinks)
+// })()
 
 export { scrapeEmailsAndSocials, scrapeFromOptimizedUrls }

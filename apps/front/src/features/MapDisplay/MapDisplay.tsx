@@ -69,7 +69,7 @@ export const MapDisplay = () => {
   }
 
   return (
-    <div className="relative h-screen w-screen flex">
+    <div className="relative h-full w-full flex">
       <div style={viewStyle.mapStyle}>
         <MapBox
           onLocationChange={setLocation}

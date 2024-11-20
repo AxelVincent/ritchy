@@ -1,10 +1,6 @@
 import { useEnrichWebsite } from '@/api/queries/enrich/useEnrichWebsite'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types/src/api/enrich.js'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLink, Loader2 } from 'lucide-react'
@@ -63,7 +59,9 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
     }
 
     const { emails, socialLinks } = enrichQuery.data
-    const hasContent = emails.length > 0 || Object.values(socialLinks).some(urls => urls.length > 0)
+    const hasContent =
+      emails.length > 0 ||
+      Object.values(socialLinks).some((urls) => urls.length > 0)
 
     return (
       <CellWrapper>

@@ -1,19 +1,18 @@
 import './App.css'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ThemeProvider } from './components/theme-provider'
-// import EnhancedSalesMapTool from './components/enhanced-sales-map-tool-with-gmap-and-places'
-import { MapDisplay } from './features/MapDisplay/MapDisplay'
+import { ClerkProvider } from '@clerk/clerk-react'
+import { RouterProvider } from '@tanstack/react-router'
+import { QueryProvider } from './providers/query-provider'
+import { router } from './routes'
 
-// Create a client
-const queryClient = new QueryClient()
-
-function App() {
+export const App = () => {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <QueryClientProvider client={queryClient}>
-        <MapDisplay />
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryProvider>
+      <ClerkProvider
+        publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+      >
+        <RouterProvider router={router} />
+      </ClerkProvider>
+    </QueryProvider>
   )
 }
 
