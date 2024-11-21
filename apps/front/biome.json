@@ -7,6 +7,11 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["./node_modules", "./tsconfig.node.json", "./tsconfig.app.json"]
+    "ignore": [
+      "./node_modules",
+      "./tsconfig.node.json",
+      "./tsconfig.app.json",
+      "./routeTree.gen.ts"
+    ]
   }
 }

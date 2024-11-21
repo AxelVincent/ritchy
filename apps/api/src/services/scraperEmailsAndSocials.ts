@@ -1,5 +1,4 @@
 import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types/src/api/enrich'
-import axios from 'axios'
 import * as cheerio from 'cheerio'
 import { XMLParser } from 'fast-xml-parser'
 import pLimit from 'p-limit'
@@ -44,9 +43,11 @@ type ScraperResult = {
  */
 async function getPagesFromSitemap(sitemapUrl: string): Promise<string[]> {
   try {
-    const response = await axios.get(sitemapUrl)
+    const response = await fetch(sitemapUrl)
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+    const data = await response.text()
     const xmlParser = new XMLParser()
-    const sitemap = xmlParser.parse(response.data)
+    const sitemap = xmlParser.parse(data)
 
     const urls: string[] = []
     const urlSet = sitemap.urlset?.url
@@ -108,20 +109,18 @@ async function scrapeEmailsAndSocials(
   socialMediaDomains: string[]
 ): Promise<ScraperResult> {
   try {
-    const response = await axios.get(url, {
+    const response = await fetch(url, {
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      },
-      timeout: 10000 // 10 second timeout
+      }
     })
 
-    // Validate response data
-    if (!response.data) {
-      throw new Error('Empty response received')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const html = response.data
+    const html = await response.text()
     if (typeof html !== 'string') {
       throw new Error('Invalid HTML content received')
     }
@@ -256,17 +255,25 @@ async function scrapeEmailsAndSocials(
 
     return { emails, socialLinks }
   } catch (error) {
-    // Enhanced error handling
     if (IS_DEBUG) {
       console.error(`Error scraping ${url}:`, error)
     }
 
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status
+    // Modified error handling since we're not using axios anymore
+    if (error instanceof TypeError) {
       return {
         emails: [],
         socialLinks: {},
-        error: status ? `Failed to fetch (${status})` : 'Network error'
+        error: 'Network error'
+      }
+    }
+
+    if (error instanceof Error && error.message.includes('HTTP error!')) {
+      const status = error.message.match(/status: (\d+)/)?.[1]
+      return {
+        emails: [],
+        socialLinks: {},
+        error: status ? `Failed to fetch (${status})` : 'HTTP error'
       }
     }
 

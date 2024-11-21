@@ -5,9 +5,9 @@ import { createRootRoute, createRoute } from '@tanstack/react-router'
 import { ErrorPage } from '@/components/error-page'
 import { ProtectedLayout } from '@/components/layouts/protected-layout'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import RootRoute from './__root'
 import HomeRoute from './home'
 import MapDisplayRoute from './map-display'
-import RootRoute from './root'
 
 const routes = {
   public: [

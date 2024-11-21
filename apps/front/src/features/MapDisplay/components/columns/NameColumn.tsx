@@ -1,8 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import type { SearchResult } from '../Columns'
-import { CellWrapper } from './CellWrapper'
 import { useEffect, useState } from 'react'
 import { useRef } from 'react'
+import type { SearchResult } from '../Columns'
+import { CellWrapper } from './CellWrapper'
 
 export const nameColumn: ColumnDef<SearchResult> = {
   accessorKey: 'displayName',
