@@ -11,26 +11,40 @@ RUN pnpm install -g turbo
 FROM base AS builder
 WORKDIR /app
 
-# Define build arguments for environment variables
+# Define build arguments
 ARG VITE_API_WEB_BASE_URL
 ARG VITE_CLERK_PUBLISHABLE_KEY
 ARG VITE_MAPBOX_ACCESS_TOKEN
 
-# Set environment variables
-ENV VITE_API_WEB_BASE_URL=${VITE_API_WEB_BASE_URL}
-ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
-ENV VITE_MAPBOX_ACCESS_TOKEN=${VITE_MAPBOX_ACCESS_TOKEN}
+# Set them as environment variables
+ENV VITE_API_WEB_BASE_URL=$VITE_API_WEB_BASE_URL
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+ENV VITE_MAPBOX_ACCESS_TOKEN=$VITE_MAPBOX_ACCESS_TOKEN
 
 # Copy source code
 COPY . .
+
 # Prune the workspace
 RUN turbo prune front --docker
 
 # Installer Stage    
 FROM base AS installer
 WORKDIR /app
+
+# Define build arguments again
+ARG VITE_API_WEB_BASE_URL
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_MAPBOX_ACCESS_TOKEN
+
+# Set them as environment variables
+ENV VITE_API_WEB_BASE_URL=$VITE_API_WEB_BASE_URL
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+ENV VITE_MAPBOX_ACCESS_TOKEN=$VITE_MAPBOX_ACCESS_TOKEN
+
 COPY --from=builder /app/out/full/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Install dependencies
 RUN pnpm install
 
 # Build the project
