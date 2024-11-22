@@ -1,8 +1,8 @@
 import 'dotenv/config'
-import { GOOGLE_MAPS_CONFIG } from 'src/config/google_maps'
-import { getLargestSquareInCircle } from 'src/utils/geo_utils'
+import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
+import { getLargestSquareInCircle } from '../../utils/geo_utils'
 
-import type { PlacesSearchResponse } from '@ritchy/types/src/api/places'
+import type { PlacesSearchResponse } from '@ritchy/types'
 import {
   type TextSearchRequestBody,
   TextSearchRequestBodySchema,

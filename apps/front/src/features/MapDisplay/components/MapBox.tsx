@@ -1,7 +1,4 @@
-import type {
-  Place,
-  PlacesSearchResponse
-} from '@ritchy/types/src/api/places.ts'
+import type { Place, PlacesSearchResponse } from '@ritchy/types'
 import mapboxgl, { type Marker as MapboxMarker } from 'mapbox-gl'
 import {
   type FC,

@@ -1,4 +1,4 @@
-import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types/src/api/enrich'
+import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import * as cheerio from 'cheerio'
 import { XMLParser } from 'fast-xml-parser'
 import pLimit from 'p-limit'

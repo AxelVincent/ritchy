@@ -1,4 +1,4 @@
-import { LocationSchema } from '@ritchy/types/src/api/places'
+import { LocationSchema } from '@ritchy/types'
 import { z } from 'zod'
 
 // Basic/Common Schemas

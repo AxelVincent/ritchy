@@ -1,8 +1,8 @@
-import { Router } from 'express'
+import express, { type Router } from 'express'
 import { enrichWebsite } from './enrich'
 import { searchPlaces } from './places'
 
-const router = Router()
+const router: Router = express.Router()
 
 // Places routes
 router.post('/places/search', searchPlaces)

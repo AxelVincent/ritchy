@@ -11,7 +11,8 @@
       "./node_modules",
       "./tsconfig.node.json",
       "./tsconfig.app.json",
-      "./routeTree.gen.ts"
+      "./routeTree.gen.ts",
+      "./dist"
     ]
   }
 }

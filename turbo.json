@@ -25,6 +25,9 @@
     },
     "check:fix": {
       "outputs": []
+    },
+    "clean": {
+      "outputs": []
     }
   }
 }

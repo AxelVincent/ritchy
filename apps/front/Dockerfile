@@ -1,0 +1,53 @@
+# Build stage
+FROM node:20-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+# Install turbo and pnpm
+RUN pnpm install -g turbo
+
+# Builder Stage
+FROM base AS builder
+WORKDIR /app
+
+# Define build arguments for environment variables
+ARG VITE_API_WEB_BASE_URL
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_MAPBOX_ACCESS_TOKEN
+
+# Set environment variables
+ENV VITE_API_WEB_BASE_URL=${VITE_API_WEB_BASE_URL}
+ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+ENV VITE_MAPBOX_ACCESS_TOKEN=${VITE_MAPBOX_ACCESS_TOKEN}
+
+# Copy source code
+COPY . .
+# Prune the workspace
+RUN turbo prune front --docker
+
+# Installer Stage    
+FROM base AS installer
+WORKDIR /app
+COPY --from=builder /app/out/full/ .
+COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN pnpm install
+
+# Build the project
+RUN pnpm turbo build --filter=front...
+
+# Production image
+FROM nginx:alpine AS runner
+WORKDIR /usr/share/nginx/html
+
+# Copy nginx config
+COPY apps/front/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy the built project
+COPY --from=installer /app/apps/front/dist .
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

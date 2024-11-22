@@ -1,7 +1,7 @@
 import { useEnrichWebsite } from '@/api/queries/enrich/useEnrichWebsite'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types/src/api/enrich.js'
+import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLink, Loader2 } from 'lucide-react'
 import type { SearchResult } from '../Columns'

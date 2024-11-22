@@ -7,6 +7,12 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["./drizzle/meta", "./node_modules", "./drizzle", "tsconfig.json"]
+    "ignore": [
+      "./drizzle/meta",
+      "./node_modules",
+      "./drizzle",
+      "tsconfig.json",
+      "./dist"
+    ]
   }
 }

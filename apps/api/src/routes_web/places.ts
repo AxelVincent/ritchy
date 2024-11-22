@@ -3,10 +3,10 @@ import {
   type PlacesSearchRequestBody,
   PlacesSearchRequestBodySchema,
   PlacesSearchResponseSchema
-} from '@ritchy/types/src/api/places'
+} from '@ritchy/types'
 import type { Request, Response } from 'express'
-import { postTextSearchV1 } from 'src/external/google_maps/text_search_V1'
 import { z } from 'zod'
+import { postTextSearchV1 } from '../external/google_maps/text_search_V1'
 
 /**
  * Searches for places based on text query and location bias

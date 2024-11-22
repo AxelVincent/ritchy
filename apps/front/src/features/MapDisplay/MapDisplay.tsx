@@ -1,4 +1,4 @@
-import type { PlacesSearchResponse } from '@ritchy/types/src/api/places.ts'
+import type { PlacesSearchResponse } from '@ritchy/types'
 import { Columns2, Map as MapIcon, TableProperties } from 'lucide-react'
 import { useState } from 'react'
 import { columns } from './components/Columns'

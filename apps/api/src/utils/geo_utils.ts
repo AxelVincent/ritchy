@@ -21,12 +21,14 @@ export const getLargestSquareInCircle = (
   // Calculate the side length of the largest square that fits in the circle
   // (diameter / √2)
   const squareSideLength = (2 * radiusInMeters) / Math.sqrt(2)
-  const squareSideRadians = turf.lengthToRadians(squareSideLength, 'meters')
+
+  // Convert meters to kilometers for turf.js
+  const squareSideKm = squareSideLength / 1000
 
   // Calculate corners using bearings (45° intervals starting from NE)
   const corners = [45, 135, 225, 315].map((bearing) =>
-    turf.destination(centerPoint, squareSideRadians, bearing, {
-      units: 'radians'
+    turf.destination(centerPoint, squareSideKm, bearing, {
+      units: 'kilometers'
     })
   )
 

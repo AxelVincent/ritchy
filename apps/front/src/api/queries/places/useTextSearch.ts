@@ -1,7 +1,7 @@
 import type {
   PlacesSearchRequestBody,
   PlacesSearchResponse
-} from '@ritchy/types/src/api/places.ts'
+} from '@ritchy/types'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
 export const useTextSearch = ({

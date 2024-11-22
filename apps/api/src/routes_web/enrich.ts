@@ -1,7 +1,4 @@
-import {
-  type EnrichApiResponse,
-  EnrichResponseSchema
-} from '@ritchy/types/src/api/enrich'
+import { type EnrichApiResponse, EnrichResponseSchema } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { scrapeFromOptimizedUrls } from '../services/scraperEmailsAndSocials'

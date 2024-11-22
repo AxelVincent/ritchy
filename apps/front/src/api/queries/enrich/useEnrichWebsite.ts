@@ -1,4 +1,4 @@
-import type { EnrichApiResponse } from '@ritchy/types/src/api/enrich.ts'
+import type { EnrichApiResponse } from '@ritchy/types'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
 export const useEnrichWebsite = (

@@ -1,5 +1,5 @@
 import { useTextSearch } from '@/api/queries/places/useTextSearch'
-import type { PlacesSearchResponse } from '@ritchy/types/src/api/places.ts'
+import type { PlacesSearchResponse } from '@ritchy/types'
 import { useEffect, useState } from 'react'
 
 interface LocationParams {

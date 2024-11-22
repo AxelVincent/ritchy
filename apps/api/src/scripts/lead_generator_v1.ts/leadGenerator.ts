@@ -1,9 +1,10 @@
 import 'dotenv/config'
 import { sql } from 'drizzle-orm'
-import { db } from 'src/db/db'
-import { lead, leadEmail, queryParam } from 'src/db/schema'
-import { searchGoogleMaps } from 'src/scripts/lead_generator_v1.ts/google_maps'
-import { scrapeLeadDataFromWebsiteUrl } from 'src/services/scrapeWebsiteData'
+
+import { db } from '../../db/db'
+import { lead, leadEmail, queryParam } from '../../db/schema'
+import { scrapeLeadDataFromWebsiteUrl } from '../../services/scrapeWebsiteData'
+import { searchGoogleMaps } from './google_maps'
 
 const RESEARCH_QUERY = 'salle de sport'
 const PARIS_LAT = 48.8566
@@ -67,26 +68,30 @@ async function getLeadsContent() {
   }
 
   const _leadData = await Promise.all(
-    leadsWithWebsites.map(async (leadWithWebsite) => {
-      const { id, website } = leadWithWebsite
-      if (!website) return // TypeScript safety check
+    leadsWithWebsites.map(
+      async (leadWithWebsite: { id: number; website: string | null }) => {
+        const { id, website } = leadWithWebsite
+        if (!website) return // TypeScript safety check
 
-      const leadData = await scrapeLeadDataFromWebsiteUrl(website)
+        const leadData = await scrapeLeadDataFromWebsiteUrl(website)
 
-      if (!leadData?.leadStructuredData.emails.length) return
+        if (!leadData?.leadStructuredData.emails.length) return
 
-      await db
-        .insert(leadEmail)
-        .values(
-          leadData.leadStructuredData.emails.map((email) => ({
-            leadId: id,
-            email: email.email,
-            isMatchingDomain: email.isMatchingDomain
-          }))
-        )
-        .onConflictDoNothing()
-      return { id, website, leadData }
-    })
+        await db
+          .insert(leadEmail)
+          .values(
+            leadData.leadStructuredData.emails.map(
+              (email: { email: string; isMatchingDomain: boolean }) => ({
+                leadId: id,
+                email: email.email,
+                isMatchingDomain: email.isMatchingDomain
+              })
+            )
+          )
+          .onConflictDoNothing()
+        return { id, website, leadData }
+      }
+    )
   )
 
   process.exit(0)

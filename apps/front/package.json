@@ -11,7 +11,8 @@
     "format": "biome format",
     "format:fix": "biome format --write .",
     "check": "biome check",
-    "check:fix": "biome check --write ."
+    "check:fix": "biome check --write .",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@clerk/clerk-react": "5.16.0",
