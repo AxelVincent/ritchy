@@ -37,17 +37,17 @@ RUN pnpm install
 RUN pnpm turbo build --filter=front...
 
 # Production image
-FROM nginx:alpine AS runner
-WORKDIR /usr/share/nginx/html
+FROM caddy:2-alpine AS runner
+WORKDIR /app
 
-# Copy nginx config
-COPY apps/front/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy Caddy configuration
+COPY apps/front/Caddyfile /etc/caddy/Caddyfile
 
 # Copy the built project
-COPY --from=installer /app/apps/front/dist .
+COPY --from=installer /app/apps/front/dist /app/dist
 
 # Expose port
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start Caddy
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
