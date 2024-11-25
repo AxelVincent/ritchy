@@ -28,7 +28,10 @@ export const enrichWebsite = async (
     // Validate query parameters
     const { website } = EnrichRequestSchema.parse(req.query)
 
-    console.log('Processing enrich request for website:', website)
+    console.log('Processing enrich request for website:', {
+      query: req.query,
+      auth: req.auth
+    })
 
     // Call the scraper service
     const enrichedData = await scrapeFromOptimizedUrls(website, 5)

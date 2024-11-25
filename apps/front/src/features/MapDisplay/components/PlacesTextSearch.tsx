@@ -1,4 +1,5 @@
 import { useTextSearch } from '@/api/queries/places/useTextSearch'
+import { cn } from '@/lib/utils'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import { useEffect, useState } from 'react'
 
@@ -11,18 +12,20 @@ interface LocationParams {
 interface PlaceSearchProps {
   location: LocationParams
   onResultsChange: (results: PlacesSearchResponse) => void
+  className?: string
 }
 
-export const PlaceSearch = ({
+export const PlacesTextSearch = ({
   location,
-  onResultsChange
+  onResultsChange,
+  className
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
-  const [resultsQuantity, setResultsQuantity] = useState(2)
+  const [resultsQuantity, setResultsQuantity] = useState(5)
   const [currentLocation, setCurrentLocation] =
     useState<LocationParams>(location)
 
-  const { data, refetch } = useTextSearch({
+  const { data, refetch, isLoading, isError } = useTextSearch({
     textQuery: searchText,
     resultsQuantity,
     locationBias: {
@@ -37,6 +40,10 @@ export const PlaceSearch = ({
   })
 
   useEffect(() => {
+    setCurrentLocation(location)
+  }, [location])
+
+  useEffect(() => {
     if (data) {
       onResultsChange(data)
     }
@@ -44,59 +51,75 @@ export const PlaceSearch = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchText.length >= 3) {
-      setCurrentLocation(location)
-      await refetch()
+    if (searchText.length < 3) {
+      return
     }
+    await refetch()
+  }
+
+  const handleQuantityChange = (value: string) => {
+    const parsed = Number.parseInt(value) || 0
+    setResultsQuantity(Math.min(20, Math.max(0, parsed)))
   }
 
   return (
-    <div className="flex flex-col">
+    <div className={cn('flex flex-col', className)}>
       <div className="flex-shrink-0 p-4 border-b">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="search" className="text-sm font-medium">
-              Search Places
+            <label
+              htmlFor="search"
+              className="text-sm font-medium text-foreground"
+            >
+              What are you looking for?
             </label>
             <input
               id="search"
               type="text"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="w-full rounded-md border px-3 py-2"
-              placeholder="Enter search terms..."
+              className="w-full rounded-md border px-3 py-2 bg-background text-foreground"
+              placeholder="Enter at least 3 characters..."
+              minLength={3}
+              required
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="results" className="text-sm font-medium">
+            <label
+              htmlFor="results"
+              className="text-sm font-medium text-foreground"
+            >
               Number of Results
             </label>
             <input
               id="results"
               type="number"
-              min={0}
+              min={1}
               max={20}
               value={resultsQuantity}
-              onChange={(e) =>
-                setResultsQuantity(
-                  Math.min(
-                    20,
-                    Math.max(0, Number.parseInt(e.target.value) || 0)
-                  )
-                )
-              }
-              className="w-full rounded-md border px-3 py-2"
+              onChange={(e) => handleQuantityChange(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 bg-background text-foreground"
             />
           </div>
 
           <button
             type="submit"
-            className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            disabled={isLoading || searchText.length < 3}
+            className={cn(
+              'w-full rounded-md px-4 py-2 text-white transition-colors',
+              'bg-primary hover:bg-primary/90 disabled:bg-primary/50'
+            )}
           >
-            Search
+            {isLoading ? 'Searching...' : 'Search'}
           </button>
         </form>
+
+        {isError && (
+          <p className="mt-2 text-sm text-destructive">
+            Failed to search places. Please try again.
+          </p>
+        )}
       </div>
     </div>
   )

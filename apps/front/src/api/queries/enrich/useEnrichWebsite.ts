@@ -1,29 +1,26 @@
+import { createApiClient } from '@/lib/api/createApiClient'
+import { useAuth } from '@clerk/clerk-react'
 import type { EnrichApiResponse } from '@ritchy/types'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
+
+const apiClient = createApiClient({
+  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL
+})
 
 export const useEnrichWebsite = (
   website: string
 ): UseQueryResult<EnrichApiResponse> => {
+  const { getToken } = useAuth()
+
   return useQuery({
     queryKey: ['enrich', 'website', website],
     queryFn: async () => {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_WEB_BASE_URL}/enrich?website=${encodeURIComponent(
-          website
-        )}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+      const token = await getToken()
+      return apiClient.fetchWithAuth(
+        `/enrich?website=${encodeURIComponent(website)}`,
+        undefined,
+        token
       )
-
-      if (!response.ok) {
-        throw new Error('Failed to enrich website')
-      }
-
-      return response.json()
     },
     enabled: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
