@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
@@ -10,16 +10,6 @@ RUN pnpm install -g turbo
 # Builder Stage
 FROM base AS builder
 WORKDIR /app
-
-# Define build arguments
-ARG VITE_API_WEB_BASE_URL
-ARG VITE_CLERK_PUBLISHABLE_KEY
-ARG VITE_MAPBOX_ACCESS_TOKEN
-
-# Set them as environment variables
-ENV VITE_API_WEB_BASE_URL=$VITE_API_WEB_BASE_URL
-ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_MAPBOX_ACCESS_TOKEN=$VITE_MAPBOX_ACCESS_TOKEN
 
 # Copy source code
 COPY . .
@@ -59,6 +49,7 @@ COPY apps/front/Caddyfile /etc/caddy/Caddyfile
 
 # Copy the built project
 COPY --from=installer /app/apps/front/dist /app/dist
+
 
 # Expose port
 EXPOSE 80
