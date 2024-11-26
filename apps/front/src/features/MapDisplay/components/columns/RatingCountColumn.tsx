@@ -4,27 +4,32 @@ import { ArrowUpDown } from 'lucide-react'
 import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
-export const nameColumn: ColumnDef<SearchResult> = {
-  accessorKey: 'displayName',
+export const ratingCountColumn: ColumnDef<SearchResult> = {
+  accessorKey: 'userRatingCount',
   header: ({ column }) => {
     return (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Name
+        Reviews
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     )
   },
   enableSorting: true,
-  sortingFn: 'text',
+  sortingFn: 'basic',
+  sortDescFirst: true,
   cell: ({ row }) => {
+    const count = row.original.userRatingCount
+
     return (
       <CellWrapper>
-        <div>
-          <div>{row.original.displayName}</div>
-        </div>
+        {count ? (
+          <span>{count.toLocaleString()} reviews</span>
+        ) : (
+          <span className="text-muted-foreground">No reviews</span>
+        )}
       </CellWrapper>
     )
   }

@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ExternalLink, Loader2 } from 'lucide-react'
 import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
@@ -17,7 +16,9 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
     if (enrichQuery.isLoading) {
       return (
         <CellWrapper>
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Button variant="ghost" size="sm" disabled className="w-24">
+            Loading...
+          </Button>
         </CellWrapper>
       )
     }
@@ -25,27 +26,37 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
     if (!enrichQuery.data && !enrichQuery.isError) {
       return (
         <CellWrapper>
-          <div className="flex gap-2">
+          {!website ? (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => enrichQuery.refetch()}
-              disabled={!website}
+              disabled
+              className="w-24 text-gray-500"
             >
-              Enrich data
+              No website
             </Button>
-            {enrichQuery.failureCount > 0 && (
+          ) : (
+            <div className="flex gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => enrichQuery.refetch()}
-                disabled={!website}
-                className="text-destructive"
+                className="w-24 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               >
-                Retry ({enrichQuery.failureCount})
+                Enrich
               </Button>
-            )}
-          </div>
+              {enrichQuery.failureCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => enrichQuery.refetch()}
+                  className="w-24 text-destructive hover:bg-destructive/10"
+                >
+                  Retry
+                </Button>
+              )}
+            </div>
+          )}
         </CellWrapper>
       )
     }
@@ -53,7 +64,15 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
     if (enrichQuery.isError || 'error' in enrichQuery.data) {
       return (
         <CellWrapper>
-          <span className="text-destructive">Failed to load</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled
+            className="w-24 text-gray-500"
+            title={enrichQuery.error?.message || 'Error enriching data'}
+          >
+            No results
+          </Button>
         </CellWrapper>
       )
     }
@@ -67,8 +86,17 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
       <CellWrapper>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" disabled={!hasContent}>
-              {hasContent ? 'View Details' : 'No data'}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!hasContent}
+              className={`w-24 ${
+                hasContent
+                  ? 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                  : 'text-gray-500'
+              }`}
+            >
+              {hasContent ? 'Details' : 'No data'}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
@@ -98,7 +126,6 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
                           `https://${SOCIAL_MEDIA_CONFIG[platform as keyof typeof SOCIAL_MEDIA_CONFIG].domain}/`,
                           ''
                         )}
-                        <ExternalLink className="h-3 w-3" />
                       </a>
                     ))}
                   </div>
