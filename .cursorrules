@@ -60,6 +60,53 @@
 # - Minimal cross-feature dependencies
 
 #-----------------------------------------------------------------------------
+# DOCUMENTATION REQUIREMENTS
+#-----------------------------------------------------------------------------
+
+# Code Documentation
+# ----------------
+# - JSDoc for public APIs
+# - README for each package
+# - Architecture decisions
+# - API documentation
+
+#-----------------------------------------------------------------------------
+# SECURITY GUIDELINES
+#-----------------------------------------------------------------------------
+
+# Frontend Security
+# ---------------
+# - XSS prevention
+# - CSRF protection
+# - Content Security Policy
+# - Secure storage handling
+
+# Backend Security
+# -------------
+# - Input validation
+# - Authentication/Authorization
+# - Data encryption
+# - API rate limiting
+
+#-----------------------------------------------------------------------------
+# PERFORMANCE GUIDELINES
+#-----------------------------------------------------------------------------
+
+# Frontend Performance
+# ------------------
+# - Lazy loading for routes
+# - Image optimization
+# - Bundle size monitoring
+# - Performance budgets
+
+# Backend Performance
+# ----------------
+# - Query optimization
+# - Caching strategy
+# - Rate limiting
+# - Resource pooling
+
+#-----------------------------------------------------------------------------
 # PROJECT STRUCTURE
 #-----------------------------------------------------------------------------
 
@@ -206,4 +253,5 @@ pnpm-workspace.yaml
 !pnpm-lock.yaml
 !*.min.js
 !*.min.css
-!*.map 
+!*.map
+
