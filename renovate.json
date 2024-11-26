@@ -6,28 +6,49 @@
       "matchPackagePatterns": ["*"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "all non-major dependencies",
-      "groupSlug": "all-minor-patch"
+      "groupSlug": "all-minor-patch",
+      "automerge": true,
+      "automergeType": "branch",
+      "stabilityDays": 3,
+      "vulnerabilityAlerts": {
+        "enabled": true,
+        "automerge": true,
+        "stabilityDays": 0
+      }
     },
     {
       "matchPackagePatterns": ["*"],
       "matchUpdateTypes": ["major"],
       "groupName": "all major dependencies",
-      "groupSlug": "all-major"
+      "groupSlug": "all-major",
+      "automerge": false
     },
     {
       "matchPackageNames": ["@types/node"],
       "matchPackagePatterns": ["^@types/"],
       "groupName": "type definitions",
       "groupSlug": "types"
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "stabilityDays": 0
     }
   ],
   "ignoreDependencies": ["node"],
   "rangeStrategy": "pin",
-  "schedule": ["after 10pm and before 5am every day"],
+  "schedule": ["after 10pm and before 5am every weekday", "every weekend"],
   "timezone": "UTC",
   "prHourlyLimit": 4,
   "prConcurrentLimit": 10,
   "updateInternalDeps": true,
   "ignorePaths": ["**/node_modules/**"],
-  "postUpdateOptions": ["yarnDedupeHighest"]
+  "postUpdateOptions": ["yarnDedupeHighest"],
+  "baseBranches": ["staging"],
+  "automergeStrategy": "squash",
+  "platformCommit": "auto",
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "semanticCommitScope": "deps",
+  "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
 }
