@@ -16,13 +16,13 @@ export const CellWrapper = ({ children, copyValue }: CellWrapperProps) => {
   }
 
   if (!copyValue) {
-    return <div className="px-4 py-2">{children}</div>
+    return <div className="mx-1 my-1 truncate">{children}</div>
   }
 
   return (
-    <div className="px-4 py-2">
+    <div className="mx-1 my-1">
       <div
-        className="cursor-pointer hover:text-primary transition-colors relative"
+        className="cursor-pointer hover:text-primary transition-colors relative truncate"
         onClick={handleCopy}
         onKeyDown={(e) => e.key === 'Enter' && handleCopy()}
         title="Click to copy"

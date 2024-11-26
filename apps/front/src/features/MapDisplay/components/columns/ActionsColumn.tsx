@@ -11,6 +11,8 @@ import type { SearchResult } from '../Columns'
 
 export const actionsColumn: ColumnDef<SearchResult> = {
   id: 'actions',
+  header: () => 'Actions',
+  enableSorting: false,
   cell: ({ row }) => {
     return (
       <DropdownMenu>

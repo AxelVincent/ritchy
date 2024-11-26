@@ -110,21 +110,14 @@ export const MapDisplay = () => {
         </button>
       </div>
       <div style={viewStyle.dataStyle}>
-        <div className="h-[25%]">
-          <PlacesTextSearch
-            location={location}
-            onResultsChange={handleResults}
-          />
-        </div>
-        <div className="h-[75%]">
-          <DataTable
-            columns={columns}
-            data={searchResults}
-            onRowHover={setDataTableHoveredPlaceId}
-            selectedPlaceId={selectedPlaceId}
-            mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
-          />
-        </div>
+        <PlacesTextSearch location={location} onResultsChange={handleResults} />
+        <DataTable
+          columns={columns}
+          data={searchResults}
+          onRowHover={setDataTableHoveredPlaceId}
+          selectedPlaceId={selectedPlaceId}
+          mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
+        />
       </div>
     </div>
   )

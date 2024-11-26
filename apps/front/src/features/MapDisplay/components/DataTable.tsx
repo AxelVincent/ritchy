@@ -26,6 +26,7 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
+import clsx from 'clsx'
 import { useState } from 'react'
 import type { SearchResult } from './Columns'
 
@@ -37,7 +38,7 @@ interface DataTableProps<TData, TValue> {
   mapBoxHoveredPlaceId: string | null
 }
 
-export const DataTable = <TData, TValue>({
+export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
   selectedPlaceId,
@@ -74,8 +75,8 @@ export const DataTable = <TData, TValue>({
   })
 
   return (
-    <div className="flex flex-col h-full p-4">
-      <div className="flex items-center py-4">
+    <div className="h-full flex flex-col p-4">
+      <div className="flex gap-2 mb-4 flex-shrink-0">
         <Input
           placeholder="Filter name..."
           value={
@@ -113,72 +114,64 @@ export const DataTable = <TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border flex-1">
-        <div className="relative max-h-full overflow-auto">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background overflow-hidden h-16">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+      <div className="border rounded-md overflow-hidden w-full">
+        <Table>
+          <TableHeader className="sticky top-0 bg-background h-12">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="min-w-[100px]">
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody className="min-w-full">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  onMouseEnter={() =>
+                    onRowHover((row.original as SearchResult).id)
+                  }
+                  onMouseLeave={() => onRowHover(null)}
+                  className={clsx(
+                    'h-14',
+                    selectedPlaceId === (row.original as SearchResult).id &&
+                      'bg-muted',
+                    mapBoxHoveredPlaceId ===
+                      (row.original as SearchResult).id && 'bg-accent'
+                  )}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
                       {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
+                        cell.column.columnDef.cell,
+                        cell.getContext()
                       )}
-                    </TableHead>
+                    </TableCell>
                   ))}
                 </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && 'selected'}
-                    onMouseEnter={() => {
-                      onRowHover((row.original as SearchResult).id)
-                    }}
-                    onMouseLeave={() => {
-                      onRowHover(null)
-                    }}
-                    className={`
-                      ${selectedPlaceId === (row.original as SearchResult).id ? 'bg-muted' : ''}
-                      ${mapBoxHoveredPlaceId === (row.original as SearchResult).id ? 'bg-accent' : ''}
-                    `}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        className="whitespace-nowrap h-16"
-                        key={cell.id}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-16 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="text-center">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
+      <div className="flex items-center justify-between mt-4 flex-shrink-0">
+        <span className="text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{' '}
           {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
+        </span>
         <div className="space-x-2">
           <Button
             variant="outline"

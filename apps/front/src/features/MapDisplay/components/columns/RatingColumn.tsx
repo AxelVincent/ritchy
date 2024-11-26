@@ -1,30 +1,38 @@
 import { Button } from '@/components/ui/button'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, Star } from 'lucide-react'
 import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
-export const nameColumn: ColumnDef<SearchResult> = {
-  accessorKey: 'displayName',
+export const ratingColumn: ColumnDef<SearchResult> = {
+  accessorKey: 'rating',
   header: ({ column }) => {
     return (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Name
+        Rating
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     )
   },
   enableSorting: true,
-  sortingFn: 'text',
+  sortingFn: 'basic',
+  sortDescFirst: true,
   cell: ({ row }) => {
+    const rating = row.original.rating
+
     return (
       <CellWrapper>
-        <div>
-          <div>{row.original.displayName}</div>
-        </div>
+        {rating ? (
+          <div className="flex items-center gap-1">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <span>{rating.toFixed(1)}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">No rating</span>
+        )}
       </CellWrapper>
     )
   }

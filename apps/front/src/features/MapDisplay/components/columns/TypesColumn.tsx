@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import type { ColumnDef } from '@tanstack/react-table'
+import { useState } from 'react'
 import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
@@ -10,6 +11,7 @@ export const typesColumn: ColumnDef<SearchResult> = {
     const types = row.original.types
     const displayCount = 2
     const remainingCount = types.length - displayCount
+    const [isOpen, setIsOpen] = useState(false)
 
     return (
       <CellWrapper>
@@ -20,16 +22,24 @@ export const typesColumn: ColumnDef<SearchResult> = {
             </Badge>
           ))}
           {remainingCount > 0 && (
-            <div className="relative group shrink-0">
-              <Badge variant="outline">+{remainingCount}</Badge>
+            <div className="relative shrink-0">
+              <Badge
+                variant="outline"
+                className="cursor-pointer"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                +{remainingCount}
+              </Badge>
 
-              <div className="fixed mt-2 hidden rounded-md border bg-background p-2 shadow-md group-hover:flex group-hover:flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
-                {types.slice(displayCount).map((type) => (
-                  <Badge variant="secondary" key={type}>
-                    {type}
-                  </Badge>
-                ))}
-              </div>
+              {isOpen && (
+                <div className="fixed mt-2 rounded-md border bg-background p-2 shadow-md flex flex-wrap gap-2 max-h-[200px] overflow-y-auto z-[100] min-w-[200px]">
+                  {types.slice(displayCount).map((type) => (
+                    <Badge variant="secondary" key={type}>
+                      {type}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
