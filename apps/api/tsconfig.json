@@ -4,6 +4,7 @@
     "types": ["node"],
     "skipLibCheck": true,
     "moduleResolution": "node",
+    "module": "ESNext",
     "strict": true,
     "incremental": true,
     "allowSyntheticDefaultImports": true,

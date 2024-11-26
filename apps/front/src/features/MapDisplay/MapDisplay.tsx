@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { columns } from './components/Columns'
 import { DataTable } from './components/DataTable'
 import { MapBox } from './components/MapBox'
-import { PlaceSearch } from './components/PlacesTextSearch'
+import { PlacesTextSearch } from './components/PlacesTextSearch'
 
 interface Location {
   latitude: number
@@ -111,7 +111,10 @@ export const MapDisplay = () => {
       </div>
       <div style={viewStyle.dataStyle}>
         <div className="h-[25%]">
-          <PlaceSearch location={location} onResultsChange={handleResults} />
+          <PlacesTextSearch
+            location={location}
+            onResultsChange={handleResults}
+          />
         </div>
         <div className="h-[75%]">
           <DataTable

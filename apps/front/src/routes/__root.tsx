@@ -5,7 +5,7 @@ export default function RootRoute() {
   return (
     <div className="h-screen w-screen bg-background">
       <Outlet />
-      <TanStackRouterDevtools />
+      {process.env.NODE_ENV === 'development' && <TanStackRouterDevtools />}
     </div>
   )
 }

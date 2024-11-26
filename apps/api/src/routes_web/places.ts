@@ -25,7 +25,7 @@ export const searchPlaces = async (
   try {
     console.log('Processing place search request', {
       body: req.body,
-      locationBias: req.body.locationBias
+      auth: req.auth
     })
 
     // Add request validation
