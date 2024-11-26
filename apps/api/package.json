@@ -14,7 +14,7 @@
     "scripts:scrapeEmailsAndSocials": "tsx src/services/scraperEmailsAndSocials.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
     "format": "biome format",
     "format:fix": "biome format --write .",
     "check": "biome check",

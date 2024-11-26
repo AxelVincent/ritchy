@@ -58,7 +58,7 @@ app.get('/health', (_, res) => {
   res.status(200).json({ status: 'ok' })
 })
 
-app.use('/api_web', isAuthenticated, webRoutes)
+app.use('/web', isAuthenticated, webRoutes)
 
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
 app.listen(PORT, '::', () => {
