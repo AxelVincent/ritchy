@@ -172,13 +172,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
         </Table>
       </div>
       <div className="flex flex-row justify-between">
-        {/* <span className="text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </span> */}
-        <span className="text-sm text-muted-foreground pl-2">
-          {table.getFilteredRowModel().rows.length} results
-        </span>
+        <div className="text-sm text-muted-foreground pl-2">
+          <span>
+            Page {table.getState().pagination.pageIndex + 1} of{' '}
+            {table.getPageCount()}
+          </span>
+          <span className="ml-2">
+            ({table.getFilteredRowModel().rows.length} results)
+          </span>
+        </div>
         <div className="space-x-2">
           <Button
             variant="outline"
