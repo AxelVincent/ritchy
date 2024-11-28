@@ -3,8 +3,9 @@ import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
 export const addressColumn: ColumnDef<SearchResult> = {
+  id: 'formattedAddress',
   accessorKey: 'formattedAddress',
-  header: () => 'Address',
+  header: () => <CellWrapper>Address</CellWrapper>,
   enableSorting: false,
   cell: ({ row }) => {
     const address = row.original.formattedAddress

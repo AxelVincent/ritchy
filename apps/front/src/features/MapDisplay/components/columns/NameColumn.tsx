@@ -5,27 +5,24 @@ import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
 export const nameColumn: ColumnDef<SearchResult> = {
+  id: 'displayName',
   accessorKey: 'displayName',
   header: ({ column }) => {
     return (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      >
-        Name
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      <CellWrapper>
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </CellWrapper>
     )
   },
   enableSorting: true,
   sortingFn: 'text',
   cell: ({ row }) => {
-    return (
-      <CellWrapper>
-        <div>
-          <div>{row.original.displayName}</div>
-        </div>
-      </CellWrapper>
-    )
+    return <CellWrapper>{row.original.displayName}</CellWrapper>
   }
 }

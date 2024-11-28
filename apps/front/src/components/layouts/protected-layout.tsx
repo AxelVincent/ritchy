@@ -1,8 +1,6 @@
-import { SignedIn, SignedOut } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { Navigate, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { SidebarInset, SidebarProvider } from '../ui/sidebar'
-import { AppSidebar } from './sidebar/app-sidebar'
 
 export const ProtectedLayout = () => {
   useEffect(() => {
@@ -28,12 +26,14 @@ export const ProtectedLayout = () => {
   return (
     <>
       <SignedIn>
-        <SidebarProvider open={false}>
-          <AppSidebar />
-          <SidebarInset>
+        <main>
+          <div className="flex flex-row w-full h-full">
+            <div className="flex-col justify-items-center p-1 justify-start w-10 bg-gray-50">
+              <UserButton />
+            </div>
             <Outlet />
-          </SidebarInset>
-        </SidebarProvider>
+          </div>
+        </main>
       </SignedIn>
 
       <SignedOut>

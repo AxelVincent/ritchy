@@ -227,14 +227,14 @@ export const MapBox: FC<MapBoxProps> = ({
   )
 
   return (
-    <div style={{ height: '100%', position: 'relative' }}>
-      <div ref={mapContainerRef} className="h-full w-full" />
+    <>
+      <div ref={mapContainerRef} className="h-screen w-full" />
       <RadiusSlider
         value={radiusInMeters}
         onChange={handleChange}
         settings={RADIUS_SETTINGS}
       />
-    </div>
+    </>
   )
 }
 

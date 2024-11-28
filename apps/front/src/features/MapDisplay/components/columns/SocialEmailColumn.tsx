@@ -8,6 +8,7 @@ import { CellWrapper } from './CellWrapper'
 
 export const socialEmailColumn: ColumnDef<SearchResult> = {
   id: 'socialAndEmail',
+  accessorKey: 'socialAndEmail',
   header: () => <CellWrapper>Social & Email</CellWrapper>,
   cell: ({ row }) => {
     const website = row.original.websiteUri
