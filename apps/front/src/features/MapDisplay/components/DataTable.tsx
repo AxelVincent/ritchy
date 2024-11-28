@@ -29,6 +29,7 @@ import {
 import clsx from 'clsx'
 import { useState } from 'react'
 import type { SearchResult } from './Columns'
+import { ChevronDown } from 'lucide-react'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -75,8 +76,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
   })
 
   return (
-    <div className="h-full flex flex-col p-4">
-      <div className="flex gap-2 mb-4 flex-shrink-0">
+    <div className="flex flex-col min-h-0 space-y-4 p-4">
+      <div className="flex flex-row">
         <Input
           placeholder="Filter name..."
           value={
@@ -85,12 +86,13 @@ export const DataTable = <TData extends SearchResult, TValue>({
           onChange={(event) =>
             table.getColumn('displayName')?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-sm flex-shrink"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
               Columns
+              <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -114,13 +116,13 @@ export const DataTable = <TData extends SearchResult, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="border rounded-md overflow-hidden w-full">
+      <div className="border rounded-md overflow-y-auto">
         <Table>
-          <TableHeader className="sticky top-0 bg-background h-12">
+          <TableHeader className="bg-gray-50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="min-w-[100px]">
+                  <TableHead key={header.id}>
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -130,7 +132,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="min-w-full">
+          <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
@@ -140,7 +142,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   }
                   onMouseLeave={() => onRowHover(null)}
                   className={clsx(
-                    'h-14',
                     selectedPlaceId === (row.original as SearchResult).id &&
                       'bg-muted',
                     mapBoxHoveredPlaceId ===
@@ -159,18 +160,19 @@ export const DataTable = <TData extends SearchResult, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center">
-                  No results.
-                </TableCell>
+                <TableCell colSpan={columns.length}>No results.</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between mt-4 flex-shrink-0">
-        <span className="text-sm text-muted-foreground">
+      <div className="flex flex-row justify-between">
+        {/* <span className="text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{' '}
           {table.getFilteredRowModel().rows.length} row(s) selected.
+        </span> */}
+        <span className="text-sm text-muted-foreground pl-2">
+          {table.getFilteredRowModel().rows.length} results
         </span>
         <div className="space-x-2">
           <Button

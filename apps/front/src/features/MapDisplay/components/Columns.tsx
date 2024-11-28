@@ -1,10 +1,12 @@
 import type { ColumnDef } from '@tanstack/react-table'
+import { actionsColumn } from './columns/ActionsColumn'
 import { addressColumn } from './columns/AddressColumn'
 import { nameColumn } from './columns/NameColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
 import { socialEmailColumn } from './columns/SocialEmailColumn'
+import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
 
 export interface SearchResult {
@@ -27,8 +29,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   ratingCountColumn,
   addressColumn,
   websiteColumn,
-  phoneColumn
-  // TODO: Fix why they are breaking display
-  // typesColumn,
-  // actionsColumn
+  phoneColumn,
+  typesColumn,
+  actionsColumn
 ]

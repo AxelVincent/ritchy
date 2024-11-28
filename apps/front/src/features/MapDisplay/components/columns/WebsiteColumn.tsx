@@ -4,8 +4,8 @@ import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
 export const websiteColumn: ColumnDef<SearchResult> = {
-  accessorKey: 'websiteUri',
-  header: 'Website',
+  accessorKey: 'website',
+  header: () => <CellWrapper>Website</CellWrapper>,
   cell: ({ row }) => {
     const website = row.getValue('websiteUri') as string
     if (!website) return <CellWrapper>-</CellWrapper>

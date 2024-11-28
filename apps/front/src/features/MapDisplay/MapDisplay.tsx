@@ -32,11 +32,11 @@ export const MapDisplay = () => {
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
 
   const [viewStyle, setViewStyle] = useState<{
-    mapStyle: object
-    dataStyle: object
+    mapStyle: { flex: string }
+    dataStyle: { flex: string }
   }>({
-    mapStyle: { width: '50%', height: '100%' },
-    dataStyle: { width: '50%', height: '100%' }
+    mapStyle: { flex: 'flex-1' },
+    dataStyle: { flex: 'flex-1' }
   })
 
   const [viewMode, setViewMode] = useState<'map' | 'data' | 'equal'>('equal')
@@ -52,25 +52,25 @@ export const MapDisplay = () => {
     const sizes = (() => {
       switch (mode) {
         case 'map':
-          return { mapSize: 75, dataSize: 25 }
+          return { mapSize: 'basis-2/3', dataSize: 'basis-1/3' }
         case 'data':
-          return { mapSize: 25, dataSize: 75 }
+          return { mapSize: 'basis-1/3', dataSize: 'basis-2/3' }
         case 'equal':
-          return { mapSize: 50, dataSize: 50 }
+          return { mapSize: 'basis-1/2', dataSize: 'basis-1/2' }
         default:
-          return { mapSize: 50, dataSize: 50 } // Fallback
+          return { mapSize: 'basis-1/2', dataSize: 'basis-1/2' } // Fallback
       }
     })()
 
     setViewStyle({
-      mapStyle: { width: `${sizes.mapSize}%`, height: '100%' },
-      dataStyle: { width: `${sizes.dataSize}%`, height: '100%' }
+      mapStyle: { flex: sizes.mapSize },
+      dataStyle: { flex: sizes.dataSize }
     })
   }
 
   return (
-    <div className="relative h-full w-full flex">
-      <div style={viewStyle.mapStyle}>
+    <>
+      <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}>
         <MapBox
           onLocationChange={setLocation}
           searchResults={searchResults}
@@ -79,37 +79,38 @@ export const MapDisplay = () => {
           viewMode={viewMode}
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
         />
+        <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2">
+          <button
+            type="button"
+            onClick={() => toggleViewMode('map')}
+            className={`p-2 rounded ${
+              viewMode === 'map' ? 'bg-gray-200' : 'hover:bg-gray-100'
+            }`}
+          >
+            <MapIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleViewMode('equal')}
+            className={`p-2 rounded ${
+              viewMode === 'equal' ? 'bg-gray-200' : 'hover:bg-gray-100'
+            }`}
+          >
+            <Columns2 className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleViewMode('data')}
+            className={`p-2 rounded ${
+              viewMode === 'data' ? 'bg-gray-200' : 'hover:bg-gray-100'
+            }`}
+          >
+            <TableProperties className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
       </div>
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 p-2 bg-white rounded shadow-md flex flex-row space-x-2">
-        <button
-          type="button"
-          onClick={() => toggleViewMode('map')}
-          className={`p-2 rounded ${
-            viewMode === 'map' ? 'bg-gray-200' : 'hover:bg-gray-100'
-          }`}
-        >
-          <MapIcon className="h-5 w-5" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleViewMode('equal')}
-          className={`p-2 rounded ${
-            viewMode === 'equal' ? 'bg-gray-200' : 'hover:bg-gray-100'
-          }`}
-        >
-          <Columns2 className="h-5 w-5" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleViewMode('data')}
-          className={`p-2 rounded ${
-            viewMode === 'data' ? 'bg-gray-200' : 'hover:bg-gray-100'
-          }`}
-        >
-          <TableProperties className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </div>
-      <div style={viewStyle.dataStyle}>
+
+      <div className={`${viewStyle.dataStyle.flex} overflow-hidden`}>
         <PlacesTextSearch location={location} onResultsChange={handleResults} />
         <DataTable
           columns={columns}
@@ -119,6 +120,6 @@ export const MapDisplay = () => {
           mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
         />
       </div>
-    </div>
+    </>
   )
 }

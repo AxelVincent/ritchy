@@ -7,7 +7,7 @@ import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
 export const socialEmailColumn: ColumnDef<SearchResult> = {
-  id: 'socialAndEmail',
+  id: 'Social & Email',
   header: () => <CellWrapper>Social & Email</CellWrapper>,
   cell: ({ row }) => {
     const website = row.original.websiteUri

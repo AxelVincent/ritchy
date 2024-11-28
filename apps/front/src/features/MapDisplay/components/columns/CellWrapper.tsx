@@ -15,12 +15,14 @@ export const CellWrapper = ({ children, copyValue }: CellWrapperProps) => {
     setTimeout(() => setCopied(false), 500)
   }
 
+  const baseClassName = 'mx-1 my-1 text-sm text-left truncate'
+
   if (!copyValue) {
-    return <div className="mx-1 my-1 truncate">{children}</div>
+    return <div className={baseClassName}>{children}</div>
   }
 
   return (
-    <div className="mx-1 my-1">
+    <div className={baseClassName}>
       <div
         className="cursor-pointer hover:text-primary transition-colors relative truncate"
         onClick={handleCopy}
