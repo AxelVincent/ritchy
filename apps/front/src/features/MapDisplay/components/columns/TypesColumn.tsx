@@ -9,6 +9,7 @@ import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
 export const typesColumn: ColumnDef<SearchResult> = {
+  id: 'types',
   accessorKey: 'types',
   header: () => <CellWrapper>Types</CellWrapper>,
   cell: ({ row }) => {

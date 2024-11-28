@@ -5,6 +5,7 @@ import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
 export const ratingColumn: ColumnDef<SearchResult> = {
+  id: 'rating',
   accessorKey: 'rating',
   header: ({ column }) => {
     return (

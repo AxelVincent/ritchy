@@ -4,7 +4,8 @@ import type { SearchResult } from '../Columns'
 import { CellWrapper } from './CellWrapper'
 
 export const phoneColumn: ColumnDef<SearchResult> = {
-  accessorKey: 'phone',
+  id: 'internationalPhoneNumber',
+  accessorKey: 'internationalPhoneNumber',
   header: () => <CellWrapper>Phone</CellWrapper>,
   cell: ({ row }) => {
     const phone = row.getValue('internationalPhoneNumber') as string

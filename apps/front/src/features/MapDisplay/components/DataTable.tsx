@@ -109,7 +109,12 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    {column.id
+                      .split(/(?=[A-Z])|(?:And)/)
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(' ')}
                   </DropdownMenuCheckboxItem>
                 )
               })}

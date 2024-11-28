@@ -15,7 +15,7 @@ export const CellWrapper = ({ children, copyValue }: CellWrapperProps) => {
     setTimeout(() => setCopied(false), 500)
   }
 
-  const baseClassName = 'mx-1 my-1 text-sm text-left truncate'
+  const baseClassName = 'mx-0.5 text-sm text-left truncate'
 
   if (!copyValue) {
     return <div className={baseClassName}>{children}</div>
