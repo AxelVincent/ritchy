@@ -27,9 +27,9 @@ import {
   useReactTable
 } from '@tanstack/react-table'
 import clsx from 'clsx'
+import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import type { SearchResult } from './Columns'
-import { ChevronDown } from 'lucide-react'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
