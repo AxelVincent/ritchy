@@ -11,7 +11,7 @@ export const ratingColumn: ColumnDef<SearchResult> = {
     return (
       <CellWrapper>
         <Button
-          variant="ghost"
+          variant="secondary"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Rating

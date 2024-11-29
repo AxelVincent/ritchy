@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import { Columns2, Map as MapIcon, TableProperties } from 'lucide-react'
 import { useState } from 'react'
@@ -80,37 +81,33 @@ export const MapDisplay = () => {
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
         />
         <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2">
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => toggleViewMode('map')}
-            className={`p-2 rounded ${
-              viewMode === 'map' ? 'bg-gray-200' : 'hover:bg-gray-100'
-            }`}
           >
-            <MapIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
+            <MapIcon />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => toggleViewMode('equal')}
-            className={`p-2 rounded ${
-              viewMode === 'equal' ? 'bg-gray-200' : 'hover:bg-gray-100'
-            }`}
           >
-            <Columns2 className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
+            <Columns2 />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => toggleViewMode('data')}
-            className={`p-2 rounded ${
-              viewMode === 'data' ? 'bg-gray-200' : 'hover:bg-gray-100'
-            }`}
           >
-            <TableProperties className="h-5 w-5" aria-hidden="true" />
-          </button>
+            <TableProperties />
+          </Button>
         </div>
       </div>
 
-      <div className={`${viewStyle.dataStyle.flex} overflow-hidden`}>
+      <div
+        className={`${viewStyle.dataStyle.flex} bg-background overflow-hidden border-l`}
+      >
         <PlacesTextSearch location={location} onResultsChange={handleResults} />
         <DataTable
           columns={columns}

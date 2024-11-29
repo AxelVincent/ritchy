@@ -123,7 +123,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       </div>
       <div className="border rounded-md overflow-y-auto">
         <Table>
-          <TableHeader className="bg-gray-50">
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (

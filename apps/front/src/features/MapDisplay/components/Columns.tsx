@@ -25,11 +25,11 @@ export interface SearchResult {
 export const columns: ColumnDef<SearchResult>[] = [
   nameColumn,
   socialEmailColumn,
+  websiteColumn,
+  phoneColumn,
   ratingColumn,
   ratingCountColumn,
   addressColumn,
-  websiteColumn,
-  phoneColumn,
   typesColumn,
   actionsColumn
 ]
