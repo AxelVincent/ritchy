@@ -27,7 +27,7 @@ const SOCIAL_MEDIA_DOMAINS = Object.values(SOCIAL_MEDIA_CONFIG).map(
   (config) => config.domain
 )
 
-const IS_DEBUG = true
+const IS_DEBUG = process.env.NODE_ENV === 'development'
 
 // Type definitions
 type ScraperResult = {
@@ -146,18 +146,39 @@ async function scrapeEmailsAndSocials(
 
     // Helper function to validate email format
     const isValidEmail = (email: string): boolean => {
+      // Extract the base domain from the website URL
+      const websiteDomain = new URL(url).hostname.split('.').slice(-1)[0]
+
+      // Clean the email first
+      let cleanedEmail =
+        email
+          .trim()
+          .split(/[\s,;()]/)
+          .filter((part) => part.includes('@'))[0] || email
+
+      // Extract everything up to the domain extension
+      const emailMatch = cleanedEmail.match(
+        new RegExp(`^([^\\s]+@[^\\s]+\\.${websiteDomain})`, 'i')
+      )
+      if (emailMatch) {
+        cleanedEmail = emailMatch[1]
+      }
+
+      cleanedEmail = cleanedEmail.replace(/[^\w@.-]/g, '')
+
       // Additional validation to exclude common false positives
       if (
-        email.includes('//') || // URLs
-        email.includes('/') || // File paths
-        email.includes('\\') || // File paths
-        email.includes('sentry') || // Sentry URLs
-        email.includes('static.') || // Static assets
-        email.includes('unpkg') || // Package URLs
-        /\.(png|jpg|jpeg|gif|svg|webp|ico|pdf)$/i.test(email) || // Image and document files
-        email.includes('@2x') || // Image scale patterns
-        email.includes('@3x') || // Image scale patterns
-        email.includes('@4x') // Image scale patterns
+        cleanedEmail.includes('//') ||
+        cleanedEmail.includes('/') ||
+        cleanedEmail.includes('\\') ||
+        cleanedEmail.includes('sentry') ||
+        cleanedEmail.includes('static.') ||
+        cleanedEmail.includes('unpkg') ||
+        /\.(png|jpg|jpeg|gif|svg|webp|ico|pdf)$/i.test(cleanedEmail) ||
+        cleanedEmail.includes('@2x') ||
+        cleanedEmail.includes('@3x') ||
+        cleanedEmail.includes('@4x') ||
+        !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanedEmail)
       ) {
         return false
       }
@@ -177,10 +198,31 @@ async function scrapeEmailsAndSocials(
       ...(dataAttributes.match(emailRegex) || [])
     ].filter(isValidEmail)
 
-    const emails = Array.from(new Set([...mailtoLinks, ...matchedEmails]))
+    const normalizeEmail = (email: string): string => {
+      const match = email.match(
+        /([a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/
+      )?.[1]
+      return match ? match.toLowerCase().trim() : email
+    }
+
+    const emails = Array.from(
+      new Set(
+        [...mailtoLinks, ...matchedEmails].map(normalizeEmail).filter(Boolean)
+      )
+    )
 
     // Extract social media links
     const socialLinks: Record<string, string[]> = {}
+
+    // Helper function to normalize social media links
+    const normalizeSocialLink = (link: string): string => {
+      // Remove trailing slashes, query parameters, and fragments
+      return link
+        .toLowerCase()
+        .replace(/\/$/, '')
+        .split(/[?#]/)[0]
+        .replace(/^(?:https?:\/\/)?(?:www\.)?/, '')
+    }
 
     // Look for social links in href, data attributes, and meta tags
     $('a[href], [data-href], meta[content*="http"], a').each(
@@ -192,9 +234,9 @@ async function scrapeEmailsAndSocials(
         ].filter(Boolean) as string[]
 
         for (const link of links) {
-          const normalizedLink = link.toLowerCase()
+          const normalizedLink = normalizeSocialLink(link)
           for (const domain of socialMediaDomains) {
-            if (normalizedLink.includes(domain)) {
+            if (normalizedLink.includes(domain.toLowerCase())) {
               if (!socialLinks[domain]) {
                 socialLinks[domain] = []
               }
@@ -252,9 +294,18 @@ async function scrapeEmailsAndSocials(
       }
     }
 
-    // Deduplicate social links
+    // Enhanced deduplication with normalization
     for (const domain in socialLinks) {
-      socialLinks[domain] = Array.from(new Set(socialLinks[domain]))
+      // Create a Set of normalized links for efficient lookup
+      const seen = new Set<string>()
+      socialLinks[domain] = socialLinks[domain].filter((link) => {
+        const normalized = normalizeSocialLink(link)
+        if (seen.has(normalized)) {
+          return false
+        }
+        seen.add(normalized)
+        return true
+      })
     }
 
     return { emails, socialLinks }
