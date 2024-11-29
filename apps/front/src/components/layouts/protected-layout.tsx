@@ -1,6 +1,7 @@
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { Navigate, Outlet } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { ThemeToggle } from '../theme-toggle'
 
 export const ProtectedLayout = () => {
   useEffect(() => {
@@ -28,8 +29,9 @@ export const ProtectedLayout = () => {
       <SignedIn>
         <main>
           <div className="flex flex-row w-full h-full">
-            <div className="flex-col justify-items-center p-1 justify-start w-10 bg-gray-50">
+            <div className="flex flex-col items-center justify-start w-12 gap-4 pt-4">
               <UserButton />
+              <ThemeToggle />
             </div>
             <Outlet />
           </div>

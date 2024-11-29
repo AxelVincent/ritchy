@@ -284,30 +284,41 @@ const createMarkerWithPopup = (
 
 const createPopupContent = (place: Place) => {
   return `
-    <div class="p-3 max-w-sm">
-      <h3 class="font-bold text-lg mb-2">${place.displayName}</h3>
+    <div class="p-4 max-w-sm text-black">
+      <h3 class="scroll-m-20 text-lg font-semibold tracking-tight mb-2 text-black">${place.displayName}</h3>
       ${
         place.rating
           ? `
-        <div class="mb-2">
-          ⭐ ${place.rating.toFixed(1)} ${place.userRatingCount ? `(${place.userRatingCount} reviews)` : ''}
+        <div class="flex items-center gap-1 mb-2 text-sm">
+          <span class="text-yellow-500">★</span>
+          <span class="text-black">${place.rating.toFixed(1)}</span>
+          ${place.userRatingCount ? `<span class="text-gray-600">(${place.userRatingCount} reviews)</span>` : ''}
         </div>
       `
           : ''
       }
-      <p class="text-sm mb-2">${place.shortFormattedAddress}</p>
+      <p class="text-sm text-gray-600 mb-2">${place.shortFormattedAddress}</p>
       ${
         place.currentOpeningHours
           ? `
-        <div class="text-sm ${place.currentOpeningHours.openNow ? 'text-green-600' : 'text-red-600'}">
+        <div class="text-sm ${
+          place.currentOpeningHours.openNow
+            ? 'text-emerald-600'
+            : 'text-red-600'
+        }">
           ${place.currentOpeningHours.openNow ? 'Open now' : 'Closed'}
         </div>
       `
           : ''
       }
-      <div class="mt-2">
-        <a href="${place.googleMapsUri}" target="_blank" class="text-blue-500 text-sm hover:underline">
+      <div class="mt-3">
+        <a 
+          href="${place.googleMapsUri}" 
+          target="_blank" 
+          class="text-sm text-blue-600 hover:underline inline-flex items-center"
+        >
           View on Google Maps
+          <span class="ml-1">↗</span>
         </a>
       </div>
     </div>

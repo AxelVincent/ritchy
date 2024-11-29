@@ -2,7 +2,7 @@ import { Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 
 export default function RootRoute() {
-  const isMobile = window.innerWidth <= 768
+  const isMobile = window.innerWidth < 1000
 
   return (
     <div className="bg-background h-screen w-screen">
