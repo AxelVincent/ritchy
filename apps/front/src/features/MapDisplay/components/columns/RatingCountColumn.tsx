@@ -21,7 +21,8 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
     )
   },
   enableSorting: true,
-  sortingFn: 'basic',
+  sortingFn: 'alphanumeric',
+  sortUndefined: -1,
   sortDescFirst: true,
   cell: ({ row }) => {
     const count = row.original.userRatingCount

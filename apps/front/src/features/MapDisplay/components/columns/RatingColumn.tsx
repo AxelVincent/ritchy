@@ -21,7 +21,8 @@ export const ratingColumn: ColumnDef<SearchResult> = {
     )
   },
   enableSorting: true,
-  sortingFn: 'basic',
+  sortingFn: 'alphanumeric',
+  sortUndefined: -1,
   sortDescFirst: true,
   cell: ({ row }) => {
     const rating = row.original.rating
