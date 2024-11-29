@@ -23,6 +23,14 @@ export const nameColumn: ColumnDef<SearchResult> = {
   enableSorting: true,
   sortingFn: 'text',
   cell: ({ row }) => {
-    return <CellWrapper>{row.original.displayName}</CellWrapper>
+    return (
+      <CellWrapper
+        copyValue={row.original.displayName}
+        truncate={true}
+        maxWidth="250px"
+      >
+        {row.original.displayName}
+      </CellWrapper>
+    )
   }
 }
