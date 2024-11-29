@@ -153,7 +153,11 @@ async function scrapeEmailsAndSocials(
         email.includes('\\') || // File paths
         email.includes('sentry') || // Sentry URLs
         email.includes('static.') || // Static assets
-        email.includes('unpkg') // Package URLs
+        email.includes('unpkg') || // Package URLs
+        /\.(png|jpg|jpeg|gif|svg|webp|ico|pdf)$/i.test(email) || // Image and document files
+        email.includes('@2x') || // Image scale patterns
+        email.includes('@3x') || // Image scale patterns
+        email.includes('@4x') // Image scale patterns
       ) {
         return false
       }
