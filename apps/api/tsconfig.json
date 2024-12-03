@@ -9,9 +9,15 @@
     "incremental": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
-    "baseUrl": ".",
+    "baseUrl": "../../",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "../../",
+    "declaration": true,
+    "declarationMap": true,
+    "paths": {
+      "@ritchy/*": ["../../packages/*/src"]
+    },
+    "composite": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

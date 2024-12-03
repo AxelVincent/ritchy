@@ -19,5 +19,5 @@ export const phoneColumn: ColumnDef<SearchResult> = {
         </a>
       </CellWrapper>
     )
-  }
+  },
 }

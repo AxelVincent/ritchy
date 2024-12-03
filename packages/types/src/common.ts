@@ -7,10 +7,10 @@ export const ApiErrorResponseSchema = z.object({
       z.object({
         code: z.string(),
         message: z.string(),
-        path: z.array(z.string().or(z.number()))
-      })
+        path: z.array(z.string().or(z.number())),
+      }),
     )
-    .optional()
+    .optional(),
 })
 
 export type ApiErrorResponse = z.infer<typeof ApiErrorResponseSchema>

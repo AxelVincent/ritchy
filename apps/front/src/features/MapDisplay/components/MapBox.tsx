@@ -6,13 +6,16 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState
+  useState,
 } from 'react'
+import ReactDOM from 'react-dom'
 import { DEFAULT_LOCATION } from '../MapDisplay'
 import { useMapCircle } from '../hooks/useMapCircle'
 import { useMapInitialization } from '../hooks/useMapInitialization'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
+import { PlacePopup } from './PlacePopup'
 import { RadiusSlider } from './RadiusSlider'
+import '../styles.css'
 
 interface MapBoxProps {
   onLocationChange: (location: {
@@ -38,7 +41,7 @@ export const MapBox: FC<MapBoxProps> = ({
   dataTableHoveredPlaceId,
   setSelectedPlaceId,
   viewMode,
-  setMapBoxHoveredPlaceId
+  setMapBoxHoveredPlaceId,
 }) => {
   // Refs for DOM elements and state management
   const mapContainerRef = useRef<HTMLDivElement>(null) // Container div for map
@@ -50,21 +53,21 @@ export const MapBox: FC<MapBoxProps> = ({
     () =>
       [DEFAULT_LOCATION.longitude, DEFAULT_LOCATION.latitude] as [
         number,
-        number
+        number,
       ],
-    []
+    [],
   )
 
   // State for radius control
   const [radiusInMeters, setRadiusInMeters] = useState(
-    DEFAULT_LOCATION.radiusInMeters
+    DEFAULT_LOCATION.radiusInMeters,
   )
 
   // Initialize map and circle functionality
   const mapRef = useMapInitialization(
     mapContainerRef,
     initialCenter,
-    MAP_SETTINGS
+    MAP_SETTINGS,
   )
   const { updateCircleData } = useMapCircle(mapRef)
 
@@ -90,10 +93,10 @@ export const MapBox: FC<MapBoxProps> = ({
             type: 'Point',
             coordinates: [
               mapRef.current.getCenter().lng,
-              mapRef.current.getCenter().lat
-            ]
-          }
-        }
+              mapRef.current.getCenter().lat,
+            ],
+          },
+        },
       })
 
       // Add circle layer with zoom-based radius scaling
@@ -113,12 +116,12 @@ export const MapBox: FC<MapBoxProps> = ({
             [
               '*',
               ['/', ['*', ['number', ['get', 'radius_m']], 1], 111319.9],
-              4194304
-            ]
+              4194304,
+            ],
           ],
           'circle-color': '#007cbf',
-          'circle-opacity': 0.3
-        }
+          'circle-opacity': 0.3,
+        },
       })
     })
 
@@ -136,7 +139,7 @@ export const MapBox: FC<MapBoxProps> = ({
         onLocationChange({
           latitude: center.lat,
           longitude: center.lng,
-          radiusInMeters
+          radiusInMeters,
         })
       }
     })
@@ -159,7 +162,7 @@ export const MapBox: FC<MapBoxProps> = ({
           place,
           '#22c55e',
           setSelectedPlaceId,
-          setMapBoxHoveredPlaceId
+          setMapBoxHoveredPlaceId,
         )
         marker.addTo(mapRef.current)
         markersMapRef.current.set(place.id, { marker, place })
@@ -179,14 +182,14 @@ export const MapBox: FC<MapBoxProps> = ({
   useEffect(() => {
     console.log(
       '🔄 hoveredPlaceId useEffect triggered',
-      dataTableHoveredPlaceId
+      dataTableHoveredPlaceId,
     )
     if (!mapRef.current) return
 
     // Close previous popup if exists
     if (currentHoveredPlaceIdRef.current) {
       const previousMarkerData = markersMapRef.current.get(
-        currentHoveredPlaceIdRef.current
+        currentHoveredPlaceIdRef.current,
       )
       if (previousMarkerData?.marker.getPopup()?.isOpen()) {
         previousMarkerData.marker.togglePopup()
@@ -219,11 +222,11 @@ export const MapBox: FC<MapBoxProps> = ({
         onLocationChange({
           latitude: center.lat,
           longitude: center.lng,
-          radiusInMeters: newValue
+          radiusInMeters: newValue,
         })
       }
     },
-    [updateCircleData, onLocationChange, mapRef]
+    [updateCircleData, onLocationChange, mapRef],
   )
 
   return (
@@ -242,17 +245,24 @@ const createMarkerWithPopup = (
   place: Place,
   color: string,
   setSelectedPlaceId: (placeId: string | null) => void,
-  setMapBoxHoveredPlaceId: (placeId: string | null) => void
+  setMapBoxHoveredPlaceId: (placeId: string | null) => void,
 ) => {
+  // Create a DOM node for React to render into
+  const popupNode = document.createElement('div')
+
   const popup = new mapboxgl.Popup({
     offset: 25,
     maxWidth: '300px',
-    className: 'place-popup'
-  }).setHTML(createPopupContent(place))
+  })
+
+  // Render React component into the popup
+  ReactDOM.render(<PlacePopup place={place} />, popupNode)
+
+  popup.setDOMContent(popupNode)
 
   const marker = new mapboxgl.Marker({
     color: color,
-    scale: 0.8
+    scale: 0.8,
   })
     .setLngLat([place.location.longitude, place.location.latitude])
     .setPopup(popup)
@@ -260,13 +270,18 @@ const createMarkerWithPopup = (
   const element = marker.getElement()
   // Add hover handlers to marker element
   element.addEventListener('mouseenter', () => {
-    console.log('🎯 marker hovered', place.id)
+    // console.log('🎯 marker hovered', place.id)
     setMapBoxHoveredPlaceId(place.id)
+  })
+
+  element.addEventListener('mouseleave', () => {
+    // console.log('🎯 marker unhovered', place.id)
+    setMapBoxHoveredPlaceId(null)
   })
 
   // Add click handler to marker element
   element.addEventListener('click', () => {
-    console.log('🎯 marker clicked', place.id)
+    // console.log('🎯 marker clicked', place.id)
     setSelectedPlaceId(place.id)
   })
 
@@ -274,53 +289,10 @@ const createMarkerWithPopup = (
   popup.on('open', () => {
     const closeButton = document.querySelector('.mapboxgl-popup-close-button')
     closeButton?.addEventListener('click', () => {
-      console.log('🎯 popup close button clicked', place.id)
+      // console.log('🎯 popup close button clicked', place.id)
       setSelectedPlaceId(null)
     })
   })
 
   return marker
-}
-
-const createPopupContent = (place: Place) => {
-  return `
-    <div class="p-4 max-w-sm text-black">
-      <h3 class="scroll-m-20 text-lg font-semibold tracking-tight mb-2 text-black">${place.displayName}</h3>
-      ${
-        place.rating
-          ? `
-        <div class="flex items-center gap-1 mb-2 text-sm">
-          <span class="text-yellow-500">★</span>
-          <span class="text-black">${place.rating.toFixed(1)}</span>
-          ${place.userRatingCount ? `<span class="text-gray-600">(${place.userRatingCount} reviews)</span>` : ''}
-        </div>
-      `
-          : ''
-      }
-      <p class="text-sm text-gray-600 mb-2">${place.shortFormattedAddress}</p>
-      ${
-        place.currentOpeningHours
-          ? `
-        <div class="text-sm ${
-          place.currentOpeningHours.openNow
-            ? 'text-emerald-600'
-            : 'text-red-600'
-        }">
-          ${place.currentOpeningHours.openNow ? 'Open now' : 'Closed'}
-        </div>
-      `
-          : ''
-      }
-      <div class="mt-3">
-        <a 
-          href="${place.googleMapsUri}" 
-          target="_blank" 
-          class="text-sm text-blue-600 hover:underline inline-flex items-center"
-        >
-          View on Google Maps
-          <span class="ml-1">↗</span>
-        </a>
-      </div>
-    </div>
-  `
 }

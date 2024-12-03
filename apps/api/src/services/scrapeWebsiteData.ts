@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio'
 
 function extractEmails(
   text: string,
-  excludeList: string[] = ['sentry', 'datadog']
+  excludeList: string[] = ['sentry', 'datadog'],
 ): string[] {
   const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
   const imagePattern = /\.(png|jpe?g|gif|bmp|webp)$/i
@@ -12,8 +12,8 @@ function extractEmails(
   return validEmails.filter(
     (email) =>
       !excludeList.some((exclude) =>
-        email.toLowerCase().includes(exclude.toLowerCase())
-      )
+        email.toLowerCase().includes(exclude.toLowerCase()),
+      ),
   )
 }
 
@@ -33,7 +33,7 @@ type LeadStructuredData = {
 
 async function getWebsiteContent(
   url: string,
-  subdomains: string[] = ['about', 'faq', 'a-propos', 'contact']
+  subdomains: string[] = ['about', 'faq', 'a-propos', 'contact'],
 ): Promise<{
   AIOptimizedText: string
   leadStructuredData: LeadStructuredData
@@ -42,7 +42,7 @@ async function getWebsiteContent(
     const mainUrl = new URL(url)
     const urlsToFetch = [
       mainUrl.href,
-      ...subdomains.map((subdomain) => new URL(`/${subdomain}`, url).href)
+      ...subdomains.map((subdomain) => new URL(`/${subdomain}`, url).href),
     ]
 
     const responses = await Promise.all(urlsToFetch.map((u) => fetch(u)))
@@ -51,12 +51,12 @@ async function getWebsiteContent(
       throw new Error(
         `HTTP error! All pages failed. Statuses: ${responses
           .map((r) => r.status)
-          .join(', ')}`
+          .join(', ')}`,
       )
     }
 
     const htmlContents = await Promise.all(
-      responses.map((response) => response.text())
+      responses.map((response) => response.text()),
     )
 
     const domain = getDomainFromUrl(url)
@@ -71,16 +71,16 @@ async function getWebsiteContent(
       return {
         ...structuredContent,
         url: urlsToFetch[index],
-        emails
+        emails,
       }
     })
 
     const emails = [
-      ...new Set(pageContents.flatMap((content) => content.emails))
+      ...new Set(pageContents.flatMap((content) => content.emails)),
     ]
     const emailMatchWithDomainName = findEmailMatchWithDomainName(
       emails,
-      domain
+      domain,
     )
 
     const leadStructuredData = {
@@ -89,12 +89,12 @@ async function getWebsiteContent(
         pageContents.find((content) => content.description)?.description || '',
       pageContents: pageContents.map((content) => ({
         url: content.url,
-        content: content.content
+        content: content.content,
       })),
       emails: emails.map((email) => ({
         email,
-        isMatchingDomain: email === emailMatchWithDomainName
-      }))
+        isMatchingDomain: email === emailMatchWithDomainName,
+      })),
     }
 
     const AIOptimizedText = `
@@ -107,7 +107,7 @@ async function getWebsiteContent(
           (page) => `
       ${page.url} Content:
       ${page.content}
-      `
+      `,
         )
         .join('\n')}
     `
@@ -147,11 +147,11 @@ function extractStructuredContent($: cheerio.CheerioAPI) {
 
 function findEmailMatchWithDomainName(
   emails: string[],
-  domain: string
+  domain: string,
 ): string | null {
   return (
     emails.find((email) =>
-      email.toLowerCase().includes(domain.toLowerCase())
+      email.toLowerCase().includes(domain.toLowerCase()),
     ) || null
   )
 }

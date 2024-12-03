@@ -10,7 +10,7 @@ const connectionData = {
   database: process.env.DB_NAME,
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  max: 1
+  max: 1,
 }
 
 const migrationConnection = postgres(connectionData)

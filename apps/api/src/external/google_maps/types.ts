@@ -4,12 +4,12 @@ import { z } from 'zod'
 // Basic/Common Schemas
 export const DisplayNameSchema = z.object({
   text: z.string(),
-  languageCode: z.string()
+  languageCode: z.string(),
 })
 
 export const ViewportSchema = z.object({
   low: LocationSchema,
-  high: LocationSchema
+  high: LocationSchema,
 })
 
 // Time-related Schemas
@@ -21,27 +21,27 @@ export const TimeSlotSchema = z.object({
     .object({
       year: z.number(),
       month: z.number(),
-      day: z.number()
+      day: z.number(),
     })
-    .optional()
+    .optional(),
 })
 
 export const PeriodSchema = z.object({
   open: TimeSlotSchema.optional(),
-  close: TimeSlotSchema.optional()
+  close: TimeSlotSchema.optional(),
 })
 
 export const OpeningHoursSchema = z.object({
   openNow: z.boolean(),
   periods: z.array(PeriodSchema),
-  weekdayDescriptions: z.array(z.string())
+  weekdayDescriptions: z.array(z.string()),
 })
 
 // Attribution & Media Schemas
 export const AuthorAttributionSchema = z.object({
   displayName: z.string(),
   uri: z.string(),
-  photoUri: z.string().optional()
+  photoUri: z.string().optional(),
 })
 
 export const PhotoSchema = z.object({
@@ -50,7 +50,7 @@ export const PhotoSchema = z.object({
   heightPx: z.number(),
   authorAttributions: z.array(AuthorAttributionSchema),
   flagContentUri: z.string().optional(),
-  googleMapsUri: z.string()
+  googleMapsUri: z.string(),
 })
 
 // Place-related Schemas
@@ -58,7 +58,7 @@ export const AddressComponentSchema = z.object({
   longText: z.string(),
   shortText: z.string(),
   types: z.array(z.string()),
-  languageCode: z.string()
+  languageCode: z.string(),
 })
 
 export const LandmarkSchema = z.object({
@@ -67,7 +67,7 @@ export const LandmarkSchema = z.object({
   displayName: DisplayNameSchema,
   types: z.array(z.string()),
   straightLineDistanceMeters: z.number(),
-  travelDistanceMeters: z.number().optional()
+  travelDistanceMeters: z.number().optional(),
 })
 
 export const ReviewSchema = z.object({
@@ -79,7 +79,7 @@ export const ReviewSchema = z.object({
   authorAttribution: AuthorAttributionSchema,
   publishTime: z.string(),
   flagContentUri: z.string(),
-  googleMapsUri: z.string()
+  googleMapsUri: z.string(),
 })
 
 export const GoogleMapsLinksSchema = z.object({
@@ -87,7 +87,7 @@ export const GoogleMapsLinksSchema = z.object({
   placeUri: z.string(),
   writeAReviewUri: z.string(),
   reviewsUri: z.string(),
-  photosUri: z.string()
+  photosUri: z.string(),
 })
 
 // Main Place Schema
@@ -101,7 +101,7 @@ export const PlaceSchema = z.object({
   addressComponents: z.array(AddressComponentSchema),
   plusCode: z.object({
     globalCode: z.string(),
-    compoundCode: z.string()
+    compoundCode: z.string(),
   }),
   location: LocationSchema,
   viewport: ViewportSchema,
@@ -123,15 +123,15 @@ export const PlaceSchema = z.object({
   accessibilityOptions: z
     .object({
       wheelchairAccessibleParking: z.boolean().optional(),
-      wheelchairAccessibleEntrance: z.boolean().optional()
+      wheelchairAccessibleEntrance: z.boolean().optional(),
     })
     .optional(),
   addressDescriptor: z
     .object({
-      landmarks: z.array(LandmarkSchema).optional()
+      landmarks: z.array(LandmarkSchema).optional(),
     })
     .optional(),
-  googleMapsLinks: GoogleMapsLinksSchema
+  googleMapsLinks: GoogleMapsLinksSchema,
 })
 
 // API Request/Response Schemas
@@ -140,11 +140,11 @@ export const TextSearchRequestBodySchema = z.object({
   locationBias: z.object({
     circle: z.object({
       center: LocationSchema,
-      radiusInMeters: z.number().positive()
-    })
+      radiusInMeters: z.number().positive(),
+    }),
   }),
   nextPageToken: z.string().optional(),
-  pageSize: z.number().positive()
+  pageSize: z.number().positive(),
 })
 
 export const TextSearchResponseSchema = z.object({
@@ -152,12 +152,12 @@ export const TextSearchResponseSchema = z.object({
   contextualContents: z
     .array(
       z.object({
-        photos: z.array(PhotoSchema).optional()
-      })
+        photos: z.array(PhotoSchema).optional(),
+      }),
     )
     .optional(),
   nextPageToken: z.string().optional(),
-  searchUri: z.string().optional()
+  searchUri: z.string().optional(),
 })
 
 // Type Inference

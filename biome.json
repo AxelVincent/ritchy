@@ -9,8 +9,7 @@
       "recommended": true,
       "correctness": {
         "noUnusedVariables": "error",
-        "noUnusedPrivateClassMembers": "error",
-        "noUnusedImports": "error"
+        "useExhaustiveDependencies": "error"
       },
       "suspicious": {
         "noEmptyInterface": "error",
@@ -31,8 +30,7 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
-      "semicolons": "asNeeded",
-      "trailingCommas": "none"
+      "semicolons": "asNeeded"
     }
   }
 }

@@ -12,7 +12,7 @@ if (!accessToken) {
 export const useMapInitialization = (
   mapContainerRef: React.RefObject<HTMLDivElement>,
   initialCenter: [number, number],
-  settings: MapSettings
+  settings: MapSettings,
 ) => {
   const mapRef = useRef<mapboxgl.Map | null>(null)
 
@@ -30,7 +30,7 @@ export const useMapInitialization = (
         center: initialCenter,
         zoom: settings.zoom,
         maxZoom: settings.maxZoom,
-        minZoom: settings.minZoom
+        minZoom: settings.minZoom,
       })
 
       // Add error handling
@@ -44,7 +44,7 @@ export const useMapInitialization = (
           accessToken: mapboxgl.accessToken,
           marker: false,
           flyTo: { duration: 0 },
-          mapboxgl
+          mapboxgl,
         }) as IControl,
         new mapboxgl.NavigationControl(),
         new mapboxgl.FullscreenControl(),
@@ -52,8 +52,8 @@ export const useMapInitialization = (
           positionOptions: { enableHighAccuracy: true },
           trackUserLocation: true,
           showUserHeading: true,
-          fitBoundsOptions: { maxZoom: 15, animate: false }
-        })
+          fitBoundsOptions: { maxZoom: 15, animate: false },
+        }),
       ]
 
       // Add controls to map

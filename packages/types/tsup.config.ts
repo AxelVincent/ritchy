@@ -5,5 +5,5 @@ export default defineConfig((options: Options) => ({
   clean: true,
   dts: true,
   format: ['esm'],
-  ...options
+  ...options,
 }))

@@ -2,7 +2,7 @@ import {
   type PlacesSearchApiResponse,
   type PlacesSearchRequestBody,
   PlacesSearchRequestBodySchema,
-  PlacesSearchResponseSchema
+  PlacesSearchResponseSchema,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -20,12 +20,12 @@ export const searchPlaces = async (
     PlacesSearchApiResponse,
     PlacesSearchRequestBody
   >,
-  res: Response<PlacesSearchApiResponse>
+  res: Response<PlacesSearchApiResponse>,
 ): Promise<void> => {
   try {
     console.log('Processing place search request', {
       body: req.body,
-      auth: req.auth
+      auth: req.auth,
     })
 
     // Add request validation
@@ -39,7 +39,7 @@ export const searchPlaces = async (
     const requestBody = {
       textQuery: parsedBody.textQuery,
       locationBias: parsedBody.locationBias,
-      pageSize: parsedBody.resultsQuantity
+      pageSize: parsedBody.resultsQuantity,
     }
     const results = await postTextSearchV1(requestBody)
 
@@ -51,7 +51,7 @@ export const searchPlaces = async (
       console.log('Validation error:', error)
       res.status(400).json({
         error: 'Invalid request data',
-        details: error.errors
+        details: error.errors,
       })
     }
 

@@ -24,5 +24,5 @@ export const websiteColumn: ColumnDef<SearchResult> = {
         </a>
       </CellWrapper>
     )
-  }
+  },
 }

@@ -5,7 +5,7 @@ import { scrapeFromOptimizedUrls } from '../services/scraperEmailsAndSocials'
 
 // Request validation schema
 const EnrichRequestSchema = z.object({
-  website: z.string().url()
+  website: z.string().url(),
 })
 
 type EnrichRequestQuery = z.infer<typeof EnrichRequestSchema>
@@ -22,7 +22,7 @@ export const enrichWebsite = async (
     unknown,
     EnrichRequestQuery
   >,
-  res: Response<EnrichApiResponse>
+  res: Response<EnrichApiResponse>,
 ): Promise<void> => {
   try {
     // Validate query parameters
@@ -30,7 +30,7 @@ export const enrichWebsite = async (
 
     console.log('Processing enrich request for website:', {
       query: req.query,
-      auth: req.auth
+      auth: req.auth,
     })
 
     // Call the scraper service
@@ -44,7 +44,7 @@ export const enrichWebsite = async (
       console.log('Validation error:', error)
       res.status(400).json({
         error: 'Invalid request parameters',
-        details: error.errors
+        details: error.errors,
       })
       return
     }

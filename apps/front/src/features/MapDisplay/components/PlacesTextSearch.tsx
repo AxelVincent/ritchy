@@ -17,7 +17,7 @@ interface PlaceSearchProps {
 
 export const PlacesTextSearch = ({
   location,
-  onResultsChange
+  onResultsChange,
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
   const [resultsQuantity, setResultsQuantity] = useState(5)
@@ -31,11 +31,11 @@ export const PlacesTextSearch = ({
       circle: {
         center: {
           latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude
+          longitude: currentLocation.longitude,
         },
-        radiusInMeters: currentLocation.radiusInMeters
-      }
-    }
+        radiusInMeters: currentLocation.radiusInMeters,
+      },
+    },
   })
 
   useEffect(() => {

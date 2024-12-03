@@ -16,7 +16,7 @@ interface Location {
 export const DEFAULT_LOCATION: Location = {
   latitude: 48.8566,
   longitude: 2.3522,
-  radiusInMeters: 1000
+  radiusInMeters: 1000,
 }
 
 export const MapDisplay = () => {
@@ -37,7 +37,7 @@ export const MapDisplay = () => {
     dataStyle: { flex: string }
   }>({
     mapStyle: { flex: 'flex-1' },
-    dataStyle: { flex: 'flex-1' }
+    dataStyle: { flex: 'flex-1' },
   })
 
   const [viewMode, setViewMode] = useState<'map' | 'data' | 'equal'>('equal')
@@ -65,7 +65,7 @@ export const MapDisplay = () => {
 
     setViewStyle({
       mapStyle: { flex: sizes.mapSize },
-      dataStyle: { flex: sizes.dataSize }
+      dataStyle: { flex: sizes.dataSize },
     })
   }
 

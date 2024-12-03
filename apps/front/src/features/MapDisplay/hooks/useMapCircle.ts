@@ -5,7 +5,7 @@ export const useMapCircle = (mapRef: React.RefObject<mapboxgl.Map>) => {
   const updateCircleData = useCallback(
     (center: mapboxgl.LngLat, radius: number) => {
       const circleSource = mapRef.current?.getSource(
-        'circle'
+        'circle',
       ) as mapboxgl.GeoJSONSource
       if (!circleSource) return
 
@@ -14,13 +14,13 @@ export const useMapCircle = (mapRef: React.RefObject<mapboxgl.Map>) => {
         properties: { radius_m: radius },
         geometry: {
           type: 'Point',
-          coordinates: [center.lng, center.lat]
-        }
+          coordinates: [center.lng, center.lat],
+        },
       }
 
       circleSource.setData(newData)
     },
-    [mapRef]
+    [mapRef],
   )
 
   return { updateCircleData }

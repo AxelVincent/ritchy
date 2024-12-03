@@ -5,9 +5,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60 * 1000, // 1 minute
-      retry: 1
-    }
-  }
+      retry: 1,
+    },
+  },
 })
 
 export const QueryProvider = ({ children }: PropsWithChildren) => {
