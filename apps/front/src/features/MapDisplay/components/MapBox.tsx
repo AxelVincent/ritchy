@@ -13,6 +13,9 @@ import { useMapCircle } from '../hooks/useMapCircle'
 import { useMapInitialization } from '../hooks/useMapInitialization'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
 import { RadiusSlider } from './RadiusSlider'
+import ReactDOM from 'react-dom'
+import { PlacePopup } from './PlacePopup'
+import '../styles.css'
 
 interface MapBoxProps {
   onLocationChange: (location: {
@@ -244,11 +247,23 @@ const createMarkerWithPopup = (
   setSelectedPlaceId: (placeId: string | null) => void,
   setMapBoxHoveredPlaceId: (placeId: string | null) => void
 ) => {
+  // Create a DOM node for React to render into
+  const popupNode = document.createElement('div')
+  
   const popup = new mapboxgl.Popup({
     offset: 25,
     maxWidth: '300px',
-    className: 'place-popup'
-  }).setHTML(createPopupContent(place))
+  })
+
+  // Render React component into the popup
+  ReactDOM.render(
+    <PlacePopup 
+      place={place}
+    />, 
+    popupNode
+  )
+  
+  popup.setDOMContent(popupNode)
 
   const marker = new mapboxgl.Marker({
     color: color,
@@ -260,13 +275,18 @@ const createMarkerWithPopup = (
   const element = marker.getElement()
   // Add hover handlers to marker element
   element.addEventListener('mouseenter', () => {
-    console.log('🎯 marker hovered', place.id)
+    // console.log('🎯 marker hovered', place.id)
     setMapBoxHoveredPlaceId(place.id)
+  })
+
+  element.addEventListener('mouseleave', () => {
+    // console.log('🎯 marker unhovered', place.id)
+    setMapBoxHoveredPlaceId(null)
   })
 
   // Add click handler to marker element
   element.addEventListener('click', () => {
-    console.log('🎯 marker clicked', place.id)
+    // console.log('🎯 marker clicked', place.id)
     setSelectedPlaceId(place.id)
   })
 
@@ -274,53 +294,10 @@ const createMarkerWithPopup = (
   popup.on('open', () => {
     const closeButton = document.querySelector('.mapboxgl-popup-close-button')
     closeButton?.addEventListener('click', () => {
-      console.log('🎯 popup close button clicked', place.id)
+      // console.log('🎯 popup close button clicked', place.id)
       setSelectedPlaceId(null)
     })
   })
 
   return marker
-}
-
-const createPopupContent = (place: Place) => {
-  return `
-    <div class="p-4 max-w-sm text-black">
-      <h3 class="scroll-m-20 text-lg font-semibold tracking-tight mb-2 text-black">${place.displayName}</h3>
-      ${
-        place.rating
-          ? `
-        <div class="flex items-center gap-1 mb-2 text-sm">
-          <span class="text-yellow-500">★</span>
-          <span class="text-black">${place.rating.toFixed(1)}</span>
-          ${place.userRatingCount ? `<span class="text-gray-600">(${place.userRatingCount} reviews)</span>` : ''}
-        </div>
-      `
-          : ''
-      }
-      <p class="text-sm text-gray-600 mb-2">${place.shortFormattedAddress}</p>
-      ${
-        place.currentOpeningHours
-          ? `
-        <div class="text-sm ${
-          place.currentOpeningHours.openNow
-            ? 'text-emerald-600'
-            : 'text-red-600'
-        }">
-          ${place.currentOpeningHours.openNow ? 'Open now' : 'Closed'}
-        </div>
-      `
-          : ''
-      }
-      <div class="mt-3">
-        <a 
-          href="${place.googleMapsUri}" 
-          target="_blank" 
-          class="text-sm text-blue-600 hover:underline inline-flex items-center"
-        >
-          View on Google Maps
-          <span class="ml-1">↗</span>
-        </a>
-      </div>
-    </div>
-  `
 }
