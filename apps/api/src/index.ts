@@ -11,20 +11,20 @@ app.use(clerkMiddleware())
 app.use(
   cors({
     origin: process.env.FRONTEND_BASE_URL,
-    credentials: true
-  })
+    credentials: true,
+  }),
 )
 
 // Protect a route based on authorization status
 const isAuthenticated = (
   req: express.Request,
   res: express.Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   console.log('isAuthenticated middleware called', {
     url: req.url,
     method: req.method,
-    body: req.body
+    body: req.body,
   })
 
   try {
@@ -33,7 +33,7 @@ const isAuthenticated = (
     if (!userId || !sessionId) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Authentication required'
+        message: 'Authentication required',
       })
       return
     }
@@ -44,7 +44,7 @@ const isAuthenticated = (
     console.error('Authentication error:', error)
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to process authentication'
+      message: 'Failed to process authentication',
     })
     return
   }

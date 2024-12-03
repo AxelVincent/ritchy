@@ -5,15 +5,18 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist/**"
-  ],
+  "files": ["dist/**"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "biome format .",
+    "check": "biome check .",
+    "format:fix": "biome format --write ./src",
+    "check:fix": "biome check --apply ./src"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.5.3",
     "tsup": "8.3.5",
     "zod": "3.23.8"
   },

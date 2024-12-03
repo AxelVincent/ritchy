@@ -17,7 +17,7 @@ async function getGmapLeads() {
       RESEARCH_QUERY,
       PARIS_LAT,
       PARIS_LON,
-      ZOOM
+      ZOOM,
     )
 
     const queryParamResult = await db
@@ -26,7 +26,7 @@ async function getGmapLeads() {
         researchQuery: RESEARCH_QUERY,
         latitude: PARIS_LAT,
         longitude: PARIS_LON,
-        zoom: ZOOM
+        zoom: ZOOM,
       })
       .returning({ id: queryParam.id })
 
@@ -39,7 +39,7 @@ async function getGmapLeads() {
         website: result.website,
         description: result.description,
         latitude: result.gps_coordinates.latitude,
-        longitude: result.gps_coordinates.longitude
+        longitude: result.gps_coordinates.longitude,
       }
     })
 
@@ -54,7 +54,7 @@ async function getLeadsContent() {
   const leadsWithWebsites = await db
     .select({
       id: lead.id,
-      website: lead.website
+      website: lead.website,
     })
     .from(lead)
     .where(sql`${lead.queryParamId} = 5`)
@@ -84,14 +84,14 @@ async function getLeadsContent() {
               (email: { email: string; isMatchingDomain: boolean }) => ({
                 leadId: id,
                 email: email.email,
-                isMatchingDomain: email.isMatchingDomain
-              })
-            )
+                isMatchingDomain: email.isMatchingDomain,
+              }),
+            ),
           )
           .onConflictDoNothing()
         return { id, website, leadData }
-      }
-    )
+      },
+    ),
   )
 
   process.exit(0)

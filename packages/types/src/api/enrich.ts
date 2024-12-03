@@ -1,16 +1,16 @@
+import {
+  Camera,
+  Facebook,
+  Globe,
+  Instagram,
+  Linkedin,
+  type LucideIcon,
+  MessageCircle,
+  Twitter,
+  Youtube,
+} from 'lucide-react'
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../common'
-import {
-  Facebook,
-  Twitter,
-  Linkedin,
-  Instagram,
-  Youtube,
-  MessageCircle,
-  Camera,
-  Globe,
-  type LucideIcon
-} from 'lucide-react'
 
 type SocialMediaConfigType = {
   [K: string]: {
@@ -28,27 +28,27 @@ export const SOCIAL_MEDIA_CONFIG: SocialMediaConfigType = {
   tiktok: { domain: 'tiktok.com', icon: MessageCircle },
   pinterest: { domain: 'pinterest.com', icon: Camera },
   reddit: { domain: 'reddit.com', icon: Globe },
-  snapchat: { domain: 'snapchat.com', icon: Camera }
+  snapchat: { domain: 'snapchat.com', icon: Camera },
 } as const
 
 // Basic/Common Schemas
 const SocialMediaPlatformEnum = z.enum(
-  Object.keys(SOCIAL_MEDIA_CONFIG) as [string, ...string[]]
+  Object.keys(SOCIAL_MEDIA_CONFIG) as [string, ...string[]],
 )
 
 // API Request/Response Schemas
 export const EnrichRequestSchema = z.object({
-  website: z.string().url()
+  website: z.string().url(),
 })
 
 export const EnrichResponseSchema = z.object({
   emails: z.array(z.string().email()),
-  socialLinks: z.record(SocialMediaPlatformEnum, z.array(z.string().url()))
+  socialLinks: z.record(SocialMediaPlatformEnum, z.array(z.string().url())),
 })
 
 export const EnrichApiResponseSchema = z.union([
   EnrichResponseSchema,
-  ApiErrorResponseSchema
+  ApiErrorResponseSchema,
 ])
 
 // Type inference from schemas

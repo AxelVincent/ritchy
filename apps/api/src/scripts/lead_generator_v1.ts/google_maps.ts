@@ -77,14 +77,14 @@ export async function searchGoogleMaps(
   query: string,
   latitude: number,
   longitude: number,
-  zoom: string
+  zoom: string,
 ): Promise<SearchResponse> {
   const url = 'https://www.searchapi.io/api/v1/search'
   const params = new URLSearchParams({
     engine: 'google_maps',
     q: query,
     ll: `@${latitude},${longitude},${zoom}`,
-    api_key: String(process.env.GMAP_SEARCH_API_KEY)
+    api_key: String(process.env.GMAP_SEARCH_API_KEY),
   })
 
   try {

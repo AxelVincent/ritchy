@@ -4,7 +4,7 @@ import { ApiErrorResponseSchema } from '../common'
 // Basic/Common Schemas
 export const LocationSchema = z.object({
   latitude: z.number(),
-  longitude: z.number()
+  longitude: z.number(),
 })
 
 // API Request/Response Schemas
@@ -13,10 +13,10 @@ export const PlacesSearchRequestBodySchema = z.object({
   locationBias: z.object({
     circle: z.object({
       center: LocationSchema,
-      radiusInMeters: z.number().positive()
-    })
+      radiusInMeters: z.number().positive(),
+    }),
   }),
-  resultsQuantity: z.number().positive()
+  resultsQuantity: z.number().positive(),
 })
 
 export const PlaceSchema = z.object({
@@ -35,21 +35,21 @@ export const PlaceSchema = z.object({
       periods: z.array(
         z.object({
           open: z.object({
-            time: z.string()
-          })
-        })
-      )
+            time: z.string(),
+          }),
+        }),
+      ),
     })
     .optional(),
   googleMapsUri: z.string(),
-  internationalPhoneNumber: z.string().optional()
+  internationalPhoneNumber: z.string().optional(),
 })
 
 export const PlacesSearchResponseSchema = z.array(PlaceSchema)
 
 export const PlacesSearchApiResponseSchema = z.union([
   PlacesSearchResponseSchema,
-  ApiErrorResponseSchema
+  ApiErrorResponseSchema,
 ])
 
 // Type inference from schemas

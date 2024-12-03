@@ -14,7 +14,7 @@ interface Square {
 
 export const getLargestSquareInCircle = (
   center: Coordinate,
-  radiusInMeters: number
+  radiusInMeters: number,
 ): Square => {
   const centerPoint = turf.point([center.longitude, center.latitude])
 
@@ -28,26 +28,26 @@ export const getLargestSquareInCircle = (
   // Calculate corners using bearings (45° intervals starting from NE)
   const corners = [45, 135, 225, 315].map((bearing) =>
     turf.destination(centerPoint, squareSideKm, bearing, {
-      units: 'kilometers'
-    })
+      units: 'kilometers',
+    }),
   )
 
   return {
     northEast: {
       latitude: corners[0].geometry.coordinates[1],
-      longitude: corners[0].geometry.coordinates[0]
+      longitude: corners[0].geometry.coordinates[0],
     },
     southEast: {
       latitude: corners[1].geometry.coordinates[1],
-      longitude: corners[1].geometry.coordinates[0]
+      longitude: corners[1].geometry.coordinates[0],
     },
     southWest: {
       latitude: corners[2].geometry.coordinates[1],
-      longitude: corners[2].geometry.coordinates[0]
+      longitude: corners[2].geometry.coordinates[0],
     },
     northWest: {
       latitude: corners[3].geometry.coordinates[1],
-      longitude: corners[3].geometry.coordinates[0]
-    }
+      longitude: corners[3].geometry.coordinates[0],
+    },
   }
 }

@@ -6,7 +6,7 @@ import {
   serial,
   text,
   timestamp,
-  unique
+  unique,
 } from 'drizzle-orm/pg-core'
 
 export const queryParam = pgTable('query_param', {
@@ -16,7 +16,7 @@ export const queryParam = pgTable('query_param', {
   longitude: doublePrecision('longitude').notNull(),
   zoom: text('zoom').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
 export const lead = pgTable('lead', {
@@ -33,7 +33,7 @@ export const lead = pgTable('lead', {
   description: text('description'),
   websiteContent: text('website_content'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
 export const leadEmail = pgTable(
@@ -46,9 +46,9 @@ export const leadEmail = pgTable(
     email: text('email').notNull(),
     isMatchingDomain: boolean('is_matching_domain').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow()
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => ({
-    uniqueLeadIdEmail: unique().on(table.leadId, table.email)
-  })
+    uniqueLeadIdEmail: unique().on(table.leadId, table.email),
+  }),
 )

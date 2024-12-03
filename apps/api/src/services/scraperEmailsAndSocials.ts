@@ -18,13 +18,13 @@ const POTENTIAL_SUBPAGES = [
   '/careers',
   '/jobs',
   '/get-in-touch',
-  '/reach-us'
+  '/reach-us',
 ]
 
 type SocialMediaPlatform = keyof typeof SOCIAL_MEDIA_CONFIG
 
 const SOCIAL_MEDIA_DOMAINS = Object.values(SOCIAL_MEDIA_CONFIG).map(
-  (config) => config.domain
+  (config) => config.domain,
 )
 
 const IS_DEBUG = process.env.NODE_ENV === 'development'
@@ -74,7 +74,7 @@ async function getPagesFromSitemap(sitemapUrl: string): Promise<string[]> {
 function filterRelevantUrls(
   sitemapUrls: string[],
   baseUrl: string,
-  potentialSubpages: string[]
+  potentialSubpages: string[],
 ): string[] {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
 
@@ -82,7 +82,7 @@ function filterRelevantUrls(
     // Include base URL along with subpages
     return [
       normalizedBaseUrl,
-      ...potentialSubpages.map((subpage) => `${normalizedBaseUrl}${subpage}`)
+      ...potentialSubpages.map((subpage) => `${normalizedBaseUrl}${subpage}`),
     ]
   }
 
@@ -94,7 +94,7 @@ function filterRelevantUrls(
     ...sitemapUrls.filter((url) => {
       const path = url.replace(baseDomain, '').replace(/\/+/g, '/')
       return potentialSubpages.includes(path)
-    })
+    }),
   ]
 }
 
@@ -106,14 +106,14 @@ function filterRelevantUrls(
  */
 async function scrapeEmailsAndSocials(
   url: string,
-  socialMediaDomains: string[]
+  socialMediaDomains: string[],
 ): Promise<ScraperResult> {
   try {
     const response = await fetch(url, {
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      },
     })
 
     if (!response.ok) {
@@ -158,7 +158,7 @@ async function scrapeEmailsAndSocials(
 
       // Extract everything up to the domain extension
       const emailMatch = cleanedEmail.match(
-        new RegExp(`^([^\\s]+@[^\\s]+\\.${websiteDomain})`, 'i')
+        new RegExp(`^([^\\s]+@[^\\s]+\\.${websiteDomain})`, 'i'),
       )
       if (emailMatch) {
         cleanedEmail = emailMatch[1]
@@ -195,20 +195,20 @@ async function scrapeEmailsAndSocials(
     const matchedEmails = [
       ...(html.match(emailRegex) || []),
       ...(textContent.match(emailRegex) || []),
-      ...(dataAttributes.match(emailRegex) || [])
+      ...(dataAttributes.match(emailRegex) || []),
     ].filter(isValidEmail)
 
     const normalizeEmail = (email: string): string => {
       const match = email.match(
-        /([a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/
+        /([a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/,
       )?.[1]
       return match ? match.toLowerCase().trim() : email
     }
 
     const emails = Array.from(
       new Set(
-        [...mailtoLinks, ...matchedEmails].map(normalizeEmail).filter(Boolean)
-      )
+        [...mailtoLinks, ...matchedEmails].map(normalizeEmail).filter(Boolean),
+      ),
     )
 
     // Extract social media links
@@ -230,7 +230,7 @@ async function scrapeEmailsAndSocials(
         const links = [
           $(element).attr('href'),
           $(element).data('href'),
-          $(element).attr('content')
+          $(element).attr('content'),
         ].filter(Boolean) as string[]
 
         for (const link of links) {
@@ -248,7 +248,7 @@ async function scrapeEmailsAndSocials(
             }
           }
         }
-      }
+      },
     )
 
     // Look for social usernames in common patterns
@@ -256,7 +256,7 @@ async function scrapeEmailsAndSocials(
       /(?:twitter\.com|x\.com)\/([a-zA-Z0-9_]{1,15})/g, // Twitter usernames are max 15 chars
       /(?:facebook\.com|fb\.com)\/(?!pages\/)([a-zA-Z0-9.]{5,50})/g, // Exclude "pages/" prefix
       /(?:instagram\.com)\/([a-zA-Z0-9._]{1,30})\/?$/g, // Instagram usernames
-      /(?:linkedin\.com\/(?:in|company)\/[a-zA-Z0-9-]{3,100})/g // LinkedIn profiles/companies
+      /(?:linkedin\.com\/(?:in|company)\/[a-zA-Z0-9-]{3,100})/g, // LinkedIn profiles/companies
     ]
 
     const invalidUsernames = [
@@ -266,7 +266,7 @@ async function scrapeEmailsAndSocials(
       'media',
       'import',
       'charset',
-      'layer'
+      'layer',
     ]
     const textWithUsernames = $('body').text()
     for (const pattern of usernamePatterns) {
@@ -319,7 +319,7 @@ async function scrapeEmailsAndSocials(
       return {
         emails: [],
         socialLinks: {},
-        error: 'Network error'
+        error: 'Network error',
       }
     }
 
@@ -328,14 +328,14 @@ async function scrapeEmailsAndSocials(
       return {
         emails: [],
         socialLinks: {},
-        error: status ? `Failed to fetch (${status})` : 'HTTP error'
+        error: status ? `Failed to fetch (${status})` : 'HTTP error',
       }
     }
 
     return {
       emails: [],
       socialLinks: {},
-      error: 'Failed to parse page'
+      error: 'Failed to parse page',
     }
   }
 }
@@ -348,7 +348,7 @@ async function scrapeEmailsAndSocials(
  * @returns - Combined emails and social links across all relevant subpages
  */
 const mapSocialLinks = (
-  socialLinks: Record<string, string[]>
+  socialLinks: Record<string, string[]>,
 ): Record<SocialMediaPlatform, string[]> => {
   const mapped: Partial<Record<SocialMediaPlatform, string[]>> = {}
 
@@ -364,7 +364,7 @@ const mapSocialLinks = (
 
 async function scrapeFromOptimizedUrls(
   baseUrl: string,
-  concurrencyLimit = 5
+  concurrencyLimit = 5,
 ): Promise<{
   emails: string[]
   socialLinks: Record<SocialMediaPlatform, string[]>
@@ -378,7 +378,7 @@ async function scrapeFromOptimizedUrls(
   const relevantUrls = filterRelevantUrls(
     sitemapUrls,
     baseUrl,
-    POTENTIAL_SUBPAGES
+    POTENTIAL_SUBPAGES,
   )
   console.log(`Filtered ${relevantUrls.length} relevant URLs from sitemap.`)
 
@@ -395,7 +395,7 @@ async function scrapeFromOptimizedUrls(
       }
       const { emails, socialLinks, error } = await scrapeEmailsAndSocials(
         url,
-        SOCIAL_MEDIA_DOMAINS
+        SOCIAL_MEDIA_DOMAINS,
       )
 
       if (error && IS_DEBUG) {
@@ -416,7 +416,7 @@ async function scrapeFromOptimizedUrls(
           }
         }
       }
-    })
+    }),
   )
 
   await Promise.all(tasks)
@@ -428,7 +428,7 @@ async function scrapeFromOptimizedUrls(
 
   return {
     emails: Array.from(allEmails),
-    socialLinks: mapSocialLinks(aggregatedSocialLinks)
+    socialLinks: mapSocialLinks(aggregatedSocialLinks),
   }
 }
 

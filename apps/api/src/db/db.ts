@@ -10,11 +10,11 @@ const connectionData = {
   database: process.env.DB_NAME,
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  max: 1
+  max: 1,
 }
 
 const queryConnection = postgres(connectionData)
 
 export const db = drizzle(queryConnection, {
-  schema
+  schema,
 })

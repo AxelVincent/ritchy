@@ -8,12 +8,12 @@ export default defineConfig({
     compilerOptions: {
       composite: false,
       incremental: false,
-      tsBuildInfoFile: undefined
-    }
+      tsBuildInfoFile: undefined,
+    },
   },
   sourcemap: true,
   target: 'node22',
   treeshake: true,
   splitting: false,
-  outDir: 'dist'
+  outDir: 'dist',
 })
