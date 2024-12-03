@@ -32,5 +32,5 @@ export const nameColumn: ColumnDef<SearchResult> = {
         {row.original.displayName}
       </CellWrapper>
     )
-  }
+  },
 }

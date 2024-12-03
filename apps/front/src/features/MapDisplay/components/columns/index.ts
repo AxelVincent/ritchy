@@ -13,7 +13,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   websiteColumn,
   phoneColumn,
   socialEmailColumn,
-  actionsColumn
+  actionsColumn,
 ]
 
 export * from './CellWrapper'

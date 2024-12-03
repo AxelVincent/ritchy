@@ -1,22 +1,17 @@
-import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Place } from '@ritchy/types'
-import { Copy } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ExternalLink } from "lucide-react"
+import { Copy } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
+import { useState } from 'react'
 
 interface CopyTextProps {
   text: string
   className?: string
 }
 
-const CopyText = ({ text, className = "" }: CopyTextProps) => {
+const CopyText = ({ text, className = '' }: CopyTextProps) => {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -26,7 +21,7 @@ const CopyText = ({ text, className = "" }: CopyTextProps) => {
   }
 
   return (
-    <p 
+    <p
       className={`flex items-center gap-2 cursor-pointer hover:text-foreground transition-colors ${className}`}
       onClick={handleCopy}
       onKeyDown={(e) => e.key === 'Enter' && handleCopy()}
@@ -56,29 +51,33 @@ export const PlacePopup = ({ place }: PlacePopupProps) => {
             <span className="text-yellow-500">★</span>
             <span>{place.rating.toFixed(1)}</span>
             {place.userRatingCount && (
-              <span className="text-muted-foreground">({place.userRatingCount} reviews)</span>
+              <span className="text-muted-foreground">
+                ({place.userRatingCount} reviews)
+              </span>
             )}
           </div>
         )}
-        
+
         {place.shortFormattedAddress && (
-          <CopyText 
-            text={place.shortFormattedAddress} 
+          <CopyText
+            text={place.shortFormattedAddress}
             className="text-sm text-muted-foreground"
           />
         )}
 
         {place.currentOpeningHours && (
-          <Badge className={place.currentOpeningHours.openNow ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
+          <Badge
+            className={
+              place.currentOpeningHours.openNow
+                ? 'bg-green-500 text-white'
+                : 'bg-red-500 text-white'
+            }
+          >
             {place.currentOpeningHours.openNow ? 'Open now' : 'Closed'}
           </Badge>
         )}
 
-        <Button
-          variant="link"
-          className="h-auto p-0"
-          asChild
-        >
+        <Button variant="link" className="h-auto p-0" asChild>
           <a
             href={place.googleMapsUri}
             target="_blank"

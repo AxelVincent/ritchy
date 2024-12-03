@@ -166,7 +166,7 @@ interface ContextualContent {
 
 export const createMockTextSearchAPI = () => {
   const textSearch = async (
-    request: TextSearchRequest
+    request: TextSearchRequest,
   ): Promise<ApiResponse> => {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -180,7 +180,7 @@ export const createMockTextSearchAPI = () => {
       name: `${request.textQuery} Location ${index + 1}`,
       displayName: {
         text: `${request.textQuery} Location ${index + 1}`,
-        languageCode: 'en'
+        languageCode: 'en',
       },
       formattedAddress: `${100 + index} Mock Street, ${request.textQuery.split(' ')[0]}, ST 12345, USA`,
       adrFormatAddress: `${100 + index} Mock Street, ${request.textQuery.split(' ')[0]}, ST 12345, USA`,
@@ -191,27 +191,27 @@ export const createMockTextSearchAPI = () => {
               (Math.random() - 0.5) * 0.01,
             longitude:
               request.locationBias.circle.center.longitude +
-              (Math.random() - 0.5) * 0.01
+              (Math.random() - 0.5) * 0.01,
           }
         : {
             latitude: 32.7809617 + (Math.random() - 0.5) * 0.1,
-            longitude: -79.9310849 + (Math.random() - 0.5) * 0.1
+            longitude: -79.9310849 + (Math.random() - 0.5) * 0.1,
           },
       addressComponents: [],
       plusCode: {
         globalCode: 'mock-global-code',
-        compoundCode: 'mock-compound-code'
+        compoundCode: 'mock-compound-code',
       },
       viewport: {
         low: { latitude: 32.7, longitude: -79.9 },
-        high: { latitude: 32.8, longitude: -79.8 }
+        high: { latitude: 32.8, longitude: -79.8 },
       },
       googleMapsLinks: {
         directionsUri: 'mock-uri',
         placeUri: 'mock-uri',
         writeAReviewUri: 'mock-uri',
         reviewsUri: 'mock-uri',
-        photosUri: 'mock-uri'
+        photosUri: 'mock-uri',
       },
       rating: 3 + Math.random() * 2,
       userRatingCount: Math.floor(Math.random() * 500),
@@ -224,14 +224,14 @@ export const createMockTextSearchAPI = () => {
       iconMaskBaseUri:
         'https://maps.gstatic.com/mapfiles/place_api/icons/v2/restaurant_pinlet',
       iconBackgroundColor: '#FF9E67',
-      utcOffsetMinutes: -240
+      utcOffsetMinutes: -240,
     }))
 
     return {
       places,
       contextualContents: [],
       nextPageToken: `mock_next_page_${Date.now()}`,
-      searchUri: `https://www.google.com/maps/search/${encodeURIComponent(request.textQuery)}`
+      searchUri: `https://www.google.com/maps/search/${encodeURIComponent(request.textQuery)}`,
     }
   }
 

@@ -31,5 +31,5 @@ export const columns: ColumnDef<SearchResult>[] = [
   ratingCountColumn,
   addressColumn,
   typesColumn,
-  actionsColumn
+  actionsColumn,
 ]

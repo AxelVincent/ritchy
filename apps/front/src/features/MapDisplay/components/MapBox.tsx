@@ -6,15 +6,15 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState
+  useState,
 } from 'react'
+import ReactDOM from 'react-dom'
 import { DEFAULT_LOCATION } from '../MapDisplay'
 import { useMapCircle } from '../hooks/useMapCircle'
 import { useMapInitialization } from '../hooks/useMapInitialization'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
-import { RadiusSlider } from './RadiusSlider'
-import ReactDOM from 'react-dom'
 import { PlacePopup } from './PlacePopup'
+import { RadiusSlider } from './RadiusSlider'
 import '../styles.css'
 
 interface MapBoxProps {
@@ -41,7 +41,7 @@ export const MapBox: FC<MapBoxProps> = ({
   dataTableHoveredPlaceId,
   setSelectedPlaceId,
   viewMode,
-  setMapBoxHoveredPlaceId
+  setMapBoxHoveredPlaceId,
 }) => {
   // Refs for DOM elements and state management
   const mapContainerRef = useRef<HTMLDivElement>(null) // Container div for map
@@ -53,21 +53,21 @@ export const MapBox: FC<MapBoxProps> = ({
     () =>
       [DEFAULT_LOCATION.longitude, DEFAULT_LOCATION.latitude] as [
         number,
-        number
+        number,
       ],
-    []
+    [],
   )
 
   // State for radius control
   const [radiusInMeters, setRadiusInMeters] = useState(
-    DEFAULT_LOCATION.radiusInMeters
+    DEFAULT_LOCATION.radiusInMeters,
   )
 
   // Initialize map and circle functionality
   const mapRef = useMapInitialization(
     mapContainerRef,
     initialCenter,
-    MAP_SETTINGS
+    MAP_SETTINGS,
   )
   const { updateCircleData } = useMapCircle(mapRef)
 
@@ -93,10 +93,10 @@ export const MapBox: FC<MapBoxProps> = ({
             type: 'Point',
             coordinates: [
               mapRef.current.getCenter().lng,
-              mapRef.current.getCenter().lat
-            ]
-          }
-        }
+              mapRef.current.getCenter().lat,
+            ],
+          },
+        },
       })
 
       // Add circle layer with zoom-based radius scaling
@@ -116,12 +116,12 @@ export const MapBox: FC<MapBoxProps> = ({
             [
               '*',
               ['/', ['*', ['number', ['get', 'radius_m']], 1], 111319.9],
-              4194304
-            ]
+              4194304,
+            ],
           ],
           'circle-color': '#007cbf',
-          'circle-opacity': 0.3
-        }
+          'circle-opacity': 0.3,
+        },
       })
     })
 
@@ -139,7 +139,7 @@ export const MapBox: FC<MapBoxProps> = ({
         onLocationChange({
           latitude: center.lat,
           longitude: center.lng,
-          radiusInMeters
+          radiusInMeters,
         })
       }
     })
@@ -162,7 +162,7 @@ export const MapBox: FC<MapBoxProps> = ({
           place,
           '#22c55e',
           setSelectedPlaceId,
-          setMapBoxHoveredPlaceId
+          setMapBoxHoveredPlaceId,
         )
         marker.addTo(mapRef.current)
         markersMapRef.current.set(place.id, { marker, place })
@@ -182,14 +182,14 @@ export const MapBox: FC<MapBoxProps> = ({
   useEffect(() => {
     console.log(
       '🔄 hoveredPlaceId useEffect triggered',
-      dataTableHoveredPlaceId
+      dataTableHoveredPlaceId,
     )
     if (!mapRef.current) return
 
     // Close previous popup if exists
     if (currentHoveredPlaceIdRef.current) {
       const previousMarkerData = markersMapRef.current.get(
-        currentHoveredPlaceIdRef.current
+        currentHoveredPlaceIdRef.current,
       )
       if (previousMarkerData?.marker.getPopup()?.isOpen()) {
         previousMarkerData.marker.togglePopup()
@@ -222,11 +222,11 @@ export const MapBox: FC<MapBoxProps> = ({
         onLocationChange({
           latitude: center.lat,
           longitude: center.lng,
-          radiusInMeters: newValue
+          radiusInMeters: newValue,
         })
       }
     },
-    [updateCircleData, onLocationChange, mapRef]
+    [updateCircleData, onLocationChange, mapRef],
   )
 
   return (
@@ -245,29 +245,24 @@ const createMarkerWithPopup = (
   place: Place,
   color: string,
   setSelectedPlaceId: (placeId: string | null) => void,
-  setMapBoxHoveredPlaceId: (placeId: string | null) => void
+  setMapBoxHoveredPlaceId: (placeId: string | null) => void,
 ) => {
   // Create a DOM node for React to render into
   const popupNode = document.createElement('div')
-  
+
   const popup = new mapboxgl.Popup({
     offset: 25,
     maxWidth: '300px',
   })
 
   // Render React component into the popup
-  ReactDOM.render(
-    <PlacePopup 
-      place={place}
-    />, 
-    popupNode
-  )
-  
+  ReactDOM.render(<PlacePopup place={place} />, popupNode)
+
   popup.setDOMContent(popupNode)
 
   const marker = new mapboxgl.Marker({
     color: color,
-    scale: 0.8
+    scale: 0.8,
   })
     .setLngLat([place.location.longitude, place.location.latitude])
     .setPopup(popup)

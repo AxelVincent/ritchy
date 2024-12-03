@@ -39,5 +39,5 @@ export const ratingColumn: ColumnDef<SearchResult> = {
         )}
       </CellWrapper>
     )
-  }
+  },
 }

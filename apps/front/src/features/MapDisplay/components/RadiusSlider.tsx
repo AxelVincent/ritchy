@@ -10,7 +10,7 @@ interface RadiusSliderProps {
 export const RadiusSlider: FC<RadiusSliderProps> = ({
   value,
   onChange,
-  settings
+  settings,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(Number.parseFloat(e.target.value))

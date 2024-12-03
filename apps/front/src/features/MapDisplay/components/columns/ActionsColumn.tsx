@@ -3,7 +3,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import type { ColumnDef } from '@tanstack/react-table'
 import { MoreHorizontal } from 'lucide-react'
@@ -38,5 +38,5 @@ export const actionsColumn: ColumnDef<SearchResult> = {
         </DropdownMenuContent>
       </DropdownMenu>
     )
-  }
+  },
 }

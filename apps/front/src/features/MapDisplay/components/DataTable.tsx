@@ -3,7 +3,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
@@ -12,7 +12,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table'
 import {
   type ColumnDef,
@@ -24,7 +24,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable
+  useReactTable,
 } from '@tanstack/react-table'
 import clsx from 'clsx'
 import { ChevronDown } from 'lucide-react'
@@ -44,7 +44,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   data,
   selectedPlaceId,
   onRowHover,
-  mapBoxHoveredPlaceId
+  mapBoxHoveredPlaceId,
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -66,13 +66,13 @@ export const DataTable = <TData extends SearchResult, TValue>({
       sorting,
       columnFilters,
       columnVisibility,
-      rowSelection
+      rowSelection,
     },
     initialState: {
       pagination: {
-        pageSize: 10
-      }
-    }
+        pageSize: 10,
+      },
+    },
   })
 
   return (
@@ -112,7 +112,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     {column.id
                       .split(/(?=[A-Z])|(?:And)/)
                       .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
                       )
                       .join(' ')}
                   </DropdownMenuCheckboxItem>
@@ -130,7 +130,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   <TableHead key={header.id}>
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableHead>
                 ))}
@@ -150,14 +150,14 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     selectedPlaceId === (row.original as SearchResult).id &&
                       'bg-muted',
                     mapBoxHoveredPlaceId ===
-                      (row.original as SearchResult).id && 'bg-accent'
+                      (row.original as SearchResult).id && 'bg-accent',
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

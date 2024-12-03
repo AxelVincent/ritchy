@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
 } from '@/components/ui/popover'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { SearchResult } from '../Columns'
@@ -46,5 +46,5 @@ export const typesColumn: ColumnDef<SearchResult> = {
         </div>
       </CellWrapper>
     )
-  }
+  },
 }

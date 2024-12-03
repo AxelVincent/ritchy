@@ -13,19 +13,19 @@ const routes = {
   public: [
     {
       path: '/',
-      component: HomeRoute
-    }
+      component: HomeRoute,
+    },
   ],
   protected: [
     {
       path: '/map-display',
-      component: MapDisplayRoute
-    }
-  ]
+      component: MapDisplayRoute,
+    },
+  ],
 } as const
 
 const rootRoute = createRootRoute({
-  component: RootRoute
+  component: RootRoute,
 })
 
 // Create public routes
@@ -33,35 +33,35 @@ const publicRoutes = routes.public.map((route) =>
   createRoute({
     getParentRoute: () => rootRoute,
     path: route.path,
-    component: route.component
-  })
+    component: route.component,
+  }),
 )
 
 // Create protected routes under protected layout
 const protectedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'protected',
-  component: ProtectedLayout
+  component: ProtectedLayout,
 })
 
 const protectedRoutes = routes.protected.map((route) =>
   createRoute({
     getParentRoute: () => protectedLayoutRoute,
     path: route.path,
-    component: route.component
-  })
+    component: route.component,
+  }),
 )
 
 const routeTree = rootRoute.addChildren([
   ...publicRoutes,
-  protectedLayoutRoute.addChildren(protectedRoutes)
+  protectedLayoutRoute.addChildren(protectedRoutes),
 ])
 
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
   defaultErrorComponent: ({ error }) => <ErrorPage error={error} />,
-  defaultPendingComponent: () => <LoadingSpinner />
+  defaultPendingComponent: () => <LoadingSpinner />,
 })
 
 declare module '@tanstack/react-router' {

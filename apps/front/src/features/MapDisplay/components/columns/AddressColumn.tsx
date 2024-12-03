@@ -12,5 +12,5 @@ export const addressColumn: ColumnDef<SearchResult> = {
     if (!address) return null
 
     return <CellWrapper copyValue={address}>{address}</CellWrapper>
-  }
+  },
 }

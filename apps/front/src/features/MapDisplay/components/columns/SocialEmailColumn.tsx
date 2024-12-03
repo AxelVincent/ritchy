@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
@@ -22,7 +22,7 @@ import { CellWrapper } from './CellWrapper'
 
 const SocialCard = ({
   platform,
-  links
+  links,
 }: { platform: SocialMediaPlatform; links: string[] }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const config = SOCIAL_MEDIA_CONFIG[platform]
@@ -69,7 +69,7 @@ const SocialCard = ({
 const LinkItem = ({
   url,
   domain,
-  icon: Icon
+  icon: Icon,
 }: {
   url: string
   domain: string
@@ -79,7 +79,7 @@ const LinkItem = ({
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(
-      url.startsWith('mailto:') ? url.slice(7) : url
+      url.startsWith('mailto:') ? url.slice(7) : url,
     )
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -207,7 +207,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
               disabled={!hasContent}
               className={cn(
                 'w-32',
-                hasContent && 'text-green-600 hover:text-green-700'
+                hasContent && 'text-green-600 hover:text-green-700',
               )}
             >
               {hasContent ? `View contacts (${totalResults})` : 'No contacts'}
@@ -272,5 +272,5 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
         </Dialog>
       </CellWrapper>
     )
-  }
+  },
 }

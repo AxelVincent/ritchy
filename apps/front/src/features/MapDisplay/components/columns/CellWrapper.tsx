@@ -11,7 +11,7 @@ export const CellWrapper = ({
   children,
   copyValue,
   truncate = true,
-  maxWidth
+  maxWidth,
 }: CellWrapperProps) => {
   const [copied, setCopied] = useState(false)
 

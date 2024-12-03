@@ -9,7 +9,7 @@ if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>
       <App />
-    </StrictMode>
+    </StrictMode>,
   )
 } else {
   console.error('Root element not found')

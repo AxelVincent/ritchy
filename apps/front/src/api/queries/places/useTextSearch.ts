@@ -2,18 +2,18 @@ import { createApiClient } from '@/lib/api/createApiClient'
 import { useAuth } from '@clerk/clerk-react'
 import type {
   PlacesSearchRequestBody,
-  PlacesSearchResponse
+  PlacesSearchResponse,
 } from '@ritchy/types'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
 const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL
+  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
 })
 
 export const useTextSearch = ({
   textQuery,
   resultsQuantity,
-  locationBias
+  locationBias,
 }: PlacesSearchRequestBody): UseQueryResult<PlacesSearchResponse> => {
   const { getToken } = useAuth()
 
@@ -23,7 +23,7 @@ export const useTextSearch = ({
       'text-search',
       textQuery,
       resultsQuantity,
-      locationBias
+      locationBias,
     ],
     queryFn: async () => {
       const token = await getToken()
@@ -34,15 +34,15 @@ export const useTextSearch = ({
           body: JSON.stringify({
             textQuery,
             resultsQuantity,
-            locationBias
-          })
+            locationBias,
+          }),
         },
-        token
+        token,
       )
       return response
     },
     enabled: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: false
+    retry: false,
   })
 }
