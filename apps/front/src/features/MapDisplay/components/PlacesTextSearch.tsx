@@ -15,12 +15,14 @@ interface PlaceSearchProps {
   className?: string
 }
 
+const MAX_RESULTS = 60
+
 export const PlacesTextSearch = ({
   location,
   onResultsChange,
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
-  const [resultsQuantity, setResultsQuantity] = useState(5)
+  const [resultsQuantity, setResultsQuantity] = useState(45)
   const [currentLocation, setCurrentLocation] =
     useState<LocationParams>(location)
 
@@ -58,7 +60,7 @@ export const PlacesTextSearch = ({
 
   const handleQuantityChange = (value: string) => {
     const parsed = Number.parseInt(value) || 0
-    setResultsQuantity(Math.min(20, Math.max(0, parsed)))
+    setResultsQuantity(Math.min(MAX_RESULTS, Math.max(0, parsed)))
   }
 
   return (
@@ -95,7 +97,7 @@ export const PlacesTextSearch = ({
               id="results"
               type="number"
               min={1}
-              max={20}
+              max={MAX_RESULTS}
               value={resultsQuantity}
               onChange={(e) => handleQuantityChange(e.target.value)}
               className="w-full rounded-md border px-2 sm:px-3 py-1.5 sm:py-2 bg-background text-foreground text-sm sm:text-base"

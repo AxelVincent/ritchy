@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import ReactDOM from 'react-dom'
 import { DEFAULT_LOCATION } from '../MapDisplay'
 import { useMapCircle } from '../hooks/useMapCircle'
 import { useMapInitialization } from '../hooks/useMapInitialization'
@@ -16,6 +15,7 @@ import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
 import { PlacePopup } from './PlacePopup'
 import { RadiusSlider } from './RadiusSlider'
 import '../styles.css'
+import { createRoot } from 'react-dom/client'
 
 interface MapBoxProps {
   onLocationChange: (location: {
@@ -154,6 +154,7 @@ export const MapBox: FC<MapBoxProps> = ({
     markersMapRef.current.clear()
 
     if (!mapRef.current || !searchResults) return
+    console.log('🔄 searchResults useEffect triggered', searchResults)
 
     // Create new markers for search results
     for (const place of searchResults) {
@@ -255,8 +256,9 @@ const createMarkerWithPopup = (
     maxWidth: '300px',
   })
 
-  // Render React component into the popup
-  ReactDOM.render(<PlacePopup place={place} />, popupNode)
+  // Use React 18's createRoot API
+  const root = createRoot(popupNode)
+  root.render(<PlacePopup place={place} />)
 
   popup.setDOMContent(popupNode)
 
