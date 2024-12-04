@@ -1,53 +1,59 @@
 import * as turf from '@turf/turf'
+import { point } from '@turf/turf'
+import { destination } from '@turf/turf'
 
 interface Coordinate {
   latitude: number
   longitude: number
 }
 
-interface Square {
+export interface Square {
   northEast: Coordinate
   southEast: Coordinate
   southWest: Coordinate
   northWest: Coordinate
 }
 
-export const getLargestSquareInCircle = (
+// TODO - Create a GeoJSON shared package
+export const getLargestSquareFromCoordinates = (
   center: Coordinate,
   radiusInMeters: number,
 ): Square => {
-  const centerPoint = turf.point([center.longitude, center.latitude])
+  console.log('🎯 center', center)
+  console.log('🎯 radiusInMeters', radiusInMeters)
 
-  // Calculate the side length of the largest square that fits in the circle
-  // (diameter / √2)
-  const squareSideLength = (2 * radiusInMeters) / Math.sqrt(2)
+  const centerPoint = point([center.longitude, center.latitude])
+  const coordinates = [
+    destination(centerPoint, radiusInMeters, 45, { units: 'meters' }).geometry
+      .coordinates, // NW
+    destination(centerPoint, radiusInMeters, 135, { units: 'meters' }).geometry
+      .coordinates, // NE
+    destination(centerPoint, radiusInMeters, 225, { units: 'meters' }).geometry
+      .coordinates, // SE
+    destination(centerPoint, radiusInMeters, 315, { units: 'meters' }).geometry
+      .coordinates, // SW
+    destination(centerPoint, radiusInMeters, 45, { units: 'meters' }).geometry
+      .coordinates, // Back to NW to close the polygon
+  ]
 
-  // Convert meters to kilometers for turf.js
-  const squareSideKm = squareSideLength / 1000
-
-  // Calculate corners using bearings (45° intervals starting from NE)
-  const corners = [45, 135, 225, 315].map((bearing) =>
-    turf.destination(centerPoint, squareSideKm, bearing, {
-      units: 'kilometers',
-    }),
-  )
-
-  return {
+  const corners = {
     northEast: {
-      latitude: corners[0].geometry.coordinates[1],
-      longitude: corners[0].geometry.coordinates[0],
+      latitude: coordinates[0][1],
+      longitude: coordinates[0][0],
     },
     southEast: {
-      latitude: corners[1].geometry.coordinates[1],
-      longitude: corners[1].geometry.coordinates[0],
+      latitude: coordinates[1][1],
+      longitude: coordinates[1][0],
     },
     southWest: {
-      latitude: corners[2].geometry.coordinates[1],
-      longitude: corners[2].geometry.coordinates[0],
+      latitude: coordinates[2][1],
+      longitude: coordinates[2][0],
     },
     northWest: {
-      latitude: corners[3].geometry.coordinates[1],
-      longitude: corners[3].geometry.coordinates[0],
+      latitude: coordinates[3][1],
+      longitude: coordinates[3][0],
     },
   }
+
+  return corners
 }

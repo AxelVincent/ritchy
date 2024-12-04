@@ -21,7 +21,7 @@ export const MAP_SETTINGS: MapSettings = {
 
 export const RADIUS_SETTINGS: RadiusSettings = {
   min: 150,
-  max: 3000,
+  max: 5000,
   step: 150,
   initial: 150,
 }

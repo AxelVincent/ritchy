@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
-import { getLargestSquareInCircle } from '../../utils/geo_utils'
+import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
 
 import type { PlacesSearchResponse } from '@ritchy/types'
 import {
@@ -74,7 +74,7 @@ export async function postTextSearchV1(
 ): Promise<PlacesSearchResponse> {
   const validatedRequest = TextSearchRequestBodySchema.parse(requestBody)
 
-  const largestSquare = getLargestSquareInCircle(
+  const largestSquare = getLargestSquareFromCoordinates(
     validatedRequest.locationBias.circle.center,
     validatedRequest.locationBias.circle.radiusInMeters,
   )
