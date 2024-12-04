@@ -1,7 +1,14 @@
 /** @type {import('tailwindcss').Config} */
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import animate from 'tailwindcss-animate'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 export default {
   darkMode: ['class'],
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: [path.join(__dirname, './src/**/*.{js,jsx,ts,tsx}')],
   theme: {
     extend: {
       borderRadius: {
@@ -53,5 +60,5 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [animate],
 }

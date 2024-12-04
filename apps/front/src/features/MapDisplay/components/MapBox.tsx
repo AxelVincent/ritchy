@@ -8,14 +8,14 @@ import {
   useRef,
   useState,
 } from 'react'
-import ReactDOM from 'react-dom'
 import { DEFAULT_LOCATION } from '../MapDisplay'
-import { useMapCircle } from '../hooks/useMapCircle'
 import { useMapInitialization } from '../hooks/useMapInitialization'
+import { useMapSquare } from '../hooks/useMapSquare'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
 import { PlacePopup } from './PlacePopup'
 import { RadiusSlider } from './RadiusSlider'
 import '../styles.css'
+import { createRoot } from 'react-dom/client'
 
 interface MapBoxProps {
   onLocationChange: (location: {
@@ -69,7 +69,7 @@ export const MapBox: FC<MapBoxProps> = ({
     initialCenter,
     MAP_SETTINGS,
   )
-  const { updateCircleData } = useMapCircle(mapRef)
+  const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
 
   // Step 2: Update map size on view mode change
   useEffect(() => {
@@ -99,31 +99,48 @@ export const MapBox: FC<MapBoxProps> = ({
         },
       })
 
-      // Add circle layer with zoom-based radius scaling
-      mapRef.current?.addLayer({
-        id: 'center-circle',
-        type: 'circle',
-        source: 'circle',
-        paint: {
-          // Complex radius calculation based on zoom level
-          'circle-radius': [
-            'interpolate',
-            ['exponential', 1.75],
-            ['zoom'],
-            0,
-            ['/', ['*', ['number', ['get', 'radius_m']], 1], 111319.9],
-            22,
-            [
-              '*',
-              ['/', ['*', ['number', ['get', 'radius_m']], 1], 111319.9],
-              4194304,
+      // Add square source
+      mapRef.current?.addSource('square', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: { radius_m: radiusInMeters },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              calculateSquareCoordinates(
+                mapRef.current.getCenter(),
+                radiusInMeters,
+              ),
             ],
-          ],
-          'circle-color': '#007cbf',
-          'circle-opacity': 0.3,
+          },
+        },
+      })
+
+      // Add square fill layer
+      mapRef.current?.addLayer({
+        id: 'center-square',
+        type: 'fill',
+        source: 'square',
+        paint: {
+          'fill-color': 'blue', // Different color to distinguish from circle
+          'fill-opacity': 0.1,
+        },
+      })
+
+      // Add square border layer
+      mapRef.current?.addLayer({
+        id: 'center-square-border',
+        type: 'line',
+        source: 'square',
+        paint: {
+          'line-color': 'blue',
+          'line-width': 1,
         },
       })
     })
+
+    updateSquareData(mapRef.current.getCenter(), radiusInMeters)
 
     // Add center marker and handle map movement
     const marker = new mapboxgl.Marker()
@@ -135,7 +152,7 @@ export const MapBox: FC<MapBoxProps> = ({
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
         marker.setLngLat(center)
-        updateCircleData(center, radiusInMeters)
+        updateSquareData(center, radiusInMeters)
         onLocationChange({
           latitude: center.lat,
           longitude: center.lng,
@@ -143,7 +160,13 @@ export const MapBox: FC<MapBoxProps> = ({
         })
       }
     })
-  }, [radiusInMeters, mapRef, updateCircleData, onLocationChange])
+  }, [
+    radiusInMeters,
+    mapRef,
+    updateSquareData,
+    onLocationChange,
+    calculateSquareCoordinates,
+  ])
 
   // Effect: Manage search result markers
   useEffect(() => {
@@ -154,6 +177,7 @@ export const MapBox: FC<MapBoxProps> = ({
     markersMapRef.current.clear()
 
     if (!mapRef.current || !searchResults) return
+    console.log('🔄 searchResults useEffect triggered', searchResults)
 
     // Create new markers for search results
     for (const place of searchResults) {
@@ -218,7 +242,7 @@ export const MapBox: FC<MapBoxProps> = ({
 
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
-        updateCircleData(center, newValue)
+        updateSquareData(center, newValue)
         onLocationChange({
           latitude: center.lat,
           longitude: center.lng,
@@ -226,7 +250,7 @@ export const MapBox: FC<MapBoxProps> = ({
         })
       }
     },
-    [updateCircleData, onLocationChange, mapRef],
+    [updateSquareData, onLocationChange, mapRef],
   )
 
   return (
@@ -255,8 +279,9 @@ const createMarkerWithPopup = (
     maxWidth: '300px',
   })
 
-  // Render React component into the popup
-  ReactDOM.render(<PlacePopup place={place} />, popupNode)
+  // Use React 18's createRoot API
+  const root = createRoot(popupNode)
+  root.render(<PlacePopup place={place} />)
 
   popup.setDOMContent(popupNode)
 

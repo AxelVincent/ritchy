@@ -134,6 +134,18 @@ export const PlaceSchema = z.object({
   googleMapsLinks: GoogleMapsLinksSchema,
 })
 
+export const GooglePlacesTextSearchRequestSchema = z.object({
+  textQuery: z.string().min(1),
+  locationRestriction: z.object({
+    rectangle: z.object({
+      low: LocationSchema,
+      high: LocationSchema,
+    }),
+  }),
+  maxResultCount: z.number().min(1).max(20),
+  pageToken: z.string().optional(),
+})
+
 // API Request/Response Schemas
 export const TextSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
@@ -147,7 +159,7 @@ export const TextSearchRequestBodySchema = z.object({
   pageSize: z.number().positive(),
 })
 
-export const TextSearchResponseSchema = z.object({
+export const GooglePlacesTextSearchResponseSchema = z.object({
   places: z.array(PlaceSchema).optional(),
   contextualContents: z
     .array(
@@ -156,6 +168,7 @@ export const TextSearchResponseSchema = z.object({
       }),
     )
     .optional(),
+
   nextPageToken: z.string().optional(),
   searchUri: z.string().optional(),
 })
@@ -174,4 +187,9 @@ export type Review = z.infer<typeof ReviewSchema>
 export type GoogleMapsLinks = z.infer<typeof GoogleMapsLinksSchema>
 export type Place = z.infer<typeof PlaceSchema>
 export type TextSearchRequestBody = z.infer<typeof TextSearchRequestBodySchema>
-export type TextSearchResponse = z.infer<typeof TextSearchResponseSchema>
+export type GooglePlacesTextSearchRequest = z.infer<
+  typeof GooglePlacesTextSearchRequestSchema
+>
+export type GooglePlacesTextSearchResponse = z.infer<
+  typeof GooglePlacesTextSearchResponseSchema
+>
