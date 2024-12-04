@@ -1,39 +1,9 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Place } from '@ritchy/types'
-import { Copy } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
-import { useState } from 'react'
-
-interface CopyTextProps {
-  text: string
-  className?: string
-}
-
-const CopyText = ({ text, className = '' }: CopyTextProps) => {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 500)
-  }
-
-  return (
-    <p
-      className={`flex items-center gap-2 cursor-pointer hover:text-foreground transition-colors ${className}`}
-      onClick={handleCopy}
-      onKeyDown={(e) => e.key === 'Enter' && handleCopy()}
-      title={text}
-    >
-      <span className="truncate flex-1">
-        {copied ? <span className="text-green-500">Copied!</span> : text}
-      </span>
-      <Copy className="h-3 w-3 flex-shrink-0" />
-    </p>
-  )
-}
 
 interface PlacePopupProps {
   place: Place
@@ -59,10 +29,17 @@ export const PlacePopup = ({ place }: PlacePopupProps) => {
         )}
 
         {place.shortFormattedAddress && (
-          <CopyText
-            text={place.shortFormattedAddress}
-            className="text-sm text-muted-foreground"
-          />
+          <TextWrapper
+            copyValue={place.shortFormattedAddress}
+            truncate
+            maxWidth="100%"
+          >
+            {place.shortFormattedAddress}
+          </TextWrapper>
+          // <CopyText
+          //   text={place.shortFormattedAddress}
+          //   className="text-sm text-muted-foreground"
+          // />
         )}
 
         {place.currentOpeningHours && (

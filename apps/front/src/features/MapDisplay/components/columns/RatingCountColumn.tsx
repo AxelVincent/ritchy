@@ -1,15 +1,15 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
 import { Button } from '@/components/ui/button'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowUpDown } from 'lucide-react'
 import type { SearchResult } from '../Columns'
-import { CellWrapper } from './CellWrapper'
 
 export const ratingCountColumn: ColumnDef<SearchResult> = {
   id: 'userRatingCount',
   accessorKey: 'userRatingCount',
   header: ({ column }) => {
     return (
-      <CellWrapper>
+      <TextWrapper>
         <Button
           variant="secondary"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
@@ -17,7 +17,7 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
           Reviews
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      </CellWrapper>
+      </TextWrapper>
     )
   },
   enableSorting: true,
@@ -28,13 +28,13 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
     const count = row.original.userRatingCount
 
     return (
-      <CellWrapper>
+      <TextWrapper>
         {count ? (
           <span>{count.toLocaleString()} reviews</span>
         ) : (
           <span className="text-muted-foreground">No reviews</span>
         )}
-      </CellWrapper>
+      </TextWrapper>
     )
   },
 }
