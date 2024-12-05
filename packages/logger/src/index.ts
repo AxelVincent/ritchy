@@ -19,12 +19,15 @@ const baseLogger = pino({
           },
         },
       }
-    : {
-        formatters: {
-          level: (label: string) => ({ level: label }),
-        },
-        timestamp: () => `,"time":"${new Date().toISOString()}"`,
-      }),
+    : {}),
+  ...(process.env.NODE_ENV !== 'development' && {
+    formatters: {
+      level: (label: string) => ({ level: label }),
+    },
+    timestamp: () => `,"time":"${new Date().toISOString()}"`,
+    messageKey: 'msg',
+    singleLine: true,
+  }),
   serializers: pino.stdSerializers,
 })
 
