@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
 
+import { logger } from '@ritchy/logger'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import {
   type GooglePlacesTextSearchRequest,
@@ -60,7 +61,11 @@ async function fetchSinglePage(
 
   if (!response.ok) {
     const errorData = await response.json()
-    console.error('Google API Error Details:', errorData)
+    logger.error({
+      msg: 'Google API Error Details',
+      event: 'google_api_error',
+      metadata: { errorData },
+    })
     throw new Error(
       `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
     )
@@ -123,17 +128,25 @@ export async function postTextSearchV1(
     // Trim results to match requested pageSize
     const trimmedResults = allResults.slice(0, validatedRequest.pageSize)
 
-    console.log('Google Places API request successful', {
-      query: requestBody.textQuery,
-      resultCount: trimmedResults.length,
-      pagesRequested: Math.ceil(trimmedResults.length / 20),
+    logger.info({
+      msg: 'Google Places API request successful',
+      event: 'google_places_api_success',
+      metadata: {
+        query: requestBody.textQuery,
+        resultCount: trimmedResults.length,
+        pagesRequested: Math.ceil(trimmedResults.length / 20),
+      },
     })
 
     return mapToPlacesSearchResult({ places: trimmedResults })
   } catch (error) {
-    console.log('Google Places API request failed', {
-      error,
-      query: requestBody.textQuery,
+    logger.info({
+      msg: 'Google Places API request failed',
+      event: 'google_places_api_failure',
+      metadata: {
+        error,
+        query: requestBody.textQuery,
+      },
     })
     throw error
   }

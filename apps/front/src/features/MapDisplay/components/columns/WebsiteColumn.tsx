@@ -1,18 +1,18 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLink } from 'lucide-react'
+import { TextWrapper } from '../../../../components/common/TextWrapper'
 import type { SearchResult } from '../Columns'
-import { CellWrapper } from './CellWrapper'
 
 export const websiteColumn: ColumnDef<SearchResult> = {
   id: 'websiteUri',
   accessorKey: 'websiteUri',
-  header: () => <CellWrapper>Website</CellWrapper>,
+  header: () => <TextWrapper>Website</TextWrapper>,
   cell: ({ row }) => {
     const website = row.getValue('websiteUri') as string
-    if (!website) return <CellWrapper>-</CellWrapper>
+    if (!website) return <TextWrapper>-</TextWrapper>
 
     return (
-      <CellWrapper copyValue={website}>
+      <TextWrapper copyValue={website}>
         <a
           href={website}
           target="_blank"
@@ -22,7 +22,7 @@ export const websiteColumn: ColumnDef<SearchResult> = {
           <span className="truncate max-w-[200px]">{website}</span>
           <ExternalLink className="h-4 w-4" />
         </a>
-      </CellWrapper>
+      </TextWrapper>
     )
   },
 }

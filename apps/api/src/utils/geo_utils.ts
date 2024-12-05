@@ -1,4 +1,4 @@
-import * as turf from '@turf/turf'
+import logger from '@ritchy/logger'
 import { point } from '@turf/turf'
 import { destination } from '@turf/turf'
 
@@ -19,9 +19,6 @@ export const getLargestSquareFromCoordinates = (
   center: Coordinate,
   radiusInMeters: number,
 ): Square => {
-  console.log('🎯 center', center)
-  console.log('🎯 radiusInMeters', radiusInMeters)
-
   const centerPoint = point([center.longitude, center.latitude])
   const coordinates = [
     destination(centerPoint, radiusInMeters, 45, { units: 'meters' }).geometry

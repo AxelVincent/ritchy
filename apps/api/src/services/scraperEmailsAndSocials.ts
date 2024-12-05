@@ -1,3 +1,4 @@
+import { logger } from '@ritchy/logger'
 import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import * as cheerio from 'cheerio'
 import { XMLParser } from 'fast-xml-parser'
@@ -59,7 +60,11 @@ async function getPagesFromSitemap(sitemapUrl: string): Promise<string[]> {
 
     return urls
   } catch (error) {
-    console.error('Error fetching sitemap:', (error as Error).message)
+    logger.error({
+      msg: 'Error fetching sitemap',
+      event: 'fetch_sitemap_error',
+      metadata: { error },
+    })
     return []
   }
 }
@@ -311,7 +316,11 @@ async function scrapeEmailsAndSocials(
     return { emails, socialLinks }
   } catch (error) {
     if (IS_DEBUG) {
-      console.error(`Error scraping ${url}:`, error)
+      logger.error({
+        msg: `Error scraping ${url}`,
+        event: 'scrape_emails_and_socials_error',
+        metadata: { error },
+      })
     }
 
     // Modified error handling since we're not using axios anymore
@@ -371,7 +380,10 @@ async function scrapeFromOptimizedUrls(
 }> {
   const sitemapUrl = `${baseUrl}/sitemap.xml`
   if (IS_DEBUG) {
-    console.log(`Fetching sitemap from ${sitemapUrl}`)
+    logger.info({
+      msg: `Fetching sitemap from ${sitemapUrl}`,
+      event: 'fetch_sitemap',
+    })
   }
   const sitemapUrls = await getPagesFromSitemap(sitemapUrl)
 
@@ -380,7 +392,10 @@ async function scrapeFromOptimizedUrls(
     baseUrl,
     POTENTIAL_SUBPAGES,
   )
-  console.log(`Filtered ${relevantUrls.length} relevant URLs from sitemap.`)
+  logger.info({
+    msg: `Filtered ${relevantUrls.length} relevant URLs from sitemap.`,
+    event: 'filter_relevant_urls',
+  })
 
   const allEmails: Set<string> = new Set()
   const allSocialLinks: Record<string, Set<string>> = {}
@@ -391,7 +406,10 @@ async function scrapeFromOptimizedUrls(
   const tasks = relevantUrls.map((url) =>
     limit(async () => {
       if (IS_DEBUG) {
-        console.log(`Scraping page: ${url}`)
+        logger.info({
+          msg: `Scraping page: ${url}`,
+          event: 'scrape_page',
+        })
       }
       const { emails, socialLinks, error } = await scrapeEmailsAndSocials(
         url,
@@ -399,7 +417,11 @@ async function scrapeFromOptimizedUrls(
       )
 
       if (error && IS_DEBUG) {
-        console.error(`Error scraping ${url}:`, error)
+        logger.error({
+          msg: `Error scraping ${url}`,
+          event: 'scrape_page_error',
+          metadata: { error },
+        })
       }
 
       if (!error) {

@@ -1,15 +1,15 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
 import { Button } from '@/components/ui/button'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowUpDown } from 'lucide-react'
 import type { SearchResult } from '../Columns'
-import { CellWrapper } from './CellWrapper'
 
 export const nameColumn: ColumnDef<SearchResult> = {
   id: 'displayName',
   accessorKey: 'displayName',
   header: ({ column }) => {
     return (
-      <CellWrapper>
+      <TextWrapper>
         <Button
           variant="secondary"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
@@ -17,20 +17,20 @@ export const nameColumn: ColumnDef<SearchResult> = {
           Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      </CellWrapper>
+      </TextWrapper>
     )
   },
   enableSorting: true,
   sortingFn: 'text',
   cell: ({ row }) => {
     return (
-      <CellWrapper
+      <TextWrapper
         copyValue={row.original.displayName}
         truncate={true}
         maxWidth="250px"
       >
         {row.original.displayName}
-      </CellWrapper>
+      </TextWrapper>
     )
   },
 }

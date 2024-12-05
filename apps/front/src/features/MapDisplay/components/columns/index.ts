@@ -15,5 +15,3 @@ export const columns: ColumnDef<SearchResult>[] = [
   socialEmailColumn,
   actionsColumn,
 ]
-
-export * from './CellWrapper'

@@ -1,3 +1,4 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
 import { Badge } from '@/components/ui/badge'
 import {
   Popover,
@@ -6,19 +7,18 @@ import {
 } from '@/components/ui/popover'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { SearchResult } from '../Columns'
-import { CellWrapper } from './CellWrapper'
 
 export const typesColumn: ColumnDef<SearchResult> = {
   id: 'types',
   accessorKey: 'types',
-  header: () => <CellWrapper>Types</CellWrapper>,
+  header: () => <TextWrapper>Types</TextWrapper>,
   cell: ({ row }) => {
     const types = row.original.types
     const displayCount = 2
     const remainingCount = types.length - displayCount
 
     return (
-      <CellWrapper>
+      <TextWrapper>
         <div className="flex flex-row gap-2">
           {types.slice(0, displayCount).map((type) => (
             <Badge variant="secondary" key={type} className="shrink-0">
@@ -44,7 +44,7 @@ export const typesColumn: ColumnDef<SearchResult> = {
             </Popover>
           )}
         </div>
-      </CellWrapper>
+      </TextWrapper>
     )
   },
 }

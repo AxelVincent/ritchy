@@ -1,16 +1,16 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { SearchResult } from '../Columns'
-import { CellWrapper } from './CellWrapper'
 
 export const addressColumn: ColumnDef<SearchResult> = {
   id: 'formattedAddress',
   accessorKey: 'formattedAddress',
-  header: () => <CellWrapper>Address</CellWrapper>,
+  header: () => <TextWrapper>Address</TextWrapper>,
   enableSorting: false,
   cell: ({ row }) => {
     const address = row.original.formattedAddress
     if (!address) return null
 
-    return <CellWrapper copyValue={address}>{address}</CellWrapper>
+    return <TextWrapper copyValue={address}>{address}</TextWrapper>
   },
 }

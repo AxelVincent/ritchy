@@ -1,3 +1,5 @@
+import { logger } from '@ritchy/logger'
+
 interface SearchResponse {
   search_metadata: SearchMetadata
   search_parameters: SearchParameters
@@ -92,7 +94,11 @@ export async function searchGoogleMaps(
     const data = await response.json()
     return data
   } catch (error) {
-    console.error('Error:', error)
+    logger.error({
+      msg: 'Error',
+      event: 'search_google_maps_error',
+      metadata: { error },
+    })
     throw error
   }
 }

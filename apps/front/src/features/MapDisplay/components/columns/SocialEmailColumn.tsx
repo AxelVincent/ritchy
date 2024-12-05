@@ -1,4 +1,5 @@
 import { useEnrichWebsite } from '@/api/queries/enrich/useEnrichWebsite'
+import { TextWrapper } from '@/components/common/TextWrapper'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -18,7 +19,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Check, Copy, ExternalLink, type LucideIcon, Mail } from 'lucide-react'
 import { useState } from 'react'
 import type { SearchResult } from '../Columns'
-import { CellWrapper } from './CellWrapper'
 
 const SocialCard = ({
   platform,
@@ -124,24 +124,24 @@ const LinkItem = ({
 export const socialEmailColumn: ColumnDef<SearchResult> = {
   id: 'socialsAndEmails',
   accessorKey: 'socialsAndEmails',
-  header: () => <CellWrapper>Socials & Emails</CellWrapper>,
+  header: () => <TextWrapper>Socials & Emails</TextWrapper>,
   cell: ({ row }) => {
     const website = row.original.websiteUri
     const enrichQuery = useEnrichWebsite(website)
 
     if (enrichQuery.isLoading) {
       return (
-        <CellWrapper>
+        <TextWrapper>
           <Button variant="outline" size="sm" disabled className="w-32">
             Loading...
           </Button>
-        </CellWrapper>
+        </TextWrapper>
       )
     }
 
     if (!enrichQuery.data && !enrichQuery.isError) {
       return (
-        <CellWrapper>
+        <TextWrapper>
           {!website ? (
             <Button variant="secondary" size="sm" disabled className="w-32">
               No website
@@ -168,13 +168,13 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
               )}
             </div>
           )}
-        </CellWrapper>
+        </TextWrapper>
       )
     }
 
     if (enrichQuery.isError || 'error' in enrichQuery.data) {
       return (
-        <CellWrapper>
+        <TextWrapper>
           <Button
             variant="outline"
             size="sm"
@@ -184,7 +184,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
           >
             No results
           </Button>
-        </CellWrapper>
+        </TextWrapper>
       )
     }
 
@@ -198,7 +198,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
       Object.values(socialLinks).reduce((sum, urls) => sum + urls.length, 0)
 
     return (
-      <CellWrapper>
+      <TextWrapper>
         <Dialog>
           <DialogTrigger asChild>
             <Button
@@ -270,7 +270,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </CellWrapper>
+      </TextWrapper>
     )
   },
 }

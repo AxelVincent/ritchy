@@ -1,18 +1,19 @@
+import { Copy } from 'lucide-react'
 import { useState } from 'react'
 
-interface CellWrapperProps {
+interface TextWrapperProps {
   children: React.ReactNode
   copyValue?: string
   truncate?: boolean
   maxWidth?: string
 }
 
-export const CellWrapper = ({
+export const TextWrapper = ({
   children,
   copyValue,
   truncate = true,
   maxWidth,
-}: CellWrapperProps) => {
+}: TextWrapperProps) => {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -38,16 +39,21 @@ export const CellWrapper = ({
   }
 
   return (
-    <div className={baseClassName} style={style}>
+    <div className={`flex gap-2 w-full ${baseClassName}`}>
       <div
-        className={`cursor-pointer hover:text-primary transition-colors relative ${truncate ? 'truncate' : ''}`}
+        className={
+          'flex flex-row w-full cursor-pointer hover:text-primary transition-colors relative'
+        }
         onClick={handleCopy}
         onKeyDown={(e) => e.key === 'Enter' && handleCopy()}
         title={
           truncate ? `${String(children)} (Click to copy)` : 'Click to copy'
         }
       >
-        {copied ? <span className="text-green-500">Copied!</span> : children}
+        <span className={`basis-10/12 ${truncate ? 'truncate' : ''}`}>
+          {copied ? <span className="text-green-500">Copied!</span> : children}
+        </span>
+        <Copy className="basis-2/12 h-3 w-3" />
       </div>
     </div>
   )
