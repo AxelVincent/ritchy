@@ -1,3 +1,4 @@
+import { logger } from '@ritchy/logger'
 import { type EnrichApiResponse, EnrichResponseSchema } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -28,11 +29,6 @@ export const enrichWebsite = async (
     // Validate query parameters
     const { website } = EnrichRequestSchema.parse(req.query)
 
-    console.log('Processing enrich request for website:', {
-      query: req.query,
-      auth: req.auth,
-    })
-
     // Call the scraper service
     const enrichedData = await scrapeFromOptimizedUrls(website, 5)
 
@@ -41,7 +37,11 @@ export const enrichWebsite = async (
     res.json(validatedData)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log('Validation error:', error)
+      logger.info({
+        msg: 'Validation error',
+        event: 'validation_error',
+        metadata: { error },
+      })
       res.status(400).json({
         error: 'Invalid request parameters',
         details: error.errors,
@@ -49,7 +49,11 @@ export const enrichWebsite = async (
       return
     }
 
-    console.error('Enrichment error:', error)
+    logger.error({
+      msg: 'Enrichment error',
+      event: 'enrichment_error',
+      metadata: { error },
+    })
     res.status(500).json({ error: 'Failed to enrich website data' })
   }
 }

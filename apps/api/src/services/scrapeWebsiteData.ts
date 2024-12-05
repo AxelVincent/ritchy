@@ -1,4 +1,5 @@
 import { URL } from 'node:url'
+import { logger } from '@ritchy/logger'
 import * as cheerio from 'cheerio'
 
 function extractEmails(
@@ -116,7 +117,11 @@ async function getWebsiteContent(
 
     return { AIOptimizedText, leadStructuredData }
   } catch (error) {
-    console.error(`Error fetching content from ${url}:`, error)
+    logger.error({
+      msg: `Error fetching content from ${url}`,
+      event: 'fetch_website_content_error',
+      metadata: { error },
+    })
     return null
   }
 }
@@ -166,10 +171,18 @@ export async function scrapeLeadDataFromWebsiteUrl(url: string): Promise<{
     return websiteContent
   } catch (error) {
     if (error instanceof Error) {
-      console.error(`Error: ${error.message}`)
+      logger.error({
+        msg: `Error: ${error.message}`,
+        event: 'scrape_website_data_error',
+        metadata: { error },
+      })
       return null
     }
-    console.log('An unknown error occurred')
+    logger.error({
+      msg: 'An unknown error occurred',
+      event: 'scrape_website_data_error',
+      metadata: { error },
+    })
     return null
   }
 }

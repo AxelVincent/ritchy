@@ -1,3 +1,4 @@
+import { logger } from '@ritchy/logger'
 import {
   type PlacesSearchApiResponse,
   type PlacesSearchRequestBody,
@@ -23,11 +24,6 @@ export const searchPlaces = async (
   res: Response<PlacesSearchApiResponse>,
 ): Promise<void> => {
   try {
-    console.log('Processing place search request', {
-      body: req.body,
-      auth: req.auth,
-    })
-
     // Add request validation
     if (!req.body) {
       res.status(400).json({ error: 'Request body is required' })
@@ -48,14 +44,22 @@ export const searchPlaces = async (
     res.json(validatedResults)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log('Validation error:', error)
+      logger.info({
+        msg: 'Validation error',
+        event: 'validation_error',
+        metadata: { error },
+      })
       res.status(400).json({
         error: 'Invalid request data',
         details: error.errors,
       })
     }
 
-    console.error('Search error:', error)
+    logger.error({
+      msg: 'Search places error',
+      event: 'search_places_error',
+      metadata: { error },
+    })
     res.status(500).json({ error: 'Failed to search places' })
   }
 }

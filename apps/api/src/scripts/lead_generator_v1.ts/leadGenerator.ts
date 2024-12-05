@@ -1,11 +1,11 @@
 import 'dotenv/config'
 import { sql } from 'drizzle-orm'
 
+import { logger } from '@ritchy/logger'
 import { db } from '../../db/db'
 import { lead, leadEmail, queryParam } from '../../db/schema'
 import { scrapeLeadDataFromWebsiteUrl } from '../../services/scrapeWebsiteData'
 import { searchGoogleMaps } from './google_maps'
-
 const RESEARCH_QUERY = 'salle de sport'
 const PARIS_LAT = 48.8566
 const PARIS_LON = 2.3522
@@ -45,7 +45,11 @@ async function getGmapLeads() {
 
     await db.insert(lead).values(leads)
   } catch (error) {
-    console.error('Error generating leads:', error)
+    logger.error({
+      msg: 'Error generating leads',
+      event: 'generate_leads_error',
+      metadata: { error },
+    })
   }
   process.exit(0)
 }
@@ -63,7 +67,10 @@ async function getLeadsContent() {
     .execute()
 
   if (leadsWithWebsites.length === 0) {
-    console.log('No leads with websites found.')
+    logger.info({
+      msg: 'No leads with websites found.',
+      event: 'no_leads_with_websites_found',
+    })
     return
   }
 

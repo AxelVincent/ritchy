@@ -16,13 +16,16 @@ interface PlaceSearchProps {
 }
 
 const MAX_RESULTS = 60
+const DEFAULT_RESULTS_QUANTITY = 5
 
 export const PlacesTextSearch = ({
   location,
   onResultsChange,
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
-  const [resultsQuantity, setResultsQuantity] = useState(45)
+  const [resultsQuantity, setResultsQuantity] = useState(
+    DEFAULT_RESULTS_QUANTITY,
+  )
   const [currentLocation, setCurrentLocation] =
     useState<LocationParams>(location)
 
