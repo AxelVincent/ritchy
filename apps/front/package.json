@@ -33,7 +33,7 @@
     "@tanstack/react-router": "1.82.1",
     "@tanstack/react-table": "8.20.5",
     "@turf/turf": "7.1.0",
-    "class-variance-authority": "0.7.0",
+    "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "1.0.4",
     "lucide-react": "0.460.0",
