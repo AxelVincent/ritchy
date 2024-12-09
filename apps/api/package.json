@@ -32,7 +32,7 @@
     "@types/cors": "2.8.17",
     "cheerio": "1.0.0",
     "cors": "2.8.5",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "drizzle-orm": "0.36.4",
     "express": "4.21.1",
     "fast-xml-parser": "4.5.0",
