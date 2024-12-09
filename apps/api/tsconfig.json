@@ -11,11 +11,12 @@
     "sourceMap": true,
     "baseUrl": "../../",
     "outDir": "./dist",
-    "rootDir": "../../",
+    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
     "paths": {
-      "@ritchy/*": ["../../packages/*/src"]
+      "@/*": ["./src/*"],
+      "@ritchy/*": ["../../packages/*"]
     },
     "composite": true
   },

@@ -1,3 +1,9 @@
+import { DEFAULT_LOCATION } from '@/features/MapDisplay/MapDisplay'
+import { RadiusSlider } from '@/features/MapDisplay/components/map_box/RadiusSlider'
+import { PlacePopup } from '@/features/MapDisplay/components/map_box/place_popup/PlacePopup'
+import { useMapInitialization } from '@/features/MapDisplay/hooks/useMapInitialization'
+import { useMapSquare } from '@/features/MapDisplay/hooks/useMapSquare'
+import { MAP_SETTINGS, RADIUS_SETTINGS } from '@/features/MapDisplay/types'
 import type { Place, PlacesSearchResponse } from '@ritchy/types'
 import mapboxgl, { type Marker as MapboxMarker } from 'mapbox-gl'
 import {
@@ -8,13 +14,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { DEFAULT_LOCATION } from '../MapDisplay'
-import { useMapInitialization } from '../hooks/useMapInitialization'
-import { useMapSquare } from '../hooks/useMapSquare'
-import { MAP_SETTINGS, RADIUS_SETTINGS } from '../types'
-import { PlacePopup } from './PlacePopup'
-import { RadiusSlider } from './RadiusSlider'
-import '../styles.css'
+import './styles.css'
 import { createRoot } from 'react-dom/client'
 
 interface MapBoxProps {

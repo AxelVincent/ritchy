@@ -1,7 +1,9 @@
+import type { OpeningHours } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { actionsColumn } from './columns/ActionsColumn'
 import { addressColumn } from './columns/AddressColumn'
 import { nameColumn } from './columns/NameColumn'
+import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
@@ -19,6 +21,8 @@ export interface SearchResult {
   rating?: number
   userRatingCount?: number
   formattedAddress?: string
+  regularOpeningHours?: OpeningHours
+  utcOffsetMinutes?: number
 }
 
 // Compose the columns array
@@ -30,6 +34,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   ratingColumn,
   ratingCountColumn,
   addressColumn,
+  openingHoursColumn,
   typesColumn,
   actionsColumn,
 ]

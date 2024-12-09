@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import type { RadiusSettings } from '../types'
+import type { RadiusSettings } from '../../types'
 
 interface RadiusSliderProps {
   value: number

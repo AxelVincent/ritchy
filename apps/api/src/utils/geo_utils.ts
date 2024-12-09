@@ -1,4 +1,3 @@
-import logger from '@ritchy/logger'
 import { point } from '@turf/turf'
 import { destination } from '@turf/turf'
 

@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["dist/**"],
+  "types": "./src/index.ts",
+  "files": ["dist/**", "src/**"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
