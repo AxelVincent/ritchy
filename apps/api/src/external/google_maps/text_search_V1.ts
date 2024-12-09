@@ -31,14 +31,17 @@ function mapToPlacesSearchResult(
     shortFormattedAddress: place.shortFormattedAddress,
     googleMapsUri: place.googleMapsUri || '',
     internationalPhoneNumber: place.internationalPhoneNumber,
+    utcOffsetMinutes: place.utcOffsetMinutes,
+    regularOpeningHours: place.regularOpeningHours,
     currentOpeningHours: place.currentOpeningHours
       ? {
-          openNow: place.currentOpeningHours.openNow,
-          periods: place.currentOpeningHours.periods.map((period) => ({
-            open: {
-              time: `${period.open?.hour?.toString().padStart(2, '0')}:${period.open?.minute?.toString().padStart(2, '0')}`,
-            },
-          })),
+          openNow: place.currentOpeningHours.openNow ?? false,
+          periods:
+            place.currentOpeningHours.periods?.map((period) => ({
+              open: {
+                time: `${period.open?.hour?.toString().padStart(2, '0')}:${period.open?.minute?.toString().padStart(2, '0')}`,
+              },
+            })) ?? [],
         }
       : undefined,
   }))

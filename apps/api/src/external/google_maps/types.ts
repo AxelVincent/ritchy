@@ -1,4 +1,4 @@
-import { LocationSchema } from '@ritchy/types'
+import { LocationSchema, OpeningHoursSchema } from '@ritchy/types'
 import { z } from 'zod'
 
 // Basic/Common Schemas
@@ -10,31 +10,6 @@ export const DisplayNameSchema = z.object({
 export const ViewportSchema = z.object({
   low: LocationSchema,
   high: LocationSchema,
-})
-
-// Time-related Schemas
-export const TimeSlotSchema = z.object({
-  day: z.number(),
-  hour: z.number(),
-  minute: z.number(),
-  date: z
-    .object({
-      year: z.number(),
-      month: z.number(),
-      day: z.number(),
-    })
-    .optional(),
-})
-
-export const PeriodSchema = z.object({
-  open: TimeSlotSchema.optional(),
-  close: TimeSlotSchema.optional(),
-})
-
-export const OpeningHoursSchema = z.object({
-  openNow: z.boolean(),
-  periods: z.array(PeriodSchema),
-  weekdayDescriptions: z.array(z.string()),
 })
 
 // Attribution & Media Schemas
@@ -176,8 +151,6 @@ export const GooglePlacesTextSearchResponseSchema = z.object({
 // Type Inference
 export type DisplayName = z.infer<typeof DisplayNameSchema>
 export type Viewport = z.infer<typeof ViewportSchema>
-export type TimeSlot = z.infer<typeof TimeSlotSchema>
-export type Period = z.infer<typeof PeriodSchema>
 export type OpeningHours = z.infer<typeof OpeningHoursSchema>
 export type AuthorAttribution = z.infer<typeof AuthorAttributionSchema>
 export type Photo = z.infer<typeof PhotoSchema>

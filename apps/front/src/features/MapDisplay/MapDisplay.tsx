@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button'
+import { columns } from '@/features/MapDisplay/components/data_table/Columns'
+import { DataTable } from '@/features/MapDisplay/components/data_table/DataTable'
+import { MapBox } from '@/features/MapDisplay/components/map_box/MapBox'
+import { PlacesTextSearch } from '@/features/MapDisplay/components/search_section/PlacesTextSearch'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import { Columns2, Map as MapIcon, TableProperties } from 'lucide-react'
 import { useState } from 'react'
-import { columns } from './components/Columns'
-import { DataTable } from './components/DataTable'
-import { MapBox } from './components/MapBox'
-import { PlacesTextSearch } from './components/PlacesTextSearch'
 
 interface Location {
   latitude: number

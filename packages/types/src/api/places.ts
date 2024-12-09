@@ -7,6 +7,31 @@ export const LocationSchema = z.object({
   longitude: z.number(),
 })
 
+// Time-related Schemas
+export const TimeSlotSchema = z.object({
+  day: z.number(),
+  hour: z.number(),
+  minute: z.number(),
+  date: z
+    .object({
+      year: z.number(),
+      month: z.number(),
+      day: z.number(),
+    })
+    .optional(),
+})
+
+export const PeriodSchema = z.object({
+  open: TimeSlotSchema.optional(),
+  close: TimeSlotSchema.optional(),
+})
+
+export const OpeningHoursSchema = z.object({
+  openNow: z.boolean().optional(),
+  periods: z.array(PeriodSchema).optional(),
+  weekdayDescriptions: z.array(z.string()).optional(),
+})
+
 // API Request/Response Schemas
 export const PlacesSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
@@ -29,6 +54,8 @@ export const PlaceSchema = z.object({
   userRatingCount: z.number().optional(),
   formattedAddress: z.string(),
   shortFormattedAddress: z.string().optional(),
+  utcOffsetMinutes: z.number(),
+  regularOpeningHours: OpeningHoursSchema.optional(),
   currentOpeningHours: z
     .object({
       openNow: z.boolean(),
@@ -55,6 +82,7 @@ export const PlacesSearchApiResponseSchema = z.union([
 // Type inference from schemas
 export type Location = z.infer<typeof LocationSchema>
 export type Place = z.infer<typeof PlaceSchema>
+export type OpeningHours = z.infer<typeof OpeningHoursSchema>
 export type PlacesSearchRequestBody = z.infer<
   typeof PlacesSearchRequestBodySchema
 >
