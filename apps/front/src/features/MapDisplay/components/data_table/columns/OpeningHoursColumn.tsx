@@ -55,12 +55,14 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
           </DialogTrigger>
           <DialogContent className="min-w-[350px]">
             <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
+              <DialogTitle className="flex items-center space-x-2 max-w-[88%]">
                 <span>{row.original.displayName}</span>
-                <StatusIndicator isOpen={regularOpeningHours.openNow} />
-                <span className="text-xs text-muted-foreground">
-                  {formatUtcOffset(utcOffsetMinutes ?? 0)}
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <StatusIndicator isOpen={regularOpeningHours.openNow} />
+                  <span className="text-xs text-muted-foreground">
+                    {formatUtcOffset(utcOffsetMinutes ?? 0)}
+                  </span>
+                </div>
               </DialogTitle>
             </DialogHeader>
             <OpeningHoursContent regularOpeningHours={regularOpeningHours} />
@@ -71,10 +73,6 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        {/* <OpeningHoursDialog
-          regularOpeningHours={regularOpeningHours}
-          displayName={row.original.displayName}
-        /> */}
       </TextWrapper>
     )
   },
