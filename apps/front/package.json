@@ -15,7 +15,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@clerk/clerk-react": "5.16.0",
+    "@clerk/clerk-react": "5.19.1",
     "@googlemaps/js-api-loader": "1.16.8",
     "@radix-ui/react-avatar": "1.1.1",
     "@radix-ui/react-checkbox": "1.1.2",
