@@ -121,7 +121,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
             </DropdownMenu>
           </div>
         </div>
-        <div className="overflow-y-auto h-[75%] border rounded-md">
+        <div className="overflow-y-auto h-[70%] border rounded-md">
           <div className="relative h-full overflow-auto ">
             <table className="border-separate border-spacing-0">
               <thead>
