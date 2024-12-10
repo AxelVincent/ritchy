@@ -39,7 +39,7 @@ export const TextWrapper = ({
   }
 
   return (
-    <div className={`flex gap-2 w-full ${baseClassName}`}>
+    <div className={`flex gap-2 w-full ${baseClassName}`} style={style}>
       <div
         className={
           'flex flex-row w-full cursor-pointer hover:text-primary transition-colors relative'

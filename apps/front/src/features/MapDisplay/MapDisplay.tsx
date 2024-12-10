@@ -70,7 +70,7 @@ export const MapDisplay = () => {
   }
 
   return (
-    <>
+    <div className="flex flex-row h-full w-full overflow-hidden">
       <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}>
         <MapBox
           onLocationChange={setLocation}
@@ -80,7 +80,7 @@ export const MapDisplay = () => {
           viewMode={viewMode}
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
         />
-        <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2">
+        <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2 z-50">
           <Button
             variant="outline"
             size="icon"
@@ -104,9 +104,8 @@ export const MapDisplay = () => {
           </Button>
         </div>
       </div>
-
       <div
-        className={`${viewStyle.dataStyle.flex} bg-background overflow-hidden border-l`}
+        className={`${viewStyle.dataStyle.flex} flex flex-col h-full w-full overflow-hidden border-l`}
       >
         <PlacesTextSearch location={location} onResultsChange={handleResults} />
         <DataTable
@@ -117,6 +116,6 @@ export const MapDisplay = () => {
           mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
         />
       </div>
-    </>
+    </div>
   )
 }
