@@ -27,7 +27,7 @@ export const nameColumn: ColumnDef<SearchResult> = {
       <TextWrapper
         copyValue={row.original.displayName}
         truncate={true}
-        maxWidth="250px"
+        maxWidth="200px"
       >
         {row.original.displayName}
       </TextWrapper>

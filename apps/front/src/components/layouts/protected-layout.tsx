@@ -28,12 +28,14 @@ export const ProtectedLayout = () => {
     <>
       <SignedIn>
         <main>
-          <div className="flex flex-row w-full h-full">
-            <div className="flex flex-col items-center justify-start w-12 gap-4 pt-4">
+          <div className="flex flex-row w-screen h-screen">
+            <div className="w-[5%] flex flex-col items-center justify-start gap-4 pt-4">
               <UserButton />
               <ThemeToggle />
             </div>
-            <Outlet />
+            <div className="w-[95%] h-full">
+              <Outlet />
+            </div>
           </div>
         </main>
       </SignedIn>
