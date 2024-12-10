@@ -1,4 +1,3 @@
-import { DEFAULT_LOCATION } from '@/features/MapDisplay/MapDisplay'
 import { RadiusSlider } from '@/features/MapDisplay/components/map_box/RadiusSlider'
 import { PlacePopup } from '@/features/MapDisplay/components/map_box/place_popup/PlacePopup'
 import { useMapInitialization } from '@/features/MapDisplay/hooks/useMapInitialization'
@@ -15,6 +14,7 @@ import {
   useState,
 } from 'react'
 import './styles.css'
+import type { Location } from '@/features/MapDisplay/types'
 import { createRoot } from 'react-dom/client'
 
 interface MapBoxProps {
@@ -28,6 +28,7 @@ interface MapBoxProps {
   setSelectedPlaceId: (placeId: string | null) => void
   viewMode: 'map' | 'data' | 'equal'
   setMapBoxHoveredPlaceId: (placeId: string | null) => void
+  userLocation: Location
 }
 
 type MarkerData = {
@@ -42,6 +43,7 @@ export const MapBox: FC<MapBoxProps> = ({
   setSelectedPlaceId,
   viewMode,
   setMapBoxHoveredPlaceId,
+  userLocation,
 }) => {
   // Refs for DOM elements and state management
   const mapContainerRef = useRef<HTMLDivElement>(null) // Container div for map
@@ -50,17 +52,13 @@ export const MapBox: FC<MapBoxProps> = ({
 
   // Default center coordinates
   const initialCenter = useMemo(
-    () =>
-      [DEFAULT_LOCATION.longitude, DEFAULT_LOCATION.latitude] as [
-        number,
-        number,
-      ],
-    [],
+    () => [userLocation.longitude, userLocation.latitude] as [number, number],
+    [userLocation],
   )
 
   // State for radius control
   const [radiusInMeters, setRadiusInMeters] = useState(
-    DEFAULT_LOCATION.radiusInMeters,
+    userLocation.radiusInMeters,
   )
 
   // Initialize map and circle functionality

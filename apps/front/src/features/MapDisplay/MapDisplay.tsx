@@ -3,24 +3,27 @@ import { columns } from '@/features/MapDisplay/components/data_table/Columns'
 import { DataTable } from '@/features/MapDisplay/components/data_table/DataTable'
 import { MapBox } from '@/features/MapDisplay/components/map_box/MapBox'
 import { PlacesTextSearch } from '@/features/MapDisplay/components/search_section/PlacesTextSearch'
+import type { Location } from '@/features/MapDisplay/types'
+import { useGeolocation } from '@/hooks/useGeolocation'
 import type { PlacesSearchResponse } from '@ritchy/types'
-import { Columns2, Map as MapIcon, TableProperties } from 'lucide-react'
-import { useState } from 'react'
+import {
+  Columns2,
+  Loader2,
+  Map as MapIcon,
+  TableProperties,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-interface Location {
-  latitude: number
-  longitude: number
-  radiusInMeters: number
-}
-
-export const DEFAULT_LOCATION: Location = {
+const DEFAULT_LOCATION: Location = {
   latitude: 48.8566,
   longitude: 2.3522,
-  radiusInMeters: 1000,
+  radiusInMeters: 3000,
 }
 
 export const MapDisplay = () => {
-  const [location, setLocation] = useState<Location>(DEFAULT_LOCATION)
+  const { location, error, loading } = useGeolocation(DEFAULT_LOCATION)
+
+  const [currentLocation, setLocation] = useState<Location>(location)
 
   const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
 
@@ -69,6 +72,30 @@ export const MapDisplay = () => {
     })
   }
 
+  // Update currentLocation when geolocation is available
+  useEffect(() => {
+    if (location) {
+      setLocation(location)
+    }
+  }, [location])
+
+  // Optionally show loading or error states
+  if (loading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Detecting your location...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    console.warn('Geolocation error:', error)
+    // Continue with default location
+  }
+
   return (
     <div className="flex flex-row h-full w-full overflow-hidden">
       <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}>
@@ -79,6 +106,7 @@ export const MapDisplay = () => {
           setSelectedPlaceId={setSelectedPlaceId}
           viewMode={viewMode}
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
+          userLocation={location}
         />
         <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2 z-50">
           <Button
@@ -107,7 +135,10 @@ export const MapDisplay = () => {
       <div
         className={`${viewStyle.dataStyle.flex} flex flex-col h-full w-full overflow-hidden border-l`}
       >
-        <PlacesTextSearch location={location} onResultsChange={handleResults} />
+        <PlacesTextSearch
+          location={currentLocation}
+          onResultsChange={handleResults}
+        />
         <DataTable
           columns={columns}
           data={searchResults}

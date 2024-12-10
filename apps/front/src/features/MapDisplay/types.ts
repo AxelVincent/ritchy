@@ -14,16 +14,16 @@ export interface RadiusSettings {
 
 export const MAP_SETTINGS: MapSettings = {
   style: 'mapbox://styles/mapbox/streets-v12',
-  zoom: 13,
+  zoom: 12,
   maxZoom: 17,
-  minZoom: 9,
+  minZoom: 7,
 }
 
 export const RADIUS_SETTINGS: RadiusSettings = {
-  min: 150,
-  max: 5000,
-  step: 150,
-  initial: 150,
+  min: 100,
+  max: 50000,
+  step: 100,
+  initial: 100,
 }
 
 export interface MapCircleData {
@@ -57,4 +57,10 @@ export interface MapLayerConfig {
     id: string
     paint: mapboxgl.CirclePaint
   }
+}
+
+export interface Location {
+  latitude: number
+  longitude: number
+  radiusInMeters: number
 }
