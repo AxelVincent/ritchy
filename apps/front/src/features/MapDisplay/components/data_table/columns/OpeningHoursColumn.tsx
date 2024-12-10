@@ -10,10 +10,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { cn, formatUtcOffset } from '@/lib/utils'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { OpeningHoursContent } from '../../shared/OpeningHours'
 import { StatusIndicator } from '../../shared/StatusIndicator'
-import type { SearchResult } from '../Columns'
 
 export const openingHoursColumn: ColumnDef<SearchResult> = {
   id: 'regularOpeningHours',

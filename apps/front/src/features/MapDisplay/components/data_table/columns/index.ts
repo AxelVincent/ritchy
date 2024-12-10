@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import type { SearchResult } from '../Columns'
+
+import type { SearchResult } from '@ritchy/types'
 import { actionsColumn } from './ActionsColumn'
 import { nameColumn } from './NameColumn'
 import { phoneColumn } from './PhoneColumn'

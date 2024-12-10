@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -22,7 +23,7 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import type { SearchResult } from './Columns'
+import { DataExport } from '../data_export/DataExport'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -208,8 +209,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
             </table>
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
           <span>{table.getRowModel().rows.length} Results</span>
+          <DataExport data={data} />
         </div>
       </div>
     </>

@@ -1,7 +1,7 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ExternalLink } from 'lucide-react'
-import type { SearchResult } from '../Columns'
 
 export const websiteColumn: ColumnDef<SearchResult> = {
   id: 'websiteUri',

@@ -15,10 +15,10 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { SOCIAL_MEDIA_CONFIG, type SocialMediaPlatform } from '@ritchy/types'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Check, Copy, ExternalLink, type LucideIcon, Mail } from 'lucide-react'
 import { useState } from 'react'
-import type { SearchResult } from '../Columns'
 
 const SocialCard = ({
   platform,
