@@ -1,5 +1,7 @@
+import https from 'node:https'
 import { logger } from '@ritchy/logger'
 import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
+import axios from 'axios'
 import * as cheerio from 'cheerio'
 import { XMLParser } from 'fast-xml-parser'
 import pLimit from 'p-limit'
@@ -7,19 +9,19 @@ import pLimit from 'p-limit'
 // Constants
 const POTENTIAL_SUBPAGES = [
   '/contact',
-  '/about',
-  '/team',
-  '/support',
-  '/help',
-  '/faq',
-  '/legal',
-  '/terms',
-  '/privacy',
-  '/impressum',
-  '/careers',
-  '/jobs',
-  '/get-in-touch',
-  '/reach-us',
+  // '/about',
+  // '/team',
+  // '/support',
+  // '/help',
+  // '/faq',
+  // '/legal',
+  // '/terms',
+  // '/privacy',
+  // '/impressum',
+  // '/careers',
+  // '/jobs',
+  // '/get-in-touch',
+  // '/reach-us'
 ]
 
 type SocialMediaPlatform = keyof typeof SOCIAL_MEDIA_CONFIG
@@ -104,7 +106,7 @@ function filterRelevantUrls(
 }
 
 /**
- * Extract emails and social links from a page
+ * Extract emails and social links from a page with retry logic
  * @param url - The target page URL
  * @param socialMediaDomains - A list of social media domains to detect
  * @returns - A list of emails and social links found on the page
@@ -114,18 +116,36 @@ async function scrapeEmailsAndSocials(
   socialMediaDomains: string[],
 ): Promise<ScraperResult> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      },
+    logger.info({
+      msg: `Attempting to fetch ${url}`,
+      event: 'fetch_attempt_start',
+      metadata: { url },
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      timeout: 30000,
+      maxRedirects: 5,
+      validateStatus: (status) => status < 400,
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false, // WARNING: This bypasses SSL certificate verification
+      }),
+    })
 
-    const html = await response.text()
+    const html = response.data
     if (typeof html !== 'string') {
       throw new Error('Invalid HTML content received')
     }
@@ -316,35 +336,39 @@ async function scrapeEmailsAndSocials(
     return { emails, socialLinks }
   } catch (error) {
     if (IS_DEBUG) {
+      const err = error as Error & {
+        response?: {
+          status?: number
+          data?: unknown
+          headers?: unknown
+        }
+        isAxiosError?: boolean
+        code?: string
+      }
+
       logger.error({
         msg: `Error scraping ${url}`,
         event: 'scrape_emails_and_socials_error',
-        metadata: { error },
+        metadata: {
+          error: err.message || 'Unknown error',
+          stack: err.stack || 'No stack trace',
+          url,
+          statusCode: err.response?.status || 'unknown',
+          axiosError: err.isAxiosError
+            ? {
+                code: err.code,
+                response: err.response?.data,
+                headers: err.response?.headers,
+              }
+            : undefined,
+        },
       })
-    }
-
-    // Modified error handling since we're not using axios anymore
-    if (error instanceof TypeError) {
-      return {
-        emails: [],
-        socialLinks: {},
-        error: 'Network error',
-      }
-    }
-
-    if (error instanceof Error && error.message.includes('HTTP error!')) {
-      const status = error.message.match(/status: (\d+)/)?.[1]
-      return {
-        emails: [],
-        socialLinks: {},
-        error: status ? `Failed to fetch (${status})` : 'HTTP error',
-      }
     }
 
     return {
       emails: [],
       socialLinks: {},
-      error: 'Failed to parse page',
+      error: (error as Error).message || 'Failed to fetch page',
     }
   }
 }
@@ -454,9 +478,9 @@ async function scrapeFromOptimizedUrls(
   }
 }
 
-// // Example usage
+// Example usage
 // ;(async () => {
-//   const baseUrl = 'https://www.lerempartbastille.fr/'
+//   const baseUrl = 'https://swellsurfmorocco.com'
 
 //   const { emails, socialLinks } = await scrapeFromOptimizedUrls(baseUrl, 5)
 
