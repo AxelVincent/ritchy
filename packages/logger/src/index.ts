@@ -8,7 +8,7 @@ interface LogPayload {
 
 const baseLogger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  ...(process.env.NODE_ENV !== 'development'
+  ...(process.env.NODE_ENV === 'development'
     ? {
         transport: {
           target: 'pino-pretty',
@@ -20,7 +20,7 @@ const baseLogger = pino({
         },
       }
     : {}),
-  ...(process.env.NODE_ENV === 'development' && {
+  ...(process.env.NODE_ENV !== 'development' && {
     formatters: {
       level: (label: string) => ({ level: label }),
     },
