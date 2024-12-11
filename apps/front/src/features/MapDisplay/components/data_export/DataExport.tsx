@@ -121,6 +121,42 @@ export const DataExport = ({ data }: DataExportProps) => {
             header: 'Address',
             accessor: (row): string => row.formattedAddress || 'N/A',
           },
+          {
+            header: 'Opening Hours',
+            accessor: (row): string => {
+              const hours = row.regularOpeningHours
+
+              // Handle cases where no opening hours data exists
+              if (!hours) return 'N/A'
+
+              // If we have weekday descriptions, use those as they're pre-formatted
+              if (hours.weekdayDescriptions?.length) {
+                return hours.weekdayDescriptions.join(' | ')
+              }
+
+              // If we have periods but no descriptions, format the periods
+              if (hours.periods?.length) {
+                return hours.periods
+                  .map((period) => {
+                    const open = period.open
+                      ? `${period.open.day}:${period.open.hour}:${period.open.minute}`
+                      : 'Unknown'
+                    const close = period.close
+                      ? `${period.close.day}:${period.close.hour}:${period.close.minute}`
+                      : 'Unknown'
+                    return `${open}-${close}`
+                  })
+                  .join(' | ')
+              }
+
+              // If we only have openNow status
+              if (typeof hours.openNow === 'boolean') {
+                return hours.openNow ? 'Currently Open' : 'Currently Closed'
+              }
+
+              return 'N/A'
+            },
+          },
         ],
       })
 
