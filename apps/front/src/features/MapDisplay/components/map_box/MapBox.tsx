@@ -70,9 +70,10 @@ export const MapBox: FC<MapBoxProps> = ({
   const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
 
   // Step 2: Update map size on view mode change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!mapRef.current) return
-    console.log('🔄 viewMode useEffect triggered', viewMode)
+    // console.log('🔄 viewMode useEffect triggered', viewMode)
     mapRef.current.resize() // Resize the map to fit the new container size
   }, [viewMode, mapRef]) // Step 3: Add viewMode as a dependency
 
@@ -175,7 +176,7 @@ export const MapBox: FC<MapBoxProps> = ({
     markersMapRef.current.clear()
 
     if (!mapRef.current || !searchResults) return
-    console.log('🔄 searchResults useEffect triggered', searchResults)
+    // console.log('🔄 searchResults useEffect triggered', searchResults)
 
     // Create new markers for search results
     for (const place of searchResults) {
@@ -202,10 +203,10 @@ export const MapBox: FC<MapBoxProps> = ({
 
   // Effect: Handle hover state and popup visibility
   useEffect(() => {
-    console.log(
-      '🔄 hoveredPlaceId useEffect triggered',
-      dataTableHoveredPlaceId,
-    )
+    // console.log(
+    //   '🔄 hoveredPlaceId useEffect triggered',
+    //   dataTableHoveredPlaceId,
+    // )
     if (!mapRef.current) return
 
     // Close previous popup if exists

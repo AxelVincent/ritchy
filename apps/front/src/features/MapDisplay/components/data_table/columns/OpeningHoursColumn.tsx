@@ -22,7 +22,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
   cell: ({ row }) => {
     const regularOpeningHours = row.original.regularOpeningHours
     const utcOffsetMinutes = row.original.utcOffsetMinutes
-    console.log(row.original)
+    // console.log(row.original)
 
     if (!regularOpeningHours) {
       return (

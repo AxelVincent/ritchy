@@ -47,9 +47,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState(defaultRowSelection)
 
-  console.log(selectedPlaceId, 'selectedPlaceId')
-  console.log(mapBoxHoveredPlaceId, 'mapBoxHoveredPlaceId')
-
   const table = useReactTable({
     data,
     columns,

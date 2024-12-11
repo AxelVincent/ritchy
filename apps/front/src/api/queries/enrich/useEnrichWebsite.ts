@@ -7,13 +7,18 @@ const apiClient = createApiClient({
   baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
 })
 
+export const enrichKeys = {
+  all: ['enrich'] as const,
+  website: (url: string) => [...enrichKeys.all, 'website', url] as const,
+}
+
 export const useEnrichWebsite = (
   website: string,
 ): UseQueryResult<EnrichApiResponse> => {
   const { getToken } = useAuth()
 
   return useQuery({
-    queryKey: ['enrich', 'website', website],
+    queryKey: enrichKeys.website(website),
     queryFn: async () => {
       const token = await getToken()
       return apiClient.fetchWithAuth(
@@ -22,6 +27,7 @@ export const useEnrichWebsite = (
         token,
       )
     },
+    // enabled: Boolean(website),
     enabled: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,

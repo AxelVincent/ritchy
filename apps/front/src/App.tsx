@@ -1,4 +1,5 @@
 import './App.css'
+import { Toaster } from '@/components/ui/toaster'
 import { ClerkProvider } from '@clerk/clerk-react'
 import { RouterProvider } from '@tanstack/react-router'
 import { QueryProvider } from './providers/query-provider'
@@ -15,6 +16,7 @@ export const App = () => {
           <RouterProvider router={router} />
         </ClerkProvider>
       </QueryProvider>
+      <Toaster />
     </ThemeProvider>
   )
 }
