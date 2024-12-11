@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -22,7 +23,7 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import type { SearchResult } from './Columns'
+import { DataExport } from '../data_export/DataExport'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -45,9 +46,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState(defaultRowSelection)
-
-  console.log(selectedPlaceId, 'selectedPlaceId')
-  console.log(mapBoxHoveredPlaceId, 'mapBoxHoveredPlaceId')
 
   const table = useReactTable({
     data,
@@ -120,7 +118,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
             </DropdownMenu>
           </div>
         </div>
-        <div className="overflow-y-auto h-[75%] border rounded-md">
+        <div className="overflow-y-auto h-[70%] border rounded-md">
           <div className="relative h-full overflow-auto ">
             <table className="border-separate border-spacing-0">
               <thead>
@@ -208,8 +206,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
             </table>
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-between items-center">
           <span>{table.getRowModel().rows.length} Results</span>
+          <DataExport data={data} />
         </div>
       </div>
     </>

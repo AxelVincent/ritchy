@@ -1,6 +1,6 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import type { SearchResult } from '../Columns'
 
 export const addressColumn: ColumnDef<SearchResult> = {
   id: 'formattedAddress',

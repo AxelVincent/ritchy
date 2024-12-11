@@ -5,8 +5,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import type { SearchResult } from '../Columns'
 
 export const typesColumn: ColumnDef<SearchResult> = {
   id: 'types',

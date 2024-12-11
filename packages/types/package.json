@@ -13,14 +13,15 @@
     "format": "biome format .",
     "check": "biome check .",
     "format:fix": "biome format --write ./src",
-    "check:fix": "biome check --apply ./src"
+    "check:fix": "biome check --apply ./src",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
     "@biomejs/biome": "1.5.3",
-    "tsup": "8.3.5",
-    "zod": "3.23.8"
+    "tsup": "8.3.5"
   },
   "dependencies": {
-    "lucide-react": "0.460.0"
+    "lucide-react": "0.460.0",
+    "zod": "3.23.8"
   }
 }

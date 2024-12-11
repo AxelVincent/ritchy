@@ -1,8 +1,8 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import { Button } from '@/components/ui/button'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowUpDown, Star } from 'lucide-react'
-import type { SearchResult } from '../Columns'
 
 export const ratingColumn: ColumnDef<SearchResult> = {
   id: 'rating',

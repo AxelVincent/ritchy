@@ -5,9 +5,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { MoreHorizontal } from 'lucide-react'
-import type { SearchResult } from '../Columns'
 
 export const actionsColumn: ColumnDef<SearchResult> = {
   id: 'actions',
