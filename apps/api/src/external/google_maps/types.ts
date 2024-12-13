@@ -52,10 +52,10 @@ const PhotoSchema = z.object({
     z.object({
       displayName: z.string(),
       uri: z.string(),
-      photoUri: z.string(),
+      photoUri: z.string().optional(),
     }),
   ),
-  flagContentUri: z.string(),
+  flagContentUri: z.string().optional(),
   googleMapsUri: z.string(),
 })
 
@@ -191,7 +191,7 @@ const LocationOnlyPlaceSchema = IDSOnlyPlaceSchema.extend({
 // Address Descriptor Schema
 const AddressDescriptorSchema = z.object({
   landmarks: z.array(LandmarkSchema),
-  areas: z.array(AreaSchema),
+  areas: z.array(AreaSchema).optional(),
 })
 
 // Stage 2 - Basic Place Information
