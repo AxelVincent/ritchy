@@ -16,7 +16,7 @@ interface PlaceSearchProps {
 }
 
 const MAX_RESULTS = 60
-const DEFAULT_RESULTS_QUANTITY = 5
+const DEFAULT_RESULTS_QUANTITY = 20
 
 export const PlacesTextSearch = ({
   location,

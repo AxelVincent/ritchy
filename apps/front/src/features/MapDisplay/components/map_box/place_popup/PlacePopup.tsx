@@ -50,10 +50,10 @@ export const PlacePopup = ({ place }: PlacePopupProps) => {
           </TextWrapper>
         )}
 
-        {place.currentOpeningHours && (
+        {place.regularOpeningHours && (
           <div className="flex flex-col w-full gap-1">
             <div className="flex items-center gap-2">
-              <StatusIndicator isOpen={place.currentOpeningHours.openNow} />
+              <StatusIndicator isOpen={place.regularOpeningHours.openNow} />
               <span className="text-xs text-muted-foreground">
                 {formatUtcOffset(place.utcOffsetMinutes)}
               </span>
@@ -73,7 +73,7 @@ export const PlacePopup = ({ place }: PlacePopupProps) => {
               )}
             </div>
 
-            {showHours && place.regularOpeningHours && (
+            {showHours && (
               <OpeningHoursContent
                 regularOpeningHours={place.regularOpeningHours}
               />

@@ -56,18 +56,6 @@ export const PlaceSchema = z.object({
   shortFormattedAddress: z.string().optional(),
   utcOffsetMinutes: z.number(),
   regularOpeningHours: OpeningHoursSchema.optional(),
-  currentOpeningHours: z
-    .object({
-      openNow: z.boolean(),
-      periods: z.array(
-        z.object({
-          open: z.object({
-            time: z.string(),
-          }),
-        }),
-      ),
-    })
-    .optional(),
   googleMapsUri: z.string(),
   internationalPhoneNumber: z.string().optional(),
 })
