@@ -5,10 +5,11 @@ import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
 import { logger } from '@ritchy/logger'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import {
-  type GooglePlacesTextSearchRequest,
+  ADVANCED_PLACE_KEYS,
+  type GooglePlacesTextSearchRequestBody,
+  GooglePlacesTextSearchRequestBodySchema,
   type GooglePlacesTextSearchResponse,
-  type TextSearchRequestBody,
-  TextSearchRequestBodySchema,
+  GooglePlacesTextSearchResponseSchema,
 } from './types'
 
 function mapToPlacesSearchResult(
@@ -31,35 +32,31 @@ function mapToPlacesSearchResult(
     shortFormattedAddress: place.shortFormattedAddress,
     googleMapsUri: place.googleMapsUri || '',
     internationalPhoneNumber: place.internationalPhoneNumber,
-    utcOffsetMinutes: place.utcOffsetMinutes,
+    utcOffsetMinutes: place.utcOffsetMinutes || 0,
     regularOpeningHours: place.regularOpeningHours,
-    currentOpeningHours: place.currentOpeningHours
-      ? {
-          openNow: place.currentOpeningHours.openNow ?? false,
-          periods:
-            place.currentOpeningHours.periods?.map((period) => ({
-              open: {
-                time: `${period.open?.hour?.toString().padStart(2, '0')}:${period.open?.minute?.toString().padStart(2, '0')}`,
-              },
-            })) ?? [],
-        }
-      : undefined,
   }))
 }
 
 async function fetchSinglePage(
-  formattedRequest: GooglePlacesTextSearchRequest,
+  formattedRequest: GooglePlacesTextSearchRequestBody,
 ): Promise<GooglePlacesTextSearchResponse> {
   const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places:searchText`)
+
+  const body = {
+    textQuery: formattedRequest.textQuery,
+    locationRestriction: formattedRequest.locationRestriction,
+    pageToken: formattedRequest.nextPageToken,
+    pageSize: 20,
+  }
 
   const response = await fetch(url.toString(), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
-      'X-Goog-FieldMask': '*',
+      'X-Goog-FieldMask': ADVANCED_PLACE_KEYS,
     },
-    body: JSON.stringify(formattedRequest),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
@@ -78,27 +75,10 @@ async function fetchSinglePage(
 }
 
 export async function postTextSearchV1(
-  requestBody: TextSearchRequestBody,
+  requestBody: GooglePlacesTextSearchRequestBody,
 ): Promise<PlacesSearchResponse> {
-  const validatedRequest = TextSearchRequestBodySchema.parse(requestBody)
-
-  const largestSquare = getLargestSquareFromCoordinates(
-    validatedRequest.locationBias.circle.center,
-    validatedRequest.locationBias.circle.radiusInMeters,
-  )
-
-  const locationRestriction = {
-    rectangle: {
-      low: {
-        latitude: largestSquare.southWest.latitude,
-        longitude: largestSquare.southWest.longitude,
-      },
-      high: {
-        latitude: largestSquare.northEast.latitude,
-        longitude: largestSquare.northEast.longitude,
-      },
-    },
-  }
+  const validatedRequest =
+    GooglePlacesTextSearchRequestBodySchema.parse(requestBody)
 
   try {
     const allResults: GooglePlacesTextSearchResponse['places'] = []
@@ -107,12 +87,13 @@ export async function postTextSearchV1(
     do {
       const formattedRequest = {
         textQuery: validatedRequest.textQuery,
-        locationRestriction,
-        maxResultCount: 20, // Google's max page size
-        pageToken: nextPageToken, // Use the nextPageToken from the previous response
+        locationRestriction: validatedRequest.locationRestriction,
+        nextPageToken,
+        resultsQuantity: validatedRequest.resultsQuantity,
       }
 
       const data = await fetchSinglePage(formattedRequest)
+      GooglePlacesTextSearchResponseSchema.parse(data)
 
       if (data.places) {
         allResults.push(...data.places)
@@ -126,22 +107,25 @@ export async function postTextSearchV1(
       }
 
       // Stop if we have enough results or no more pages
-    } while (nextPageToken && allResults.length < validatedRequest.pageSize)
+    } while (
+      nextPageToken &&
+      allResults.length < validatedRequest.resultsQuantity
+    )
 
-    // Trim results to match requested pageSize
-    const trimmedResults = allResults.slice(0, validatedRequest.pageSize)
+    const results = mapToPlacesSearchResult({ places: allResults })
 
     logger.info({
       msg: 'Google Places API request successful',
       event: 'google_places_api_success',
       metadata: {
         query: requestBody.textQuery,
-        resultCount: trimmedResults.length,
-        pagesRequested: Math.ceil(trimmedResults.length / 20),
+        results,
+        resultCount: results.length,
+        pagesRequested: Math.ceil(results.length / 20),
       },
     })
 
-    return mapToPlacesSearchResult({ places: trimmedResults })
+    return results
   } catch (error) {
     logger.info({
       msg: 'Google Places API request failed',

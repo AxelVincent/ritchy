@@ -8,6 +8,7 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { postTextSearchV1 } from '../external/google_maps/text_search_V1'
+import { getLargestSquareFromCoordinates } from '../utils/geo_utils'
 
 /**
  * Searches for places based on text query and location bias
@@ -32,10 +33,19 @@ export const searchPlaces = async (
     // Validate request body
     const parsedBody = PlacesSearchRequestBodySchema.parse(req.body)
 
+    const largestSquare = getLargestSquareFromCoordinates(
+      parsedBody.locationBias.circle.center,
+      parsedBody.locationBias.circle.radiusInMeters,
+    )
     const requestBody = {
       textQuery: parsedBody.textQuery,
-      locationBias: parsedBody.locationBias,
-      pageSize: parsedBody.resultsQuantity,
+      locationRestriction: {
+        rectangle: {
+          low: largestSquare.southWest,
+          high: largestSquare.northEast,
+        },
+      },
+      resultsQuantity: parsedBody.resultsQuantity,
     }
     const results = await postTextSearchV1(requestBody)
 

@@ -1,63 +1,164 @@
 import { LocationSchema, OpeningHoursSchema } from '@ritchy/types'
 import { z } from 'zod'
 
-// Basic/Common Schemas
-export const DisplayNameSchema = z.object({
+const LocalizedTextSchema = z.object({
   text: z.string(),
   languageCode: z.string(),
 })
 
-export const ViewportSchema = z.object({
-  low: LocationSchema,
-  high: LocationSchema,
-})
-
-// Attribution & Media Schemas
-export const AuthorAttributionSchema = z.object({
-  displayName: z.string(),
-  uri: z.string(),
-  photoUri: z.string().optional(),
-})
-
-export const PhotoSchema = z.object({
-  name: z.string(),
-  widthPx: z.number(),
-  heightPx: z.number(),
-  authorAttributions: z.array(AuthorAttributionSchema),
-  flagContentUri: z.string().optional(),
-  googleMapsUri: z.string(),
-})
-
-// Place-related Schemas
-export const AddressComponentSchema = z.object({
+const AddressComponentSchema = z.object({
   longText: z.string(),
   shortText: z.string(),
   types: z.array(z.string()),
   languageCode: z.string(),
 })
 
-export const LandmarkSchema = z.object({
-  name: z.string(),
-  placeId: z.string(),
-  displayName: DisplayNameSchema,
-  types: z.array(z.string()),
-  straightLineDistanceMeters: z.number(),
-  travelDistanceMeters: z.number().optional(),
+const PlusCodeSchema = z.object({
+  globalCode: z.string(),
+  compoundCode: z.string(),
 })
 
-export const ReviewSchema = z.object({
+const LatLngSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+})
+
+const ViewportSchema = z.object({
+  low: LatLngSchema,
+  high: LatLngSchema,
+})
+
+const ReviewSchema = z.object({
   name: z.string(),
   relativePublishTimeDescription: z.string(),
-  rating: z.number(),
-  text: DisplayNameSchema.optional(),
-  originalText: DisplayNameSchema.optional(),
-  authorAttribution: AuthorAttributionSchema,
+  text: LocalizedTextSchema,
+  originalText: LocalizedTextSchema,
+  rating: z.number().min(1).max(5),
+  authorAttribution: z.object({
+    displayName: z.string(),
+    uri: z.string(),
+    photoUri: z.string(),
+  }),
   publishTime: z.string(),
   flagContentUri: z.string(),
   googleMapsUri: z.string(),
 })
 
-export const GoogleMapsLinksSchema = z.object({
+const PhotoSchema = z.object({
+  name: z.string(),
+  widthPx: z.number(),
+  heightPx: z.number(),
+  authorAttributions: z.array(
+    z.object({
+      displayName: z.string(),
+      uri: z.string(),
+      photoUri: z.string().optional(),
+    }),
+  ),
+  flagContentUri: z.string().optional(),
+  googleMapsUri: z.string(),
+})
+
+const FuelTypeEnum = z.enum([
+  'FUEL_TYPE_UNSPECIFIED',
+  'DIESEL',
+  'REGULAR_UNLEADED',
+  'MIDGRADE',
+  'PREMIUM',
+  'SP91',
+  'SP91_E10',
+  'SP92',
+  'SP95',
+  'SP95_E10',
+  'SP98',
+  'SP99',
+  'SP100',
+  'LPG',
+  'E80',
+  'E85',
+  'METHANE',
+  'BIO_DIESEL',
+  'TRUCK_DIESEL',
+])
+
+const MoneySchema = z.object({
+  currencyCode: z.string(),
+  units: z.string(),
+  nanos: z.number().optional(),
+})
+
+const FuelPriceSchema = z.object({
+  type: FuelTypeEnum,
+  price: MoneySchema,
+  updateTime: z.string().datetime(),
+})
+
+const EVConnectorTypeEnum = z.enum([
+  'EV_CONNECTOR_TYPE_UNSPECIFIED',
+  'EV_CONNECTOR_TYPE_OTHER',
+  'EV_CONNECTOR_TYPE_J1772',
+  'EV_CONNECTOR_TYPE_TYPE_2',
+  'EV_CONNECTOR_TYPE_CHADEMO',
+  'EV_CONNECTOR_TYPE_CCS_COMBO_1',
+  'EV_CONNECTOR_TYPE_CCS_COMBO_2',
+  'EV_CONNECTOR_TYPE_TESLA',
+  'EV_CONNECTOR_TYPE_UNSPECIFIED_GB_T',
+  'EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET',
+])
+
+const ConnectorAggregationSchema = z.object({
+  type: EVConnectorTypeEnum,
+  maxChargeRateKw: z.number(),
+  count: z.number().int(),
+  availabilityLastUpdateTime: z.string().datetime(),
+  availableCount: z.number().int(),
+  outOfServiceCount: z.number().int(),
+})
+
+const ContentBlockSchema = z.object({
+  topic: z.string(),
+  content: LocalizedTextSchema,
+  references: z.object({
+    reviews: z.array(ReviewSchema).optional(),
+    places: z.array(z.string()).optional(),
+  }),
+})
+
+const SpatialRelationshipEnum = z.enum([
+  'NEAR',
+  'WITHIN',
+  'BESIDE',
+  'ACROSS_THE_ROAD',
+  'DOWN_THE_ROAD',
+  'AROUND_THE_CORNER',
+  'BEHIND',
+])
+
+const ContainmentEnum = z.enum([
+  'CONTAINMENT_UNSPECIFIED',
+  'WITHIN',
+  'OUTSKIRTS',
+  'NEAR',
+])
+
+const LandmarkSchema = z.object({
+  name: z.string(),
+  placeId: z.string(),
+  displayName: LocalizedTextSchema,
+  types: z.array(z.string()),
+  spatialRelationship: SpatialRelationshipEnum.optional(),
+  straightLineDistanceMeters: z.number(),
+  travelDistanceMeters: z.number().optional(),
+})
+
+const AreaSchema = z.object({
+  name: z.string(),
+  placeId: z.string(),
+  displayName: LocalizedTextSchema,
+  containment: ContainmentEnum,
+})
+
+const GoogleMapsLinksSchema = z.object({
   directionsUri: z.string(),
   placeUri: z.string(),
   writeAReviewUri: z.string(),
@@ -65,51 +166,157 @@ export const GoogleMapsLinksSchema = z.object({
   photosUri: z.string(),
 })
 
-// Main Place Schema
-export const PlaceSchema = z.object({
-  name: z.string(),
+// Stage 0 - Base Place Information
+const IDSOnlyPlaceSchema = z.object({
   id: z.string(),
-  types: z.array(z.string()),
-  nationalPhoneNumber: z.string().optional(),
-  internationalPhoneNumber: z.string().optional(),
-  formattedAddress: z.string(),
-  addressComponents: z.array(AddressComponentSchema),
-  plusCode: z.object({
-    globalCode: z.string(),
-    compoundCode: z.string(),
-  }),
-  location: LocationSchema,
-  viewport: ViewportSchema,
-  rating: z.number().optional(),
-  googleMapsUri: z.string(),
-  websiteUri: z.string().optional(),
-  regularOpeningHours: OpeningHoursSchema.optional(),
-  utcOffsetMinutes: z.number(),
-  adrFormatAddress: z.string(),
-  businessStatus: z.string(),
-  userRatingCount: z.number().optional(),
-  iconMaskBaseUri: z.string(),
-  iconBackgroundColor: z.string(),
-  displayName: DisplayNameSchema,
-  currentOpeningHours: OpeningHoursSchema.optional(),
-  shortFormattedAddress: z.string(),
-  reviews: z.array(ReviewSchema).optional(),
+  name: z.string(),
   photos: z.array(PhotoSchema).optional(),
+  attributions: z
+    .array(z.object({ provider: z.string(), providerUri: z.string() }))
+    .optional(),
+})
+
+// Stage 1 - Core Place Information
+const LocationOnlyPlaceSchema = IDSOnlyPlaceSchema.extend({
+  addressComponents: z.array(AddressComponentSchema),
+  adrFormatAddress: z.string().optional(),
+  formattedAddress: z.string(),
+  location: LatLngSchema.optional(),
+  plusCode: PlusCodeSchema.optional(),
+  shortFormattedAddress: z.string().optional(),
+  types: z.array(z.string()),
+  viewport: ViewportSchema.optional(),
+})
+
+// Address Descriptor Schema
+const AddressDescriptorSchema = z.object({
+  landmarks: z.array(LandmarkSchema),
+  areas: z.array(AreaSchema).optional(),
+})
+
+// Stage 2 - Basic Place Information
+const BasicPlaceSchema = LocationOnlyPlaceSchema.extend({
+  displayName: LocalizedTextSchema,
+  primaryType: z.string(),
+  primaryTypeDisplayName: LocalizedTextSchema,
   accessibilityOptions: z
     .object({
       wheelchairAccessibleParking: z.boolean().optional(),
       wheelchairAccessibleEntrance: z.boolean().optional(),
+      wheelchairAccessibleRestroom: z.boolean().optional(),
+      wheelchairAccessibleSeating: z.boolean().optional(),
     })
     .optional(),
-  addressDescriptor: z
-    .object({
-      landmarks: z.array(LandmarkSchema).optional(),
-    })
+  businessStatus: z
+    .enum(['OPERATIONAL', 'CLOSED_TEMPORARILY', 'CLOSED_PERMANENTLY'])
     .optional(),
-  googleMapsLinks: GoogleMapsLinksSchema,
+  googleMapsLinks: GoogleMapsLinksSchema.optional(),
+  googleMapsUri: z.string().optional(),
+  iconBackgroundColor: z.string().optional(),
+  iconMaskBaseUri: z.string().optional(),
+  pureServiceAreaBusiness: z.boolean().optional(),
+  subDestinations: z
+    .array(z.object({ name: z.string(), id: z.string() }))
+    .optional(),
+  utcOffsetMinutes: z.number().optional(),
+  addressDescriptor: AddressDescriptorSchema.optional(),
 })
 
-export const GooglePlacesTextSearchRequestSchema = z.object({
+// Stage 3 - Advanced Place Information
+const AdvancedPlaceSchema = BasicPlaceSchema.extend({
+  currentOpeningHours: OpeningHoursSchema.optional(),
+  currentSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
+  internationalPhoneNumber: z.string().optional(),
+  nationalPhoneNumber: z.string().optional(),
+  priceLevel: z
+    .enum([
+      'PRICE_LEVEL_FREE',
+      'PRICE_LEVEL_INEXPENSIVE',
+      'PRICE_LEVEL_MODERATE',
+      'PRICE_LEVEL_EXPENSIVE',
+      'PRICE_LEVEL_VERY_EXPENSIVE',
+    ])
+    .optional(),
+  priceRange: z
+    .object({
+      startPrice: MoneySchema,
+      endPrice: MoneySchema.optional(),
+    })
+    .optional(),
+  rating: z.number().min(1).max(5).optional(),
+  regularOpeningHours: OpeningHoursSchema.optional(),
+  regularSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
+  userRatingCount: z.number().optional(),
+  websiteUri: z.string().optional(),
+})
+
+const AreaSummarySchema = z.object({
+  contentBlocks: z.array(ContentBlockSchema),
+  flagContentUri: z.string(),
+})
+
+// Stage 4 - Preferred (Complete) Place Information
+const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
+  allowsDogs: z.boolean().optional(),
+  curbsidePickup: z.boolean().optional(),
+  delivery: z.boolean().optional(),
+  dineIn: z.boolean().optional(),
+  editorialSummary: LocalizedTextSchema.optional(),
+  evChargeOptions: z
+    .object({
+      connectorCount: z.number().int(),
+      connectorAggregation: z.array(ConnectorAggregationSchema),
+    })
+    .optional(),
+  fuelOptions: z
+    .object({
+      fuelPrices: z.array(FuelPriceSchema),
+    })
+    .optional(),
+  goodForChildren: z.boolean().optional(),
+  goodForGroups: z.boolean().optional(),
+  goodForWatchingSports: z.boolean().optional(),
+  liveMusic: z.boolean().optional(),
+  menuForChildren: z.boolean().optional(),
+  outdoorSeating: z.boolean().optional(),
+  parkingOptions: z
+    .object({
+      freeParkingLot: z.boolean().optional(),
+      paidParkingLot: z.boolean().optional(),
+      freeStreetParking: z.boolean().optional(),
+      paidStreetParking: z.boolean().optional(),
+      valetParking: z.boolean().optional(),
+      freeGarageParking: z.boolean().optional(),
+      paidGarageParking: z.boolean().optional(),
+    })
+    .optional(),
+  paymentOptions: z
+    .object({
+      acceptsCreditCards: z.boolean().optional(),
+      acceptsDebitCards: z.boolean().optional(),
+      acceptsCashOnly: z.boolean().optional(),
+      acceptsNfc: z.boolean().optional(),
+    })
+    .optional(),
+  reservable: z.boolean().optional(),
+  restroom: z.boolean().optional(),
+  reviews: z.array(ReviewSchema).optional(),
+  servesBeer: z.boolean().optional(),
+  servesBreakfast: z.boolean().optional(),
+  servesBrunch: z.boolean().optional(),
+  servesCocktails: z.boolean().optional(),
+  servesCoffee: z.boolean().optional(),
+  servesDessert: z.boolean().optional(),
+  servesDinner: z.boolean().optional(),
+  servesLunch: z.boolean().optional(),
+  servesVegetarianFood: z.boolean().optional(),
+  servesWine: z.boolean().optional(),
+  takeout: z.boolean().optional(),
+  areaSummary: AreaSummarySchema.optional(),
+})
+
+// API Request/Response Schemas
+export const GooglePlacesTextSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
   locationRestriction: z.object({
     rectangle: z.object({
@@ -117,25 +324,12 @@ export const GooglePlacesTextSearchRequestSchema = z.object({
       high: LocationSchema,
     }),
   }),
-  maxResultCount: z.number().min(1).max(20),
-  pageToken: z.string().optional(),
-})
-
-// API Request/Response Schemas
-export const TextSearchRequestBodySchema = z.object({
-  textQuery: z.string().min(1),
-  locationBias: z.object({
-    circle: z.object({
-      center: LocationSchema,
-      radiusInMeters: z.number().positive(),
-    }),
-  }),
   nextPageToken: z.string().optional(),
-  pageSize: z.number().positive(),
+  resultsQuantity: z.number().positive(),
 })
 
 export const GooglePlacesTextSearchResponseSchema = z.object({
-  places: z.array(PlaceSchema).optional(),
+  places: z.array(AdvancedPlaceSchema).optional(),
   contextualContents: z
     .array(
       z.object({
@@ -148,20 +342,46 @@ export const GooglePlacesTextSearchResponseSchema = z.object({
   searchUri: z.string().optional(),
 })
 
-// Type Inference
-export type DisplayName = z.infer<typeof DisplayNameSchema>
-export type Viewport = z.infer<typeof ViewportSchema>
-export type OpeningHours = z.infer<typeof OpeningHoursSchema>
-export type AuthorAttribution = z.infer<typeof AuthorAttributionSchema>
-export type Photo = z.infer<typeof PhotoSchema>
-export type AddressComponent = z.infer<typeof AddressComponentSchema>
-export type Landmark = z.infer<typeof LandmarkSchema>
-export type Review = z.infer<typeof ReviewSchema>
-export type GoogleMapsLinks = z.infer<typeof GoogleMapsLinksSchema>
-export type Place = z.infer<typeof PlaceSchema>
-export type TextSearchRequestBody = z.infer<typeof TextSearchRequestBodySchema>
-export type GooglePlacesTextSearchRequest = z.infer<
-  typeof GooglePlacesTextSearchRequestSchema
+// Keys
+// Stage 0 keys
+export const IDS_ONLY_PLACE_KEYS = `${Object.keys(IDSOnlyPlaceSchema.shape)
+  .map((key) => `places.${key}`)
+  .join(',')},contextualContents,nextPageToken,searchUri`
+
+// Stage 1 keys
+export const LOCATION_ONLY_PLACE_KEYS = `${Object.keys(
+  LocationOnlyPlaceSchema.shape,
+)
+  .map((key) => `places.${key}`)
+  .join(',')},contextualContents,nextPageToken,searchUri`
+
+// Stage 2 keys
+export const BASIC_PLACE_KEYS = `${Object.keys(BasicPlaceSchema.shape)
+  .map((key) => `places.${key}`)
+  .join(',')},contextualContents,nextPageToken,searchUri`
+
+// Stage 3 keys
+export const ADVANCED_PLACE_KEYS = `${Object.keys(AdvancedPlaceSchema.shape)
+  .map((key) => `places.${key}`)
+  .join(',')},contextualContents,nextPageToken,searchUri`
+
+// Stage 4 keys
+export const PREFERRED_PLACE_KEYS = `${Object.keys(PreferredPlaceSchema.shape)
+  .map((key) => `places.${key}`)
+  .join(',')},contextualContents,nextPageToken,searchUri`
+
+// Type Inference for Place Stages
+export type IDSOnlyPlace = z.infer<typeof IDSOnlyPlaceSchema>
+export type LocationOnlyPlace = z.infer<typeof LocationOnlyPlaceSchema>
+export type BasicPlace = z.infer<typeof BasicPlaceSchema>
+export type AdvancedPlace = z.infer<typeof AdvancedPlaceSchema>
+export type PreferredPlace = z.infer<typeof PreferredPlaceSchema>
+export type AreaSummary = z.infer<typeof AreaSummarySchema>
+export type AddressDescriptor = z.infer<typeof AddressDescriptorSchema>
+
+// Type Inference for TextSearch Request/Response
+export type GooglePlacesTextSearchRequestBody = z.infer<
+  typeof GooglePlacesTextSearchRequestBodySchema
 >
 export type GooglePlacesTextSearchResponse = z.infer<
   typeof GooglePlacesTextSearchResponseSchema
