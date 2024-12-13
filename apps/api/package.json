@@ -47,7 +47,7 @@
     "@biomejs/biome": "1.9.4",
     "@ritchy/types": "workspace:*",
     "@types/express": "5.0.0",
-    "@types/node": "22.10.1",
+    "@types/node": "22.10.2",
     "@types/turf": "3.5.32",
     "drizzle-kit": "0.28.1",
     "tsup": "8.3.5",
