@@ -169,7 +169,7 @@ const GoogleMapsLinksSchema = z.object({
 // Stage 0 - Base Place Information
 const IDSOnlyPlaceSchema = z.object({
   id: z.string(),
-  name: z.string(),
+  name: z.string().optional(),
   photos: z.array(PhotoSchema).optional(),
   attributions: z
     .array(z.object({ provider: z.string(), providerUri: z.string() }))
@@ -178,27 +178,27 @@ const IDSOnlyPlaceSchema = z.object({
 
 // Stage 1 - Core Place Information
 const LocationOnlyPlaceSchema = IDSOnlyPlaceSchema.extend({
-  addressComponents: z.array(AddressComponentSchema),
+  addressComponents: z.array(AddressComponentSchema).optional(),
   adrFormatAddress: z.string().optional(),
-  formattedAddress: z.string(),
+  formattedAddress: z.string().optional(),
   location: LatLngSchema.optional(),
   plusCode: PlusCodeSchema.optional(),
   shortFormattedAddress: z.string().optional(),
-  types: z.array(z.string()),
+  types: z.array(z.string()).optional(),
   viewport: ViewportSchema.optional(),
 })
 
 // Address Descriptor Schema
 const AddressDescriptorSchema = z.object({
-  landmarks: z.array(LandmarkSchema),
+  landmarks: z.array(LandmarkSchema).optional(),
   areas: z.array(AreaSchema).optional(),
 })
 
 // Stage 2 - Basic Place Information
 const BasicPlaceSchema = LocationOnlyPlaceSchema.extend({
-  displayName: LocalizedTextSchema,
-  primaryType: z.string(),
-  primaryTypeDisplayName: LocalizedTextSchema,
+  displayName: LocalizedTextSchema.optional(),
+  primaryType: z.string().optional(),
+  primaryTypeDisplayName: LocalizedTextSchema.optional(),
   accessibilityOptions: z
     .object({
       wheelchairAccessibleParking: z.boolean().optional(),
@@ -239,7 +239,7 @@ const AdvancedPlaceSchema = BasicPlaceSchema.extend({
     .optional(),
   priceRange: z
     .object({
-      startPrice: MoneySchema,
+      startPrice: MoneySchema.optional(),
       endPrice: MoneySchema.optional(),
     })
     .optional(),
@@ -264,13 +264,13 @@ const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
   editorialSummary: LocalizedTextSchema.optional(),
   evChargeOptions: z
     .object({
-      connectorCount: z.number().int(),
-      connectorAggregation: z.array(ConnectorAggregationSchema),
+      connectorCount: z.number().int().optional(),
+      connectorAggregation: z.array(ConnectorAggregationSchema).optional(),
     })
     .optional(),
   fuelOptions: z
     .object({
-      fuelPrices: z.array(FuelPriceSchema),
+      fuelPrices: z.array(FuelPriceSchema).optional(),
     })
     .optional(),
   goodForChildren: z.boolean().optional(),
@@ -337,7 +337,6 @@ export const GooglePlacesTextSearchResponseSchema = z.object({
       }),
     )
     .optional(),
-
   nextPageToken: z.string().optional(),
   searchUri: z.string().optional(),
 })
