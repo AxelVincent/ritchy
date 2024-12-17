@@ -9,9 +9,9 @@ interface CustomList {
 
 // Mock data with emojis
 const MOCK_LISTS: CustomList[] = [
-  { id: '1', name: 'Favorite Places', emoji: '⭐', itemCount: 3 },
-  { id: '2', name: 'To Visit', emoji: '🎯', itemCount: 5 },
-  { id: '3', name: 'Recommended', emoji: '👍', itemCount: 2 },
+  { id: '1', name: 'Restaurants', emoji: '🍔', itemCount: 3 },
+  { id: '2', name: 'Hotels', emoji: '🏨', itemCount: 5 },
+  { id: '3', name: 'Jeux et jouets', emoji: '🎮', itemCount: 2 },
 ]
 
 export const useCustomListsQuery = () => {

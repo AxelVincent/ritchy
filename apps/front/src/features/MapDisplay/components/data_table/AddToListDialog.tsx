@@ -9,6 +9,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useCustomLists } from '@/features/MapDisplay/hooks/useCustomLists'
+import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 
 interface AddToListDialogProps<T> {
@@ -28,9 +29,14 @@ export function AddToListDialog<T>({
   const [selectedEmoji, setSelectedEmoji] = useState('📍')
   const { lists, addList, addItemsToList } = useCustomLists()
   const defaultEmojis = DEFAULT_EMOJIS
+  const { toast } = useToast()
 
   const handleAddToList = async (listId: string) => {
     await addItemsToList(listId, selectedItems)
+    toast({
+      title: 'Added to list',
+      description: `${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'} added to the list`,
+    })
     onOpenChange(false)
   }
 
@@ -41,6 +47,10 @@ export function AddToListDialog<T>({
       emoji: selectedEmoji,
     })
     await addItemsToList(newListId, selectedItems)
+    toast({
+      title: 'List created',
+      description: `Created "${newListName}" and added ${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'}`,
+    })
     setNewListName('')
     setSelectedEmoji('📍')
     setShowNewListInput(false)
