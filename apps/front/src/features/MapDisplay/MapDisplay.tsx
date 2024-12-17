@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button'
-import { columns } from '@/features/MapDisplay/components/data_table/Columns'
-import { DataTable } from '@/features/MapDisplay/components/data_table/DataTable'
-import { MapBox } from '@/features/MapDisplay/components/map_box/MapBox'
-import { PlacesTextSearch } from '@/features/MapDisplay/components/search_section/PlacesTextSearch'
-import type { Location } from '@/features/MapDisplay/types'
+import { columns } from './components/data_table/Columns'
+import { DataTable } from './components/data_table/DataTable'
+import { MapBox } from './components/map_box/MapBox'
+import { PlacesTextSearch } from './components/search_section/PlacesTextSearch'
+import { DEFAULT_LOCATION } from './constants'
+
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { PlacesSearchResponse } from '@ritchy/types'
+import type { RowSelectionState } from '@tanstack/react-table'
 import {
   Columns2,
   Loader2,
@@ -13,73 +15,42 @@ import {
   TableProperties,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-
-const DEFAULT_LOCATION: Location = {
-  latitude: 48.8566,
-  longitude: 2.3522,
-  radiusInMeters: 3000,
-}
+import { useViewMode } from './hooks/useViewMode'
+import type { Location, ViewMode } from './types'
 
 export const MapDisplay = () => {
+  // Core location state
   const { location, error, loading } = useGeolocation(DEFAULT_LOCATION)
-
   const [currentLocation, setLocation] = useState<Location>(location)
 
+  // Search and selection state
   const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
-
   const [dataTableHoveredPlaceId, setDataTableHoveredPlaceId] = useState<
     string | null
   >(null)
   const [mapBoxHoveredPlaceId, setMapBoxHoveredPlaceId] = useState<
     string | null
   >(null)
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
+  const [mapBoxSelectedPlaceId, setMapBoxSelectedPlaceId] = useState<
+    string | null
+  >(null)
+  const [dataTableRowSelection, setDataTableRowSelection] =
+    useState<RowSelectionState>({})
 
-  const [viewStyle, setViewStyle] = useState<{
-    mapStyle: { flex: string }
-    dataStyle: { flex: string }
-  }>({
-    mapStyle: { flex: 'flex-1' },
-    dataStyle: { flex: 'flex-1' },
-  })
+  useEffect(() => {
+    console.log(dataTableRowSelection)
+  }, [dataTableRowSelection])
 
-  const [viewMode, setViewMode] = useState<'map' | 'data' | 'equal'>('equal')
+  // View management
+  const { viewMode, viewStyle, toggleViewMode } = useViewMode()
 
-  const handleResults = (results: PlacesSearchResponse) => {
-    setSearchResults(results)
-  }
-
-  const toggleViewMode = (mode: 'map' | 'data' | 'equal') => {
-    setViewMode(mode)
-
-    // Create an object to define sizes based on the current view mode
-    const sizes = (() => {
-      switch (mode) {
-        case 'map':
-          return { mapSize: 'basis-2/3', dataSize: 'basis-1/3' }
-        case 'data':
-          return { mapSize: 'basis-1/3', dataSize: 'basis-2/3' }
-        case 'equal':
-          return { mapSize: 'basis-1/2', dataSize: 'basis-1/2' }
-        default:
-          return { mapSize: 'basis-1/2', dataSize: 'basis-1/2' } // Fallback
-      }
-    })()
-
-    setViewStyle({
-      mapStyle: { flex: sizes.mapSize },
-      dataStyle: { flex: sizes.dataSize },
-    })
-  }
-
-  // Update currentLocation when geolocation is available
+  // Effects
   useEffect(() => {
     if (location) {
       setLocation(location)
     }
   }, [location])
 
-  // Optionally show loading or error states
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -93,60 +64,68 @@ export const MapDisplay = () => {
 
   if (error) {
     console.warn('Geolocation error:', error)
-    // Continue with default location
   }
 
   return (
     <div className="flex flex-row h-full w-full overflow-hidden">
+      {/* Map Section */}
       <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}>
         <MapBox
           onLocationChange={setLocation}
           searchResults={searchResults}
           dataTableHoveredPlaceId={dataTableHoveredPlaceId}
-          setSelectedPlaceId={setSelectedPlaceId}
+          setMapBoxSelectedPlaceId={setMapBoxSelectedPlaceId}
           viewMode={viewMode}
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
           userLocation={location}
+          dataTableRowSelection={dataTableRowSelection}
         />
-        <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2 z-50">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => toggleViewMode('map')}
-          >
-            <MapIcon />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => toggleViewMode('equal')}
-          >
-            <Columns2 />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => toggleViewMode('data')}
-          >
-            <TableProperties />
-          </Button>
-        </div>
+        <ViewModeControls toggleViewMode={toggleViewMode} />
       </div>
+
+      {/* Data Section */}
       <div
         className={`${viewStyle.dataStyle.flex} flex flex-col h-full w-full overflow-hidden border-l`}
       >
         <PlacesTextSearch
           location={currentLocation}
-          onResultsChange={handleResults}
+          onResultsChange={setSearchResults}
         />
         <DataTable
           columns={columns}
           data={searchResults}
           onRowHover={setDataTableHoveredPlaceId}
-          selectedPlaceId={selectedPlaceId}
+          mapBoxSelectedPlaceId={mapBoxSelectedPlaceId}
           mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
+          setDataTableRowSelection={setDataTableRowSelection}
+          dataTableRowSelection={dataTableRowSelection}
         />
       </div>
     </div>
   )
 }
+
+// View mode controls component
+const ViewModeControls = ({
+  toggleViewMode,
+}: { toggleViewMode: (mode: ViewMode) => void }) => (
+  <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2 z-50">
+    <Button variant="outline" size="icon" onClick={() => toggleViewMode('map')}>
+      <MapIcon />
+    </Button>
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => toggleViewMode('equal')}
+    >
+      <Columns2 />
+    </Button>
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => toggleViewMode('data')}
+    >
+      <TableProperties />
+    </Button>
+  </div>
+)

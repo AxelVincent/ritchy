@@ -40,20 +40,18 @@ export const TextWrapper = ({
 
   return (
     <div className={`flex gap-2 w-full ${baseClassName}`} style={style}>
-      <div
-        className={
-          'flex flex-row w-full cursor-pointer hover:text-primary transition-colors relative'
-        }
-        onClick={handleCopy}
-        onKeyDown={(e) => e.key === 'Enter' && handleCopy()}
-        title={
-          truncate ? `${String(children)} (Click to copy)` : 'Click to copy'
-        }
-      >
-        <span className={`basis-10/12 ${truncate ? 'truncate' : ''}`}>
+      <div className="flex flex-row w-full items-center">
+        <span
+          className={`basis-10/12 ${truncate ? 'truncate' : ''}`}
+          title={truncate ? String(children) : undefined}
+        >
           {copied ? <span className="text-green-500">Copied!</span> : children}
         </span>
-        <Copy className="basis-2/12 h-3 w-3" />
+
+        <Copy
+          className="basis-2/12 cursor-pointer hover:text-primary transition-colors w-3 h-3"
+          onClick={handleCopy}
+        />
       </div>
     </div>
   )

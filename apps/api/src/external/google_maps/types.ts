@@ -51,7 +51,7 @@ const PhotoSchema = z.object({
   authorAttributions: z.array(
     z.object({
       displayName: z.string(),
-      uri: z.string(),
+      uri: z.string().optional(),
       photoUri: z.string().optional(),
     }),
   ),
@@ -147,7 +147,7 @@ const LandmarkSchema = z.object({
   displayName: LocalizedTextSchema,
   types: z.array(z.string()),
   spatialRelationship: SpatialRelationshipEnum.optional(),
-  straightLineDistanceMeters: z.number(),
+  straightLineDistanceMeters: z.number().optional(),
   travelDistanceMeters: z.number().optional(),
 })
 
@@ -164,6 +164,16 @@ const GoogleMapsLinksSchema = z.object({
   writeAReviewUri: z.string(),
   reviewsUri: z.string(),
   photosUri: z.string(),
+})
+
+const AddressDescriptorSchema = z.object({
+  landmarks: z.array(LandmarkSchema).optional(),
+  areas: z.array(AreaSchema).optional(),
+})
+
+const AreaSummarySchema = z.object({
+  contentBlocks: z.array(ContentBlockSchema),
+  flagContentUri: z.string(),
 })
 
 // Stage 0 - Base Place Information
@@ -186,12 +196,6 @@ const LocationOnlyPlaceSchema = IDSOnlyPlaceSchema.extend({
   shortFormattedAddress: z.string().optional(),
   types: z.array(z.string()).optional(),
   viewport: ViewportSchema.optional(),
-})
-
-// Address Descriptor Schema
-const AddressDescriptorSchema = z.object({
-  landmarks: z.array(LandmarkSchema).optional(),
-  areas: z.array(AreaSchema).optional(),
 })
 
 // Stage 2 - Basic Place Information
@@ -248,11 +252,6 @@ const AdvancedPlaceSchema = BasicPlaceSchema.extend({
   regularSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
   userRatingCount: z.number().optional(),
   websiteUri: z.string().optional(),
-})
-
-const AreaSummarySchema = z.object({
-  contentBlocks: z.array(ContentBlockSchema),
-  flagContentUri: z.string(),
 })
 
 // Stage 4 - Preferred (Complete) Place Information

@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -28,24 +29,27 @@ import { DataExport } from '../data_export/DataExport'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  onRowHover: (id: string | null) => void
-  selectedPlaceId: string | null
+  onRowHover: React.Dispatch<React.SetStateAction<string | null>>
+  setDataTableRowSelection: React.Dispatch<
+    React.SetStateAction<RowSelectionState>
+  >
+  dataTableRowSelection: RowSelectionState
+  mapBoxSelectedPlaceId: string | null
   mapBoxHoveredPlaceId: string | null
-  defaultRowSelection?: RowSelectionState
 }
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
-  selectedPlaceId,
+  mapBoxSelectedPlaceId,
   onRowHover,
   mapBoxHoveredPlaceId,
-  defaultRowSelection = {},
+  setDataTableRowSelection,
+  dataTableRowSelection,
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState(defaultRowSelection)
 
   const table = useReactTable({
     data,
@@ -56,12 +60,13 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: setDataTableRowSelection,
+    getRowId: (row) => row.id,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
-      rowSelection,
+      rowSelection: dataTableRowSelection,
     },
   })
 
@@ -131,9 +136,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           key={header.id}
                           className={cn(
                             header.column.columnDef.meta?.headerClassName,
-                            'px-4 py-1 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
+                            'px-4 py-2 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
                             idx === 0 &&
-                              'sticky border-r border-s-0  left-0 z-20 bg-background text-secondary-foreground font-medium',
+                              'sticky left-0 z-20 border-r border-s-0',
                           )}
                         >
                           <TextWrapper>
@@ -150,25 +155,20 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   </tr>
                 ))}
               </thead>
-              <tbody className="overflow-auto">
+              <tbody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => {
                     const backgroundClasses = cn(
                       'bg-background',
                       mapBoxHoveredPlaceId === row.original.id && 'bg-gray-200',
-                      selectedPlaceId === row.original.id && 'bg-gray-200',
+                      mapBoxSelectedPlaceId === row.original.id &&
+                        'bg-gray-200',
                     )
 
                     return (
                       <tr
-                        key={row.id}
+                        key={row.original.id}
                         data-state={row.getIsSelected() && 'selected'}
-                        onClick={() => row.toggleSelected()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            row.toggleSelected()
-                          }
-                        }}
                         onMouseEnter={() => onRowHover(row.original.id)}
                         onMouseLeave={() => onRowHover(null)}
                         tabIndex={0}
@@ -178,10 +178,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           <td
                             key={cell.id}
                             className={cn(
-                              'px-4 py-1 border-b border-s-0 whitespace-nowrap text-secondary-foreground font-medium',
+                              'px-4 py-1 whitespace-nowrap border-b border-s-0',
                               idx === 0 &&
                                 cn(
-                                  'sticky border-r border-s-0 left-0 z-10 text-secondary-foreground font-medium',
+                                  'sticky left-0 z-10 border-r border-s-0',
                                   backgroundClasses,
                                 ),
                             )}
@@ -207,7 +207,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span>{table.getRowModel().rows.length} Results</span>
+          <Label>{table.getRowModel().rows.length} Results</Label>
+          <Label>
+            {Object.keys(dataTableRowSelection).length} of{' '}
+            {table.getPreFilteredRowModel().rows.length} Total Rows Selected
+          </Label>
           <DataExport data={data} />
         </div>
       </div>

@@ -21,7 +21,7 @@ export const MAP_SETTINGS: MapSettings = {
 
 export const RADIUS_SETTINGS: RadiusSettings = {
   min: 100,
-  max: 50000,
+  max: 150000,
   step: 100,
   initial: 100,
 }
@@ -63,4 +63,15 @@ export interface Location {
   latitude: number
   longitude: number
   radiusInMeters: number
+}
+
+export type ViewMode = 'map' | 'data' | 'equal'
+
+export interface ViewStyle {
+  mapStyle: { flex: string }
+  dataStyle: { flex: string }
+}
+
+export interface MapDisplayProps {
+  defaultLocation?: Location
 }
