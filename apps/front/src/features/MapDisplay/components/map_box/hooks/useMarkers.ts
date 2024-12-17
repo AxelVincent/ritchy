@@ -66,7 +66,6 @@ export const useMarkers = (
 
       // Only update if the color actually changed
       if (currentColor !== color) {
-        console.log('Updating marker color for', placeId, 'to', color)
         markerData.marker.remove()
         const newMarker = MarkerWithPopup(
           markerData.place,

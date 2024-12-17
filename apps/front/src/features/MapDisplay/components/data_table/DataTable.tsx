@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DataExport } from '@/features/MapDisplay/components/data_export/DataExport'
+import { AddToListDialog } from '@/features/MapDisplay/components/data_table/AddToListDialog'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -24,7 +26,6 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import { DataExport } from '../data_export/DataExport'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -50,6 +51,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [showListDialog, setShowListDialog] = useState(false)
 
   const table = useReactTable({
     data,
@@ -69,6 +71,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
       rowSelection: dataTableRowSelection,
     },
   })
+
+  // Get the selected rows data
+  const selectedRows = table.getSelectedRowModel().rows
 
   return (
     <>
@@ -136,7 +141,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           key={header.id}
                           className={cn(
                             header.column.columnDef.meta?.headerClassName,
-                            'px-4 py-2 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
+                            'px-4 py-0 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
                             idx === 0 &&
                               'sticky left-0 z-20 border-r border-s-0',
                           )}
@@ -208,10 +213,17 @@ export const DataTable = <TData extends SearchResult, TValue>({
         </div>
         <div className="flex justify-between items-center">
           <Label>{table.getRowModel().rows.length} Results</Label>
-          <Label>
-            {Object.keys(dataTableRowSelection).length} of{' '}
-            {table.getPreFilteredRowModel().rows.length} Total Rows Selected
-          </Label>
+          {selectedRows.length > 0 && (
+            <Button variant="default" onClick={() => setShowListDialog(true)}>
+              Add {selectedRows.length} item(s) to list
+            </Button>
+          )}
+
+          <AddToListDialog
+            open={showListDialog}
+            onOpenChange={setShowListDialog}
+            selectedItems={selectedRows.map((row) => row.original)}
+          />
           <DataExport data={data} />
         </div>
       </div>
