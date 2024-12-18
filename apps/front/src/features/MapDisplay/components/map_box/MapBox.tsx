@@ -1,8 +1,11 @@
+import './styles.css'
 import { RadiusSlider } from '@/features/MapDisplay/components/map_box/RadiusSlider'
 import { useMapInitialization } from '@/features/MapDisplay/hooks/useMapInitialization'
 import { useMapSquare } from '@/features/MapDisplay/hooks/useMapSquare'
 import { MAP_SETTINGS, RADIUS_SETTINGS } from '@/features/MapDisplay/types'
+import type { Location } from '@/features/MapDisplay/types'
 import type { PlacesSearchResponse } from '@ritchy/types'
+import type { RowSelectionState } from '@tanstack/react-table'
 import mapboxgl from 'mapbox-gl'
 import {
   type FC,
@@ -12,9 +15,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import './styles.css'
-import type { Location } from '@/features/MapDisplay/types'
-import type { RowSelectionState } from '@tanstack/react-table'
 import { useMarkers } from './hooks/useMarkers'
 
 // Create a dedicated type for the location change event

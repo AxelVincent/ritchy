@@ -5,7 +5,11 @@
 }
 
 .place-popup .mapboxgl-popup-close-button {
-  padding: 0.5rem;
+  width: 30px;
+  height: 30px;
+  padding: 2rem;
+  margin-top: 0px;
+  margin-right: 0px;
   font-size: 1.25rem;
 }
 
