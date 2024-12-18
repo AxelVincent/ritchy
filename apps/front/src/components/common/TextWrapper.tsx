@@ -1,4 +1,4 @@
-import { Copy } from 'lucide-react'
+import { Label } from '@radix-ui/react-dropdown-menu'
 import { useState } from 'react'
 
 interface TextWrapperProps {
@@ -39,20 +39,23 @@ export const TextWrapper = ({
   }
 
   return (
-    <div className={`flex gap-2 w-full ${baseClassName}`} style={style}>
-      <div className="flex flex-row w-full items-center">
-        <span
-          className={`basis-10/12 ${truncate ? 'truncate' : ''}`}
-          title={truncate ? String(children) : undefined}
-        >
-          {copied ? <span className="text-green-500">Copied!</span> : children}
-        </span>
-
-        <Copy
-          className="basis-2/12 cursor-pointer hover:text-primary transition-colors w-3 h-3"
-          onClick={handleCopy}
-        />
-      </div>
+    <div
+      className={`flex gap-2 w-full cursor-pointer hover:text-primary ${baseClassName}`}
+      style={style}
+      onClick={handleCopy}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleCopy()
+        }
+      }}
+    >
+      <Label
+        className={` ${truncate ? 'truncate' : ''}`}
+        title={truncate ? String(children) : undefined}
+      >
+        {copied ? <span className="text-green-500">Copied!</span> : children}
+      </Label>
     </div>
   )
 }

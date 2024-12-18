@@ -1,7 +1,15 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ExternalLink } from 'lucide-react'
+
+const getDomainFromUrl = (url: string): string => {
+  try {
+    const domain = new URL(url).hostname.replace('www.', '')
+    return domain
+  } catch {
+    return url
+  }
+}
 
 export const websiteColumn: ColumnDef<SearchResult> = {
   id: 'websiteUri',
@@ -12,17 +20,13 @@ export const websiteColumn: ColumnDef<SearchResult> = {
     if (!website) return <TextWrapper>-</TextWrapper>
 
     return (
-      <TextWrapper copyValue={website}>
-        <a
-          href={website}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1"
-        >
-          <span className="truncate max-w-[200px]">{website}</span>
-          <ExternalLink className="h-4 w-4" />
-        </a>
-      </TextWrapper>
+      <div className="flex items-center gap-1">
+        <TextWrapper copyValue={website} maxWidth={'200px'}>
+          <a href={website} target="_blank" rel="noopener noreferrer">
+            {getDomainFromUrl(website)}
+          </a>
+        </TextWrapper>
+      </div>
     )
   },
 }
