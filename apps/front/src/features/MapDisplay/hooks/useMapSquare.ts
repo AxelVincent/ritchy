@@ -38,7 +38,7 @@ export const useMapSquare = (mapRef: React.RefObject<mapboxgl.Map>) => {
       if (source && 'setData' in source) {
         source.setData({
           type: 'Feature',
-          properties: { radius_m: radiusInMeters },
+          properties: {},
           geometry: {
             type: 'Polygon',
             coordinates: [coordinates],

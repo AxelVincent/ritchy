@@ -1,20 +1,12 @@
 import './styles.css'
-import { RadiusSlider } from '@/features/MapDisplay/components/map_box/RadiusSlider'
 import { useMapInitialization } from '@/features/MapDisplay/hooks/useMapInitialization'
 import { useMapSquare } from '@/features/MapDisplay/hooks/useMapSquare'
-import { MAP_SETTINGS, RADIUS_SETTINGS } from '@/features/MapDisplay/types'
+import { MAP_SETTINGS } from '@/features/MapDisplay/types'
 import type { Location } from '@/features/MapDisplay/types'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import mapboxgl from 'mapbox-gl'
-import {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkers } from './hooks/useMarkers'
 
 // Create a dedicated type for the location change event
@@ -34,6 +26,8 @@ interface MapBoxProps {
   setMapBoxHoveredPlaceId: (placeId: string | null) => void
   userLocation: Location
   dataTableRowSelection: RowSelectionState
+  radiusInMeters: number
+  setRadiusInMeters: (radius: number) => void
 }
 
 export const MapBox: FC<MapBoxProps> = ({
@@ -45,12 +39,11 @@ export const MapBox: FC<MapBoxProps> = ({
   setMapBoxHoveredPlaceId,
   userLocation,
   dataTableRowSelection,
+  radiusInMeters,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const currentHoveredPlaceIdRef = useRef<string | null>(null)
-  const [radiusInMeters, setRadiusInMeters] = useState(
-    userLocation.radiusInMeters,
-  )
+  const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
 
   // Default center coordinates
   const initialCenter = useMemo(
@@ -78,28 +71,18 @@ export const MapBox: FC<MapBoxProps> = ({
     if (!mapRef.current) return
 
     mapRef.current.on('load', () => {
-      // Add circle source for radius visualization
-      mapRef.current?.addSource('circle', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: { radius_m: radiusInMeters },
-          geometry: {
-            type: 'Point',
-            coordinates: [
-              mapRef.current.getCenter().lng,
-              mapRef.current.getCenter().lat,
-            ],
-          },
-        },
-      })
+      console.log('load')
+      if (!mapRef.current) return
+      centerMarkerRef.current = new mapboxgl.Marker()
+        .setLngLat(mapRef.current.getCenter())
+        .addTo(mapRef.current)
 
       // Add square source
       mapRef.current?.addSource('square', {
         type: 'geojson',
         data: {
           type: 'Feature',
-          properties: { radius_m: radiusInMeters },
+          properties: {},
           geometry: {
             type: 'Polygon',
             coordinates: [
@@ -134,19 +117,17 @@ export const MapBox: FC<MapBoxProps> = ({
         },
       })
     })
+  }, [radiusInMeters, mapRef, calculateSquareCoordinates])
 
-    updateSquareData(mapRef.current.getCenter(), radiusInMeters)
-
-    // Add center marker and handle map movement
-    const marker = new mapboxgl.Marker()
-      .setLngLat(mapRef.current.getCenter())
-      .addTo(mapRef.current)
+  // Effect: Add center marker and handle map movement
+  useEffect(() => {
+    if (!mapRef.current) return
 
     // Update marker position and notify parent of location changes
     mapRef.current.on('move', () => {
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
-        marker.setLngLat(center)
+        centerMarkerRef.current?.setLngLat(center)
         updateSquareData(center, radiusInMeters)
         onLocationChange({
           latitude: center.lat,
@@ -155,13 +136,12 @@ export const MapBox: FC<MapBoxProps> = ({
         })
       }
     })
-  }, [
-    radiusInMeters,
-    mapRef,
-    updateSquareData,
-    onLocationChange,
-    calculateSquareCoordinates,
-  ])
+  }, [radiusInMeters, mapRef, updateSquareData, onLocationChange])
+
+  useEffect(() => {
+    if (!mapRef.current) return
+    updateSquareData(mapRef.current.getCenter(), radiusInMeters)
+  }, [radiusInMeters, mapRef, updateSquareData])
 
   const markersMapRef = useMarkers(
     mapRef,
@@ -200,32 +180,9 @@ export const MapBox: FC<MapBoxProps> = ({
     currentHoveredPlaceIdRef.current = dataTableHoveredPlaceId
   }, [dataTableHoveredPlaceId, mapRef, markersMapRef])
 
-  // Handler for radius slider changes
-  const handleChange = useCallback(
-    (newValue: number) => {
-      setRadiusInMeters(newValue)
-
-      if (mapRef.current) {
-        const center = mapRef.current.getCenter()
-        updateSquareData(center, newValue)
-        onLocationChange({
-          latitude: center.lat,
-          longitude: center.lng,
-          radiusInMeters: newValue,
-        })
-      }
-    },
-    [updateSquareData, onLocationChange, mapRef],
-  )
-
   return (
     <>
       <div ref={mapContainerRef} className="h-screen w-full" />
-      <RadiusSlider
-        value={radiusInMeters}
-        onChange={handleChange}
-        settings={RADIUS_SETTINGS}
-      />
     </>
   )
 }

@@ -3,7 +3,7 @@ import type { Location } from '@/features/MapDisplay/types'
 export const DEFAULT_LOCATION: Location = {
   latitude: 48.8566,
   longitude: 2.3522,
-  radiusInMeters: 3000,
+  radiusInMeters: 5000,
 }
 
 export const VIEW_SIZES = {

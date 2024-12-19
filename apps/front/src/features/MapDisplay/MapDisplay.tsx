@@ -22,6 +22,7 @@ export const MapDisplay = () => {
   // Core location state
   const { location, error, loading } = useGeolocation(DEFAULT_LOCATION)
   const [currentLocation, setLocation] = useState<Location>(location)
+  const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
 
   // Search and selection state
   const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
@@ -79,6 +80,8 @@ export const MapDisplay = () => {
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
           userLocation={location}
           dataTableRowSelection={dataTableRowSelection}
+          radiusInMeters={radiusInMeters}
+          setRadiusInMeters={setRadiusInMeters}
         />
         <ViewModeControls toggleViewMode={toggleViewMode} />
       </div>
@@ -90,6 +93,8 @@ export const MapDisplay = () => {
         <PlacesTextSearch
           location={currentLocation}
           onResultsChange={setSearchResults}
+          radiusInMeters={radiusInMeters}
+          setRadiusInMeters={setRadiusInMeters}
         />
         <DataTable
           columns={columns}
