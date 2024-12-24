@@ -15,8 +15,8 @@ export interface RadiusSettings {
 export const MAP_SETTINGS: MapSettings = {
   style: 'mapbox://styles/mapbox/streets-v12',
   zoom: 10,
-  maxZoom: 17,
-  minZoom: 7,
+  maxZoom: 30,
+  minZoom: 5,
 }
 
 export const RADIUS_SETTINGS: RadiusSettings = {
@@ -64,8 +64,6 @@ export interface Location {
   longitude: number
   radiusInMeters: number
 }
-
-export type ViewMode = 'map' | 'data' | 'equal'
 
 export interface ViewStyle {
   mapStyle: { flex: string }

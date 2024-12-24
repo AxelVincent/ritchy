@@ -1,22 +1,16 @@
-import { Button } from '@/components/ui/button'
 import { columns } from './components/data_table/Columns'
 import { DataTable } from './components/data_table/DataTable'
 import { MapBox } from './components/map_box/MapBox'
 import { PlacesTextSearch } from './components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from './constants'
 
+import { mockData } from '@/api/queries/places/mock/mockData'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
-import {
-  Columns2,
-  Loader2,
-  Map as MapIcon,
-  TableProperties,
-} from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useViewMode } from './hooks/useViewMode'
-import type { Location, ViewMode } from './types'
+import type { Location } from './types'
 
 export const MapDisplay = () => {
   // Core location state
@@ -25,7 +19,9 @@ export const MapDisplay = () => {
   const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
 
   // Search and selection state
-  const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
+  const [searchResults, setSearchResults] = useState<PlacesSearchResponse>(
+    process.env.NODE_ENV === 'development' ? mockData : [],
+  )
   const [dataTableHoveredPlaceId, setDataTableHoveredPlaceId] = useState<
     string | null
   >(null)
@@ -37,13 +33,6 @@ export const MapDisplay = () => {
   >(null)
   const [dataTableRowSelection, setDataTableRowSelection] =
     useState<RowSelectionState>({})
-
-  useEffect(() => {
-    console.log(dataTableRowSelection)
-  }, [dataTableRowSelection])
-
-  // View management
-  const { viewMode, viewStyle, toggleViewMode } = useViewMode()
 
   // Effects
   useEffect(() => {
@@ -68,28 +57,25 @@ export const MapDisplay = () => {
   }
 
   return (
-    <div className="flex flex-row h-full w-full overflow-hidden">
+    <div className="flex flex-1">
       {/* Map Section */}
-      <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}>
+      <div className="w-1/2">
+        {/* <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}> */}
         <MapBox
           onLocationChange={setLocation}
           searchResults={searchResults}
           dataTableHoveredPlaceId={dataTableHoveredPlaceId}
           setMapBoxSelectedPlaceId={setMapBoxSelectedPlaceId}
-          viewMode={viewMode}
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
           userLocation={location}
           dataTableRowSelection={dataTableRowSelection}
           radiusInMeters={radiusInMeters}
           setRadiusInMeters={setRadiusInMeters}
         />
-        <ViewModeControls toggleViewMode={toggleViewMode} />
       </div>
 
       {/* Data Section */}
-      <div
-        className={`${viewStyle.dataStyle.flex} flex flex-col h-full w-full overflow-hidden border-l`}
-      >
+      <div className="w-1/2 flex-1 flex flex-col overflow-hidden">
         <PlacesTextSearch
           location={currentLocation}
           onResultsChange={setSearchResults}
@@ -109,28 +95,3 @@ export const MapDisplay = () => {
     </div>
   )
 }
-
-// View mode controls component
-const ViewModeControls = ({
-  toggleViewMode,
-}: { toggleViewMode: (mode: ViewMode) => void }) => (
-  <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2 z-50">
-    <Button variant="outline" size="icon" onClick={() => toggleViewMode('map')}>
-      <MapIcon />
-    </Button>
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={() => toggleViewMode('equal')}
-    >
-      <Columns2 />
-    </Button>
-    <Button
-      variant="outline"
-      size="icon"
-      onClick={() => toggleViewMode('data')}
-    >
-      <TableProperties />
-    </Button>
-  </div>
-)

@@ -5,7 +5,7 @@ export default function RootRoute() {
   const isMobile = window.innerWidth < 1000
 
   return (
-    <div className="bg-background h-screen w-screen">
+    <>
       {isMobile ? (
         <div className="flex h-full flex-col items-center justify-center bg-zinc-900 p-10 text-white">
           <div className="flex items-center text-lg font-medium">
@@ -29,6 +29,6 @@ export default function RootRoute() {
           {process.env.NODE_ENV === 'development' && <TanStackRouterDevtools />}
         </>
       )}
-    </div>
+    </>
   )
 }

@@ -3,6 +3,7 @@ import { useMapInitialization } from '@/features/MapDisplay/hooks/useMapInitiali
 import { useMapSquare } from '@/features/MapDisplay/hooks/useMapSquare'
 import { MAP_SETTINGS } from '@/features/MapDisplay/types'
 import type { Location } from '@/features/MapDisplay/types'
+import { debounce } from '@/lib/debounce'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import mapboxgl from 'mapbox-gl'
@@ -22,7 +23,6 @@ interface MapBoxProps {
   searchResults: PlacesSearchResponse | null
   dataTableHoveredPlaceId: string | null
   setMapBoxSelectedPlaceId: (placeId: string | null) => void
-  viewMode: 'map' | 'data' | 'equal'
   setMapBoxHoveredPlaceId: (placeId: string | null) => void
   userLocation: Location
   dataTableRowSelection: RowSelectionState
@@ -35,7 +35,6 @@ export const MapBox: FC<MapBoxProps> = ({
   searchResults,
   dataTableHoveredPlaceId,
   setMapBoxSelectedPlaceId,
-  viewMode,
   setMapBoxHoveredPlaceId,
   userLocation,
   dataTableRowSelection,
@@ -59,12 +58,25 @@ export const MapBox: FC<MapBoxProps> = ({
   )
   const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
 
-  // Step 2: Update map size on view mode change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    if (!mapRef.current) return
-    mapRef.current.resize()
-  }, [viewMode, mapRef])
+    if (!mapRef.current || !mapContainerRef.current) return
+
+    // Debounce the resize handler with 100ms delay
+    const debouncedResize = debounce(() => {
+      mapRef.current?.resize()
+    }, 100)
+
+    const resizeObserver = new ResizeObserver(debouncedResize)
+    resizeObserver.observe(mapContainerRef.current)
+
+    return () => {
+      if (mapContainerRef.current) {
+        resizeObserver.unobserve(mapContainerRef.current)
+      }
+      resizeObserver.disconnect()
+      debouncedResize.cancel() // Clean up the debounced function
+    }
+  }, [mapRef])
 
   // Effect: Initialize map circle and center marker
   useEffect(() => {
@@ -182,7 +194,7 @@ export const MapBox: FC<MapBoxProps> = ({
 
   return (
     <>
-      <div ref={mapContainerRef} className="h-screen w-full" />
+      <div ref={mapContainerRef} className="h-full w-full" />
     </>
   )
 }
