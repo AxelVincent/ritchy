@@ -1,7 +1,4 @@
-import { SignedIn, SignedOut } from '@clerk/clerk-react'
-import { Navigate, Outlet } from '@tanstack/react-router'
-import { useEffect } from 'react'
-import { AppSidebar } from '../sidebar/app-sidebar'
+import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,11 +6,22 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '../ui/breadcrumb'
-import { Separator } from '../ui/separator'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '../ui/sidebar'
+} from '@/components/ui/breadcrumb'
+import { Separator } from '@/components/ui/separator'
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar'
+import { SignedIn, SignedOut } from '@clerk/clerk-react'
+import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
-export const ProtectedLayout = () => {
+export const Route = createFileRoute('/_auth')({
+  component: AuthedLayout,
+})
+
+function AuthedLayout() {
   useEffect(() => {
     // Initialize Sleekplan
     window.$sleek = []

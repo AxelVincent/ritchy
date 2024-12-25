@@ -217,6 +217,9 @@ importers:
         specifier: 3.23.8
         version: 3.23.8
     devDependencies:
+      '@clerk/types':
+        specifier: 4.39.0
+        version: 4.39.0
       '@mapbox/mapbox-gl-geocoder':
         specifier: 5.0.3
         version: 5.0.3
@@ -646,6 +649,10 @@ packages:
 
   '@clerk/types@4.39.0':
     resolution: {integrity: sha512-WWEoXmcob6X80cZZZGobN8aKjHAjAoL0cgVyLX8UeQ+JW4kl1IfUmZQgDBFOafGEm2yUoKlKAP22bWPDqmbTJw==}
+    engines: {node: '>=18.17.0'}
+
+  '@clerk/types@4.40.0':
+    resolution: {integrity: sha512-9QdllXYujsjYLbvPg9Kq1rWOemX5FB0r6Ijy8HOxwjKN+TPlxUnGcs+t7IwU+M5gdmZ2KV6aA6d1a2q2FlSoiA==}
     engines: {node: '>=18.17.0'}
 
   '@cspotcode/source-map-support@0.8.1':
@@ -5025,7 +5032,7 @@ snapshots:
     dependencies:
       '@clerk/backend': 1.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@clerk/shared': 2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@clerk/types': 4.35.0
+      '@clerk/types': 4.40.0
       express: 4.21.1
       tslib: 2.4.1
     transitivePeerDependencies:
@@ -5077,6 +5084,10 @@ snapshots:
       csstype: 3.1.1
 
   '@clerk/types@4.39.0':
+    dependencies:
+      csstype: 3.1.1
+
+  '@clerk/types@4.40.0':
     dependencies:
       csstype: 3.1.1
 

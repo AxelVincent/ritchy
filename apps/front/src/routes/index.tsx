@@ -1,71 +1,37 @@
-import { createRouter } from '@tanstack/react-router'
+import { SignIn } from '@clerk/clerk-react'
+import { createFileRoute } from '@tanstack/react-router'
 
-import { createRootRoute, createRoute } from '@tanstack/react-router'
-
-import { ErrorPage } from '@/components/error-page'
-import { ProtectedLayout } from '@/components/layouts/protected-layout'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import RootRoute from './__root'
-import HomeRoute from './home'
-import MapDisplayRoute from './map-display'
-
-const routes = {
-  public: [
-    {
-      path: '/',
-      component: HomeRoute,
-    },
-  ],
-  protected: [
-    {
-      path: '/map-display',
-      component: MapDisplayRoute,
-    },
-  ],
-} as const
-
-const rootRoute = createRootRoute({
-  component: RootRoute,
+export const Route = createFileRoute('/')({
+  component: RouteComponent,
 })
 
-// Create public routes
-const publicRoutes = routes.public.map((route) =>
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path: route.path,
-    component: route.component,
-  }),
-)
-
-// Create protected routes under protected layout
-const protectedLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: 'protected',
-  component: ProtectedLayout,
-})
-
-const protectedRoutes = routes.protected.map((route) =>
-  createRoute({
-    getParentRoute: () => protectedLayoutRoute,
-    path: route.path,
-    component: route.component,
-  }),
-)
-
-const routeTree = rootRoute.addChildren([
-  ...publicRoutes,
-  protectedLayoutRoute.addChildren(protectedRoutes),
-])
-
-export const router = createRouter({
-  routeTree,
-  defaultPreload: 'intent',
-  defaultErrorComponent: ({ error }) => <ErrorPage error={error} />,
-  defaultPendingComponent: () => <LoadingSpinner />,
-})
-
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
+function RouteComponent() {
+  return (
+    <>
+      <div className="container relative hidden h-full flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+        <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+          <div className="absolute inset-0 bg-zinc-900" />
+          <div className="relative z-20 flex items-center text-lg font-medium">
+            <span className="mr-2 text-2xl" role="img" aria-label="Ritchy Logo">
+              🐕
+            </span>
+            Ritchy
+          </div>
+          <div className="relative z-20 mt-auto">
+            <blockquote className="space-y-2">
+              <p className="text-lg">
+                &ldquo;Welcome to the beta. Feedback welcome.&rdquo;
+              </p>
+              <footer className="text-sm">Ritchy Team</footer>
+            </blockquote>
+          </div>
+        </div>
+        <div className="lg:p-8">
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <SignIn fallbackRedirectUrl="/search" />
+          </div>
+        </div>
+      </div>
+    </>
+  )
 }
