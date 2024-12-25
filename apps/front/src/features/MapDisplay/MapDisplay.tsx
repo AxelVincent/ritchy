@@ -5,10 +5,10 @@ import { PlacesTextSearch } from './components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from './constants'
 
 import { mockData } from '@/api/queries/places/mock/mockData'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
-import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Location } from './types'
 
@@ -42,14 +42,7 @@ export const MapDisplay = () => {
   }, [location])
 
   if (loading) {
-    return (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Detecting your location...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner message="Detecting your location..." />
   }
 
   if (error) {
