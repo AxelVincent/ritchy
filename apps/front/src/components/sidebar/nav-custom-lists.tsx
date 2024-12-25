@@ -40,7 +40,7 @@ export function NavCustomLists() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Custom Lists</SidebarGroupLabel>
+      <SidebarGroupLabel>Lists</SidebarGroupLabel>
       <SidebarMenu>
         {lists?.map((list) => (
           <SidebarMenuItem key={list.id}>
