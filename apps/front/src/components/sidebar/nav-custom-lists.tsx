@@ -19,12 +19,13 @@ import {
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { Link } from '@tanstack/react-router'
+import { Link, useMatch } from '@tanstack/react-router'
 import { Folder, Forward, MoreHorizontal, Trash2 } from 'lucide-react'
 
 export function NavCustomLists() {
   const { isMobile } = useSidebar()
   const { data: lists, isLoading } = useCustomListsQuery()
+  const match = useMatch({ from: '/_auth/lists/$listId', shouldThrow: false })
 
   if (isLoading) {
     return (
@@ -47,6 +48,7 @@ export function NavCustomLists() {
             <SidebarMenuButton
               asChild
               tooltip={list.name}
+              isActive={match?.params.listId === list.id}
               className={cn('justify-between')}
             >
               <Link to={`/lists/${list.id}`}>
