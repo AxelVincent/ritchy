@@ -1,10 +1,5 @@
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
-import { Separator } from '@/components/ui/separator'
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { SignedIn, SignedOut } from '@clerk/clerk-react'
 import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
@@ -40,11 +35,11 @@ function AuthedLayout() {
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset className="h-full w-full overflow-hidden">
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            {/* <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
               <div className="flex items-center gap-2 px-4">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mr-2 h-4" />
-                {/* <Breadcrumb>
+                <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem className="hidden md:block">
                       <BreadcrumbLink href="#">
@@ -56,9 +51,9 @@ function AuthedLayout() {
                       <BreadcrumbPage>Data Fetching</BreadcrumbPage>
                     </BreadcrumbItem>
                   </BreadcrumbList>
-                </Breadcrumb> */}
+                </Breadcrumb>
               </div>
-            </header>
+            </header> */}
             <Outlet />
           </SidebarInset>
         </SidebarProvider>
