@@ -45,6 +45,8 @@ export const useMapInitialization = (
           marker: false,
           flyTo: { duration: 0 },
           mapboxgl,
+          collapsed: true,
+          enableGeolocation: true,
         }) as IControl,
         new mapboxgl.NavigationControl(),
         new mapboxgl.FullscreenControl(),
