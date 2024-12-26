@@ -8,7 +8,7 @@ export function RitchyLogo() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton size="lg">
+        <SidebarMenuButton size="lg" className="pointer-events-none">
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-secondary text-sidebar-primary-foreground">
             🐕
           </div>
