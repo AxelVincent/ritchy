@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sidebar'
 import { useTheme } from '@/providers/theme-provider'
 import { UserButton, UserProfile, useAuth, useUser } from '@clerk/clerk-react'
+import { Label } from '../ui/label'
 
 export function NavUser() {
   const { isMobile } = useSidebar()
@@ -48,10 +49,12 @@ export function NavUser() {
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user?.fullName}</span>
-                <span className="truncate text-xs">
+                <Label className="truncate font-semibold">
+                  {user?.fullName}
+                </Label>
+                <Label className="truncate text-xs">
                   {user?.emailAddresses[0]?.emailAddress}
-                </span>
+                </Label>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -66,12 +69,12 @@ export function NavUser() {
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <UserButton />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">
+                  <Label className="truncate font-semibold">
                     {user?.fullName}
-                  </span>
-                  <span className="truncate text-xs">
+                  </Label>
+                  <Label className="truncate text-xs">
                     {user?.emailAddresses[0]?.emailAddress}
-                  </span>
+                  </Label>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -89,7 +92,7 @@ export function NavUser() {
                   className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
                   size={12}
                 />
-                <span className="sr-only">Toggle theme</span>
+                <Label className="sr-only">Toggle theme</Label>
                 {theme === 'dark' ? 'Light' : 'Dark'} mode
               </DropdownMenuItem>
             </DropdownMenuGroup>

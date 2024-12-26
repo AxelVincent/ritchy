@@ -1,4 +1,6 @@
-import { useCustomListMutations } from '@/api/mutations/lists/useCustomListMutations'
+import { useAddItemsToList } from '@/api/mutations/lists/useAddItemsToList'
+import { useCreateList } from '@/api/mutations/lists/useCreateList'
+import { useRemoveFromList } from '@/api/mutations/lists/useRemoveFromList'
 import { useCustomListsQuery } from '@/api/queries/lists/useCustomLists'
 
 interface CreateListParams {
@@ -8,13 +10,17 @@ interface CreateListParams {
 
 export function useCustomLists() {
   const { data: lists = [] } = useCustomListsQuery()
-  const { addList, addItemsToList } = useCustomListMutations()
+  const createList = useCreateList()
+  const addItems = useAddItemsToList()
+  const removeItems = useRemoveFromList()
 
   return {
     lists,
     addList: (params: CreateListParams) =>
-      addList.mutateAsync(params).then((res) => res.id),
+      createList.mutateAsync(params).then((res) => res.id),
     addItemsToList: (listId: string, items: unknown[]) =>
-      addItemsToList.mutateAsync({ listId, items }),
+      addItems.mutateAsync({ listId, items }),
+    removeItemsFromList: (listId: string, items: unknown[]) =>
+      removeItems.mutateAsync({ listId, items }),
   }
 }

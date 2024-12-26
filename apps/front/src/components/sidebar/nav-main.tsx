@@ -13,8 +13,8 @@ export function NavMain() {
       <SidebarMenuItem>
         <SidebarMenuButton asChild tooltip="Search">
           <Link to="/search">
-            <Search className="text-muted-foreground" />
-            <span>Search</span>
+            <Search className="text-muted-foreground text-sm" />
+            <p className="pl-2 font-medium">Search</p>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>

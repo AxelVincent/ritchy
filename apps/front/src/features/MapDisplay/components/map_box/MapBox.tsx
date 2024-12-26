@@ -28,6 +28,7 @@ interface MapBoxProps {
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
   setRadiusInMeters: (radius: number) => void
+  listId?: string
 }
 
 export const MapBox: FC<MapBoxProps> = ({
@@ -39,6 +40,7 @@ export const MapBox: FC<MapBoxProps> = ({
   userLocation,
   dataTableRowSelection,
   radiusInMeters,
+  listId,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const currentHoveredPlaceIdRef = useRef<string | null>(null)
@@ -80,7 +82,7 @@ export const MapBox: FC<MapBoxProps> = ({
 
   // Effect: Initialize map circle and center marker
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || listId) return
 
     mapRef.current.on('load', () => {
       console.log('load')
@@ -129,11 +131,11 @@ export const MapBox: FC<MapBoxProps> = ({
         },
       })
     })
-  }, [radiusInMeters, mapRef, calculateSquareCoordinates])
+  }, [radiusInMeters, mapRef, calculateSquareCoordinates, listId])
 
   // Effect: Add center marker and handle map movement
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || listId) return
 
     // Update marker position and notify parent of location changes
     mapRef.current.on('move', () => {
@@ -148,12 +150,12 @@ export const MapBox: FC<MapBoxProps> = ({
         })
       }
     })
-  }, [radiusInMeters, mapRef, updateSquareData, onLocationChange])
+  }, [radiusInMeters, mapRef, updateSquareData, onLocationChange, listId])
 
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || listId) return
     updateSquareData(mapRef.current.getCenter(), radiusInMeters)
-  }, [radiusInMeters, mapRef, updateSquareData])
+  }, [radiusInMeters, mapRef, updateSquareData, listId])
 
   const markersMapRef = useMarkers(
     mapRef,

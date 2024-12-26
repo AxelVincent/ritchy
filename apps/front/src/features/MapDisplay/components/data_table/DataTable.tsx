@@ -26,6 +26,7 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
+import { RemoveFromListDialog } from './RemoveFromListDialog'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -37,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   dataTableRowSelection: RowSelectionState
   mapBoxSelectedPlaceId: string | null
   mapBoxHoveredPlaceId: string | null
+  listId?: string
 }
 
 export const DataTable = <TData extends SearchResult, TValue>({
@@ -47,6 +49,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   mapBoxHoveredPlaceId,
   setDataTableRowSelection,
   dataTableRowSelection,
+  listId,
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -89,15 +92,39 @@ export const DataTable = <TData extends SearchResult, TValue>({
             }
             className=""
           />
-          <AddToListDialog
-            open={showListDialog}
-            onOpenChange={setShowListDialog}
-            selectedItems={selectedRows.map((row) => row.original)}
-          />
-          {selectedRows.length > 0 && (
-            <Button variant="default" onClick={() => setShowListDialog(true)}>
-              Add {selectedRows.length} item(s) to list
-            </Button>
+          {listId ? (
+            <>
+              <RemoveFromListDialog
+                open={showListDialog}
+                onOpenChange={setShowListDialog}
+                selectedItems={selectedRows.map((row) => row.original)}
+                listId={listId}
+              />
+              {selectedRows.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowListDialog(true)}
+                >
+                  Remove {selectedRows.length} item(s) from list
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <AddToListDialog
+                open={showListDialog}
+                onOpenChange={setShowListDialog}
+                selectedItems={selectedRows.map((row) => row.original)}
+              />
+              {selectedRows.length > 0 && (
+                <Button
+                  variant="default"
+                  onClick={() => setShowListDialog(true)}
+                >
+                  Add {selectedRows.length} item(s) to list
+                </Button>
+              )}
+            </>
           )}
           <DataExport data={data} />
           <DropdownMenu>

@@ -12,7 +12,12 @@ import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
 import type { Location } from './types'
 
-export const MapDisplay = () => {
+interface MapDisplayProps {
+  initialData?: PlacesSearchResponse
+  listId?: string
+}
+
+export const MapDisplay = ({ initialData, listId }: MapDisplayProps) => {
   // Core location state
   const { location, error, loading } = useGeolocation(DEFAULT_LOCATION)
   const [currentLocation, setLocation] = useState<Location>(location)
@@ -20,7 +25,7 @@ export const MapDisplay = () => {
 
   // Search and selection state
   const [searchResults, setSearchResults] = useState<PlacesSearchResponse>(
-    process.env.NODE_ENV === 'development' ? mockData : [],
+    initialData ?? (process.env.NODE_ENV === 'development' ? mockData : []),
   )
   const [dataTableHoveredPlaceId, setDataTableHoveredPlaceId] = useState<
     string | null
@@ -53,7 +58,6 @@ export const MapDisplay = () => {
     <div className="flex flex-1">
       {/* Map Section */}
       <div className="w-1/2">
-        {/* <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}> */}
         <MapBox
           onLocationChange={setLocation}
           searchResults={searchResults}
@@ -64,17 +68,20 @@ export const MapDisplay = () => {
           dataTableRowSelection={dataTableRowSelection}
           radiusInMeters={radiusInMeters}
           setRadiusInMeters={setRadiusInMeters}
+          listId={listId}
         />
       </div>
 
       {/* Data Section */}
       <div className="w-1/2 flex-1 flex flex-col overflow-hidden">
-        <PlacesTextSearch
-          location={currentLocation}
-          onResultsChange={setSearchResults}
-          radiusInMeters={radiusInMeters}
-          setRadiusInMeters={setRadiusInMeters}
-        />
+        {!listId && (
+          <PlacesTextSearch
+            location={currentLocation}
+            onResultsChange={setSearchResults}
+            radiusInMeters={radiusInMeters}
+            setRadiusInMeters={setRadiusInMeters}
+          />
+        )}
         <DataTable
           columns={columns}
           data={searchResults}
@@ -83,6 +90,7 @@ export const MapDisplay = () => {
           mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
           setDataTableRowSelection={setDataTableRowSelection}
           dataTableRowSelection={dataTableRowSelection}
+          listId={listId}
         />
       </div>
     </div>

@@ -49,21 +49,21 @@ export function NavCustomLists() {
               tooltip={list.name}
               className={cn('justify-between')}
             >
-              <Link to={`/lists/${list.id}`} className="">
+              <Link to={`/lists/${list.id}`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">{list.emoji}</span>
-                  <span>{list.name}</span>
+                  <p className="text-sm">{list.emoji}</p>
+                  <p className="pl-2 font-medium">{list.name}</p>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {list.itemCount}
-                </span>
+                </p>
               </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction showOnHover>
                   <MoreHorizontal />
-                  <span className="sr-only">More</span>
+                  <p className="sr-only">More</p>
                 </SidebarMenuAction>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -73,16 +73,16 @@ export function NavCustomLists() {
               >
                 <DropdownMenuItem>
                   <Folder className="text-muted-foreground" />
-                  <span>View Project</span>
+                  <p>View Project</p>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Forward className="text-muted-foreground" />
-                  <span>Share Project</span>
+                  <p>Share Project</p>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <Trash2 className="text-muted-foreground" />
-                  <span>Delete Project</span>
+                  <p>Delete Project</p>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
