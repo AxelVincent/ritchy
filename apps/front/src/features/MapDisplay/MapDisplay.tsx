@@ -6,6 +6,9 @@ import { DEFAULT_LOCATION } from './constants'
 
 import { mockData } from '@/api/queries/places/mock/mockData'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { ResizablePanelGroup } from '@/components/ui/resizable'
+import { ResizableHandle } from '@/components/ui/resizable'
+import { ResizablePanel } from '@/components/ui/resizable'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
@@ -55,9 +58,8 @@ export const MapDisplay = ({ initialData, listId }: MapDisplayProps) => {
   }
 
   return (
-    <div className="flex flex-1">
-      {/* Map Section */}
-      <div className="w-1/2">
+    <ResizablePanelGroup direction="horizontal">
+      <ResizablePanel className="flex-1">
         <MapBox
           onLocationChange={setLocation}
           searchResults={searchResults}
@@ -70,10 +72,9 @@ export const MapDisplay = ({ initialData, listId }: MapDisplayProps) => {
           setRadiusInMeters={setRadiusInMeters}
           listId={listId}
         />
-      </div>
-
-      {/* Data Section */}
-      <div className="w-1/2 flex-1 flex flex-col overflow-hidden">
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
         {!listId && (
           <PlacesTextSearch
             location={currentLocation}
@@ -92,7 +93,7 @@ export const MapDisplay = ({ initialData, listId }: MapDisplayProps) => {
           dataTableRowSelection={dataTableRowSelection}
           listId={listId}
         />
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   )
 }
