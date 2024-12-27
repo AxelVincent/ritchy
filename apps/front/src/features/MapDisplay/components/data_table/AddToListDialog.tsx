@@ -32,13 +32,35 @@ export function AddToListDialog({
   const { toast } = useToast()
 
   const handleAddToList = async (listId: string) => {
-    await addItemsToList({
+    const res = await addItemsToList({
       id: listId,
       items: selectedItems,
     })
+
+    if ('error' in res) {
+      toast({
+        title: 'Error',
+        description: res.error,
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const newCount = res.added.length ?? 0
+    const existingCount = res.duplicates.length ?? 0
+
+    const newItemsText =
+      newCount > 0
+        ? `Added ${newCount} new place${newCount === 1 ? '' : 's'}`
+        : ''
+    const existingItemsText =
+      existingCount > 0
+        ? `${existingCount} place${existingCount === 1 ? ' was' : 's were'} already in your list`
+        : ''
+
     toast({
-      title: 'Added to list',
-      description: `${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'} added to the list`,
+      title: 'Updated list',
+      description: [newItemsText, existingItemsText].filter(Boolean).join('. '),
     })
     onOpenChange(false)
   }

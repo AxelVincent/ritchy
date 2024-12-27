@@ -1,12 +1,12 @@
 import { logger } from '@ritchy/logger'
 import {
+  type AddItemsToListApiResponse,
   type AddItemsToListRequestBody,
   AddItemsToListRequestBodySchema,
   type AddItemsToListRequestParams,
-  AddItemsToListRequestSchema,
   type AddItemsToListResponse,
 } from '@ritchy/types'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
@@ -19,7 +19,7 @@ export const addItemsToList = async (
     AddItemsToListResponse,
     AddItemsToListRequestBody
   >,
-  res: Response<AddItemsToListResponse>,
+  res: Response<AddItemsToListApiResponse>,
 ): Promise<void> => {
   try {
     const listId = Number.parseInt(req.params.id)
@@ -47,17 +47,37 @@ export const addItemsToList = async (
       return
     }
 
-    await db
-      .insert(listPlace)
-      .values(
-        parsedBody.items.map((item) => ({
+    // First, get existing entries
+    const existingEntries = await db
+      .select()
+      .from(listPlace)
+      .where(
+        and(
+          eq(listPlace.listId, listId),
+          inArray(listPlace.placeId, parsedBody.items),
+        ),
+      )
+
+    const duplicatePlaceIds = existingEntries.map((entry) => entry.placeId)
+    const newPlaceIds = parsedBody.items.filter(
+      (id) => !duplicatePlaceIds.includes(id),
+    )
+
+    // Only insert new items
+    if (newPlaceIds.length > 0) {
+      await db.insert(listPlace).values(
+        newPlaceIds.map((item) => ({
           listId: listId,
           placeId: item,
         })),
       )
-      .onConflictDoNothing({ target: [listPlace.listId, listPlace.placeId] })
+    }
 
-    res.json({ success: true })
+    res.json({
+      success: true,
+      duplicates: duplicatePlaceIds.map(Number),
+      added: newPlaceIds.map(Number),
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({

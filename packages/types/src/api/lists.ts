@@ -68,16 +68,20 @@ export const DeleteItemsFromListResponseSchema = z.object({
   success: z.boolean(),
 })
 
+export const AddItemsToListResponseSchema = z.object({
+  success: z.boolean(),
+  duplicates: z.array(z.number()),
+  added: z.array(z.number()),
+})
+
 // API Union Types
 export const ListContentApiResponseSchema = z.union([
   ListContentResponseSchema,
   ApiErrorResponseSchema,
 ])
 
-export const AddItemsToListResponseSchema = z.union([
-  z.object({
-    success: z.boolean(),
-  }),
+export const AddItemsToListApiResponseSchema = z.union([
+  AddItemsToListResponseSchema,
   ApiErrorResponseSchema,
 ])
 
@@ -88,11 +92,6 @@ export const CreateListApiResponseSchema = z.union([
 
 export const ListsApiResponseSchema = z.union([
   ListsResponseSchema,
-  ApiErrorResponseSchema,
-])
-
-export const AddItemsToListApiResponseSchema = z.union([
-  AddItemsToListResponseSchema,
   ApiErrorResponseSchema,
 ])
 
