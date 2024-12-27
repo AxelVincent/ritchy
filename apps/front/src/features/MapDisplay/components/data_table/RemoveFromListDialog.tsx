@@ -6,27 +6,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useCustomLists } from '@/features/MapDisplay/hooks/useCustomLists'
+import { useLists } from '@/features/MapDisplay/hooks/useLists'
 import { useToast } from '@/hooks/use-toast'
 
-interface RemoveFromListDialogProps<T> {
+interface RemoveFromListDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedItems: T[]
+  selectedItems: string[]
   listId: string
 }
 
-export function RemoveFromListDialog<T>({
+export function RemoveFromListDialog({
   open,
   onOpenChange,
   selectedItems,
   listId,
-}: RemoveFromListDialogProps<T>) {
-  const { removeItemsFromList } = useCustomLists()
+}: RemoveFromListDialogProps) {
+  const { removeItemsFromList } = useLists()
   const { toast } = useToast()
 
   const handleRemoveFromList = async () => {
-    await removeItemsFromList(listId, selectedItems)
+    await removeItemsFromList({ id: listId, items: selectedItems })
     toast({
       title: 'Removed from list',
       description: `${selectedItems.length} item${

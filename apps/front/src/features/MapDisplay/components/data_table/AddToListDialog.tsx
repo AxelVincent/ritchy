@@ -1,4 +1,4 @@
-import { DEFAULT_EMOJIS } from '@/api/mutations/lists/useCustomListMutations'
+import { DEFAULT_EMOJIS } from '@/api/mutations/lists/useCreateList'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -8,31 +8,34 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useCustomLists } from '@/features/MapDisplay/hooks/useCustomLists'
+import { useLists } from '@/features/MapDisplay/hooks/useLists'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 
-interface AddToListDialogProps<T> {
+interface AddToListDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedItems: T[]
+  selectedItems: string[]
 }
 
-export function AddToListDialog<T>({
+export function AddToListDialog({
   open,
   onOpenChange,
   selectedItems,
-}: AddToListDialogProps<T>) {
+}: AddToListDialogProps) {
   const [showNewListInput, setShowNewListInput] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [selectedEmoji, setSelectedEmoji] = useState('📍')
-  const { lists, addList, addItemsToList } = useCustomLists()
+  const { lists, addList, addItemsToList } = useLists()
   const defaultEmojis = DEFAULT_EMOJIS
   const { toast } = useToast()
 
   const handleAddToList = async (listId: string) => {
-    await addItemsToList(listId, selectedItems)
+    await addItemsToList({
+      id: listId,
+      items: selectedItems,
+    })
     toast({
       title: 'Added to list',
       description: `${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'} added to the list`,
@@ -46,7 +49,10 @@ export function AddToListDialog<T>({
       name: newListName,
       emoji: selectedEmoji,
     })
-    await addItemsToList(newListId, selectedItems)
+    await addItemsToList({
+      id: newListId,
+      items: selectedItems,
+    })
     toast({
       title: 'List created',
       description: `Created "${newListName}" and added ${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'}`,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCustomListsQuery } from '@/api/queries/lists/useCustomLists'
+import { useListsQuery } from '@/api/queries/lists/useLists'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +24,7 @@ import { Folder, Forward, MoreHorizontal, Trash2 } from 'lucide-react'
 
 export function NavCustomLists() {
   const { isMobile } = useSidebar()
-  const { data: lists, isLoading } = useCustomListsQuery()
+  const { data: lists, isLoading } = useListsQuery()
   const match = useMatch({ from: '/_auth/lists/$listId', shouldThrow: false })
 
   if (isLoading) {

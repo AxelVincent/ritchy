@@ -1,0 +1,1 @@
+ALTER TABLE "list_place" ALTER COLUMN "place_id" SET DATA TYPE text;

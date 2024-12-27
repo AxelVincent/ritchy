@@ -1,4 +1,4 @@
-import { useCustomListContentQuery } from '@/api/queries/lists/useCustomListContent'
+import { useListContentQuery } from '@/api/queries/lists/useListContent'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { MapDisplay } from '@/features/MapDisplay/MapDisplay'
 import { createFileRoute } from '@tanstack/react-router'
@@ -14,12 +14,11 @@ export const Route = createFileRoute('/_auth/lists/$listId')({
 
 function RouteComponent() {
   const { listId } = Route.useLoaderData()
-  const { data, isLoading, error } = useCustomListContentQuery(listId)
-
-  console.log(data)
+  const { data, isLoading, error } = useListContentQuery(listId)
 
   if (isLoading) return <LoadingSpinner message="Loading list content..." />
   if (error) return <div>Error: {error.message}</div>
+  if (!data || 'error' in data) return null
 
-  return <MapDisplay key={listId} initialData={data} listId={listId} />
+  return <MapDisplay key={listId} listId={listId} listData={data} />
 }

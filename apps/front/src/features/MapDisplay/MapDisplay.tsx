@@ -10,26 +10,43 @@ import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import type { PlacesSearchResponse } from '@ritchy/types'
+import type {
+  ListContentApiResponse,
+  PlacesSearchResponse,
+} from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
 import type { Location } from './types'
 
 interface MapDisplayProps {
-  initialData?: PlacesSearchResponse
   listId?: string
+  listData?: ListContentApiResponse
 }
 
-export const MapDisplay = ({ initialData, listId }: MapDisplayProps) => {
+export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   // Core location state
   const { location, error, loading } = useGeolocation(DEFAULT_LOCATION)
   const [currentLocation, setLocation] = useState<Location>(location)
   const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
 
-  // Search and selection state
+  // Update searchResults to use listData when available, fallback to mockData in development
   const [searchResults, setSearchResults] = useState<PlacesSearchResponse>(
-    initialData ?? (process.env.NODE_ENV === 'development' ? mockData : []),
+    () => {
+      if (listId && listData && !('error' in listData)) {
+        return listData.items
+      }
+      return process.env.NODE_ENV === 'development' ? mockData : []
+    },
   )
+
+  // Add effect to update searchResults when listData changes
+  useEffect(() => {
+    if (listId && listData && !('error' in listData)) {
+      setSearchResults(listData.items)
+    }
+  }, [listId, listData])
+
+  // Search and selection state
   const [dataTableHoveredPlaceId, setDataTableHoveredPlaceId] = useState<
     string | null
   >(null)

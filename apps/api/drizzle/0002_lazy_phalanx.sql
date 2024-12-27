@@ -1,1 +1,0 @@
-DROP TABLE "lead_query_param_id_index";

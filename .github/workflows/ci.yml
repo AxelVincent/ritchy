@@ -36,3 +36,18 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        uses: ./.github/setup
+      - name: Migrate
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: ritchy
+        run: cd apps/api && pnpm migrate

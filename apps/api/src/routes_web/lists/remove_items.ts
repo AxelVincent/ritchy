@@ -1,0 +1,82 @@
+import { logger } from '@ritchy/logger'
+import {
+  type RemoveItemsFromListApiResponse,
+  type RemoveItemsFromListRequestBody,
+  RemoveItemsFromListRequestBodySchema,
+  type RemoveItemsFromListRequestParams,
+  type RemoveItemsFromListResponse,
+} from '@ritchy/types'
+import { sql } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
+import type { Request, Response } from 'express'
+import { z } from 'zod'
+import { db } from '../../db/db'
+import { list, listPlace } from '../../db/schema'
+
+export const removeItemsFromList = async (
+  req: Request<
+    RemoveItemsFromListRequestParams,
+    RemoveItemsFromListResponse,
+    RemoveItemsFromListRequestBody
+  >,
+  res: Response<RemoveItemsFromListApiResponse>,
+): Promise<void> => {
+  try {
+    const listId = Number.parseInt(req.params.id)
+    if (Number.isNaN(listId)) {
+      res.status(400).json({
+        error: 'Invalid list ID',
+      })
+      return
+    }
+
+    const userId = req.auth.userId
+    const parsedBody = RemoveItemsFromListRequestBodySchema.parse(req.body)
+
+    // Verify list ownership
+    const result = await db
+      .select()
+      .from(list)
+      .where(and(eq(list.id, listId), eq(list.userId, userId)))
+      .limit(1)
+
+    if (!result.length) {
+      res.status(404).json({
+        error: 'List not found',
+      })
+      return
+    }
+
+    // Delete the items
+    await db
+      .delete(listPlace)
+      .where(
+        and(
+          eq(listPlace.listId, listId),
+          inArray(listPlace.placeId, parsedBody.items),
+        ),
+      )
+
+    res.json({ success: true })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      logger.info({
+        msg: 'Validation error',
+        event: 'validation_error',
+        metadata: { error },
+      })
+      res.status(400).json({
+        error: 'Invalid request data',
+        details: error.errors,
+      })
+      return
+    }
+
+    logger.error({
+      msg: 'Remove items from list error',
+      event: 'remove_items_error',
+      metadata: { error },
+    })
+    res.status(500).json({ error: 'Failed to remove items from list' })
+  }
+}

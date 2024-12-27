@@ -1,1 +1,0 @@
-ALTER TABLE "lead_email" ADD CONSTRAINT "lead_email_lead_id_email_unique" UNIQUE("lead_id","email");

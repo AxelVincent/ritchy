@@ -227,7 +227,7 @@ const BasicPlaceSchema = LocationOnlyPlaceSchema.extend({
 })
 
 // Stage 3 - Advanced Place Information
-const AdvancedPlaceSchema = BasicPlaceSchema.extend({
+export const AdvancedPlaceSchema = BasicPlaceSchema.extend({
   currentOpeningHours: OpeningHoursSchema.optional(),
   currentSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
   internationalPhoneNumber: z.string().optional(),
@@ -340,33 +340,41 @@ export const GooglePlacesTextSearchResponseSchema = z.object({
   searchUri: z.string().optional(),
 })
 
-// Keys
+const generatePlaceKeys = (
+  schema: z.ZodObject<z.ZodRawShape>,
+  includePrefix = true,
+) => {
+  const prefix = includePrefix ? 'places.' : ''
+  const placeKeys = Object.keys(schema.shape)
+    .map((key) => `${prefix}${key}`)
+    .join(',')
+
+  return includePrefix
+    ? `${placeKeys},contextualContents,nextPageToken,searchUri`
+    : placeKeys
+}
+
 // Stage 0 keys
-export const IDS_ONLY_PLACE_KEYS = `${Object.keys(IDSOnlyPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const IDS_ONLY_PLACE_KEYS = generatePlaceKeys(IDSOnlyPlaceSchema)
 
 // Stage 1 keys
-export const LOCATION_ONLY_PLACE_KEYS = `${Object.keys(
-  LocationOnlyPlaceSchema.shape,
+export const LOCATION_ONLY_PLACE_KEYS = generatePlaceKeys(
+  LocationOnlyPlaceSchema,
 )
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
 
 // Stage 2 keys
-export const BASIC_PLACE_KEYS = `${Object.keys(BasicPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const BASIC_PLACE_KEYS = generatePlaceKeys(BasicPlaceSchema)
 
 // Stage 3 keys
-export const ADVANCED_PLACE_KEYS = `${Object.keys(AdvancedPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const ADVANCED_PLACE_KEYS_PLACE_DETAILS = generatePlaceKeys(
+  AdvancedPlaceSchema,
+  false,
+)
+export const ADVANCED_PLACE_KEYS_TEXT_SEARCH =
+  generatePlaceKeys(AdvancedPlaceSchema)
 
 // Stage 4 keys
-export const PREFERRED_PLACE_KEYS = `${Object.keys(PreferredPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const PREFERRED_PLACE_KEYS = generatePlaceKeys(PreferredPlaceSchema)
 
 // Type Inference for Place Stages
 export type IDSOnlyPlace = z.infer<typeof IDSOnlyPlaceSchema>

@@ -97,7 +97,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
               <RemoveFromListDialog
                 open={showListDialog}
                 onOpenChange={setShowListDialog}
-                selectedItems={selectedRows.map((row) => row.original)}
+                selectedItems={selectedRows.map((row) => row.original.id)}
                 listId={listId}
               />
               {selectedRows.length > 0 && (
@@ -114,7 +114,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
               <AddToListDialog
                 open={showListDialog}
                 onOpenChange={setShowListDialog}
-                selectedItems={selectedRows.map((row) => row.original)}
+                selectedItems={selectedRows.map((row) => row.original.id)}
               />
               {selectedRows.length > 0 && (
                 <Button
