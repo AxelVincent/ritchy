@@ -51,6 +51,7 @@ export const MapBox: FC<MapBoxProps> = ({
     () => [userLocation.longitude, userLocation.latitude] as [number, number],
     [userLocation],
   )
+  console.log('initialCenter', initialCenter)
 
   // Initialize map and circle functionality
   const mapRef = useMapInitialization(
