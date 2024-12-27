@@ -12,17 +12,17 @@ import { useLists } from '@/features/MapDisplay/hooks/useLists'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 
-interface AddToListDialogProps {
+interface AddItemsToListDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedItems: string[]
 }
 
-export function AddToListDialog({
+export function AddItemsToListDialog({
   open,
   onOpenChange,
   selectedItems,
-}: AddToListDialogProps) {
+}: AddItemsToListDialogProps) {
   const [showNewListInput, setShowNewListInput] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [newListName, setNewListName] = useState('')

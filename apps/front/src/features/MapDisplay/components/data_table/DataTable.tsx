@@ -9,7 +9,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/MapDisplay/components/data_export/DataExport'
-import { AddToListDialog } from '@/features/MapDisplay/components/data_table/AddToListDialog'
+import { AddItemsToListDialog } from '@/features/MapDisplay/components/data_table/AddItemsToListDialog'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -54,7 +54,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [showListDialog, setShowListDialog] = useState(false)
+  const [showAddListDialog, setShowAddListDialog] = useState(false)
+  const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
 
   const table = useReactTable({
     data,
@@ -95,31 +96,44 @@ export const DataTable = <TData extends SearchResult, TValue>({
           {listId ? (
             <>
               <DeleteItemsFromListDialog
-                open={showListDialog}
-                onOpenChange={setShowListDialog}
+                open={showDeleteListDialog}
+                onOpenChange={setShowDeleteListDialog}
                 selectedItems={selectedRows.map((row) => row.original.id)}
                 listId={listId}
               />
+              <AddItemsToListDialog
+                open={showAddListDialog}
+                onOpenChange={setShowAddListDialog}
+                selectedItems={selectedRows.map((row) => row.original.id)}
+              />
               {selectedRows.length > 0 && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowListDialog(true)}
-                >
-                  Remove {selectedRows.length} item(s) from list
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    onClick={() => setShowAddListDialog(true)}
+                  >
+                    Add {selectedRows.length} item(s) to list
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteListDialog(true)}
+                  >
+                    Remove {selectedRows.length} items
+                  </Button>
+                </div>
               )}
             </>
           ) : (
             <>
-              <AddToListDialog
-                open={showListDialog}
-                onOpenChange={setShowListDialog}
+              <AddItemsToListDialog
+                open={showAddListDialog}
+                onOpenChange={setShowAddListDialog}
                 selectedItems={selectedRows.map((row) => row.original.id)}
               />
               {selectedRows.length > 0 && (
                 <Button
                   variant="default"
-                  onClick={() => setShowListDialog(true)}
+                  onClick={() => setShowAddListDialog(true)}
                 >
                   Add {selectedRows.length} item(s) to list
                 </Button>
