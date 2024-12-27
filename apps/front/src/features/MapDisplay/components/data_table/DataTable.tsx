@@ -198,8 +198,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
                 table.getRowModel().rows.map((row) => {
                   const backgroundClasses = cn(
                     'bg-background',
-                    mapBoxHoveredPlaceId === row.original.id && 'bg-gray-200',
-                    mapBoxSelectedPlaceId === row.original.id && 'bg-gray-200',
+                    mapBoxHoveredPlaceId === row.original.id &&
+                      'bg-gray-100 dark:bg-gray-900',
+                    mapBoxSelectedPlaceId === row.original.id &&
+                      'bg-gray-100 dark:bg-gray-900',
                   )
 
                   return (

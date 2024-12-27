@@ -118,6 +118,12 @@ export function AddToListDialog({
                 onChange={(e) => setNewListName(e.target.value)}
                 placeholder="Enter list name"
                 className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleCreateList()
+                  }
+                }}
               />
               <Button onClick={handleCreateList}>Create</Button>
             </div>
