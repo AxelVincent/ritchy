@@ -14,9 +14,11 @@ runs:
       uses: harmon758/postgresql-action@v1
       with:
         postgresql version: '15'
-        postgresql db: 'test_db'
-        postgresql user: 'test_user'
-        postgresql password: 'test_password'
+        postgresql db: 'ritchy'
+        postgresql user: 'postgres'
+        postgresql password: 'postgres'
+        postgresql port: '5432'
+        postgresql host: 'localhost'
 
     - shell: bash
       run: pnpm add -g turbo
