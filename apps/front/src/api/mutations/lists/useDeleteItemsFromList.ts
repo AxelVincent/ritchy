@@ -21,7 +21,7 @@ export const useDeleteItemsFromList = () => {
     }: DeleteItemsFromListRequest): Promise<DeleteItemsFromListApiResponse> => {
       const token = await getToken()
       const response = await apiClient.fetchWithAuth(
-        `/lists/${id}`,
+        `/lists/${id}/items`,
         {
           method: 'DELETE',
           body: JSON.stringify({ items }),
