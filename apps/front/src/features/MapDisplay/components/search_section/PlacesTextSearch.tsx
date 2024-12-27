@@ -133,9 +133,9 @@ export const PlacesTextSearch = ({
                 Radius
               </Label>
               <div>
-                <span className="text-sm text-muted-foreground">
+                <Label className="text-sm text-muted-foreground">
                   {radiusInMeters / 1000} km
-                </span>
+                </Label>
                 <Slider
                   id="radius-input"
                   min={RADIUS_SETTINGS.min}
@@ -144,6 +144,7 @@ export const PlacesTextSearch = ({
                   value={[radiusInMeters]}
                   onValueChange={([newValue]) => setRadiusInMeters(newValue)}
                   aria-label="Radius"
+                  className="cursor-pointer"
                 />
               </div>
             </div>
