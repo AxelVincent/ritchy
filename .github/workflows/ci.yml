@@ -50,4 +50,4 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
           PGDATABASE: ritchy
-        run: cd apps/api && pnpm migrate
+        run: cd apps/api && pnpm db:migrate
