@@ -9,24 +9,24 @@ import {
 import { useLists } from '@/features/MapDisplay/hooks/useLists'
 import { useToast } from '@/hooks/use-toast'
 
-interface RemoveFromListDialogProps {
+interface DeleteItemsFromListDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedItems: string[]
   listId: string
 }
 
-export function RemoveFromListDialog({
+export function DeleteItemsFromListDialog({
   open,
   onOpenChange,
   selectedItems,
   listId,
-}: RemoveFromListDialogProps) {
-  const { removeItemsFromList } = useLists()
+}: DeleteItemsFromListDialogProps) {
+  const { deleteItemsFromList } = useLists()
   const { toast } = useToast()
 
   const handleRemoveFromList = async () => {
-    await removeItemsFromList({ id: listId, items: selectedItems })
+    await deleteItemsFromList({ id: listId, items: selectedItems })
     toast({
       title: 'Removed from list',
       description: `${selectedItems.length} item${

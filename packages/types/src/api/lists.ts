@@ -42,17 +42,17 @@ export const AddItemsToListRequestSchema = z.object({
   ...AddItemsToListRequestBodySchema.shape,
 })
 
-export const RemoveItemsFromListRequestBodySchema = z.object({
+export const DeleteItemsFromListRequestBodySchema = z.object({
   items: z.array(z.string()),
 })
 
-export const RemoveItemsFromListRequestParamsSchema = z.object({
+export const DeleteItemsFromListRequestParamsSchema = z.object({
   id: z.string(),
 })
 
-export const RemoveItemsFromListRequestSchema = z.object({
-  ...RemoveItemsFromListRequestParamsSchema.shape,
-  ...RemoveItemsFromListRequestBodySchema.shape,
+export const DeleteItemsFromListRequestSchema = z.object({
+  ...DeleteItemsFromListRequestParamsSchema.shape,
+  ...DeleteItemsFromListRequestBodySchema.shape,
 })
 
 // Response Schemas with Error Handling
@@ -64,7 +64,7 @@ export const CreateListResponseSchema = z.object({
   updatedAt: z.string(),
 })
 
-export const RemoveItemsFromListResponseSchema = z.object({
+export const DeleteItemsFromListResponseSchema = z.object({
   success: z.boolean(),
 })
 
@@ -96,8 +96,22 @@ export const AddItemsToListApiResponseSchema = z.union([
   ApiErrorResponseSchema,
 ])
 
-export const RemoveItemsFromListApiResponseSchema = z.union([
-  RemoveItemsFromListResponseSchema,
+export const DeleteItemsFromListApiResponseSchema = z.union([
+  DeleteItemsFromListResponseSchema,
+  ApiErrorResponseSchema,
+])
+
+// Add these new schemas
+export const DeleteListRequestParamsSchema = z.object({
+  id: z.string(),
+})
+
+export const DeleteListResponseSchema = z.object({
+  success: z.boolean(),
+})
+
+export const DeleteListApiResponseSchema = z.union([
+  DeleteListResponseSchema,
   ApiErrorResponseSchema,
 ])
 
@@ -117,11 +131,11 @@ export type AddItemsToListRequestBody = z.infer<
 export type AddItemsToListRequestParams = z.infer<
   typeof AddItemsToListRequestParamsSchema
 >
-export type RemoveItemsFromListRequest = z.infer<
-  typeof RemoveItemsFromListRequestSchema
+export type DeleteItemsFromListRequest = z.infer<
+  typeof DeleteItemsFromListRequestSchema
 >
-export type RemoveItemsFromListResponse = z.infer<
-  typeof RemoveItemsFromListResponseSchema
+export type DeleteItemsFromListResponse = z.infer<
+  typeof DeleteItemsFromListResponseSchema
 >
 export type ListContentApiResponse = z.infer<
   typeof ListContentApiResponseSchema
@@ -130,12 +144,17 @@ export type AddItemsToListResponse = z.infer<
   typeof AddItemsToListResponseSchema
 >
 export type ListsApiResponse = z.infer<typeof ListsApiResponseSchema>
-export type RemoveItemsFromListRequestBody = z.infer<
-  typeof RemoveItemsFromListRequestBodySchema
+export type DeleteItemsFromListRequestBody = z.infer<
+  typeof DeleteItemsFromListRequestBodySchema
 >
-export type RemoveItemsFromListRequestParams = z.infer<
-  typeof RemoveItemsFromListRequestParamsSchema
+export type DeleteItemsFromListRequestParams = z.infer<
+  typeof DeleteItemsFromListRequestParamsSchema
 >
-export type RemoveItemsFromListApiResponse = z.infer<
-  typeof RemoveItemsFromListApiResponseSchema
+export type DeleteItemsFromListApiResponse = z.infer<
+  typeof DeleteItemsFromListApiResponseSchema
 >
+export type DeleteListRequestParams = z.infer<
+  typeof DeleteListRequestParamsSchema
+>
+export type DeleteListResponse = z.infer<typeof DeleteListResponseSchema>
+export type DeleteListApiResponse = z.infer<typeof DeleteListApiResponseSchema>

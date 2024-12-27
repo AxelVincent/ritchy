@@ -25,7 +25,15 @@ interface MapDisplayProps {
 
 export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   // Core location state
-  const { location, error, loading } = useGeolocation(DEFAULT_LOCATION)
+  const defaultLocation =
+    listId && listData && !('error' in listData) && listData.items.length > 0
+      ? {
+          latitude: listData.items[0].location.latitude,
+          longitude: listData.items[0].location.longitude,
+          radiusInMeters: DEFAULT_LOCATION.radiusInMeters,
+        }
+      : DEFAULT_LOCATION
+  const { location, error, loading } = useGeolocation(defaultLocation, !!listId)
   const [currentLocation, setLocation] = useState<Location>(location)
   const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
 

@@ -26,7 +26,7 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import { RemoveFromListDialog } from './RemoveFromListDialog'
+import { DeleteItemsFromListDialog } from './DeleteItemsFromListDialog'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -94,7 +94,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
           />
           {listId ? (
             <>
-              <RemoveFromListDialog
+              <DeleteItemsFromListDialog
                 open={showListDialog}
                 onOpenChange={setShowListDialog}
                 selectedItems={selectedRows.map((row) => row.original.id)}

@@ -1,40 +1,28 @@
 import { createApiClient } from '@/lib/api/createApiClient'
 import { useAuth } from '@clerk/clerk-react'
-import type { CreateListRequest } from '@ritchy/types'
+import type {
+  DeleteListApiResponse,
+  DeleteListRequestParams,
+} from '@ritchy/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-
-// Default emojis to choose from
-export const DEFAULT_EMOJIS = [
-  '📍',
-  '🎯',
-  '⭐',
-  '💫',
-  '🌟',
-  '✨',
-  '💡',
-  '📌',
-  '🎪',
-  '🏰',
-  '🗺️',
-  '🌍',
-]
 
 const apiClient = createApiClient({
   baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
 })
 
-export const useCreateList = () => {
+export const useDeleteList = () => {
   const { getToken } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ name, emoji }: CreateListRequest) => {
+    mutationFn: async ({
+      id,
+    }: DeleteListRequestParams): Promise<DeleteListApiResponse> => {
       const token = await getToken()
       const response = await apiClient.fetchWithAuth(
-        '/lists',
+        `/lists/${id}`,
         {
-          method: 'POST',
-          body: JSON.stringify({ name, emoji }),
+          method: 'DELETE',
         },
         token,
       )

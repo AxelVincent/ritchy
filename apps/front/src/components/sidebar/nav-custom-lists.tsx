@@ -1,11 +1,11 @@
 'use client'
 
+import { useDeleteList } from '@/api/mutations/lists/useDeleteList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -20,11 +20,12 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { Link, useMatch } from '@tanstack/react-router'
-import { Folder, Forward, MoreHorizontal, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Trash2 } from 'lucide-react'
 
 export function NavCustomLists() {
   const { isMobile } = useSidebar()
   const { data: lists, isLoading } = useListsQuery()
+  const deleteList = useDeleteList()
   const match = useMatch({ from: '/_auth/lists/$listId', shouldThrow: false })
 
   if (isLoading) {
@@ -73,18 +74,13 @@ export function NavCustomLists() {
                 side={isMobile ? 'bottom' : 'right'}
                 align={isMobile ? 'end' : 'start'}
               >
-                <DropdownMenuItem>
-                  <Folder className="text-muted-foreground" />
-                  <p>View Project</p>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Forward className="text-muted-foreground" />
-                  <p>Share Project</p>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => deleteList.mutateAsync({ id: list.id })}
+                  disabled={deleteList.isPending}
+                  className="cursor-pointer"
+                >
                   <Trash2 className="text-muted-foreground" />
-                  <p>Delete Project</p>
+                  <p>Delete</p>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

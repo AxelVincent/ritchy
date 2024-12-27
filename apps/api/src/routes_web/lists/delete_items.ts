@@ -1,25 +1,24 @@
 import { logger } from '@ritchy/logger'
 import {
-  type RemoveItemsFromListApiResponse,
-  type RemoveItemsFromListRequestBody,
-  RemoveItemsFromListRequestBodySchema,
-  type RemoveItemsFromListRequestParams,
-  type RemoveItemsFromListResponse,
+  type DeleteItemsFromListApiResponse,
+  type DeleteItemsFromListRequestBody,
+  DeleteItemsFromListRequestBodySchema,
+  type DeleteItemsFromListRequestParams,
+  type DeleteItemsFromListResponse,
 } from '@ritchy/types'
-import { sql } from 'drizzle-orm'
 import { and, eq, inArray } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
 
-export const removeItemsFromList = async (
+export const deleteItemsFromList = async (
   req: Request<
-    RemoveItemsFromListRequestParams,
-    RemoveItemsFromListResponse,
-    RemoveItemsFromListRequestBody
+    DeleteItemsFromListRequestParams,
+    DeleteItemsFromListResponse,
+    DeleteItemsFromListRequestBody
   >,
-  res: Response<RemoveItemsFromListApiResponse>,
+  res: Response<DeleteItemsFromListApiResponse>,
 ): Promise<void> => {
   try {
     const listId = Number.parseInt(req.params.id)
@@ -31,7 +30,7 @@ export const removeItemsFromList = async (
     }
 
     const userId = req.auth.userId
-    const parsedBody = RemoveItemsFromListRequestBodySchema.parse(req.body)
+    const parsedBody = DeleteItemsFromListRequestBodySchema.parse(req.body)
 
     // Verify list ownership
     const result = await db
@@ -73,10 +72,10 @@ export const removeItemsFromList = async (
     }
 
     logger.error({
-      msg: 'Remove items from list error',
-      event: 'remove_items_error',
+      msg: 'Delete items from list error',
+      event: 'delete_items_error',
       metadata: { error },
     })
-    res.status(500).json({ error: 'Failed to remove items from list' })
+    res.status(500).json({ error: 'Failed to delete items from list' })
   }
 }

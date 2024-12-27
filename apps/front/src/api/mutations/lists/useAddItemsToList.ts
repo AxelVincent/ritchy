@@ -21,7 +21,7 @@ export const useAddItemsToList = () => {
     }: AddItemsToListRequest): Promise<AddItemsToListApiResponse> => {
       const token = await getToken()
       const response = await apiClient.fetchWithAuth(
-        `/lists/${id}`,
+        `/lists/${id}/items`,
         {
           method: 'POST',
           body: JSON.stringify({ items }),
