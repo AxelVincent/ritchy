@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS "uniq_list_place" ON "list_place" USING btree ("list_id","place_id");

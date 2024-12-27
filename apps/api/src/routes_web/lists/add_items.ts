@@ -47,12 +47,15 @@ export const addItemsToList = async (
       return
     }
 
-    await db.insert(listPlace).values(
-      parsedBody.items.map((item) => ({
-        listId: listId,
-        placeId: item,
-      })),
-    )
+    await db
+      .insert(listPlace)
+      .values(
+        parsedBody.items.map((item) => ({
+          listId: listId,
+          placeId: item,
+        })),
+      )
+      .onConflictDoNothing({ target: [listPlace.listId, listPlace.placeId] })
 
     res.json({ success: true })
   } catch (error) {

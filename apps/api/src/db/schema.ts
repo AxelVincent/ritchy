@@ -1,4 +1,11 @@
-import { integer, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
 
 export const list = pgTable('list', {
   id: serial('id').primaryKey(),
@@ -9,12 +16,21 @@ export const list = pgTable('list', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const listPlace = pgTable('list_place', {
-  id: serial('id').primaryKey(),
-  listId: integer('list_id')
-    .notNull()
-    .references(() => list.id),
-  placeId: text('place_id').notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+export const listPlace = pgTable(
+  'list_place',
+  {
+    id: serial('id').primaryKey(),
+    listId: integer('list_id')
+      .notNull()
+      .references(() => list.id),
+    placeId: text('place_id').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqListPlace: uniqueIndex('uniq_list_place').on(
+      table.listId,
+      table.placeId,
+    ),
+  }),
+)
