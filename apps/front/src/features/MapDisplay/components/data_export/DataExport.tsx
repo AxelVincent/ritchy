@@ -56,7 +56,6 @@ export const DataExport = ({ data }: DataExportProps) => {
             getEnrichmentData(queryClient, row.websiteUri),
           ]),
       )
-      console.log('enrichmentMap', enrichmentMap)
       queryClient.clear()
 
       validateAndExportToCsv<SearchResult>({

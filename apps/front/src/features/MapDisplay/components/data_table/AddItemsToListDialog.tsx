@@ -1,4 +1,3 @@
-import { DEFAULT_EMOJIS } from '@/api/mutations/lists/useCreateList'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -6,9 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLists } from '@/features/MapDisplay/hooks/useLists'
+import { CreateListForm } from '@/features/lists/components/create-list-form'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 
@@ -24,11 +23,7 @@ export function AddItemsToListDialog({
   selectedItems,
 }: AddItemsToListDialogProps) {
   const [showNewListInput, setShowNewListInput] = useState(false)
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const [newListName, setNewListName] = useState('')
-  const [selectedEmoji, setSelectedEmoji] = useState('📍')
-  const { lists, addList, addItemsToList } = useLists()
-  const defaultEmojis = DEFAULT_EMOJIS
+  const { lists, addItemsToList } = useLists()
   const { toast } = useToast()
 
   const handleAddToList = async (listId: string) => {
@@ -65,24 +60,9 @@ export function AddItemsToListDialog({
     onOpenChange(false)
   }
 
-  const handleCreateList = async () => {
-    if (!newListName) return
-    const newListId = await addList({
-      name: newListName,
-      emoji: selectedEmoji,
-    })
-    await addItemsToList({
-      id: newListId,
-      items: selectedItems,
-    })
-    toast({
-      title: 'List created',
-      description: `Created "${newListName}" and added ${selectedItems.length} item${selectedItems.length === 1 ? '' : 's'}`,
-    })
-    setNewListName('')
-    setSelectedEmoji('📍')
+  const handleCreateListSuccess = async (newListId: string) => {
+    await handleAddToList(newListId)
     setShowNewListInput(false)
-    onOpenChange(false)
   }
 
   return (
@@ -107,49 +87,7 @@ export function AddItemsToListDialog({
         </ScrollArea>
 
         {showNewListInput ? (
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  className="w-12"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                >
-                  {selectedEmoji}
-                </Button>
-                {showEmojiPicker && (
-                  <div className="fixed mt-1 p-2 bg-background border rounded-md shadow-lg grid grid-cols-6 gap-1 z-[100]">
-                    {defaultEmojis.map((emoji) => (
-                      <Button
-                        key={emoji}
-                        variant="ghost"
-                        className="w-8 h-8 p-0"
-                        onClick={() => {
-                          setSelectedEmoji(emoji)
-                          setShowEmojiPicker(false)
-                        }}
-                      >
-                        {emoji}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Input
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                placeholder="Enter list name"
-                className="flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleCreateList()
-                  }
-                }}
-              />
-              <Button onClick={handleCreateList}>Create</Button>
-            </div>
-          </div>
+          <CreateListForm onSuccess={handleCreateListSuccess} />
         ) : (
           <Button
             variant="outline"

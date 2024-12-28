@@ -3,6 +3,13 @@
 import { useDeleteList } from '@/api/mutations/lists/useDeleteList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -18,20 +25,23 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { CreateListForm } from '@/features/lists/components/create-list-form'
 import { cn } from '@/lib/utils'
 import { Link, useMatch } from '@tanstack/react-router'
-import { MoreHorizontal, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
 export function NavCustomLists() {
   const { isMobile } = useSidebar()
   const { data: lists, isLoading } = useListsQuery()
   const deleteList = useDeleteList()
   const match = useMatch({ from: '/_auth/lists/$listId', shouldThrow: false })
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   if (isLoading) {
     return (
       <SidebarGroup>
-        <SidebarGroupLabel>Custom Lists</SidebarGroupLabel>
+        <SidebarGroupLabel>Lists</SidebarGroupLabel>
         <div className="space-y-2 px-2">
           <Skeleton className="w-full" />
           <Skeleton className="w-full" />
@@ -42,7 +52,20 @@ export function NavCustomLists() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Lists</SidebarGroupLabel>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <SidebarMenuButton className="w-full justify-between">
+            <span>Lists</span>
+            <Plus className="h-4 w-4" />
+          </SidebarMenuButton>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create new list</DialogTitle>
+          </DialogHeader>
+          <CreateListForm onSuccess={() => setIsDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
       <SidebarMenu>
         {lists?.map((list) => (
           <SidebarMenuItem key={list.id}>

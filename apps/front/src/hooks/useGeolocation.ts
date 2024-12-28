@@ -19,7 +19,6 @@ export const useGeolocation = (
 
   useEffect(() => {
     if (!('geolocation' in navigator) || skipGeolocation) {
-      console.log('Geolocation is not supported')
       setState((prev) => ({
         ...prev,
         error: 'Geolocation is not supported',

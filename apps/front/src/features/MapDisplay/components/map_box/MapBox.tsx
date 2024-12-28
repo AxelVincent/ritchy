@@ -51,7 +51,6 @@ export const MapBox: FC<MapBoxProps> = ({
     () => [userLocation.longitude, userLocation.latitude] as [number, number],
     [userLocation],
   )
-  console.log('initialCenter', initialCenter)
 
   // Initialize map and circle functionality
   const mapRef = useMapInitialization(
@@ -86,7 +85,6 @@ export const MapBox: FC<MapBoxProps> = ({
     if (!mapRef.current || listId) return
 
     mapRef.current.on('load', () => {
-      console.log('load')
       if (!mapRef.current) return
       centerMarkerRef.current = new mapboxgl.Marker()
         .setLngLat(mapRef.current.getCenter())
