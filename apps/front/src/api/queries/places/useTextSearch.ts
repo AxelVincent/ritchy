@@ -42,7 +42,7 @@ export const useTextSearch = ({
       return response
     },
     enabled: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     retry: false,
   })
 }

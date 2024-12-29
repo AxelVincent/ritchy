@@ -38,8 +38,10 @@ export const PlacesTextSearch = ({
   // const [resultsQuantity, setResultsQuantity] = useState(
   //   DEFAULT_RESULTS_QUANTITY,
   // )
-  const [currentLocation, setCurrentLocation] =
-    useState<LocationParams>(location)
+  const [currentLocation, setCurrentLocation] = useState<LocationParams>({
+    ...location,
+    radiusInMeters,
+  })
 
   const { data, refetch, isLoading, isError } = useTextSearch({
     textQuery: searchText,
@@ -56,8 +58,11 @@ export const PlacesTextSearch = ({
   })
 
   useEffect(() => {
-    setCurrentLocation(location)
-  }, [location])
+    setCurrentLocation({
+      ...location,
+      radiusInMeters,
+    })
+  }, [location, radiusInMeters])
 
   useEffect(() => {
     if (data) {
