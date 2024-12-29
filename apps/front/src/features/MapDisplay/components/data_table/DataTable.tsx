@@ -6,7 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/MapDisplay/components/data_export/DataExport'
 import { AddItemsToListDialog } from '@/features/MapDisplay/components/data_table/AddItemsToListDialog'
@@ -83,7 +82,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
         <div className="flex flex-row justify-between items-center p-4">
-          <Input
+          {/* <Input
             placeholder="Filter name..."
             value={
               (table.getColumn('displayName')?.getFilterValue() as string) ?? ''
@@ -92,7 +91,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
               table.getColumn('displayName')?.setFilterValue(event.target.value)
             }
             className=""
-          />
+          /> */}
           {listId ? (
             <>
               <DeleteItemsFromListDialog
