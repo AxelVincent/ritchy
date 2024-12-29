@@ -3,6 +3,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from '@tanstack/react-form'
 import { zodValidator } from '@tanstack/zod-form-adapter'
@@ -148,15 +154,24 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
                           ([key, category]) => {
                             const Icon = category.icon
                             return (
-                              <Button
-                                key={key}
-                                variant="ghost"
-                                size="sm"
-                                className="flex-shrink-0"
-                                onClick={() => scrollToCategory(key)}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </Button>
+                              <TooltipProvider key={key}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="flex-shrink-0"
+                                      onClick={() => scrollToCategory(key)}
+                                      aria-label={category.label}
+                                    >
+                                      <Icon className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{category.label}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             )
                           },
                         )}
