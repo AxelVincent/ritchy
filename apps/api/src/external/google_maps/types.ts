@@ -159,11 +159,11 @@ const AreaSchema = z.object({
 })
 
 const GoogleMapsLinksSchema = z.object({
-  directionsUri: z.string(),
-  placeUri: z.string(),
-  writeAReviewUri: z.string(),
-  reviewsUri: z.string(),
-  photosUri: z.string(),
+  directionsUri: z.string().optional(),
+  placeUri: z.string().optional(),
+  writeAReviewUri: z.string().optional(),
+  reviewsUri: z.string().optional(),
+  photosUri: z.string().optional(),
 })
 
 const AddressDescriptorSchema = z.object({
