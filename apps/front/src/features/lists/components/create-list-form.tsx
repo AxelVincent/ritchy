@@ -2,50 +2,21 @@ import { useCreateList } from '@/api/mutations/lists/useCreateList'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from '@tanstack/react-form'
 import { zodValidator } from '@tanstack/zod-form-adapter'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { EMOJI_CATEGORIES } from './emojis'
 
-// Define the emoji category structure
-export const EMOJI_CATEGORIES = {
-  markers: {
-    label: 'Markers & Highlights',
-    emojis: ['📍', '🎯', '⭐', '💫', '🌟', '✨', '💡', '📌'],
-  },
-  geography: {
-    label: 'Geographic & Maps',
-    emojis: ['🗺️', '🌍', '🌎', '🌏'],
-  },
-  landmarks: {
-    label: 'Natural Landmarks',
-    emojis: ['🏔️', '⛰️', '🌋', '🗻', '🏞️', '🌅'],
-  },
-  outdoors: {
-    label: 'Beaches & Outdoors',
-    emojis: ['🏖️', '🏝️', '🏕️', '⛺'],
-  },
-  attractions: {
-    label: 'Attractions & Entertainment',
-    emojis: ['🎪', '🎡', '🎢', '🎠', '🏰'],
-  },
-  cultural: {
-    label: 'Cultural & Religious Sites',
-    emojis: ['🏛️', '⛩️', '🕌', '⛪', '🕍', '🏺'],
-  },
-  food: {
-    label: 'Food & Drinks',
-    emojis: ['🍽️', '🥂', '☕'],
-  },
-  arts: {
-    label: 'Arts & Culture',
-    emojis: ['🎨', '🎭', '🎬', '🎼'],
-  },
-} as const
+export const ALL_EMOJIS = Object.values(EMOJI_CATEGORIES).flatMap(
+  (category) => category.emojis,
+)
 
-// Get first emoji for default value
-export const DEFAULT_EMOJI = EMOJI_CATEGORIES.markers.emojis[0]
+// Get random emoji for default value
+const getRandomEmoji = () =>
+  ALL_EMOJIS[Math.floor(Math.random() * ALL_EMOJIS.length)]
 
 // Move this to shared types package if needed across components
 const schema = z.object({
@@ -62,6 +33,8 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
   const createList = useCreateList()
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const emojiPickerRef = useRef<HTMLDivElement>(null)
+  const [defaultEmoji] = useState(getRandomEmoji)
+  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,10 +50,14 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const scrollToCategory = (categoryKey: string) => {
+    categoryRefs.current[categoryKey]?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const form = useForm({
     defaultValues: {
       name: '',
-      emoji: '📍',
+      emoji: defaultEmoji,
     },
     // Add a validator to support Zod usage in Form and Field (no longer needed with zod@3.24.0 or higher)
     validatorAdapter: zodValidator(),
@@ -125,36 +102,66 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-12"
+                  className="w-9 h-9  text-lg"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 >
-                  {field.state.value}
+                  <span>{field.state.value}</span>
                 </Button>
                 {showEmojiPicker && (
-                  <div className="fixed mt-1 p-2 bg-background border rounded-md shadow-lg space-y-3 max-h-[400px] overflow-y-auto z-[100] min-w-[300px]">
-                    {Object.entries(EMOJI_CATEGORIES).map(([key, category]) => (
-                      <div key={key} className="space-y-1">
-                        <div className="text-sm font-medium text-muted-foreground px-1">
-                          {category.label}
-                        </div>
-                        <div className="grid grid-cols-6 gap-1">
-                          {category.emojis.map((emoji) => (
-                            <Button
-                              key={emoji}
-                              type="button"
-                              variant="ghost"
-                              className="w-8 h-8 p-0"
-                              onClick={() => {
-                                field.handleChange(emoji)
-                                setShowEmojiPicker(false)
-                              }}
-                            >
-                              {emoji}
-                            </Button>
-                          ))}
-                        </div>
+                  <div className="fixed mt-1 bg-background border rounded-md shadow-lg z-[100] min-w-[300px]">
+                    <ScrollArea className="h-[300px] p-2">
+                      {Object.entries(EMOJI_CATEGORIES).map(
+                        ([key, category]) => (
+                          <div
+                            key={key}
+                            className="space-y-1"
+                            // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+                            ref={(el) => (categoryRefs.current[key] = el)}
+                          >
+                            <div className="text-sm font-medium text-muted-foreground">
+                              {category.label}
+                            </div>
+                            <div className="grid grid-cols-8">
+                              {category.emojis.map((emoji) => (
+                                <Button
+                                  key={emoji}
+                                  type="button"
+                                  variant="ghost"
+                                  className="w-9 h-9 p-0 text-xl"
+                                  onClick={() => {
+                                    field.handleChange(emoji)
+                                    setShowEmojiPicker(false)
+                                  }}
+                                >
+                                  {emoji}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </ScrollArea>
+
+                    <div className="border-t p-2">
+                      <div className="flex overflow-x-auto">
+                        {Object.entries(EMOJI_CATEGORIES).map(
+                          ([key, category]) => {
+                            const Icon = category.icon
+                            return (
+                              <Button
+                                key={key}
+                                variant="ghost"
+                                size="sm"
+                                className="flex-shrink-0"
+                                onClick={() => scrollToCategory(key)}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </Button>
+                            )
+                          },
+                        )}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -171,6 +178,11 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
                 name={field.name}
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                data-form-type="other"
+                aria-autocomplete="none"
               />
             </div>
           )}

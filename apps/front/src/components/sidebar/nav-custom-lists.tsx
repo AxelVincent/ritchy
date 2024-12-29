@@ -32,7 +32,7 @@ import { MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 export function NavCustomLists() {
-  const { isMobile } = useSidebar()
+  const { open } = useSidebar()
   const { data: lists, isLoading } = useListsQuery()
   const deleteList = useDeleteList()
   const match = useMatch({ from: '/_auth/lists/$listId', shouldThrow: false })
@@ -55,8 +55,14 @@ export function NavCustomLists() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
           <SidebarMenuButton className="w-full justify-between">
-            <span>Lists</span>
-            <Plus className="h-4 w-4" />
+            {open ? (
+              <>
+                <span>Lists</span>
+                <Plus className="h-4 w-4" />
+              </>
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
           </SidebarMenuButton>
         </DialogTrigger>
         <DialogContent>
@@ -94,8 +100,8 @@ export function NavCustomLists() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-48 rounded-lg"
-                side={isMobile ? 'bottom' : 'right'}
-                align={isMobile ? 'end' : 'start'}
+                side={open ? 'bottom' : 'right'}
+                align={open ? 'end' : 'start'}
               >
                 <DropdownMenuItem
                   onClick={() => deleteList.mutateAsync({ id: list.id })}
