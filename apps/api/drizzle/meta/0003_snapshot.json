@@ -1,23 +1,17 @@
 {
-  "id": "c49352a6-6dfe-4b0f-9e32-1f132bb25833",
-  "prevId": "2fb41937-b8a8-4767-9b9b-af7168ff9584",
+  "id": "47a88fec-c069-49bf-a853-d37d96e30394",
+  "prevId": "80be82a0-0847-4251-bdad-0bb310bee47c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.lead": {
-      "name": "lead",
+    "public.list": {
+      "name": "list",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "serial",
           "primaryKey": true,
-          "notNull": true
-        },
-        "query_param_id": {
-          "name": "query_param_id",
-          "type": "integer",
-          "primaryKey": false,
           "notNull": true
         },
         "name": {
@@ -26,121 +20,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "address": {
-          "name": "address",
+        "emoji": {
+          "name": "emoji",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "phone": {
-          "name": "phone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "website": {
-          "name": "website",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "latitude": {
-          "name": "latitude",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "longitude": {
-          "name": "longitude",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "website_content": {
-          "name": "website_content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "lead_query_param_id_query_param_id_fk": {
-          "name": "lead_query_param_id_query_param_id_fk",
-          "tableFrom": "lead",
-          "tableTo": "query_param",
-          "columnsFrom": [
-            "query_param_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "public.query_param": {
-      "name": "query_param",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "research_query": {
-          "name": "research_query",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "latitude": {
-          "name": "latitude",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "longitude": {
-          "name": "longitude",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "zoom": {
-          "name": "zoom",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -160,12 +50,77 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.list_place": {
+      "name": "list_place",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "list_id": {
+          "name": "list_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "place_id": {
+          "name": "place_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "list_place_list_id_list_id_fk": {
+          "name": "list_place_list_id_list_id_fk",
+          "tableFrom": "list_place",
+          "tableTo": "list",
+          "columnsFrom": [
+            "list_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {},
   "schemas": {},
   "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

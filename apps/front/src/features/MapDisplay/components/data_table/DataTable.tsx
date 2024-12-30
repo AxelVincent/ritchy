@@ -6,7 +6,9 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { DataExport } from '@/features/MapDisplay/components/data_export/DataExport'
+import { AddItemsToListDialog } from '@/features/MapDisplay/components/data_table/AddItemsToListDialog'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -23,29 +25,36 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import { DataExport } from '../data_export/DataExport'
+import { DeleteItemsFromListDialog } from './DeleteItemsFromListDialog'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  onRowHover: (id: string | null) => void
-  selectedPlaceId: string | null
+  onRowHover: React.Dispatch<React.SetStateAction<string | null>>
+  setDataTableRowSelection: React.Dispatch<
+    React.SetStateAction<RowSelectionState>
+  >
+  dataTableRowSelection: RowSelectionState
+  mapBoxSelectedPlaceId: string | null
   mapBoxHoveredPlaceId: string | null
-  defaultRowSelection?: RowSelectionState
+  listId?: string
 }
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
-  selectedPlaceId,
+  mapBoxSelectedPlaceId,
   onRowHover,
   mapBoxHoveredPlaceId,
-  defaultRowSelection = {},
+  setDataTableRowSelection,
+  dataTableRowSelection,
+  listId,
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState(defaultRowSelection)
+  const [showAddListDialog, setShowAddListDialog] = useState(false)
+  const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
 
   const table = useReactTable({
     data,
@@ -56,161 +65,202 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: setDataTableRowSelection,
+    getRowId: (row) => row.id,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
-      rowSelection,
+      rowSelection: dataTableRowSelection,
     },
   })
 
-  return (
-    <>
-      <div className="flex flex-col h-full p-4 space-y-2">
-        <div className="">
-          <div className="flex flex-row">
-            <Input
-              placeholder="Filter name..."
-              value={
-                (table.getColumn('displayName')?.getFilterValue() as string) ??
-                ''
-              }
-              onChange={(event) =>
-                table
-                  .getColumn('displayName')
-                  ?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm flex-shrink"
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
-                  Columns
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                      >
-                        {column.id
-                          .split(/(?=[A-Z])|(?:And)/)
-                          .map(
-                            (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1),
-                          )
-                          .join(' ')}
-                      </DropdownMenuCheckboxItem>
-                    )
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-        <div className="overflow-y-auto h-[70%] border rounded-md">
-          <div className="relative h-full overflow-auto ">
-            <table className="border-separate border-spacing-0">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id} className="hover:bg-transparent">
-                    {headerGroup.headers.map((header, idx) => {
-                      return (
-                        <th
-                          scope="col"
-                          key={header.id}
-                          className={cn(
-                            header.column.columnDef.meta?.headerClassName,
-                            'px-4 py-1 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
-                            idx === 0 &&
-                              'sticky border-r border-s-0  left-0 z-20 bg-background text-secondary-foreground font-medium',
-                          )}
-                        >
-                          <TextWrapper>
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext(),
-                                )}
-                          </TextWrapper>
-                        </th>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </thead>
-              <tbody className="overflow-auto">
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => {
-                    const backgroundClasses = cn(
-                      'bg-background',
-                      mapBoxHoveredPlaceId === row.original.id && 'bg-gray-200',
-                      selectedPlaceId === row.original.id && 'bg-gray-200',
-                    )
+  // Get the selected rows data
+  const selectedRows = table.getSelectedRowModel().rows
 
-                    return (
-                      <tr
-                        key={row.id}
-                        data-state={row.getIsSelected() && 'selected'}
-                        onClick={() => row.toggleSelected()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            row.toggleSelected()
-                          }
-                        }}
-                        onMouseEnter={() => onRowHover(row.original.id)}
-                        onMouseLeave={() => onRowHover(null)}
-                        tabIndex={0}
-                        className={backgroundClasses}
-                      >
-                        {row.getVisibleCells().map((cell, idx) => (
-                          <td
-                            key={cell.id}
-                            className={cn(
-                              'px-4 py-1 border-b border-s-0 whitespace-nowrap text-secondary-foreground font-medium',
-                              idx === 0 &&
-                                cn(
-                                  'sticky border-r border-s-0 left-0 z-10 text-secondary-foreground font-medium',
-                                  backgroundClasses,
-                                ),
-                            )}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    )
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={columns.length} className="h-24 text-center">
-                      No results.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <span>{table.getRowModel().rows.length} Results</span>
+  return (
+    <div className="flex flex-1 flex-col overflow-auto">
+      <div className="flex flex-col space-y-2">
+        <div className="flex flex-row justify-between items-center p-4">
+          {/* <Input
+            placeholder="Filter name..."
+            value={
+              (table.getColumn('displayName')?.getFilterValue() as string) ?? ''
+            }
+            onChange={(event) =>
+              table.getColumn('displayName')?.setFilterValue(event.target.value)
+            }
+            className=""
+          /> */}
+          {listId ? (
+            <>
+              <DeleteItemsFromListDialog
+                open={showDeleteListDialog}
+                onOpenChange={setShowDeleteListDialog}
+                selectedItems={selectedRows.map((row) => row.original.id)}
+                listId={listId}
+              />
+              <AddItemsToListDialog
+                open={showAddListDialog}
+                onOpenChange={setShowAddListDialog}
+                selectedItems={selectedRows.map((row) => row.original.id)}
+              />
+              {selectedRows.length > 0 && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    onClick={() => setShowAddListDialog(true)}
+                  >
+                    Add {selectedRows.length} item(s) to list
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteListDialog(true)}
+                  >
+                    Remove {selectedRows.length} items
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <AddItemsToListDialog
+                open={showAddListDialog}
+                onOpenChange={setShowAddListDialog}
+                selectedItems={selectedRows.map((row) => row.original.id)}
+              />
+              {selectedRows.length > 0 && (
+                <Button
+                  variant="default"
+                  onClick={() => setShowAddListDialog(true)}
+                >
+                  Add {selectedRows.length} item(s) to list
+                </Button>
+              )}
+            </>
+          )}
           <DataExport data={data} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id
+                        .split(/(?=[A-Z])|(?:And)/)
+                        .map(
+                          (word) =>
+                            word.charAt(0).toUpperCase() + word.slice(1),
+                        )
+                        .join(' ')}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
-    </>
+      <div className="flex-1 overflow-scroll min-h-0 min-w-0 border">
+        <div className="w-[100px] h-[100px]">
+          <table className="border-separate border-spacing-0 min-w-full border-spacing-0">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id} className="hover:bg-transparent">
+                  {headerGroup.headers.map((header, idx) => {
+                    return (
+                      <th
+                        scope="col"
+                        key={header.id}
+                        className={cn(
+                          header.column.columnDef.meta?.headerClassName,
+                          'px-4 py-0 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
+                          idx === 0 && 'sticky left-0 z-20 border-r border-s-0',
+                        )}
+                      >
+                        <TextWrapper>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TextWrapper>
+                      </th>
+                    )
+                  })}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => {
+                  const backgroundClasses = cn(
+                    'bg-background',
+                    mapBoxHoveredPlaceId === row.original.id &&
+                      'bg-gray-100 dark:bg-gray-900',
+                    mapBoxSelectedPlaceId === row.original.id &&
+                      'bg-gray-100 dark:bg-gray-900',
+                  )
+
+                  return (
+                    <tr
+                      key={row.original.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                      onMouseEnter={() => onRowHover(row.original.id)}
+                      onMouseLeave={() => onRowHover(null)}
+                      tabIndex={0}
+                      className={backgroundClasses}
+                    >
+                      {row.getVisibleCells().map((cell, idx) => (
+                        <td
+                          key={cell.id}
+                          className={cn(
+                            'px-4 py-1 whitespace-nowrap border-b border-s-0',
+                            idx === 0 &&
+                              cn(
+                                'sticky left-0 z-10 border-r border-s-0',
+                                backgroundClasses,
+                              ),
+                          )}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  )
+                })
+              ) : (
+                <tr>
+                  <td colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="flex justify-between items-center p-4">
+        <Label>{table.getRowModel().rows.length} Results</Label>
+      </div>
+    </div>
   )
 }

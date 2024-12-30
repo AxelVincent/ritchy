@@ -9,7 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { cn, formatUtcOffset } from '@/lib/utils'
+import { formatUtcOffset } from '@/lib/formatUtcOffset'
+import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { OpeningHoursContent } from '../../shared/OpeningHours'

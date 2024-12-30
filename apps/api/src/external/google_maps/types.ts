@@ -51,7 +51,7 @@ const PhotoSchema = z.object({
   authorAttributions: z.array(
     z.object({
       displayName: z.string(),
-      uri: z.string(),
+      uri: z.string().optional(),
       photoUri: z.string().optional(),
     }),
   ),
@@ -147,7 +147,7 @@ const LandmarkSchema = z.object({
   displayName: LocalizedTextSchema,
   types: z.array(z.string()),
   spatialRelationship: SpatialRelationshipEnum.optional(),
-  straightLineDistanceMeters: z.number(),
+  straightLineDistanceMeters: z.number().optional(),
   travelDistanceMeters: z.number().optional(),
 })
 
@@ -159,11 +159,21 @@ const AreaSchema = z.object({
 })
 
 const GoogleMapsLinksSchema = z.object({
-  directionsUri: z.string(),
-  placeUri: z.string(),
-  writeAReviewUri: z.string(),
-  reviewsUri: z.string(),
-  photosUri: z.string(),
+  directionsUri: z.string().optional(),
+  placeUri: z.string().optional(),
+  writeAReviewUri: z.string().optional(),
+  reviewsUri: z.string().optional(),
+  photosUri: z.string().optional(),
+})
+
+const AddressDescriptorSchema = z.object({
+  landmarks: z.array(LandmarkSchema).optional(),
+  areas: z.array(AreaSchema).optional(),
+})
+
+const AreaSummarySchema = z.object({
+  contentBlocks: z.array(ContentBlockSchema),
+  flagContentUri: z.string(),
 })
 
 // Stage 0 - Base Place Information
@@ -186,12 +196,6 @@ const LocationOnlyPlaceSchema = IDSOnlyPlaceSchema.extend({
   shortFormattedAddress: z.string().optional(),
   types: z.array(z.string()).optional(),
   viewport: ViewportSchema.optional(),
-})
-
-// Address Descriptor Schema
-const AddressDescriptorSchema = z.object({
-  landmarks: z.array(LandmarkSchema).optional(),
-  areas: z.array(AreaSchema).optional(),
 })
 
 // Stage 2 - Basic Place Information
@@ -223,7 +227,7 @@ const BasicPlaceSchema = LocationOnlyPlaceSchema.extend({
 })
 
 // Stage 3 - Advanced Place Information
-const AdvancedPlaceSchema = BasicPlaceSchema.extend({
+export const AdvancedPlaceSchema = BasicPlaceSchema.extend({
   currentOpeningHours: OpeningHoursSchema.optional(),
   currentSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
   internationalPhoneNumber: z.string().optional(),
@@ -248,11 +252,6 @@ const AdvancedPlaceSchema = BasicPlaceSchema.extend({
   regularSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
   userRatingCount: z.number().optional(),
   websiteUri: z.string().optional(),
-})
-
-const AreaSummarySchema = z.object({
-  contentBlocks: z.array(ContentBlockSchema),
-  flagContentUri: z.string(),
 })
 
 // Stage 4 - Preferred (Complete) Place Information
@@ -341,33 +340,41 @@ export const GooglePlacesTextSearchResponseSchema = z.object({
   searchUri: z.string().optional(),
 })
 
-// Keys
+const generatePlaceKeys = (
+  schema: z.ZodObject<z.ZodRawShape>,
+  includePrefix = true,
+) => {
+  const prefix = includePrefix ? 'places.' : ''
+  const placeKeys = Object.keys(schema.shape)
+    .map((key) => `${prefix}${key}`)
+    .join(',')
+
+  return includePrefix
+    ? `${placeKeys},contextualContents,nextPageToken,searchUri`
+    : placeKeys
+}
+
 // Stage 0 keys
-export const IDS_ONLY_PLACE_KEYS = `${Object.keys(IDSOnlyPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const IDS_ONLY_PLACE_KEYS = generatePlaceKeys(IDSOnlyPlaceSchema)
 
 // Stage 1 keys
-export const LOCATION_ONLY_PLACE_KEYS = `${Object.keys(
-  LocationOnlyPlaceSchema.shape,
+export const LOCATION_ONLY_PLACE_KEYS = generatePlaceKeys(
+  LocationOnlyPlaceSchema,
 )
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
 
 // Stage 2 keys
-export const BASIC_PLACE_KEYS = `${Object.keys(BasicPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const BASIC_PLACE_KEYS = generatePlaceKeys(BasicPlaceSchema)
 
 // Stage 3 keys
-export const ADVANCED_PLACE_KEYS = `${Object.keys(AdvancedPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const ADVANCED_PLACE_KEYS_PLACE_DETAILS = generatePlaceKeys(
+  AdvancedPlaceSchema,
+  false,
+)
+export const ADVANCED_PLACE_KEYS_TEXT_SEARCH =
+  generatePlaceKeys(AdvancedPlaceSchema)
 
 // Stage 4 keys
-export const PREFERRED_PLACE_KEYS = `${Object.keys(PreferredPlaceSchema.shape)
-  .map((key) => `places.${key}`)
-  .join(',')},contextualContents,nextPageToken,searchUri`
+export const PREFERRED_PLACE_KEYS = generatePlaceKeys(PreferredPlaceSchema)
 
 // Type Inference for Place Stages
 export type IDSOnlyPlace = z.infer<typeof IDSOnlyPlaceSchema>

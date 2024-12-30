@@ -22,7 +22,7 @@ export const useMapInitialization = (
     // Set access token
     mapboxgl.accessToken = accessToken
 
-    // Initialize map
+    // Initialize map with touch event handling
     try {
       mapRef.current = new mapboxgl.Map({
         container: mapContainerRef.current,
@@ -31,7 +31,20 @@ export const useMapInitialization = (
         zoom: settings.zoom,
         maxZoom: settings.maxZoom,
         minZoom: settings.minZoom,
+        interactive: true,
+        touchZoomRotate: true,
+        touchPitch: true,
       })
+
+      // Add passive touch event listeners
+      if (mapContainerRef.current) {
+        mapContainerRef.current.addEventListener('touchmove', () => {}, {
+          passive: true,
+        })
+        mapContainerRef.current.addEventListener('touchstart', () => {}, {
+          passive: true,
+        })
+      }
 
       // Add error handling
       mapRef.current.on('error', (e) => {
@@ -45,6 +58,7 @@ export const useMapInitialization = (
           marker: false,
           flyTo: { duration: 0 },
           mapboxgl,
+          placeholder: 'Location',
         }) as IControl,
         new mapboxgl.NavigationControl(),
         new mapboxgl.FullscreenControl(),
@@ -65,8 +79,10 @@ export const useMapInitialization = (
       throw error
     }
 
-    // Cleanup
     return () => {
+      // Remove event listeners before cleanup
+      mapContainerRef.current?.removeEventListener('touchmove', () => {})
+      mapContainerRef.current?.removeEventListener('touchstart', () => {})
       mapRef.current?.remove()
     }
   }, [initialCenter, settings, mapContainerRef])

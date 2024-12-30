@@ -1,54 +1,36 @@
 import {
-  boolean,
-  doublePrecision,
   integer,
   pgTable,
   serial,
   text,
   timestamp,
-  unique,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
-export const queryParam = pgTable('query_param', {
+export const list = pgTable('list', {
   id: serial('id').primaryKey(),
-  researchQuery: text('research_query').notNull(),
-  latitude: doublePrecision('latitude').notNull(),
-  longitude: doublePrecision('longitude').notNull(),
-  zoom: text('zoom').notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
-
-export const lead = pgTable('lead', {
-  id: serial('id').primaryKey(),
-  queryParamId: integer('query_param_id')
-    .notNull()
-    .references(() => queryParam.id),
   name: text('name').notNull(),
-  address: text('address').notNull(),
-  phone: text('phone'),
-  website: text('website'),
-  latitude: doublePrecision('latitude').notNull(),
-  longitude: doublePrecision('longitude').notNull(),
-  description: text('description'),
-  websiteContent: text('website_content'),
+  emoji: text('emoji').notNull(),
+  userId: text('user_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const leadEmail = pgTable(
-  'lead_email',
+export const listPlace = pgTable(
+  'list_place',
   {
     id: serial('id').primaryKey(),
-    leadId: integer('lead_id')
+    listId: integer('list_id')
       .notNull()
-      .references(() => lead.id),
-    email: text('email').notNull(),
-    isMatchingDomain: boolean('is_matching_domain').notNull().default(false),
+      .references(() => list.id),
+    placeId: text('place_id').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => ({
-    uniqueLeadIdEmail: unique().on(table.leadId, table.email),
+    uniqListPlace: uniqueIndex('uniq_list_place').on(
+      table.listId,
+      table.placeId,
+    ),
   }),
 )

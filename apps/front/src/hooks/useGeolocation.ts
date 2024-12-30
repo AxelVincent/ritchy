@@ -7,7 +7,10 @@ interface GeolocationState {
   loading: boolean
 }
 
-export const useGeolocation = (defaultLocation: Location) => {
+export const useGeolocation = (
+  defaultLocation: Location,
+  skipGeolocation: boolean,
+) => {
   const [state, setState] = useState<GeolocationState>({
     location: defaultLocation,
     error: null,
@@ -15,7 +18,7 @@ export const useGeolocation = (defaultLocation: Location) => {
   })
 
   useEffect(() => {
-    if (!('geolocation' in navigator)) {
+    if (!('geolocation' in navigator) || skipGeolocation) {
       setState((prev) => ({
         ...prev,
         error: 'Geolocation is not supported',
@@ -65,7 +68,7 @@ export const useGeolocation = (defaultLocation: Location) => {
       },
       options,
     )
-  }, [defaultLocation?.radiusInMeters])
+  }, [defaultLocation?.radiusInMeters, skipGeolocation])
 
   return state
 }

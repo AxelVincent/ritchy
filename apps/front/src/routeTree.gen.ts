@@ -11,21 +11,15 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as MapDisplayImport } from './routes/map-display'
-import { Route as HomeImport } from './routes/home'
+import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
+import { Route as AuthSearchImport } from './routes/_auth/search'
+import { Route as AuthListsListIdImport } from './routes/_auth/lists/$listId'
 
 // Create/Update Routes
 
-const MapDisplayRoute = MapDisplayImport.update({
-  id: '/map-display',
-  path: '/map-display',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const HomeRoute = HomeImport.update({
-  id: '/home',
-  path: '/home',
+const AuthRoute = AuthImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -33,6 +27,18 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthSearchRoute = AuthSearchImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthListsListIdRoute = AuthListsListIdImport.update({
+  id: '/lists/$listId',
+  path: '/lists/$listId',
+  getParentRoute: () => AuthRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -46,63 +52,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/home': {
-      id: '/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof HomeImport
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthImport
       parentRoute: typeof rootRoute
     }
-    '/map-display': {
-      id: '/map-display'
-      path: '/map-display'
-      fullPath: '/map-display'
-      preLoaderRoute: typeof MapDisplayImport
-      parentRoute: typeof rootRoute
+    '/_auth/search': {
+      id: '/_auth/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof AuthSearchImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/lists/$listId': {
+      id: '/_auth/lists/$listId'
+      path: '/lists/$listId'
+      fullPath: '/lists/$listId'
+      preLoaderRoute: typeof AuthListsListIdImport
+      parentRoute: typeof AuthImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface AuthRouteChildren {
+  AuthSearchRoute: typeof AuthSearchRoute
+  AuthListsListIdRoute: typeof AuthListsListIdRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthSearchRoute: AuthSearchRoute,
+  AuthListsListIdRoute: AuthListsListIdRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/home': typeof HomeRoute
-  '/map-display': typeof MapDisplayRoute
+  '': typeof AuthRouteWithChildren
+  '/search': typeof AuthSearchRoute
+  '/lists/$listId': typeof AuthListsListIdRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/home': typeof HomeRoute
-  '/map-display': typeof MapDisplayRoute
+  '': typeof AuthRouteWithChildren
+  '/search': typeof AuthSearchRoute
+  '/lists/$listId': typeof AuthListsListIdRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/home': typeof HomeRoute
-  '/map-display': typeof MapDisplayRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/_auth/search': typeof AuthSearchRoute
+  '/_auth/lists/$listId': typeof AuthListsListIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/home' | '/map-display'
+  fullPaths: '/' | '' | '/search' | '/lists/$listId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/home' | '/map-display'
-  id: '__root__' | '/' | '/home' | '/map-display'
+  to: '/' | '' | '/search' | '/lists/$listId'
+  id: '__root__' | '/' | '/_auth' | '/_auth/search' | '/_auth/lists/$listId'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  HomeRoute: typeof HomeRoute
-  MapDisplayRoute: typeof MapDisplayRoute
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  HomeRoute: HomeRoute,
-  MapDisplayRoute: MapDisplayRoute,
+  AuthRoute: AuthRouteWithChildren,
 }
 
 export const routeTree = rootRoute
@@ -116,18 +142,26 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/home",
-        "/map-display"
+        "/_auth"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/home": {
-      "filePath": "home.tsx"
+    "/_auth": {
+      "filePath": "_auth.tsx",
+      "children": [
+        "/_auth/search",
+        "/_auth/lists/$listId"
+      ]
     },
-    "/map-display": {
-      "filePath": "map-display.tsx"
+    "/_auth/search": {
+      "filePath": "_auth/search.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/lists/$listId": {
+      "filePath": "_auth/lists/$listId.tsx",
+      "parent": "/_auth"
     }
   }
 }

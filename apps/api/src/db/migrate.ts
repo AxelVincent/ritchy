@@ -5,11 +5,11 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 
 const connectionData = {
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  database: process.env.DB_NAME,
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: process.env.PGHOST,
+  port: Number(process.env.PGPORT),
+  database: process.env.PGDATABASE,
+  username: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
   max: 1,
 }
 

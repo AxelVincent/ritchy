@@ -10,7 +10,8 @@
     "check:fix": "turbo run check:fix",
     "format:fix": "turbo run format:fix",
     "test": "turbo run test",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "coverage": "pnpm typecheck && pnpm check:fix && pnpm format:fix"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

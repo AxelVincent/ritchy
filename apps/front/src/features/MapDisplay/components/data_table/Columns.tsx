@@ -7,12 +7,14 @@ import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
+import { selectColumn } from './columns/SelectColumn'
 import { socialEmailColumn } from './columns/SocialEmailColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
 
 // Compose the columns array
 export const columns: ColumnDef<SearchResult>[] = [
+  selectColumn,
   nameColumn,
   socialEmailColumn,
   websiteColumn,

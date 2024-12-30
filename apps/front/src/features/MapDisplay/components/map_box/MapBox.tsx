@@ -1,64 +1,55 @@
-import { RadiusSlider } from '@/features/MapDisplay/components/map_box/RadiusSlider'
-import { PlacePopup } from '@/features/MapDisplay/components/map_box/place_popup/PlacePopup'
+import './styles.css'
 import { useMapInitialization } from '@/features/MapDisplay/hooks/useMapInitialization'
 import { useMapSquare } from '@/features/MapDisplay/hooks/useMapSquare'
-import { MAP_SETTINGS, RADIUS_SETTINGS } from '@/features/MapDisplay/types'
-import type { Place, PlacesSearchResponse } from '@ritchy/types'
-import mapboxgl, { type Marker as MapboxMarker } from 'mapbox-gl'
-import {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
-import './styles.css'
+import { MAP_SETTINGS } from '@/features/MapDisplay/types'
 import type { Location } from '@/features/MapDisplay/types'
-import { createRoot } from 'react-dom/client'
+import { debounce } from '@/lib/debounce'
+import type { PlacesSearchResponse } from '@ritchy/types'
+import type { RowSelectionState } from '@tanstack/react-table'
+import mapboxgl from 'mapbox-gl'
+import { type FC, useEffect, useMemo, useRef } from 'react'
+import { useMarkers } from './hooks/useMarkers'
 
-interface MapBoxProps {
-  onLocationChange: (location: {
-    latitude: number
-    longitude: number
-    radiusInMeters: number
-  }) => void
-  searchResults: PlacesSearchResponse | null
-  dataTableHoveredPlaceId: string | null
-  setSelectedPlaceId: (placeId: string | null) => void
-  viewMode: 'map' | 'data' | 'equal'
-  setMapBoxHoveredPlaceId: (placeId: string | null) => void
-  userLocation: Location
+// Create a dedicated type for the location change event
+type LocationChangeEvent = {
+  latitude: number
+  longitude: number
+  radiusInMeters: number
 }
 
-type MarkerData = {
-  marker: MapboxMarker
-  place: Place
+// Improve props interface with more specific types
+interface MapBoxProps {
+  onLocationChange: (location: LocationChangeEvent) => void
+  searchResults: PlacesSearchResponse | null
+  dataTableHoveredPlaceId: string | null
+  setMapBoxSelectedPlaceId: (placeId: string | null) => void
+  setMapBoxHoveredPlaceId: (placeId: string | null) => void
+  userLocation: Location
+  dataTableRowSelection: RowSelectionState
+  radiusInMeters: number
+  setRadiusInMeters: (radius: number) => void
+  listId?: string
 }
 
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
   searchResults,
   dataTableHoveredPlaceId,
-  setSelectedPlaceId,
-  viewMode,
+  setMapBoxSelectedPlaceId,
   setMapBoxHoveredPlaceId,
   userLocation,
+  dataTableRowSelection,
+  radiusInMeters,
+  listId,
 }) => {
-  // Refs for DOM elements and state management
-  const mapContainerRef = useRef<HTMLDivElement>(null) // Container div for map
-  const markersMapRef = useRef(new Map<string, MarkerData>()) // Stores active markers
-  const currentHoveredPlaceIdRef = useRef<string | null>(null) // Tracks currently hovered place
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const currentHoveredPlaceIdRef = useRef<string | null>(null)
+  const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
 
   // Default center coordinates
   const initialCenter = useMemo(
     () => [userLocation.longitude, userLocation.latitude] as [number, number],
     [userLocation],
-  )
-
-  // State for radius control
-  const [radiusInMeters, setRadiusInMeters] = useState(
-    userLocation.radiusInMeters,
   )
 
   // Initialize map and circle functionality
@@ -69,41 +60,42 @@ export const MapBox: FC<MapBoxProps> = ({
   )
   const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
 
-  // Step 2: Update map size on view mode change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    if (!mapRef.current) return
-    // console.log('🔄 viewMode useEffect triggered', viewMode)
-    mapRef.current.resize() // Resize the map to fit the new container size
-  }, [viewMode, mapRef]) // Step 3: Add viewMode as a dependency
+    if (!mapRef.current || !mapContainerRef.current) return
+
+    // Debounce the resize handler with 100ms delay
+    const debouncedResize = debounce(() => {
+      mapRef.current?.resize()
+    }, 100)
+
+    const resizeObserver = new ResizeObserver(debouncedResize)
+    resizeObserver.observe(mapContainerRef.current)
+
+    return () => {
+      if (mapContainerRef.current) {
+        resizeObserver.unobserve(mapContainerRef.current)
+      }
+      resizeObserver.disconnect()
+      debouncedResize.cancel() // Clean up the debounced function
+    }
+  }, [mapRef])
 
   // Effect: Initialize map circle and center marker
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || listId) return
 
     mapRef.current.on('load', () => {
-      // Add circle source for radius visualization
-      mapRef.current?.addSource('circle', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: { radius_m: radiusInMeters },
-          geometry: {
-            type: 'Point',
-            coordinates: [
-              mapRef.current.getCenter().lng,
-              mapRef.current.getCenter().lat,
-            ],
-          },
-        },
-      })
+      if (!mapRef.current) return
+      centerMarkerRef.current = new mapboxgl.Marker()
+        .setLngLat(mapRef.current.getCenter())
+        .addTo(mapRef.current)
 
       // Add square source
       mapRef.current?.addSource('square', {
         type: 'geojson',
         data: {
           type: 'Feature',
-          properties: { radius_m: radiusInMeters },
+          properties: {},
           geometry: {
             type: 'Polygon',
             coordinates: [
@@ -138,19 +130,17 @@ export const MapBox: FC<MapBoxProps> = ({
         },
       })
     })
+  }, [radiusInMeters, mapRef, calculateSquareCoordinates, listId])
 
-    updateSquareData(mapRef.current.getCenter(), radiusInMeters)
-
-    // Add center marker and handle map movement
-    const marker = new mapboxgl.Marker()
-      .setLngLat(mapRef.current.getCenter())
-      .addTo(mapRef.current)
+  // Effect: Add center marker and handle map movement
+  useEffect(() => {
+    if (!mapRef.current || listId) return
 
     // Update marker position and notify parent of location changes
     mapRef.current.on('move', () => {
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
-        marker.setLngLat(center)
+        centerMarkerRef.current?.setLngLat(center)
         updateSquareData(center, radiusInMeters)
         onLocationChange({
           latitude: center.lat,
@@ -159,54 +149,23 @@ export const MapBox: FC<MapBoxProps> = ({
         })
       }
     })
-  }, [
-    radiusInMeters,
-    mapRef,
-    updateSquareData,
-    onLocationChange,
-    calculateSquareCoordinates,
-  ])
+  }, [radiusInMeters, mapRef, updateSquareData, onLocationChange, listId])
 
-  // Effect: Manage search result markers
   useEffect(() => {
-    // Clean up existing markers
-    for (const { marker } of markersMapRef.current.values()) {
-      marker.remove()
-    }
-    markersMapRef.current.clear()
+    if (!mapRef.current || listId) return
+    updateSquareData(mapRef.current.getCenter(), radiusInMeters)
+  }, [radiusInMeters, mapRef, updateSquareData, listId])
 
-    if (!mapRef.current || !searchResults) return
-    // console.log('🔄 searchResults useEffect triggered', searchResults)
-
-    // Create new markers for search results
-    for (const place of searchResults) {
-      if (place.location) {
-        const marker = createMarkerWithPopup(
-          place,
-          '#22c55e',
-          setSelectedPlaceId,
-          setMapBoxHoveredPlaceId,
-        )
-        marker.addTo(mapRef.current)
-        markersMapRef.current.set(place.id, { marker, place })
-      }
-    }
-
-    // Cleanup function
-    return () => {
-      for (const { marker } of markersMapRef.current.values()) {
-        marker.remove()
-      }
-      markersMapRef.current.clear()
-    }
-  }, [searchResults, mapRef, setSelectedPlaceId, setMapBoxHoveredPlaceId])
+  const markersMapRef = useMarkers(
+    mapRef,
+    searchResults,
+    dataTableRowSelection,
+    setMapBoxSelectedPlaceId,
+    setMapBoxHoveredPlaceId,
+  )
 
   // Effect: Handle hover state and popup visibility
   useEffect(() => {
-    // console.log(
-    //   '🔄 hoveredPlaceId useEffect triggered',
-    //   dataTableHoveredPlaceId,
-    // )
     if (!mapRef.current) return
 
     // Close previous popup if exists
@@ -232,91 +191,11 @@ export const MapBox: FC<MapBoxProps> = ({
 
     markerData.marker.togglePopup()
     currentHoveredPlaceIdRef.current = dataTableHoveredPlaceId
-  }, [dataTableHoveredPlaceId, mapRef])
-
-  // Handler for radius slider changes
-  const handleChange = useCallback(
-    (newValue: number) => {
-      setRadiusInMeters(newValue)
-
-      if (mapRef.current) {
-        const center = mapRef.current.getCenter()
-        updateSquareData(center, newValue)
-        onLocationChange({
-          latitude: center.lat,
-          longitude: center.lng,
-          radiusInMeters: newValue,
-        })
-      }
-    },
-    [updateSquareData, onLocationChange, mapRef],
-  )
+  }, [dataTableHoveredPlaceId, mapRef, markersMapRef])
 
   return (
     <>
-      <div ref={mapContainerRef} className="h-screen w-full" />
-      <RadiusSlider
-        value={radiusInMeters}
-        onChange={handleChange}
-        settings={RADIUS_SETTINGS}
-      />
+      <div ref={mapContainerRef} className="h-full w-full" />
     </>
   )
-}
-
-const createMarkerWithPopup = (
-  place: Place,
-  color: string,
-  setSelectedPlaceId: (placeId: string | null) => void,
-  setMapBoxHoveredPlaceId: (placeId: string | null) => void,
-) => {
-  // Create a DOM node for React to render into
-  const popupNode = document.createElement('div')
-
-  const popup = new mapboxgl.Popup({
-    offset: 25,
-    maxWidth: '300px',
-  })
-
-  // Use React 18's createRoot API
-  const root = createRoot(popupNode)
-  root.render(<PlacePopup place={place} />)
-
-  popup.setDOMContent(popupNode)
-
-  const marker = new mapboxgl.Marker({
-    color: color,
-    scale: 0.8,
-  })
-    .setLngLat([place.location.longitude, place.location.latitude])
-    .setPopup(popup)
-
-  const element = marker.getElement()
-  // Add hover handlers to marker element
-  element.addEventListener('mouseenter', () => {
-    // console.log('🎯 marker hovered', place.id)
-    setMapBoxHoveredPlaceId(place.id)
-  })
-
-  element.addEventListener('mouseleave', () => {
-    // console.log('🎯 marker unhovered', place.id)
-    setMapBoxHoveredPlaceId(null)
-  })
-
-  // Add click handler to marker element
-  element.addEventListener('click', () => {
-    // console.log('🎯 marker clicked', place.id)
-    setSelectedPlaceId(place.id)
-  })
-
-  // Add click handler for the popup close button
-  popup.on('open', () => {
-    const closeButton = document.querySelector('.mapboxgl-popup-close-button')
-    closeButton?.addEventListener('click', () => {
-      // console.log('🎯 popup close button clicked', place.id)
-      setSelectedPlaceId(null)
-    })
-  })
-
-  return marker
 }

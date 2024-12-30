@@ -1,152 +1,124 @@
-import { Button } from '@/components/ui/button'
-import { columns } from '@/features/MapDisplay/components/data_table/Columns'
-import { DataTable } from '@/features/MapDisplay/components/data_table/DataTable'
-import { MapBox } from '@/features/MapDisplay/components/map_box/MapBox'
-import { PlacesTextSearch } from '@/features/MapDisplay/components/search_section/PlacesTextSearch'
-import type { Location } from '@/features/MapDisplay/types'
-import { useGeolocation } from '@/hooks/useGeolocation'
-import type { PlacesSearchResponse } from '@ritchy/types'
-import {
-  Columns2,
-  Loader2,
-  Map as MapIcon,
-  TableProperties,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { columns } from './components/data_table/Columns'
+import { DataTable } from './components/data_table/DataTable'
+import { MapBox } from './components/map_box/MapBox'
+import { PlacesTextSearch } from './components/search_section/PlacesTextSearch'
+import { DEFAULT_LOCATION } from './constants'
 
-const DEFAULT_LOCATION: Location = {
-  latitude: 48.8566,
-  longitude: 2.3522,
-  radiusInMeters: 3000,
+import { mockData } from '@/api/queries/places/mock/mockData'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { ResizablePanelGroup } from '@/components/ui/resizable'
+import { ResizableHandle } from '@/components/ui/resizable'
+import { ResizablePanel } from '@/components/ui/resizable'
+import { useGeolocation } from '@/hooks/useGeolocation'
+import type {
+  ListContentApiResponse,
+  PlacesSearchResponse,
+} from '@ritchy/types'
+import type { RowSelectionState } from '@tanstack/react-table'
+import { useEffect, useState } from 'react'
+import type { Location } from './types'
+
+interface MapDisplayProps {
+  listId?: string
+  listData?: ListContentApiResponse
 }
 
-export const MapDisplay = () => {
-  const { location, error, loading } = useGeolocation(DEFAULT_LOCATION)
-
+export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
+  // Core location state
+  const defaultLocation =
+    listId && listData && !('error' in listData) && listData.items.length > 0
+      ? {
+          latitude: listData.items[0].location.latitude,
+          longitude: listData.items[0].location.longitude,
+          radiusInMeters: DEFAULT_LOCATION.radiusInMeters,
+        }
+      : DEFAULT_LOCATION
+  const { location, error, loading } = useGeolocation(defaultLocation, !!listId)
   const [currentLocation, setLocation] = useState<Location>(location)
+  const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
 
-  const [searchResults, setSearchResults] = useState<PlacesSearchResponse>([])
+  // Update searchResults to use listData when available, fallback to mockData in development
+  const [searchResults, setSearchResults] = useState<PlacesSearchResponse>(
+    () => {
+      if (listId && listData && !('error' in listData)) {
+        return listData.items
+      }
+      return process.env.NODE_ENV === 'development' ? mockData : []
+    },
+  )
 
+  // Add effect to update searchResults when listData changes
+  useEffect(() => {
+    if (listId && listData && !('error' in listData)) {
+      setSearchResults(listData.items)
+    }
+  }, [listId, listData])
+
+  // Search and selection state
   const [dataTableHoveredPlaceId, setDataTableHoveredPlaceId] = useState<
     string | null
   >(null)
   const [mapBoxHoveredPlaceId, setMapBoxHoveredPlaceId] = useState<
     string | null
   >(null)
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
+  const [mapBoxSelectedPlaceId, setMapBoxSelectedPlaceId] = useState<
+    string | null
+  >(null)
+  const [dataTableRowSelection, setDataTableRowSelection] =
+    useState<RowSelectionState>({})
 
-  const [viewStyle, setViewStyle] = useState<{
-    mapStyle: { flex: string }
-    dataStyle: { flex: string }
-  }>({
-    mapStyle: { flex: 'flex-1' },
-    dataStyle: { flex: 'flex-1' },
-  })
-
-  const [viewMode, setViewMode] = useState<'map' | 'data' | 'equal'>('equal')
-
-  const handleResults = (results: PlacesSearchResponse) => {
-    setSearchResults(results)
-  }
-
-  const toggleViewMode = (mode: 'map' | 'data' | 'equal') => {
-    setViewMode(mode)
-
-    // Create an object to define sizes based on the current view mode
-    const sizes = (() => {
-      switch (mode) {
-        case 'map':
-          return { mapSize: 'basis-2/3', dataSize: 'basis-1/3' }
-        case 'data':
-          return { mapSize: 'basis-1/3', dataSize: 'basis-2/3' }
-        case 'equal':
-          return { mapSize: 'basis-1/2', dataSize: 'basis-1/2' }
-        default:
-          return { mapSize: 'basis-1/2', dataSize: 'basis-1/2' } // Fallback
-      }
-    })()
-
-    setViewStyle({
-      mapStyle: { flex: sizes.mapSize },
-      dataStyle: { flex: sizes.dataSize },
-    })
-  }
-
-  // Update currentLocation when geolocation is available
+  // Effects
   useEffect(() => {
     if (location) {
       setLocation(location)
     }
   }, [location])
 
-  // Optionally show loading or error states
   if (loading) {
-    return (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Detecting your location...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner message="Detecting your location..." />
   }
 
   if (error) {
     console.warn('Geolocation error:', error)
-    // Continue with default location
   }
 
   return (
-    <div className="flex flex-row h-full w-full overflow-hidden">
-      <div className={`${viewStyle.mapStyle.flex} relative h-full w-full`}>
+    <ResizablePanelGroup direction="horizontal">
+      <ResizablePanel className="flex-1">
         <MapBox
           onLocationChange={setLocation}
           searchResults={searchResults}
           dataTableHoveredPlaceId={dataTableHoveredPlaceId}
-          setSelectedPlaceId={setSelectedPlaceId}
-          viewMode={viewMode}
+          setMapBoxSelectedPlaceId={setMapBoxSelectedPlaceId}
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
           userLocation={location}
+          dataTableRowSelection={dataTableRowSelection}
+          radiusInMeters={radiusInMeters}
+          setRadiusInMeters={setRadiusInMeters}
+          listId={listId}
         />
-        <div className="absolute bottom-4 right-0 translate-x-1/2 flex flex-row space-x-2 z-50">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => toggleViewMode('map')}
-          >
-            <MapIcon />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => toggleViewMode('equal')}
-          >
-            <Columns2 />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => toggleViewMode('data')}
-          >
-            <TableProperties />
-          </Button>
-        </div>
-      </div>
-      <div
-        className={`${viewStyle.dataStyle.flex} flex flex-col h-full w-full overflow-hidden border-l`}
-      >
-        <PlacesTextSearch
-          location={currentLocation}
-          onResultsChange={handleResults}
-        />
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
+        {!listId && (
+          <PlacesTextSearch
+            location={currentLocation}
+            onResultsChange={setSearchResults}
+            radiusInMeters={radiusInMeters}
+            setRadiusInMeters={setRadiusInMeters}
+          />
+        )}
         <DataTable
           columns={columns}
           data={searchResults}
           onRowHover={setDataTableHoveredPlaceId}
-          selectedPlaceId={selectedPlaceId}
+          mapBoxSelectedPlaceId={mapBoxSelectedPlaceId}
           mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
+          setDataTableRowSelection={setDataTableRowSelection}
+          dataTableRowSelection={dataTableRowSelection}
+          listId={listId}
         />
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   )
 }

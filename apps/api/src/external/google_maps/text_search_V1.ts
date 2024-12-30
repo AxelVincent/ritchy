@@ -4,38 +4,14 @@ import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
 import type { PlacesSearchResponse } from '@ritchy/types'
+import { mapToPlacesSearchResult } from './mapper'
 import {
-  ADVANCED_PLACE_KEYS,
+  ADVANCED_PLACE_KEYS_TEXT_SEARCH,
   type GooglePlacesTextSearchRequestBody,
   GooglePlacesTextSearchRequestBodySchema,
   type GooglePlacesTextSearchResponse,
   GooglePlacesTextSearchResponseSchema,
 } from './types'
-
-function mapToPlacesSearchResult(
-  response: GooglePlacesTextSearchResponse,
-): PlacesSearchResponse {
-  if (!response.places) return []
-
-  return response.places.map((place) => ({
-    id: place.id,
-    websiteUri: place.websiteUri || '',
-    displayName: place.displayName?.text || '',
-    location: {
-      latitude: place.location?.latitude || 0,
-      longitude: place.location?.longitude || 0,
-    },
-    types: place.types || [],
-    formattedAddress: place.formattedAddress || '',
-    rating: place.rating,
-    userRatingCount: place.userRatingCount,
-    shortFormattedAddress: place.shortFormattedAddress,
-    googleMapsUri: place.googleMapsUri || '',
-    internationalPhoneNumber: place.internationalPhoneNumber,
-    utcOffsetMinutes: place.utcOffsetMinutes || 0,
-    regularOpeningHours: place.regularOpeningHours,
-  }))
-}
 
 async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
@@ -54,7 +30,7 @@ async function fetchSinglePage(
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
-      'X-Goog-FieldMask': ADVANCED_PLACE_KEYS,
+      'X-Goog-FieldMask': ADVANCED_PLACE_KEYS_TEXT_SEARCH,
     },
     body: JSON.stringify(body),
   })
@@ -119,7 +95,7 @@ export async function postTextSearchV1(
       event: 'google_places_api_success',
       metadata: {
         query: requestBody.textQuery,
-        results,
+        resultIds: results.map((result) => result.id),
         resultCount: results.length,
         pagesRequested: Math.ceil(results.length / 20),
       },
