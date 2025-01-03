@@ -26,24 +26,21 @@
  * @param wait - The number of milliseconds to delay
  * @returns A debounced version of the function with a cancel method
  */
-export const debounce = <T extends (...args: unknown[]) => unknown>(
-  func: T,
+export function debounce<T extends unknown[]>(
+  func: (...args: T) => unknown,
   wait: number,
-) => {
+) {
   let timeout: NodeJS.Timeout | null = null
 
-  const debounced = (...args: Parameters<T>) => {
-    if (timeout) {
-      clearTimeout(timeout)
-    }
-    timeout = setTimeout(() => {
-      func(...args)
-    }, wait)
+  const debounced = (...args: T) => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
   }
 
   debounced.cancel = () => {
     if (timeout) {
       clearTimeout(timeout)
+      timeout = null
     }
   }
 

@@ -14,6 +14,7 @@ import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
   type ColumnFiltersState,
+  type Row,
   type RowSelectionState,
   type SortingState,
   type VisibilityState,
@@ -30,7 +31,7 @@ import { DeleteItemsFromListDialog } from './DeleteItemsFromListDialog'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  onRowHover: React.Dispatch<React.SetStateAction<string | null>>
+  onRowSelect: React.Dispatch<React.SetStateAction<string | null>>
   setDataTableRowSelection: React.Dispatch<
     React.SetStateAction<RowSelectionState>
   >
@@ -44,7 +45,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
   mapBoxSelectedPlaceId,
-  onRowHover,
+  onRowSelect,
   mapBoxHoveredPlaceId,
   setDataTableRowSelection,
   dataTableRowSelection,
@@ -77,6 +78,28 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
   // Get the selected rows data
   const selectedRows = table.getSelectedRowModel().rows
+
+  const handleRowInteraction = (row: Row<TData>) => {
+    if (mapBoxSelectedPlaceId === row.original.id) {
+      onRowSelect(null)
+    } else {
+      onRowSelect(row.original.id)
+    }
+  }
+
+  const handleRowClick = (e: React.MouseEvent, row: Row<TData>) => {
+    // Ignore if the click target is an interactive element
+    if (
+      e.target instanceof Element &&
+      (e.target.closest('button') ||
+        e.target.closest('a') ||
+        e.target.closest('[role="button"]'))
+    ) {
+      return
+    }
+
+    handleRowInteraction(row)
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-auto">
@@ -221,10 +244,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     <tr
                       key={row.original.id}
                       data-state={row.getIsSelected() && 'selected'}
-                      onMouseEnter={() => onRowHover(row.original.id)}
-                      onMouseLeave={() => onRowHover(null)}
+                      onClick={(e) => handleRowClick(e, row)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleRowInteraction(row)
+                        }
+                      }}
                       tabIndex={0}
-                      className={backgroundClasses}
+                      className={cn(backgroundClasses, 'cursor-pointer')}
                     >
                       {row.getVisibleCells().map((cell, idx) => (
                         <td
