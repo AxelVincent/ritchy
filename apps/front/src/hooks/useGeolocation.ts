@@ -1,5 +1,5 @@
 import type { Location } from '@/features/MapDisplay/types'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface GeolocationState {
   location: Location
@@ -10,15 +10,21 @@ interface GeolocationState {
 export const useGeolocation = (
   defaultLocation: Location,
   skipGeolocation: boolean,
+  runOnce = false,
 ) => {
   const [state, setState] = useState<GeolocationState>({
     location: defaultLocation,
     error: null,
     loading: true,
   })
+  const hasRun = useRef(false)
 
   useEffect(() => {
-    if (!('geolocation' in navigator) || skipGeolocation) {
+    if (
+      !('geolocation' in navigator) ||
+      skipGeolocation ||
+      (runOnce && hasRun.current)
+    ) {
       setState((prev) => ({
         ...prev,
         error: 'Geolocation is not supported',
@@ -26,6 +32,8 @@ export const useGeolocation = (
       }))
       return
     }
+
+    hasRun.current = true
 
     const options: PositionOptions = {
       enableHighAccuracy: true,
@@ -68,7 +76,7 @@ export const useGeolocation = (
       },
       options,
     )
-  }, [defaultLocation?.radiusInMeters, skipGeolocation])
+  }, [defaultLocation?.radiusInMeters, skipGeolocation, runOnce])
 
   return state
 }
