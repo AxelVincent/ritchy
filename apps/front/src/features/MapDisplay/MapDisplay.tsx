@@ -55,7 +55,7 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   }, [listId, listData])
 
   // Search and selection state
-  const [dataTableHoveredPlaceId, setDataTableHoveredPlaceId] = useState<
+  const [dataTableSelectedPlaceId, setDataTableSelectedPlaceId] = useState<
     string | null
   >(null)
   const [mapBoxHoveredPlaceId, setMapBoxHoveredPlaceId] = useState<
@@ -88,7 +88,7 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
         <MapBox
           onLocationChange={setLocation}
           searchResults={searchResults}
-          dataTableHoveredPlaceId={dataTableHoveredPlaceId}
+          dataTableSelectedPlaceId={dataTableSelectedPlaceId}
           setMapBoxSelectedPlaceId={setMapBoxSelectedPlaceId}
           setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
           userLocation={location}
@@ -111,7 +111,7 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
         <DataTable
           columns={columns}
           data={searchResults}
-          onRowHover={setDataTableHoveredPlaceId}
+          onRowSelect={setDataTableSelectedPlaceId}
           mapBoxSelectedPlaceId={mapBoxSelectedPlaceId}
           mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
           setDataTableRowSelection={setDataTableRowSelection}

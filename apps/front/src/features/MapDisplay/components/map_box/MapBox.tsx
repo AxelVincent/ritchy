@@ -6,7 +6,7 @@ import type { Location } from '@/features/MapDisplay/types'
 import { debounce } from '@/lib/debounce'
 import type { PlacesSearchResponse } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
-import mapboxgl from 'mapbox-gl'
+import mapboxgl, { type LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkers } from './hooks/useMarkers'
 
@@ -29,7 +29,7 @@ type LocationChangeEvent = {
 interface MapBoxProps {
   onLocationChange: (location: LocationChangeEvent) => void
   searchResults: PlacesSearchResponse | null
-  dataTableHoveredPlaceId: string | null
+  dataTableSelectedPlaceId: string | null
   setMapBoxSelectedPlaceId: (placeId: string | null) => void
   setMapBoxHoveredPlaceId: (placeId: string | null) => void
   userLocation: Location
@@ -42,7 +42,7 @@ interface MapBoxProps {
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
   searchResults,
-  dataTableHoveredPlaceId,
+  dataTableSelectedPlaceId,
   setMapBoxSelectedPlaceId,
   setMapBoxHoveredPlaceId,
   userLocation,
@@ -53,8 +53,9 @@ export const MapBox: FC<MapBoxProps> = ({
   debugLog('MapBox render:', { userLocation, radiusInMeters, listId })
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const currentHoveredPlaceIdRef = useRef<string | null>(null)
+  const currentSelectedPlaceIdRef = useRef<string | null>(null)
   const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  const isSelectionMovement = useRef(false)
 
   const initialCenter = useMemo(() => {
     debugLog('Calculating initial center:', userLocation)
@@ -164,6 +165,19 @@ export const MapBox: FC<MapBoxProps> = ({
     })
   }, [radiusInMeters, mapRef, calculateSquareCoordinates, listId])
 
+  // Create a memoized debounced handler
+  const debouncedLocationChange = useMemo(
+    () =>
+      debounce((center: LngLat) => {
+        onLocationChange({
+          latitude: center.lat,
+          longitude: center.lng,
+          radiusInMeters,
+        })
+      }, 1000), // Adjust the delay (in ms) as needed
+    [onLocationChange, radiusInMeters],
+  )
+
   // Map movement effect
   useEffect(() => {
     debugLog('Setting up map movement handlers', { listId })
@@ -173,19 +187,26 @@ export const MapBox: FC<MapBoxProps> = ({
     }
 
     mapRef.current.on('move', () => {
-      debugLog('Map move event')
+      if (isSelectionMovement.current) return
+
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
         centerMarkerRef.current?.setLngLat(center)
         updateSquareData(center, radiusInMeters)
-        onLocationChange({
-          latitude: center.lat,
-          longitude: center.lng,
-          radiusInMeters,
-        })
+        debouncedLocationChange(center)
       }
     })
-  }, [radiusInMeters, mapRef, updateSquareData, onLocationChange, listId])
+
+    return () => {
+      debouncedLocationChange.cancel()
+    }
+  }, [
+    radiusInMeters,
+    mapRef,
+    updateSquareData,
+    debouncedLocationChange,
+    listId,
+  ])
 
   // Square update effect
   useEffect(() => {
@@ -206,45 +227,77 @@ export const MapBox: FC<MapBoxProps> = ({
     setMapBoxHoveredPlaceId,
   )
 
-  // Hover state effect
+  // Selection state effect
   useEffect(() => {
-    debugLog('Hover state effect', {
-      dataTableHoveredPlaceId,
-      currentHoveredPlaceIdRef,
+    debugLog('Selection state effect', {
+      dataTableSelectedPlaceId,
+      currentSelectedPlaceIdRef,
+      mapRef,
     })
-    if (
-      !mapRef.current ||
-      !currentHoveredPlaceIdRef.current ||
-      !dataTableHoveredPlaceId
-    ) {
-      debugLog('Hover state skipped: no map')
+    if (!mapRef.current || !dataTableSelectedPlaceId) {
+      debugLog('Selection state skipped: no map or no selection')
       return
     }
 
-    if (currentHoveredPlaceIdRef.current) {
+    isSelectionMovement.current = true
+
+    // Clear previous popup
+    if (currentSelectedPlaceIdRef.current) {
       const previousMarkerData = markersMapRef.current.get(
-        currentHoveredPlaceIdRef.current,
+        currentSelectedPlaceIdRef.current,
       )
       if (previousMarkerData?.marker.getPopup()?.isOpen()) {
         previousMarkerData.marker.togglePopup()
       }
     }
 
-    if (!dataTableHoveredPlaceId) {
-      currentHoveredPlaceIdRef.current = null
+    if (!dataTableSelectedPlaceId) {
+      currentSelectedPlaceIdRef.current = null
       return
     }
 
-    const markerData = markersMapRef.current.get(dataTableHoveredPlaceId)
+    const markerData = markersMapRef.current.get(dataTableSelectedPlaceId)
     if (!markerData?.marker.getLngLat()) {
-      debugLog('No marker data found for hover')
+      debugLog('No marker location found for selection')
       return
     }
-    if (markerData.marker.getPopup()?.isOpen()) return
 
-    markerData.marker.togglePopup()
-    currentHoveredPlaceIdRef.current = dataTableHoveredPlaceId
-  }, [dataTableHoveredPlaceId, mapRef, markersMapRef])
+    const markerLocation = markerData.marker.getLngLat()
+
+    // Calculate the distance between current center and marker
+    const currentCenter = mapRef.current.getCenter()
+    const distanceInDegrees = Math.sqrt(
+      (currentCenter.lng - markerLocation.lng) ** 2 +
+        (currentCenter.lat - markerLocation.lat) ** 2,
+    )
+
+    // If distance is too large, jump to location instead of animating
+    if (distanceInDegrees > 1) {
+      // Adjust threshold as needed
+      mapRef.current.setCenter(markerLocation)
+      mapRef.current.setZoom(12)
+    } else {
+      // Use flyTo for shorter distances
+      mapRef.current.flyTo({
+        center: markerLocation,
+        zoom: 12,
+        speed: 0.8, // Reduce animation speed
+        curve: 1, // Linear animation
+      })
+    }
+
+    if (!markerData.marker.getPopup()?.isOpen()) {
+      markerData.marker.togglePopup()
+    }
+    currentSelectedPlaceIdRef.current = dataTableSelectedPlaceId
+
+    // Reset flag after movement completes
+    const onMoveEnd = () => {
+      isSelectionMovement.current = false
+      mapRef.current?.off('moveend', onMoveEnd)
+    }
+    mapRef.current.on('moveend', onMoveEnd)
+  }, [dataTableSelectedPlaceId, mapRef, markersMapRef])
 
   return (
     <>

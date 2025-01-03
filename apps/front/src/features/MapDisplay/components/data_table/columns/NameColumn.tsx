@@ -24,11 +24,7 @@ export const nameColumn: ColumnDef<SearchResult> = {
   sortingFn: 'text',
   cell: ({ row }) => {
     return (
-      <TextWrapper
-        copyValue={row.original.displayName}
-        truncate={true}
-        maxWidth="200px"
-      >
+      <TextWrapper truncate={true} maxWidth="200px">
         {row.original.displayName}
       </TextWrapper>
     )
