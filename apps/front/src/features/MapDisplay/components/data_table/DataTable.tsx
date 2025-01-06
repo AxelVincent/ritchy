@@ -20,6 +20,9 @@ import {
   type VisibilityState,
   flexRender,
   getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
@@ -67,6 +70,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setDataTableRowSelection,
+    getFacetedRowModel: getFacetedRowModel(), // client-side faceting
+    getFacetedUniqueValues: getFacetedUniqueValues(), // generate unique values for select filter/autocomplete
+    getFacetedMinMaxValues: getFacetedMinMaxValues(), // generate min/max values for range filter
     getRowId: (row) => row.id,
     state: {
       sorting,
@@ -104,17 +110,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
-        <div className="flex flex-row justify-between items-center p-4">
-          {/* <Input
-            placeholder="Filter name..."
-            value={
-              (table.getColumn('displayName')?.getFilterValue() as string) ?? ''
-            }
-            onChange={(event) =>
-              table.getColumn('displayName')?.setFilterValue(event.target.value)
-            }
-            className=""
-          /> */}
+        <div className="flex flex-row justify-between items-center p-4 gap-2">
           {listId ? (
             <>
               <DeleteItemsFromListDialog
@@ -162,7 +158,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
               )}
             </>
           )}
-          <DataExport data={data} />
+          <DataExport
+            data={table.getFilteredRowModel().rows.map((row) => row.original)}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="ml-auto">

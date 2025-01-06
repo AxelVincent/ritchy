@@ -6,6 +6,7 @@ interface TextWrapperProps {
   copyValue?: string
   truncate?: boolean
   maxWidth?: string
+  className?: string
 }
 
 export const TextWrapper = ({
@@ -13,6 +14,7 @@ export const TextWrapper = ({
   copyValue,
   truncate = true,
   maxWidth,
+  className,
 }: TextWrapperProps) => {
   const [copied, setCopied] = useState(false)
 
@@ -40,7 +42,7 @@ export const TextWrapper = ({
 
   return (
     <div
-      className={`flex gap-2 w-full cursor-pointer hover:text-primary ${baseClassName}`}
+      className={`flex gap-2 w-full cursor-pointer hover:text-primary ${baseClassName} ${className}`}
       style={style}
       onClick={handleCopy}
       onKeyDown={(e) => {

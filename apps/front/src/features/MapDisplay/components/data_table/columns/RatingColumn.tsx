@@ -1,25 +1,16 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
-import { Button } from '@/components/ui/button'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, Star } from 'lucide-react'
+import { Star } from 'lucide-react'
+import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const ratingColumn: ColumnDef<SearchResult> = {
   id: 'rating',
   accessorKey: 'rating',
-  header: ({ column }) => {
-    return (
-      <TextWrapper>
-        <Button
-          variant="secondary"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Rating
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </TextWrapper>
-    )
+  meta: {
+    filterVariant: 'range',
   },
+  header: ({ column }) => <HeaderWrapper column={column} title="Rating" />,
   enableSorting: true,
   sortingFn: 'alphanumeric',
   sortUndefined: -1,

@@ -5,6 +5,7 @@ declare module '@tanstack/react-table' {
     headerClassName?: string
     cellClassName?: string
     label?: string
+    filterVariant?: 'text' | 'range' | 'select'
   }
 
   interface FilterFns {

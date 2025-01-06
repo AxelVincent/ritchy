@@ -177,7 +177,7 @@ export const DataExport = ({ data }: DataExportProps) => {
 
   return (
     <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-      {isExporting ? 'Exporting...' : 'Export to CSV'}
+      {isExporting ? 'Exporting...' : `Export to CSV (${data.length})`}
     </Button>
   )
 }

@@ -13,6 +13,7 @@ export const actionsColumn: ColumnDef<SearchResult> = {
   id: 'actions',
   header: () => 'Actions',
   enableSorting: false,
+  enableColumnFilter: false,
   cell: ({ row }) => {
     return (
       <DropdownMenu>

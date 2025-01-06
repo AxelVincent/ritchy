@@ -1,6 +1,7 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const getDomainFromUrl = (url: string): string => {
   try {
@@ -14,7 +15,10 @@ const getDomainFromUrl = (url: string): string => {
 export const websiteColumn: ColumnDef<SearchResult> = {
   id: 'websiteUri',
   accessorKey: 'websiteUri',
-  header: () => <TextWrapper>Website</TextWrapper>,
+  meta: {
+    filterVariant: 'text',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
   cell: ({ row }) => {
     const website = row.getValue('websiteUri') as string
     if (!website) return <TextWrapper>-</TextWrapper>

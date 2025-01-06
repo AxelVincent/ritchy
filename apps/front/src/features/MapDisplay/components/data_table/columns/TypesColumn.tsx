@@ -7,11 +7,13 @@ import {
 } from '@/components/ui/popover'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const typesColumn: ColumnDef<SearchResult> = {
   id: 'types',
   accessorKey: 'types',
-  header: () => <TextWrapper>Types</TextWrapper>,
+  enableColumnFilter: false,
+  header: ({ column }) => <HeaderWrapper column={column} title="Types" />,
   cell: ({ row }) => {
     const types = row.original.types
     const displayCount = 2
