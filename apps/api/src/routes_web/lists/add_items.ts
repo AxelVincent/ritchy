@@ -7,6 +7,7 @@ import {
   type AddItemsToListResponse,
 } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
@@ -59,18 +60,30 @@ export const addItemsToList = async (
       )
 
     const duplicatePlaceIds = existingEntries.map((entry) => entry.placeId)
-    const newPlaceIds = parsedBody.items.filter(
-      (id) => !duplicatePlaceIds.includes(id),
-    )
+    // Deduplicate newPlaceIds using Set
+    const newPlaceIds = [
+      ...new Set(
+        parsedBody.items.filter((id) => !duplicatePlaceIds.includes(id)),
+      ),
+    ]
 
     // Only insert new items
     if (newPlaceIds.length > 0) {
-      await db.insert(listPlace).values(
-        newPlaceIds.map((item) => ({
-          listId: listId,
-          placeId: item,
-        })),
-      )
+      await db
+        .insert(listPlace)
+        .values(
+          newPlaceIds.map((item) => ({
+            listId: listId,
+            placeId: item,
+          })),
+        )
+        .onConflictDoUpdate({
+          target: [listPlace.listId, listPlace.placeId],
+          set: {
+            listId: sql`excluded.list_id`,
+            placeId: sql`excluded.place_id`,
+          },
+        })
     }
 
     res.json({
