@@ -11,7 +11,6 @@ import {
   GooglePlacesTextSearchRequestBodySchema,
   type GooglePlacesTextSearchResponse,
   GooglePlacesTextSearchResponseSchema,
-  PREFERRED_PLACE_KEYS_TEXT_SEARCH,
 } from './types'
 
 async function fetchSinglePage(
@@ -31,7 +30,7 @@ async function fetchSinglePage(
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
-      'X-Goog-FieldMask': PREFERRED_PLACE_KEYS_TEXT_SEARCH,
+      'X-Goog-FieldMask': ADVANCED_PLACE_KEYS_TEXT_SEARCH,
     },
     body: JSON.stringify(body),
   })

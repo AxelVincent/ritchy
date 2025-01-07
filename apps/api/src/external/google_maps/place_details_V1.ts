@@ -6,9 +6,9 @@ import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 
 import { mapToPlaceDetails } from './mapper'
 import {
+  ADVANCED_PLACE_KEYS_PLACE_DETAILS,
   type AdvancedPlace,
   AdvancedPlaceSchema,
-  PREFERRED_PLACE_KEYS,
 } from './types'
 
 // Initialize cache with 1 week TTL (in seconds)
@@ -21,7 +21,7 @@ async function fetchPlaceDetails(placeId: string): Promise<AdvancedPlace> {
     method: 'GET',
     headers: {
       'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
-      'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
+      'X-Goog-FieldMask': ADVANCED_PLACE_KEYS_PLACE_DETAILS,
     },
   })
 
