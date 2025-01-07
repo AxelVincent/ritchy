@@ -74,6 +74,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(), // generate unique values for select filter/autocomplete
     getFacetedMinMaxValues: getFacetedMinMaxValues(), // generate min/max values for range filter
     getRowId: (row) => row.id,
+    defaultColumn: {
+      minSize: 60,
+      maxSize: 800,
+    },
+    columnResizeMode: 'onChange',
     state: {
       sorting,
       columnFilters,

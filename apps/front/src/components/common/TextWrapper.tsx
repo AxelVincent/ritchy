@@ -1,3 +1,9 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Label } from '@radix-ui/react-dropdown-menu'
 import { useState } from 'react'
 
@@ -28,36 +34,40 @@ export const TextWrapper = ({
   const baseClassName = `mx-0.5 text-sm text-left ${truncate ? 'truncate' : ''}`
   const style = maxWidth ? { maxWidth } : undefined
 
-  if (!copyValue) {
-    return (
-      <div
-        className={baseClassName}
-        style={style}
-        title={truncate ? String(children) : undefined}
-      >
-        {children}
-      </div>
-    )
-  }
-
-  return (
+  const content = (
     <div
-      className={`flex gap-2 w-full cursor-pointer hover:text-primary ${baseClassName} ${className}`}
+      className={`flex gap-2 w-full ${copyValue ? 'cursor-pointer hover:text-primary' : ''} ${baseClassName} ${className}`}
       style={style}
-      onClick={handleCopy}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleCopy()
-        }
-      }}
+      onClick={copyValue ? handleCopy : undefined}
+      onKeyDown={
+        copyValue
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleCopy()
+              }
+            }
+          : undefined
+      }
     >
-      <Label
-        className={` ${truncate ? 'truncate' : ''}`}
-        title={truncate ? String(children) : undefined}
-      >
+      <Label className={`${truncate ? 'truncate' : ''}`}>
         {copied ? <span className="text-green-500">Copied!</span> : children}
       </Label>
     </div>
+  )
+
+  if (!truncate) {
+    return content
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent>
+          <p className="max-w-[300px] break-words">{children}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }

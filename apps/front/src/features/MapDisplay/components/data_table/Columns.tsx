@@ -2,6 +2,7 @@ import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { actionsColumn } from './columns/ActionsColumn'
 import { addressColumn } from './columns/AddressColumn'
+import { descriptionColumn } from './columns/DescriptionColumn'
 import { nameColumn } from './columns/NameColumn'
 import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
@@ -16,6 +17,7 @@ import { websiteColumn } from './columns/WebsiteColumn'
 export const columns: ColumnDef<SearchResult>[] = [
   selectColumn,
   nameColumn,
+  descriptionColumn,
   socialEmailColumn,
   websiteColumn,
   phoneColumn,

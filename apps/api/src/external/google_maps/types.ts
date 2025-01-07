@@ -374,7 +374,12 @@ export const ADVANCED_PLACE_KEYS_TEXT_SEARCH =
   generatePlaceKeys(AdvancedPlaceSchema)
 
 // Stage 4 keys
-export const PREFERRED_PLACE_KEYS = generatePlaceKeys(PreferredPlaceSchema)
+export const PREFERRED_PLACE_KEYS = generatePlaceKeys(
+  PreferredPlaceSchema,
+  false,
+)
+export const PREFERRED_PLACE_KEYS_TEXT_SEARCH =
+  generatePlaceKeys(PreferredPlaceSchema)
 
 // Type Inference for Place Stages
 export type IDSOnlyPlace = z.infer<typeof IDSOnlyPlaceSchema>

@@ -32,6 +32,11 @@ export const OpeningHoursSchema = z.object({
   weekdayDescriptions: z.array(z.string()).optional(),
 })
 
+export const LocalizedTextSchema = z.object({
+  text: z.string(),
+  languageCode: z.string(),
+})
+
 // API Request/Response Schemas
 export const PlacesSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
@@ -58,6 +63,7 @@ export const PlaceSchema = z.object({
   regularOpeningHours: OpeningHoursSchema.optional(),
   googleMapsUri: z.string(),
   internationalPhoneNumber: z.string().optional(),
+  editorialSummary: LocalizedTextSchema.optional(),
 })
 
 export const PlacesSearchResponseSchema = z.array(PlaceSchema)
