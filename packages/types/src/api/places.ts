@@ -57,13 +57,25 @@ export const PlaceSchema = z.object({
   types: z.array(z.string()),
   rating: z.number().optional(),
   userRatingCount: z.number().optional(),
-  formattedAddress: z.string(),
   shortFormattedAddress: z.string().optional(),
   utcOffsetMinutes: z.number(),
   regularOpeningHours: OpeningHoursSchema.optional(),
   googleMapsUri: z.string(),
   internationalPhoneNumber: z.string().optional(),
   editorialSummary: LocalizedTextSchema.optional(),
+  address: z.object({
+    formattedAddress: z.string(),
+    country: z.string().optional(),
+    locality: z.string().optional(),
+    sublocality: z.string().optional(),
+    postalCode: z.string().optional(),
+    postalCodeSuffix: z.string().optional(),
+    plusCode: z.string().optional(),
+    street: z.string().optional(),
+    neighborhood: z.string().optional(),
+    administrativeAreaLevel1: z.string().optional(),
+    administrativeAreaLevel2: z.string().optional(),
+  }),
 })
 
 export const PlacesSearchResponseSchema = z.array(PlaceSchema)

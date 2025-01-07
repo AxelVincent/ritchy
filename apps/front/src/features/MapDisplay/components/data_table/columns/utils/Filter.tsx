@@ -26,6 +26,9 @@ export function Filter({
       filterVariant === 'range'
         ? []
         : Array.from(column.getFacetedUniqueValues().keys())
+            .filter(
+              (value) => value !== undefined && value !== null && value !== '',
+            )
             .sort()
             .slice(0, 5000),
     [column.getFacetedUniqueValues(), filterVariant],
@@ -69,14 +72,16 @@ export function Filter({
   ) : filterVariant === 'select' ? (
     <div className="space-y-1.5 sm:space-y-2">
       <Select
-        value={columnFilterValue?.toString() ?? ''}
-        onValueChange={(value) => column.setFilterValue(value)}
+        value={columnFilterValue?.toString() ?? 'all'}
+        onValueChange={(value) =>
+          column.setFilterValue(value === 'all' ? '' : value)
+        }
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="All" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All</SelectItem>
+          <SelectItem value="all">All</SelectItem>
           {sortedUniqueValues.map((value) => (
             <SelectItem key={value} value={value.toString()}>
               {value}

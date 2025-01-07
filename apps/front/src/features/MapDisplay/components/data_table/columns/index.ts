@@ -2,6 +2,16 @@ import type { ColumnDef } from '@tanstack/react-table'
 
 import type { SearchResult } from '@ritchy/types'
 import { actionsColumn } from './ActionsColumn'
+import {
+  administrativeAreaLevel1Column,
+  administrativeAreaLevel2Column,
+  formattedAddressColumn,
+  neighborhoodColumn,
+  plusCodeColumn,
+  postalCodeColumn,
+  postalCodeSuffixColumn,
+  streetColumn,
+} from './AddressColumns'
 import { descriptionColumn } from './DescriptionColumn'
 import { nameColumn } from './NameColumn'
 import { phoneColumn } from './PhoneColumn'
@@ -19,4 +29,12 @@ export const columns: ColumnDef<SearchResult>[] = [
   phoneColumn,
   socialEmailColumn,
   actionsColumn,
+  formattedAddressColumn,
+  administrativeAreaLevel1Column,
+  administrativeAreaLevel2Column,
+  neighborhoodColumn,
+  postalCodeColumn,
+  postalCodeSuffixColumn,
+  plusCodeColumn,
+  streetColumn,
 ]

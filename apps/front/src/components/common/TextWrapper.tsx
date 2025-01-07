@@ -23,6 +23,7 @@ export const TextWrapper = ({
   className,
 }: TextWrapperProps) => {
   const [copied, setCopied] = useState(false)
+  const [isTextTruncated, setIsTextTruncated] = useState(false)
 
   const handleCopy = () => {
     if (!copyValue) return
@@ -50,13 +51,23 @@ export const TextWrapper = ({
           : undefined
       }
     >
-      <Label className={`${truncate ? 'truncate' : ''}`}>
+      <Label
+        className={`${truncate ? 'truncate' : ''}`}
+        ref={(el) => {
+          if (el && truncate) {
+            const isOverflowing = el.scrollWidth > el.clientWidth
+            setIsTextTruncated(isOverflowing)
+          }
+        }}
+      >
         {copied ? <span className="text-green-500">Copied!</span> : children}
       </Label>
     </div>
   )
 
-  if (!truncate) {
+  console.log('isTextTruncated:', isTextTruncated)
+
+  if (!truncate || !isTextTruncated) {
     return content
   }
 

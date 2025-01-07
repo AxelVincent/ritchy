@@ -4,7 +4,6 @@ import { MapBox } from './components/map_box/MapBox'
 import { PlacesTextSearch } from './components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from './constants'
 
-import { mockData } from '@/api/queries/places/mock/mockData'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
@@ -43,7 +42,7 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
       if (listId && listData && !('error' in listData)) {
         return listData.items
       }
-      return process.env.NODE_ENV === 'development' ? mockData : []
+      return process.env.NODE_ENV === 'development' ? [] : []
     },
   )
 

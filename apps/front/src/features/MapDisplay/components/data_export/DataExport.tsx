@@ -117,8 +117,50 @@ export const DataExport = ({ data }: DataExportProps) => {
             accessor: (row): string => row.userRatingCount?.toString() || 'N/A',
           },
           {
-            header: 'Address',
-            accessor: (row): string => row.formattedAddress || 'N/A',
+            header: 'Full Address',
+            accessor: (row): string => row.address.formattedAddress || 'N/A',
+          },
+          {
+            header: 'Country',
+            accessor: (row): string => row.address.country || 'N/A',
+          },
+          {
+            header: 'City',
+            accessor: (row): string => row.address.locality || 'N/A',
+          },
+          {
+            header: 'Sublocality',
+            accessor: (row): string => row.address.sublocality || 'N/A',
+          },
+          {
+            header: 'Postal Code',
+            accessor: (row): string => row.address.postalCode || 'N/A',
+          },
+          {
+            header: 'Postal Code Suffix',
+            accessor: (row): string => row.address.postalCodeSuffix || 'N/A',
+          },
+          {
+            header: 'Plus Code',
+            accessor: (row): string => row.address.plusCode || 'N/A',
+          },
+          {
+            header: 'Street',
+            accessor: (row): string => row.address.street || 'N/A',
+          },
+          {
+            header: 'Neighborhood',
+            accessor: (row): string => row.address.neighborhood || 'N/A',
+          },
+          {
+            header: 'State/Province',
+            accessor: (row): string =>
+              row.address.administrativeAreaLevel1 || 'N/A',
+          },
+          {
+            header: 'County/Region',
+            accessor: (row): string =>
+              row.address.administrativeAreaLevel2 || 'N/A',
           },
           {
             header: 'Opening Hours',

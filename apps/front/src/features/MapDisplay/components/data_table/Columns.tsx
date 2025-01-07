@@ -1,7 +1,19 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { actionsColumn } from './columns/ActionsColumn'
-import { addressColumn } from './columns/AddressColumn'
+import {
+  administrativeAreaLevel1Column,
+  administrativeAreaLevel2Column,
+  countryColumn,
+  formattedAddressColumn,
+  localityColumn,
+  neighborhoodColumn,
+  plusCodeColumn,
+  postalCodeColumn,
+  postalCodeSuffixColumn,
+  streetColumn,
+  sublocalityColumn,
+} from './columns/AddressColumns'
 import { descriptionColumn } from './columns/DescriptionColumn'
 import { nameColumn } from './columns/NameColumn'
 import { openingHoursColumn } from './columns/OpeningHoursColumn'
@@ -23,7 +35,17 @@ export const columns: ColumnDef<SearchResult>[] = [
   phoneColumn,
   ratingColumn,
   ratingCountColumn,
-  addressColumn,
+  formattedAddressColumn,
+  countryColumn,
+  localityColumn,
+  sublocalityColumn,
+  postalCodeColumn,
+  postalCodeSuffixColumn,
+  plusCodeColumn,
+  streetColumn,
+  neighborhoodColumn,
+  administrativeAreaLevel1Column,
+  administrativeAreaLevel2Column,
   openingHoursColumn,
   typesColumn,
   actionsColumn,
