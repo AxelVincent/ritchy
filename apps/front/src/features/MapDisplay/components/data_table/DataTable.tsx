@@ -203,7 +203,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       </div>
       <div className="flex-1 overflow-scroll min-h-0 min-w-0 border">
         <div className="w-[100px] h-[100px]">
-          <table className="border-separate border-spacing-0 min-w-full border-spacing-0">
+          <table className="border-separate border-spacing-0 min-w-full">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="hover:bg-transparent">
