@@ -28,7 +28,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DeleteItemsFromListDialog } from './DeleteItemsFromListDialog'
 
 interface DataTableProps<TData, TValue> {
@@ -111,6 +111,19 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
     handleRowInteraction(row)
   }
+
+  // Add this effect to handle scrolling
+  useEffect(() => {
+    if (mapBoxSelectedPlaceId) {
+      const selectedRow = document.querySelector(
+        `tr[data-id="${mapBoxSelectedPlaceId}"]`,
+      )
+      selectedRow?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }
+  }, [mapBoxSelectedPlaceId])
 
   return (
     <div className="flex flex-1 flex-col overflow-auto">
@@ -246,6 +259,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   return (
                     <tr
                       key={row.original.id}
+                      data-id={row.original.id}
                       data-state={row.getIsSelected() && 'selected'}
                       onClick={(e) => handleRowClick(e, row)}
                       onKeyDown={(e) => {
