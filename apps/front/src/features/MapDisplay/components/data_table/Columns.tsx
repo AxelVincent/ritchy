@@ -17,9 +17,9 @@ import { websiteColumn } from './columns/WebsiteColumn'
 export const columns: ColumnDef<SearchResult>[] = [
   selectColumn,
   nameColumn,
-  descriptionColumn,
   socialEmailColumn,
   websiteColumn,
+  descriptionColumn,
   phoneColumn,
   ratingColumn,
   ratingCountColumn,
