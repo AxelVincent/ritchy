@@ -14,6 +14,7 @@ const objectMapper = (place: PreferredPlace) => ({
     longitude: place.location?.longitude || 0,
   },
   types: place.types || [],
+  primaryType: place.primaryType,
   rating: place.rating,
   userRatingCount: place.userRatingCount,
   shortFormattedAddress: place.shortFormattedAddress,

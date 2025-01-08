@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface DebouncedInputProps
@@ -41,7 +42,7 @@ export const DebouncedInput = ({
         {...props}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className={`${props.className || ''} ${
+        className={`${props.className || ''} h-8 ${
           value ? 'pr-8' : ''
         } placeholder:text-sm`}
       />
@@ -50,11 +51,11 @@ export const DebouncedInput = ({
           type="button"
           variant="ghost"
           size="sm"
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 px-2"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 p-0"
           onClick={handleClear}
           aria-label="Clear input"
         >
-          ✕
+          <X className="h-4 w-4 opacity-50 hover:opacity-100 shrink-0" />
         </Button>
       )}
     </div>

@@ -1,4 +1,12 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { HeaderWrapper } from './utils/HeaderWrapper'
@@ -169,4 +177,46 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
       {row.original.address.administrativeAreaLevel2}
     </TextWrapper>
   ),
+}
+
+export const addressComponentsColumn: ColumnDef<SearchResult> = {
+  id: 'addressComponents',
+  accessorKey: 'address.addressComponents',
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Address Components" />
+  ),
+  cell: ({ row }) => {
+    const components = row.original.addressComponents
+    if (!components?.length) return null
+
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            {`${components.length} components`}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Address Components</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {components.map((component) => (
+              <div
+                key={component.longText}
+                className="flex items-center justify-between border-b pb-2"
+              >
+                <span className="text-sm font-medium">
+                  {component.longText}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {component.types?.join(', ')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  },
 }

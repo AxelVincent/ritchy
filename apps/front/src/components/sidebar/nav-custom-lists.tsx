@@ -25,7 +25,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CreateListForm } from '@/features/lists/components/CreateListForm'
+import { CreateListForm } from '@/features/lists/components/create-list-form'
 import { cn } from '@/lib/utils'
 import { Link, useMatch } from '@tanstack/react-router'
 import { MoreHorizontal, Plus, Trash2 } from 'lucide-react'

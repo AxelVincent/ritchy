@@ -23,7 +23,7 @@ const formatFilterValue = (
   }
   if (variant === 'range' && Array.isArray(value)) {
     const [min, max] = value as string[]
-    return `[${min}, ${max}]`
+    return `[${min ?? ''}, ${max ?? ''}]`
   }
   return String(value)
 }

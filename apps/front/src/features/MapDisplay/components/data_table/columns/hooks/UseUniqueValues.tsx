@@ -16,12 +16,22 @@ export const useUniqueValues = (
     const selected = (column.getFilterValue() as string[]) || []
 
     // Get faceted unique values from the column
-    const uniqueValues = Array.from(
-      column.getFacetedUniqueValues().keys(),
-    ).filter((value) => value !== undefined && value !== null && value !== '')
+    const uniqueValues = new Set<string>()
+
+    column.getFacetedUniqueValues().forEach((_, value) => {
+      if (Array.isArray(value)) {
+        for (const v of value) {
+          if (v !== undefined && v !== null && v !== '') {
+            uniqueValues.add(String(v))
+          }
+        }
+      } else if (value !== undefined && value !== null && value !== '') {
+        uniqueValues.add(String(value))
+      }
+    })
 
     // Combine and sort values
-    return [...new Set([...uniqueValues, ...selected])]
+    return [...new Set([...Array.from(uniqueValues), ...selected])]
       .sort((a, b) => String(a).localeCompare(String(b)))
       .slice(0, 5000)
   }, [column.getFacetedUniqueValues(), column.getFilterValue(), filterVariant])

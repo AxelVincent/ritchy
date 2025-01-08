@@ -1,4 +1,3 @@
-import { columns } from './components/data_table/Columns'
 import { DataTable } from './components/data_table/DataTable'
 import { MapBox } from './components/map_box/MapBox'
 import { PlacesTextSearch } from './components/search_section/PlacesTextSearch'
@@ -16,6 +15,7 @@ import type {
 } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
+import { columns } from './components/data_table/Columns'
 import type { Location } from './types'
 
 interface MapDisplayProps {

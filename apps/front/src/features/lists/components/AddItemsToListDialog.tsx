@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useLists } from '@/features/MapDisplay/hooks/useLists'
-import { CreateListForm } from '@/features/lists/components/CreateListForm'
+import { CreateListForm } from '@/features/lists/components/create-list-form'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 
