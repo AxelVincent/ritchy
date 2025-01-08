@@ -18,14 +18,16 @@ export const websiteColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Website" width="150px" />
+  ),
   cell: ({ row }) => {
     const website = row.getValue('websiteUri') as string
     if (!website) return <TextWrapper>-</TextWrapper>
 
     return (
       <div className="flex items-center gap-1">
-        <TextWrapper copyValue={website}>
+        <TextWrapper copyValue={website} truncate={true} width="150px">
           <a href={website} target="_blank" rel="noopener noreferrer">
             {getDomainFromUrl(website)}
           </a>

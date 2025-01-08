@@ -38,7 +38,7 @@ export const TextWrapper = ({
   if (!truncate || !isTextTruncated) {
     return (
       <div
-        className={`flex gap-2 w-full ${copyValue ? 'cursor-pointer hover:text-primary' : ''} ${baseClassName} ${className}`}
+        className={`flex gap-2 w-full text-sm ${copyValue ? 'cursor-pointer hover:text-primary' : ''} ${baseClassName} ${className}`}
         style={style}
         onClick={copyValue ? handleCopy : undefined}
         onKeyDown={
@@ -53,7 +53,7 @@ export const TextWrapper = ({
         }
       >
         <Label
-          className={`${truncate ? 'truncate' : ''}`}
+          className={`text-sm ${truncate ? 'truncate' : ''}`}
           ref={(el) => {
             if (el && truncate) {
               const isOverflowing = el.scrollWidth > el.clientWidth
@@ -61,7 +61,11 @@ export const TextWrapper = ({
             }
           }}
         >
-          {copied ? <span className="text-green-500">Copied!</span> : children}
+          {copied ? (
+            <span className="text-sm text-green-500">Copied!</span>
+          ) : (
+            children
+          )}
         </Label>
       </div>
     )
@@ -70,9 +74,13 @@ export const TextWrapper = ({
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent side="bottom" className="bg-white dark:bg-gray-800">
-          <p className="max-w-[300px] break-words">{children}</p>
+        <TooltipTrigger asChild>
+          <div className={`text-sm truncate ${className || ''}`} style={style}>
+            {children}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p className="max-w-[300px] break-words text-sm">{children}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
