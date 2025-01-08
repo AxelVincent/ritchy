@@ -17,7 +17,9 @@ export const formattedAddressColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Address" />,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Address" width="150px" />
+  ),
   enableSorting: false,
   cell: ({ row }) => {
     const address = row.original.address.formattedAddress

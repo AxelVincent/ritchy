@@ -11,10 +11,10 @@ export const primaryTypeColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="Primary Type" />
+    <HeaderWrapper column={column} title="Primary Type" width="250px" />
   ),
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="150px">
+    <TextWrapper truncate={true} width="250px">
       {row.original.primaryType && (
         <Badge variant="secondary">{row.original.primaryType}</Badge>
       )}

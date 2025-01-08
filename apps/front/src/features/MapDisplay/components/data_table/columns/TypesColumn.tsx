@@ -21,7 +21,9 @@ export const typesColumn: ColumnDef<SearchResult> = {
     const rowTypes = row.getValue(id) as string[]
     return filterValue.some((filter) => rowTypes.includes(filter))
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Types" />,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Types" width="350px" />
+  ),
   cell: ({ row }) => {
     const types = row.original.types
     const displayCount = 2
@@ -38,7 +40,12 @@ export const typesColumn: ColumnDef<SearchResult> = {
           {remainingCount > 0 && (
             <Popover>
               <PopoverTrigger asChild>
-                <div className="cursor-pointer">
+                <div
+                  className="cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onKeyUp={(e) => e.stopPropagation()}
+                >
                   <Badge variant="outline">+ {remainingCount}</Badge>
                 </div>
               </PopoverTrigger>

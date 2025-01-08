@@ -22,7 +22,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
   accessorKey: 'regularOpeningHours',
   enableColumnFilter: false,
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="Opening Hours" />
+    <HeaderWrapper column={column} title="Opening Hours" width="150px" />
   ),
   cell: ({ row }) => {
     const regularOpeningHours = row.original.regularOpeningHours
@@ -31,7 +31,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
 
     if (!regularOpeningHours) {
       return (
-        <TextWrapper width="100%">
+        <TextWrapper width="150px">
           <Button variant="secondary" size="sm" disabled className="w-32">
             No hours
           </Button>

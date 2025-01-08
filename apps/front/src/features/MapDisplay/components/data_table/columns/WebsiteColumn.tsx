@@ -25,7 +25,7 @@ export const websiteColumn: ColumnDef<SearchResult> = {
 
     return (
       <div className="flex items-center gap-1">
-        <TextWrapper copyValue={website} width={'200px'}>
+        <TextWrapper copyValue={website}>
           <a href={website} target="_blank" rel="noopener noreferrer">
             {getDomainFromUrl(website)}
           </a>

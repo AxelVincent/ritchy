@@ -10,7 +10,7 @@ export const descriptionColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => {
-    return <HeaderWrapper column={column} title="Description" />
+    return <HeaderWrapper column={column} title="Description" width="250px" />
   },
   cell: ({ row }) => {
     return (

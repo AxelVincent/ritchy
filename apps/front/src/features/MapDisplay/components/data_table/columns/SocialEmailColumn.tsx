@@ -147,9 +147,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
       return (
         <TextWrapper>
           {!website ? (
-            <Button variant="secondary" size="sm" disabled className="w-32">
-              No website
-            </Button>
+            <></>
           ) : (
             <div className="flex gap-2">
               <Button
