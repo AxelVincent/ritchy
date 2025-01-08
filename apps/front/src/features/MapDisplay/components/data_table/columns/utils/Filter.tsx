@@ -1,5 +1,18 @@
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -7,8 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
+import { Check } from 'lucide-react'
 import React, { useEffect, useMemo } from 'react'
 
 export function Filter({
@@ -21,18 +36,90 @@ export function Filter({
   const columnFilterValue = column.getFilterValue()
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const sortedUniqueValues = useMemo(
-    () =>
-      filterVariant === 'range'
-        ? []
-        : Array.from(column.getFacetedUniqueValues().keys())
-            .filter(
-              (value) => value !== undefined && value !== null && value !== '',
-            )
-            .sort()
-            .slice(0, 5000),
-    [column.getFacetedUniqueValues(), filterVariant],
-  )
+  const sortedUniqueValues = useMemo(() => {
+    if (filterVariant === 'range') return []
+
+    const selected = (columnFilterValue as string[]) || []
+    const uniqueValues = Array.from(
+      column.getFacetedUniqueValues().keys(),
+    ).filter((value) => value !== undefined && value !== null && value !== '')
+
+    // Combine current values with selected values
+    const allValues = [...new Set([...uniqueValues, ...selected])]
+      .sort()
+      .slice(0, 5000)
+
+    return allValues
+  }, [column.getFacetedUniqueValues(), columnFilterValue, filterVariant])
+
+  if (filterVariant === 'multi-select') {
+    const selected = (columnFilterValue as string[]) || []
+
+    return (
+      <div className="space-y-1.5 sm:space-y-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-full justify-start relative"
+            >
+              {selected.length === 0 && 'Select...'}
+              {selected.length > 0 && (
+                <div className="flex gap-1 items-center overflow-hidden">
+                  <div className="flex gap-1 items-center overflow-hidden">
+                    {selected.slice(0, 2).map((value) => (
+                      <Badge
+                        variant="secondary"
+                        key={value}
+                        className="shrink-0"
+                      >
+                        {value}
+                      </Badge>
+                    ))}
+                    {selected.length > 2 && (
+                      <Badge variant="secondary" className="shrink-0">
+                        +{selected.length - 2}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-0">
+            <Command>
+              <CommandInput placeholder="Search..." />
+              <CommandEmpty>No items found.</CommandEmpty>
+              <CommandGroup className="max-h-[200px] overflow-auto">
+                {sortedUniqueValues.map((value) => (
+                  <CommandItem
+                    key={value}
+                    onSelect={() => {
+                      const newSelected = selected.includes(value)
+                        ? selected.filter((v) => v !== value)
+                        : [...selected, value]
+                      column.setFilterValue(
+                        newSelected.length ? newSelected : undefined,
+                      )
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        selected.includes(value) ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                    {value}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
+    )
+  }
 
   return filterVariant === 'range' ? (
     <div className="space-y-1.5 sm:space-y-2">

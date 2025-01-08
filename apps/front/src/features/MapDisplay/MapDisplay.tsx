@@ -78,26 +78,11 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   }
 
   if (error) {
-    console.warn('Geolocation error:', error)
+    // console.warn('Geolocation error:', error)
   }
 
   return (
     <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel className="flex-1">
-        <MapBox
-          onLocationChange={setLocation}
-          searchResults={searchResults}
-          dataTableSelectedPlaceId={dataTableSelectedPlaceId}
-          setMapBoxSelectedPlaceId={setMapBoxSelectedPlaceId}
-          setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
-          userLocation={location}
-          dataTableRowSelection={dataTableRowSelection}
-          radiusInMeters={radiusInMeters}
-          setRadiusInMeters={setRadiusInMeters}
-          listId={listId}
-        />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
       <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
         {!listId && (
           <PlacesTextSearch
@@ -115,6 +100,21 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
           mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
           setDataTableRowSelection={setDataTableRowSelection}
           dataTableRowSelection={dataTableRowSelection}
+          listId={listId}
+        />
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel className="flex-1">
+        <MapBox
+          onLocationChange={setLocation}
+          searchResults={searchResults}
+          dataTableSelectedPlaceId={dataTableSelectedPlaceId}
+          setMapBoxSelectedPlaceId={setMapBoxSelectedPlaceId}
+          setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
+          userLocation={location}
+          dataTableRowSelection={dataTableRowSelection}
+          radiusInMeters={radiusInMeters}
+          setRadiusInMeters={setRadiusInMeters}
           listId={listId}
         />
       </ResizablePanel>

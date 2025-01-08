@@ -10,7 +10,7 @@ import mapboxgl, { type LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkers } from './hooks/useMarkers'
 
-const DEBUG = process.env.NODE_ENV === 'development'
+const DEBUG = false
 
 const debugLog = (...args: unknown[]) => {
   if (DEBUG) {

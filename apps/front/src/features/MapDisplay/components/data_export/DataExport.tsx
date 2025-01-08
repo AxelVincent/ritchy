@@ -39,6 +39,8 @@ interface DataExportProps {
  * Includes enrichment data from website scraping if available.
  */
 export const DataExport = ({ data }: DataExportProps) => {
+  if (data.length === 0) return null
+
   const queryClient = useQueryClient()
   const [isExporting, setIsExporting] = useState(false)
   const { toast } = useToast()

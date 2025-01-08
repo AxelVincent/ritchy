@@ -29,6 +29,7 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { ActiveFilters } from './ActiveFilters'
 import { DeleteItemsFromListDialog } from './DeleteItemsFromListDialog'
 
 interface DataTableProps<TData, TValue> {
@@ -70,13 +71,45 @@ export const DataTable = <TData extends SearchResult, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setDataTableRowSelection,
-    getFacetedRowModel: getFacetedRowModel(), // client-side faceting
-    getFacetedUniqueValues: getFacetedUniqueValues(), // generate unique values for select filter/autocomplete
-    getFacetedMinMaxValues: getFacetedMinMaxValues(), // generate min/max values for range filter
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getRowId: (row) => row.id,
     defaultColumn: {
       minSize: 60,
       maxSize: 800,
+      filterFn: (row, columnId, filterValue) => {
+        const column = table.getColumn(columnId)
+        const value = row.getValue(columnId)
+
+        switch (column?.columnDef.meta?.filterVariant) {
+          case 'multi-select':
+            return (
+              (filterValue as string[]).length === 0 ||
+              (filterValue as string[]).includes(value as string)
+            )
+
+          case 'select':
+            return !filterValue || value === filterValue
+
+          case 'range': {
+            const [min, max] = filterValue as [number, number]
+            const numValue = Number(value)
+            return (!min || numValue >= min) && (!max || numValue <= max)
+          }
+
+          case 'text':
+            return (
+              !filterValue ||
+              String(value)
+                .toLowerCase()
+                .includes(String(filterValue).toLowerCase())
+            )
+
+          default:
+            return true
+        }
+      },
     },
     columnResizeMode: 'onChange',
     state: {
@@ -98,13 +131,18 @@ export const DataTable = <TData extends SearchResult, TValue>({
     }
   }
 
-  const handleRowClick = (e: React.MouseEvent, row: Row<TData>) => {
-    // Ignore if the click target is an interactive element
+  const handleRowClick = (
+    e: React.MouseEvent,
+    row: Row<TData>,
+    isFirstColumn: boolean,
+  ) => {
+    // Return early if it's the first column or if the click is on an interactive element
     if (
-      e.target instanceof Element &&
-      (e.target.closest('button') ||
-        e.target.closest('a') ||
-        e.target.closest('[role="button"]'))
+      isFirstColumn ||
+      (e.target instanceof Element &&
+        (e.target.closest('button') ||
+          e.target.closest('a') ||
+          e.target.closest('[role="button"]')))
     ) {
       return
     }
@@ -176,42 +214,44 @@ export const DataTable = <TData extends SearchResult, TValue>({
               )}
             </>
           )}
-          <DataExport
-            data={table.getFilteredRowModel().rows.map((row) => row.original)}
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id
-                        .split(/(?=[A-Z])|(?:And)/)
-                        .map(
-                          (word) =>
-                            word.charAt(0).toUpperCase() + word.slice(1),
-                        )
-                        .join(' ')}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <DataExport
+              data={table.getFilteredRowModel().rows.map((row) => row.original)}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="ml-auto">
+                  Columns
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id
+                          .split(/(?=[A-Z])|(?:And)/)
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1),
+                          )
+                          .join(' ')}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
       <div className="flex-1 overflow-scroll min-h-0 min-w-0 border">
@@ -227,7 +267,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         key={header.id}
                         className={cn(
                           header.column.columnDef.meta?.headerClassName,
-                          'px-4 py-0 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
+                          'px-4 py-0 border border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
                           idx === 0 && 'sticky left-0 z-20 border-r border-s-0',
                         )}
                       >
@@ -251,9 +291,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   const backgroundClasses = cn(
                     'bg-background',
                     mapBoxHoveredPlaceId === row.original.id &&
-                      'bg-gray-100 dark:bg-gray-900',
+                      'bg-gray-50 dark:bg-gray-900',
                     mapBoxSelectedPlaceId === row.original.id &&
-                      'bg-gray-100 dark:bg-gray-900',
+                      'bg-gray-50 dark:bg-gray-900',
                   )
 
                   return (
@@ -261,7 +301,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       key={row.original.id}
                       data-id={row.original.id}
                       data-state={row.getIsSelected() && 'selected'}
-                      onClick={(e) => handleRowClick(e, row)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault()
@@ -274,8 +313,19 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       {row.getVisibleCells().map((cell, idx) => (
                         <td
                           key={cell.id}
+                          onClick={(e) => handleRowClick(e, row, idx === 0)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              handleRowClick(
+                                e as unknown as React.MouseEvent,
+                                row,
+                                idx === 0,
+                              )
+                            }
+                          }}
                           className={cn(
-                            'px-4 py-1 whitespace-nowrap border-b border-s-0',
+                            'px-4 py-1 whitespace-nowrap border border-s-0',
                             idx === 0 &&
                               cn(
                                 'sticky left-0 z-10 border-r border-s-0',
@@ -303,8 +353,13 @@ export const DataTable = <TData extends SearchResult, TValue>({
           </table>
         </div>
       </div>
-      <div className="flex justify-between items-center p-4">
-        <Label>{table.getRowModel().rows.length} Results</Label>
+      <div className="flex justify-between items-center p-4 gap-4">
+        <Label className="flex-shrink-0">
+          {table.getRowModel().rows.length} Results
+        </Label>
+        <div className="flex-1 min-w-0">
+          <ActiveFilters table={table} />
+        </div>
       </div>
     </div>
   )

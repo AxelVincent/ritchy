@@ -27,7 +27,7 @@ export const countryColumn: ColumnDef<SearchResult> = {
   id: 'country',
   accessorKey: 'address.country',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Country" />,
   cell: ({ row }) => (
@@ -41,7 +41,7 @@ export const localityColumn: ColumnDef<SearchResult> = {
   id: 'locality',
   accessorKey: 'address.locality',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="City" />,
   cell: ({ row }) => (
@@ -55,7 +55,7 @@ export const sublocalityColumn: ColumnDef<SearchResult> = {
   id: 'sublocality',
   accessorKey: 'address.sublocality',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Sublocality" />,
   cell: ({ row }) => (
@@ -69,7 +69,7 @@ export const postalCodeColumn: ColumnDef<SearchResult> = {
   id: 'postalCode',
   accessorKey: 'address.postalCode',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Postal Code" />,
   cell: ({ row }) => (
@@ -83,7 +83,7 @@ export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
   id: 'postalCodeSuffix',
   accessorKey: 'address.postalCodeSuffix',
   meta: {
-    filterVariant: 'text',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Postal Code Suffix" />
@@ -99,7 +99,7 @@ export const plusCodeColumn: ColumnDef<SearchResult> = {
   id: 'plusCode',
   accessorKey: 'address.plusCode',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Plus Code" />,
   cell: ({ row }) => (
@@ -127,7 +127,7 @@ export const neighborhoodColumn: ColumnDef<SearchResult> = {
   id: 'neighborhood',
   accessorKey: 'address.neighborhood',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Neighborhood" />
@@ -143,7 +143,7 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
   id: 'administrativeAreaLevel1',
   accessorKey: 'address.administrativeAreaLevel1',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => (
     <HeaderWrapper column={column} title="State/Region" />
@@ -159,7 +159,7 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
   id: 'administrativeAreaLevel2',
   accessorKey: 'address.administrativeAreaLevel2',
   meta: {
-    filterVariant: 'select',
+    filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="County" />,
   cell: ({ row }) => (

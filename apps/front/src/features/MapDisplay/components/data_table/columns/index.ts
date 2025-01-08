@@ -5,12 +5,15 @@ import { actionsColumn } from './ActionsColumn'
 import {
   administrativeAreaLevel1Column,
   administrativeAreaLevel2Column,
+  countryColumn,
   formattedAddressColumn,
+  localityColumn,
   neighborhoodColumn,
   plusCodeColumn,
   postalCodeColumn,
   postalCodeSuffixColumn,
   streetColumn,
+  sublocalityColumn,
 } from './AddressColumns'
 import { descriptionColumn } from './DescriptionColumn'
 import { nameColumn } from './NameColumn'
@@ -30,11 +33,14 @@ export const columns: ColumnDef<SearchResult>[] = [
   socialEmailColumn,
   actionsColumn,
   formattedAddressColumn,
-  administrativeAreaLevel1Column,
-  administrativeAreaLevel2Column,
-  neighborhoodColumn,
+  countryColumn,
+  localityColumn,
+  sublocalityColumn,
   postalCodeColumn,
   postalCodeSuffixColumn,
   plusCodeColumn,
   streetColumn,
+  neighborhoodColumn,
+  administrativeAreaLevel1Column,
+  administrativeAreaLevel2Column,
 ]

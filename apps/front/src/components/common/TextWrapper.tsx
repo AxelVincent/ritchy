@@ -65,8 +65,6 @@ export const TextWrapper = ({
     </div>
   )
 
-  console.log('isTextTruncated:', isTextTruncated)
-
   if (!truncate || !isTextTruncated) {
     return content
   }
