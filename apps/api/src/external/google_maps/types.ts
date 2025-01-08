@@ -1,7 +1,10 @@
 import {
   AddressComponentSchema,
   LocationSchema,
+  MoneySchema,
   OpeningHoursSchema,
+  PriceLevelEnum,
+  PriceRangeSchema,
 } from '@ritchy/types'
 import { z } from 'zod'
 
@@ -77,12 +80,6 @@ const FuelTypeEnum = z.enum([
   'BIO_DIESEL',
   'TRUCK_DIESEL',
 ])
-
-const MoneySchema = z.object({
-  currencyCode: z.string(),
-  units: z.string(),
-  nanos: z.number().optional(),
-})
 
 const FuelPriceSchema = z.object({
   type: FuelTypeEnum,
@@ -229,21 +226,8 @@ export const AdvancedPlaceSchema = BasicPlaceSchema.extend({
   currentSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
   internationalPhoneNumber: z.string().optional(),
   nationalPhoneNumber: z.string().optional(),
-  priceLevel: z
-    .enum([
-      'PRICE_LEVEL_FREE',
-      'PRICE_LEVEL_INEXPENSIVE',
-      'PRICE_LEVEL_MODERATE',
-      'PRICE_LEVEL_EXPENSIVE',
-      'PRICE_LEVEL_VERY_EXPENSIVE',
-    ])
-    .optional(),
-  priceRange: z
-    .object({
-      startPrice: MoneySchema.optional(),
-      endPrice: MoneySchema.optional(),
-    })
-    .optional(),
+  priceLevel: PriceLevelEnum.optional(),
+  priceRange: PriceRangeSchema.optional(),
   rating: z.number().min(1).max(5).optional(),
   regularOpeningHours: OpeningHoursSchema.optional(),
   regularSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),

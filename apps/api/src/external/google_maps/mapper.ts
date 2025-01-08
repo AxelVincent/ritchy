@@ -15,6 +15,8 @@ const objectMapper = (place: PreferredPlace) => ({
   },
   types: place.types || [],
   primaryType: place.primaryType,
+  priceLevel: place.priceLevel,
+  priceRange: place.priceRange,
   rating: place.rating,
   userRatingCount: place.userRatingCount,
   shortFormattedAddress: place.shortFormattedAddress,

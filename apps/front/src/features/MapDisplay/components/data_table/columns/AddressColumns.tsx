@@ -224,6 +224,8 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
 export const addressComponentsColumn: ColumnDef<SearchResult> = {
   id: 'addressComponents',
   accessorKey: 'address.addressComponents',
+  enableSorting: false,
+  enableColumnFilter: false,
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Address Components" width="250px" />
   ),

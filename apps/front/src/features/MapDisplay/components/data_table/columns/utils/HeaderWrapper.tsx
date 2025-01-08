@@ -19,38 +19,49 @@ export const HeaderWrapper = ({
   width?: string
 }) => {
   const widthStyle = width ? { width } : { width: '150px' }
+  const canSort = column.getCanSort()
+
   return (
     <div className="flex flex-col gap-2 p-2" style={widthStyle}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-            className="h-8 hover:bg-transparent"
+            onClick={
+              canSort
+                ? () => column.toggleSorting(column.getIsSorted() === 'asc')
+                : undefined
+            }
+            className={`h-8 hover:bg-transparent ${!canSort ? 'cursor-default' : ''}`}
           >
             <div className="flex items-center gap-1">
               <span className="font-medium">{title}</span>
-              {column.getIsSorted() === 'asc' ? (
-                <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
-              ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
-              ) : (
-                <ArrowUpDown
-                  className="h-3.5 w-3.5 opacity-50"
-                  aria-hidden="true"
-                />
-              )}
+              {canSort &&
+                (column.getIsSorted() === 'asc' ? (
+                  <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : column.getIsSorted() === 'desc' ? (
+                  <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <ArrowUpDown
+                    className="h-3.5 w-3.5 opacity-50"
+                    aria-hidden="true"
+                  />
+                ))}
             </div>
             <span className="sr-only">
-              {column.getIsSorted()
-                ? `Sorted ${column.getIsSorted() === 'asc' ? 'ascending' : 'descending'}`
-                : 'Not sorted. Click to sort ascending'}
+              {canSort
+                ? column.getIsSorted()
+                  ? `Sorted ${column.getIsSorted() === 'asc' ? 'ascending' : 'descending'}`
+                  : 'Not sorted. Click to sort ascending'
+                : ''}
             </span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          Click to {column.getIsSorted() ? 'change sort direction' : 'sort'}
-        </TooltipContent>
+        {canSort && (
+          <TooltipContent>
+            {`Click to ${column.getIsSorted() ? 'change sort direction' : 'sort'}`}
+          </TooltipContent>
+        )}
       </Tooltip>
 
       <div className={`${!column.getCanFilter() ? 'h-9' : ''}`}>

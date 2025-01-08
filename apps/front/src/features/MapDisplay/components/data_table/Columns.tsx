@@ -18,6 +18,8 @@ import {
 import { descriptionColumn } from './columns/DescriptionColumn'
 import { nameColumn } from './columns/NameColumn'
 import { phoneColumn } from './columns/PhoneColumn'
+import { priceLevelColumn } from './columns/PriceLevelColumn'
+import { priceRangeColumn } from './columns/PriceRangeColumn'
 import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
@@ -25,12 +27,15 @@ import { selectColumn } from './columns/SelectColumn'
 import { socialEmailColumn } from './columns/SocialEmailColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
+
 // Compose the columns array
 export const columns: ColumnDef<SearchResult>[] = [
   selectColumn,
   nameColumn,
   typesColumn,
   primaryTypeColumn,
+  priceLevelColumn,
+  priceRangeColumn,
   ratingColumn,
   ratingCountColumn,
   websiteColumn,

@@ -99,6 +99,24 @@ export const AddressComponentSchema = z.object({
   languageCode: z.string(),
 })
 
+export const PriceLevelEnum = z.enum([
+  'PRICE_LEVEL_FREE',
+  'PRICE_LEVEL_INEXPENSIVE',
+  'PRICE_LEVEL_MODERATE',
+  'PRICE_LEVEL_EXPENSIVE',
+  'PRICE_LEVEL_VERY_EXPENSIVE',
+])
+
+export const MoneySchema = z.object({
+  currencyCode: z.string(),
+  units: z.string(),
+  nanos: z.number().optional(),
+})
+export const PriceRangeSchema = z.object({
+  startPrice: MoneySchema.optional(),
+  endPrice: MoneySchema.optional(),
+})
+
 // API Request/Response Schemas
 export const PlacesSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
@@ -118,6 +136,8 @@ export const PlaceSchema = z.object({
   location: LocationSchema,
   types: z.array(z.string()),
   primaryType: z.string().optional(),
+  priceLevel: PriceLevelEnum.optional(),
+  priceRange: PriceRangeSchema.optional(),
   rating: z.number().optional(),
   userRatingCount: z.number().optional(),
   shortFormattedAddress: z.string().optional(),
