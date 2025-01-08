@@ -1,11 +1,5 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/MapDisplay/components/data_export/DataExport'
 import { AddItemsToListDialog } from '@/features/lists/components/AddItemsToListDialog'
@@ -27,10 +21,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { DeleteItemsFromListDialog } from '../../../lists/components/DeleteItemsFromListDialog'
 import { ActiveFilters } from './ActiveFilters'
+import { ColumnsSelection } from './ColumnsSelection'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -218,39 +212,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
             <DataExport
               data={table.getFilteredRowModel().rows.map((row) => row.original)}
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
-                  Columns
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                      >
-                        {column.id
-                          .split(/(?=[A-Z])|(?:And)/)
-                          .map(
-                            (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1),
-                          )
-                          .join(' ')}
-                      </DropdownMenuCheckboxItem>
-                    )
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ColumnsSelection table={table} />
           </div>
         </div>
       </div>
