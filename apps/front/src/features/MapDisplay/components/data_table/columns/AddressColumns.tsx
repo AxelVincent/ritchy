@@ -146,7 +146,7 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="State/Region" />
+    <HeaderWrapper column={column} title="Administrative Area Level 1" />
   ),
   cell: ({ row }) => (
     <TextWrapper truncate={true} width="150px">
@@ -161,7 +161,9 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'multi-select',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="County" />,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Administrative Area Level 2" />
+  ),
   cell: ({ row }) => (
     <TextWrapper truncate={true} width="150px">
       {row.original.address.administrativeAreaLevel2}

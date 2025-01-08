@@ -155,12 +155,12 @@ export const DataExport = ({ data }: DataExportProps) => {
             accessor: (row): string => row.address.neighborhood || 'N/A',
           },
           {
-            header: 'State/Province',
+            header: 'Administrative Area Level 1',
             accessor: (row): string =>
               row.address.administrativeAreaLevel1 || 'N/A',
           },
           {
-            header: 'County/Region',
+            header: 'Administrative Area Level 2',
             accessor: (row): string =>
               row.address.administrativeAreaLevel2 || 'N/A',
           },

@@ -53,7 +53,7 @@ export const ActiveFilters = <TData extends SearchResult>({
             const column = table.getColumn(filter.id)
             const filterVariant = column?.columnDef.meta?.filterVariant
             const columnName = filter.id
-              .split(/(?=[A-Z])|(?:And)/)
+              .split(/(?=[A-Z](?![0-9])|[0-9](?![0-9]))|(?:And)/)
               .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ')
 
