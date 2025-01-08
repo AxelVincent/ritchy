@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
+import { EmptyListState } from '@/features/lists/components/EmptyListState'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type {
   ListContentApiResponse,
@@ -79,6 +80,15 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
 
   if (error) {
     // console.warn('Geolocation error:', error)
+  }
+
+  if (
+    listId &&
+    listData &&
+    !('error' in listData) &&
+    listData.items.length === 0
+  ) {
+    return <EmptyListState listId={listId} />
   }
 
   return (

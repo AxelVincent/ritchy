@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/MapDisplay/components/data_export/DataExport'
-import { AddItemsToListDialog } from '@/features/MapDisplay/components/data_table/AddItemsToListDialog'
+import { AddItemsToListDialog } from '@/features/lists/components/AddItemsToListDialog'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -29,8 +29,8 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { DeleteItemsFromListDialog } from '../../../lists/components/DeleteItemsFromListDialog'
 import { ActiveFilters } from './ActiveFilters'
-import { DeleteItemsFromListDialog } from './DeleteItemsFromListDialog'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
