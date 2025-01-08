@@ -308,7 +308,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         }
                       }}
                       tabIndex={0}
-                      className={cn(backgroundClasses, 'cursor-pointer')}
+                      className={cn(backgroundClasses)}
                     >
                       {row.getVisibleCells().map((cell, idx) => (
                         <td

@@ -14,7 +14,11 @@ export const nameColumn: ColumnDef<SearchResult> = {
   },
   cell: ({ row }) => {
     return (
-      <TextWrapper truncate={true} width="200px">
+      <TextWrapper
+        copyValue={row.original.displayName}
+        truncate={true}
+        width="200px"
+      >
         {row.original.displayName}
       </TextWrapper>
     )

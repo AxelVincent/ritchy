@@ -26,7 +26,7 @@ export const formattedAddressColumn: ColumnDef<SearchResult> = {
     if (!address) return null
 
     return (
-      <TextWrapper truncate={true} width="150px" copyValue={address}>
+      <TextWrapper copyValue={address} truncate={true} width="150px">
         {address}
       </TextWrapper>
     )
@@ -41,7 +41,11 @@ export const countryColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Country" />,
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="150px">
+    <TextWrapper
+      copyValue={row.original.address.country}
+      truncate={true}
+      width="150px"
+    >
       {row.original.address.country}
     </TextWrapper>
   ),
@@ -55,7 +59,11 @@ export const localityColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="City" />,
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="150px">
+    <TextWrapper
+      copyValue={row.original.address.locality}
+      truncate={true}
+      width="150px"
+    >
       {row.original.address.locality}
     </TextWrapper>
   ),
@@ -69,7 +77,11 @@ export const sublocalityColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Sublocality" />,
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="150px">
+    <TextWrapper
+      copyValue={row.original.address.sublocality}
+      truncate={true}
+      width="150px"
+    >
       {row.original.address.sublocality}
     </TextWrapper>
   ),
@@ -83,7 +95,11 @@ export const postalCodeColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Postal Code" />,
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="100px">
+    <TextWrapper
+      copyValue={row.original.address.postalCode}
+      truncate={true}
+      width="100px"
+    >
       {row.original.address.postalCode}
     </TextWrapper>
   ),
@@ -99,7 +115,11 @@ export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Postal Code Suffix" />
   ),
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="100px">
+    <TextWrapper
+      copyValue={row.original.address.postalCodeSuffix}
+      truncate={true}
+      width="100px"
+    >
       {row.original.address.postalCodeSuffix}
     </TextWrapper>
   ),
@@ -113,7 +133,11 @@ export const plusCodeColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Plus Code" />,
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="100px">
+    <TextWrapper
+      copyValue={row.original.address.plusCode}
+      truncate={true}
+      width="100px"
+    >
       {row.original.address.plusCode}
     </TextWrapper>
   ),
@@ -127,7 +151,11 @@ export const streetColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Street" />,
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="200px">
+    <TextWrapper
+      copyValue={row.original.address.street}
+      truncate={true}
+      width="200px"
+    >
       {row.original.address.street}
     </TextWrapper>
   ),
@@ -143,7 +171,11 @@ export const neighborhoodColumn: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Neighborhood" />
   ),
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="150px">
+    <TextWrapper
+      copyValue={row.original.address.neighborhood}
+      truncate={true}
+      width="150px"
+    >
       {row.original.address.neighborhood}
     </TextWrapper>
   ),
@@ -159,7 +191,11 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Administrative Area Level 1" />
   ),
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="150px">
+    <TextWrapper
+      copyValue={row.original.address.administrativeAreaLevel1}
+      truncate={true}
+      width="150px"
+    >
       {row.original.address.administrativeAreaLevel1}
     </TextWrapper>
   ),
@@ -175,7 +211,11 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Administrative Area Level 2" />
   ),
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="150px">
+    <TextWrapper
+      copyValue={row.original.address.administrativeAreaLevel2}
+      truncate={true}
+      width="150px"
+    >
       {row.original.address.administrativeAreaLevel2}
     </TextWrapper>
   ),

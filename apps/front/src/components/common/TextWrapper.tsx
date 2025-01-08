@@ -25,8 +25,9 @@ export const TextWrapper = ({
   const [copied, setCopied] = useState(false)
   const [isTextTruncated, setIsTextTruncated] = useState(false)
 
-  const handleCopy = () => {
+  const handleCopy = (e?: React.MouseEvent | React.KeyboardEvent) => {
     if (!copyValue) return
+    e?.stopPropagation()
     navigator.clipboard.writeText(copyValue)
     setCopied(true)
     setTimeout(() => setCopied(false), 500)
@@ -34,23 +35,24 @@ export const TextWrapper = ({
 
   const baseClassName = `mx-0.5 text-sm text-left ${truncate ? 'truncate' : ''}`
   const style = width ? { width } : { width: '150px' }
+  const copyHandlers = copyValue
+    ? {
+        onClick: (e: React.MouseEvent) => handleCopy(e),
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleCopy(e)
+          }
+        },
+      }
+    : {}
 
   if (!truncate || !isTextTruncated) {
     return (
       <div
         className={`flex gap-2 w-full text-sm ${copyValue ? 'cursor-pointer hover:text-primary' : ''} ${baseClassName} ${className}`}
         style={style}
-        onClick={copyValue ? handleCopy : undefined}
-        onKeyDown={
-          copyValue
-            ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  handleCopy()
-                }
-              }
-            : undefined
-        }
+        {...copyHandlers}
       >
         <Label
           className={`text-sm ${truncate ? 'truncate' : ''}`}
@@ -75,8 +77,18 @@ export const TextWrapper = ({
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={`text-sm truncate ${className || ''}`} style={style}>
-            {children}
+          <div
+            className={`text-sm truncate ${copyValue ? 'cursor-pointer hover:text-primary' : ''} ${
+              className || ''
+            }`}
+            style={style}
+            {...copyHandlers}
+          >
+            {copied ? (
+              <span className="text-sm text-green-500">Copied!</span>
+            ) : (
+              children
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent side="bottom">
