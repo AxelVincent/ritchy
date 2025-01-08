@@ -225,7 +225,7 @@ export const addressComponentsColumn: ColumnDef<SearchResult> = {
   id: 'addressComponents',
   accessorKey: 'address.addressComponents',
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="Address Components" />
+    <HeaderWrapper column={column} title="Address Components" width="250px" />
   ),
   cell: ({ row }) => {
     const components = row.original.addressComponents
