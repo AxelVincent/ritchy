@@ -39,7 +39,7 @@ export const PlacePopup = ({ place }: PlacePopupProps) => {
           <TextWrapper
             copyValue={place.shortFormattedAddress}
             truncate
-            maxWidth="100%"
+            width="100%"
           >
             {place.shortFormattedAddress}
           </TextWrapper>

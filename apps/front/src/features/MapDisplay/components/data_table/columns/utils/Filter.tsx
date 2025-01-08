@@ -7,7 +7,6 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command'
-import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
@@ -24,7 +23,9 @@ import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
 import { Check } from 'lucide-react'
-import React, { useEffect, useMemo } from 'react'
+import { DebouncedInput } from '../hooks/DebouncedInput'
+import { useUniqueValues } from '../hooks/UseUniqueValues'
+import type { FilterVariant } from '../types'
 
 export function Filter({
   column,
@@ -35,24 +36,12 @@ export function Filter({
 
   const columnFilterValue = column.getFilterValue()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const sortedUniqueValues = useMemo(() => {
-    if (filterVariant === 'range') return []
+  const sortedUniqueValues = useUniqueValues(
+    column,
+    filterVariant as FilterVariant,
+  )
 
-    const selected = (columnFilterValue as string[]) || []
-    const uniqueValues = Array.from(
-      column.getFacetedUniqueValues().keys(),
-    ).filter((value) => value !== undefined && value !== null && value !== '')
-
-    // Combine current values with selected values
-    const allValues = [...new Set([...uniqueValues, ...selected])]
-      .sort()
-      .slice(0, 5000)
-
-    return allValues
-  }, [column.getFacetedUniqueValues(), columnFilterValue, filterVariant])
-
-  if (filterVariant === 'multi-select') {
+  const renderMultiSelect = () => {
     const selected = (columnFilterValue as string[]) || []
 
     return (
@@ -121,7 +110,7 @@ export function Filter({
     )
   }
 
-  return filterVariant === 'range' ? (
+  const renderRange = () => (
     <div className="space-y-1.5 sm:space-y-2">
       <div className="flex space-x-2">
         <DebouncedInput
@@ -156,7 +145,9 @@ export function Filter({
         />
       </div>
     </div>
-  ) : filterVariant === 'select' ? (
+  )
+
+  const renderSelect = () => (
     <div className="space-y-1.5 sm:space-y-2">
       <Select
         value={columnFilterValue?.toString() ?? 'all'}
@@ -177,7 +168,9 @@ export function Filter({
         </SelectContent>
       </Select>
     </div>
-  ) : (
+  )
+
+  const renderText = () => (
     <div className="space-y-1.5 sm:space-y-2">
       <DebouncedInput
         type="text"
@@ -189,58 +182,15 @@ export function Filter({
       />
     </div>
   )
-}
 
-// Update DebouncedInput to use Shadcn Input
-function DebouncedInput({
-  value: initialValue,
-  onChange,
-  debounce = 500,
-  ...props
-}: {
-  value: string | number
-  onChange: (value: string | number) => void
-  debounce?: number
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
-  const [value, setValue] = React.useState(initialValue)
-
-  React.useEffect(() => {
-    setValue(initialValue)
-  }, [initialValue])
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      onChange(value)
-    }, debounce)
-
-    return () => clearTimeout(timeout)
-  }, [value])
-
-  const handleClear = () => {
-    setValue('')
-    onChange('')
+  switch (filterVariant) {
+    case 'multi-select':
+      return renderMultiSelect()
+    case 'range':
+      return renderRange()
+    case 'select':
+      return renderSelect()
+    default:
+      return renderText()
   }
-
-  return (
-    <div className="relative">
-      <Input
-        {...props}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className={`${props.className || ''} ${value ? 'pr-8' : ''} placeholder:text-sm`}
-      />
-      {value && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-6 px-2"
-          onClick={handleClear}
-        >
-          ✕
-        </Button>
-      )}
-    </div>
-  )
 }

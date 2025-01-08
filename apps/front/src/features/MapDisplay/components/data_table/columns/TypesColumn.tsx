@@ -20,7 +20,7 @@ export const typesColumn: ColumnDef<SearchResult> = {
     const remainingCount = types.length - displayCount
 
     return (
-      <TextWrapper maxWidth="200px">
+      <TextWrapper width="350px">
         <div className="flex flex-row gap-2">
           {types.slice(0, displayCount).map((type) => (
             <Badge variant="secondary" key={type} className="shrink-0">

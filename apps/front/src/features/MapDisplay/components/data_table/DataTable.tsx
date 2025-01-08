@@ -256,7 +256,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       </div>
       <div className="flex-1 overflow-scroll min-h-0 min-w-0 border">
         <div className="w-[100px] h-[100px]">
-          <table className="border-collapse [&_td]:border-[1px] [&_th]:border-[1px]">
+          <table className="w-full border-collapse ">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="hover:bg-transparent">
@@ -267,11 +267,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         key={header.id}
                         className={cn(
                           header.column.columnDef.meta?.headerClassName,
-                          'px-4 py-0 border border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
-                          idx === 0 && 'sticky left-0 z-20 border-r border-s-0',
+                          'px-4 py-0 border-b border-r sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
+                          idx === 0 && 'sticky left-0 z-20',
                         )}
                       >
-                        <TextWrapper>
+                        <TextWrapper width="100%">
                           {header.isPlaceholder
                             ? null
                             : flexRender(
@@ -325,12 +325,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
                             }
                           }}
                           className={cn(
-                            'px-4 py-1 whitespace-nowrap border border-s-0',
+                            'px-4 py-1 whitespace-nowrap border-b border-r',
                             idx === 0 &&
-                              cn(
-                                'sticky left-0 z-10 border-r border-s-0',
-                                backgroundClasses,
-                              ),
+                              cn('sticky left-0 z-10', backgroundClasses),
                           )}
                         >
                           {flexRender(

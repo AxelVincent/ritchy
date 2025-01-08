@@ -14,7 +14,7 @@ export const descriptionColumn: ColumnDef<SearchResult> = {
   },
   cell: ({ row }) => {
     return (
-      <TextWrapper truncate={true} maxWidth="250px">
+      <TextWrapper truncate={true} width="250px">
         {row.original.editorialSummary?.text ?? ''}
       </TextWrapper>
     )

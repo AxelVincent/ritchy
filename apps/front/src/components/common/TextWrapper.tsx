@@ -11,7 +11,7 @@ interface TextWrapperProps {
   children: React.ReactNode
   copyValue?: string
   truncate?: boolean
-  maxWidth?: string
+  width?: string
   className?: string
 }
 
@@ -19,7 +19,7 @@ export const TextWrapper = ({
   children,
   copyValue,
   truncate = true,
-  maxWidth,
+  width,
   className,
 }: TextWrapperProps) => {
   const [copied, setCopied] = useState(false)
@@ -33,7 +33,7 @@ export const TextWrapper = ({
   }
 
   const baseClassName = `mx-0.5 text-sm text-left ${truncate ? 'truncate' : ''}`
-  const style = maxWidth ? { maxWidth } : undefined
+  const style = width ? { width } : { width: '150px' }
 
   const content = (
     <div

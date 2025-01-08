@@ -31,7 +31,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
 
     if (!regularOpeningHours) {
       return (
-        <TextWrapper>
+        <TextWrapper width="100%">
           <Button variant="secondary" size="sm" disabled className="w-32">
             No hours
           </Button>
@@ -40,7 +40,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
     }
 
     return (
-      <TextWrapper>
+      <TextWrapper width="100%">
         <Dialog>
           <DialogTrigger asChild>
             <Button
