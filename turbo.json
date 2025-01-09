@@ -29,6 +29,14 @@
     },
     "clean": {
       "outputs": []
+    },
+    "coverage": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": []
     }
   }
 }

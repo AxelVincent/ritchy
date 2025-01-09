@@ -2,6 +2,7 @@ import path from 'node:path'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import type { ViteUserConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react(), TanStackRouterVite()],
@@ -11,7 +12,7 @@ export default defineConfig({
     },
   },
   build: {
-    sourcemap: false, // disable in production
+    sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
@@ -21,4 +22,10 @@ export default defineConfig({
       },
     },
   },
-})
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+  },
+} as ViteUserConfig)
