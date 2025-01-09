@@ -24,7 +24,9 @@ export const priceRangeColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'multi-select',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Price Range" />,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Price Range" width="200px" />
+  ),
   cell: ({ row }) => {
     const formattedPrice = formatPriceRange(row.original.priceRange)
     return (

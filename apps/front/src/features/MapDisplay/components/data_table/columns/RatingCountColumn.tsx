@@ -24,7 +24,7 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
         {count ? (
           <span>{count.toLocaleString()} reviews</span>
         ) : (
-          <span className="text-muted-foreground">No reviews</span>
+          <span className="text-muted-foreground">0 reviews</span>
         )}
       </TextWrapper>
     )

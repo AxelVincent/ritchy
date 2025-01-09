@@ -30,13 +30,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
     // console.log(row.original)
 
     if (!regularOpeningHours) {
-      return (
-        <TextWrapper width="150px">
-          <Button variant="secondary" size="sm" disabled className="w-32">
-            No hours
-          </Button>
-        </TextWrapper>
-      )
+      return <></>
     }
 
     return (
