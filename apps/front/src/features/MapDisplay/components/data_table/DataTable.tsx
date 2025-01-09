@@ -39,6 +39,9 @@ interface DataTableProps<TData, TValue> {
   listId?: string
 }
 
+// Add a fixed height for table rows
+const ROW_HEIGHT = '40px' // Adjust this value as needed
+
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
@@ -88,7 +91,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
           case 'range': {
             const [min, max] = filterValue as [number, number]
-            const numValue = Number(value)
+            const numValue =
+              value === '' || value === null || value === undefined
+                ? 0
+                : Number(value)
             return (!min || numValue >= min) && (!max || numValue <= max)
           }
 
@@ -271,6 +277,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       }}
                       tabIndex={0}
                       className={cn(backgroundClasses)}
+                      style={{ height: ROW_HEIGHT }}
                     >
                       {row.getVisibleCells().map((cell, idx) => (
                         <td
@@ -287,10 +294,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
                             }
                           }}
                           className={cn(
-                            'px-4 py-1 whitespace-nowrap border-b border-r',
+                            'px-4 py-1 whitespace-nowrap border-b border-r overflow-hidden',
                             idx === 0 &&
                               cn('sticky left-0 z-10', backgroundClasses),
                           )}
+                          style={{ height: ROW_HEIGHT }}
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
