@@ -70,6 +70,7 @@ export function Filter({
     const selected = (columnFilterValue as string[]) || []
     const [visibleBadges, setVisibleBadges] = useState(2)
     const containerRef = useRef<HTMLDivElement>(null)
+    const [showTooltip, setShowTooltip] = useState(false)
 
     useEffect(() => {
       const calculateVisibleBadges = () => {
@@ -93,10 +94,14 @@ export function Filter({
 
     return (
       <TooltipProvider>
-        <Tooltip>
+        <Tooltip open={showTooltip}>
           <TooltipTrigger asChild>
-            <div className="space-y-1.5 sm:space-y-2">
-              <Popover>
+            <div
+              className="space-y-1.5 sm:space-y-2"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <Popover onOpenChange={() => setShowTooltip(false)}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -194,12 +199,17 @@ export function Filter({
       min !== '' &&
       max !== ''
     const hasValue = min || max
+    const [showTooltip, setShowTooltip] = useState(false)
 
     return (
       <TooltipProvider>
-        <Tooltip>
+        <Tooltip open={showTooltip}>
           <TooltipTrigger asChild>
-            <div className="space-y-1.5 sm:space-y-2">
+            <div
+              className="space-y-1.5 sm:space-y-2"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
               <div className="flex space-x-2">
                 <div className="relative flex-1">
                   <div className="relative">
