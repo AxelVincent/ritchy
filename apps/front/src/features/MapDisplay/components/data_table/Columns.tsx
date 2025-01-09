@@ -17,6 +17,7 @@ import {
 } from './columns/AddressColumns'
 import { descriptionColumn } from './columns/DescriptionColumn'
 import { nameColumn } from './columns/NameColumn'
+import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { priceLevelColumn } from './columns/PriceLevelColumn'
 import { priceRangeColumn } from './columns/PriceRangeColumn'
@@ -52,6 +53,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   neighborhoodColumn,
   administrativeAreaLevel1Column,
   administrativeAreaLevel2Column,
+  openingHoursColumn,
   descriptionColumn,
   addressComponentsColumn,
   actionsColumn,

@@ -48,24 +48,47 @@ export const TextWrapper = ({
 
   if (!truncate || !isTextTruncated) {
     return (
-      <div className={`flex gap-2 w-full text-sm ${className}`} style={style}>
-        <Label
-          className={`text-sm ${truncate ? 'truncate' : ''} ${copyValue ? 'cursor-pointer hover:text-primary' : ''}`}
-          ref={(el) => {
-            if (el && truncate) {
-              const isOverflowing = el.scrollWidth > el.clientWidth
-              setIsTextTruncated(isOverflowing)
-            }
-          }}
-          {...copyHandlers}
-        >
-          {copied ? (
-            <span className="text-sm text-green-500">Copied!</span>
+      <TooltipProvider delayDuration={200}>
+        <div className={`flex gap-2 w-full text-sm ${className}`} style={style}>
+          {copyValue ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label
+                  className={`text-sm ${truncate ? 'truncate' : ''} cursor-pointer hover:text-primary`}
+                  ref={(el) => {
+                    if (el && truncate) {
+                      const isOverflowing = el.scrollWidth > el.clientWidth
+                      setIsTextTruncated(isOverflowing)
+                    }
+                  }}
+                  {...copyHandlers}
+                >
+                  {copied ? (
+                    <span className="text-sm text-green-500">Copied!</span>
+                  ) : (
+                    children
+                  )}
+                </Label>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-sm">Click to copy</p>
+              </TooltipContent>
+            </Tooltip>
           ) : (
-            children
+            <Label
+              className="text-sm"
+              ref={(el) => {
+                if (el && truncate) {
+                  const isOverflowing = el.scrollWidth > el.clientWidth
+                  setIsTextTruncated(isOverflowing)
+                }
+              }}
+            >
+              {children}
+            </Label>
           )}
-        </Label>
-      </div>
+        </div>
+      </TooltipProvider>
     )
   }
 

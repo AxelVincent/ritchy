@@ -6,5 +6,5 @@ export const MARKER_COLORS = {
 export const MARKER_SETTINGS = {
   scale: 0.8,
   popupOffset: 25,
-  popupMaxWidth: '300px',
+  popupMaxWidth: '320px',
 } as const

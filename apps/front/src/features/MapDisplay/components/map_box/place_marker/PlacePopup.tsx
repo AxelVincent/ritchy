@@ -1,118 +1,265 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { OpeningHoursContent } from '@/features/MapDisplay/components/shared/OpeningHours'
 import { StatusIndicator } from '@/features/MapDisplay/components/shared/StatusIndicator'
-import { formatUtcOffset } from '@/lib/formatUtcOffset'
-import { cn } from '@/lib/utils'
 import type { Place } from '@ritchy/types'
-import { ExternalLink } from 'lucide-react'
-import { ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { ExternalLink, Info, MapPin, Phone, Star, Tags } from 'lucide-react'
+
+const PRICE_LEVELS = {
+  PRICE_LEVEL_FREE: 'Free',
+  PRICE_LEVEL_INEXPENSIVE: '$',
+  PRICE_LEVEL_MODERATE: '$$',
+  PRICE_LEVEL_EXPENSIVE: '$$$',
+  PRICE_LEVEL_VERY_EXPENSIVE: '$$$$',
+} as const
 
 interface PlacePopupProps {
   place: Place
 }
 
-export const PlacePopup = ({ place }: PlacePopupProps) => {
-  const [showHours, setShowHours] = useState(false)
-
-  return (
-    <Card className="w-[300px] overflow-hidden">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{place.displayName}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col items-start gap-2 space-y-1">
-        {place.rating && (
-          <div className="flex items-center gap-1">
-            <span className="text-yellow-500">★</span>
-            <span>{place.rating.toFixed(1)}</span>
-            {place.userRatingCount && (
-              <span className="text-muted-foreground">
-                ({place.userRatingCount} reviews)
-              </span>
+const PlaceInfoTab = ({ place }: { place: Place }) => (
+  <div className="h-full flex flex-col">
+    {/* Scrollable content area */}
+    <div className="flex-1 overflow-y-auto">
+      <div className="flex flex-col gap-3">
+        {/* Address */}
+        <div className="flex gap-3">
+          <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
+          <div className="space-y-1">
+            <TextWrapper
+              copyValue={
+                place.address?.formattedAddress ?? 'Address not available'
+              }
+              truncate={true}
+              width="250px"
+            >
+              {place.address?.formattedAddress ?? 'Address not available'}
+            </TextWrapper>
+            {place.address?.neighborhood && (
+              <TextWrapper
+                width="100%"
+                className="text-sm text-muted-foreground"
+              >
+                {place.address.neighborhood}
+              </TextWrapper>
             )}
           </div>
-        )}
+        </div>
 
-        {place.shortFormattedAddress && (
-          <TextWrapper
-            copyValue={place.shortFormattedAddress}
-            truncate
-            width="100%"
-          >
-            {place.shortFormattedAddress}
-          </TextWrapper>
-        )}
-
-        {place.internationalPhoneNumber && (
-          <TextWrapper copyValue={place.internationalPhoneNumber}>
-            {place.internationalPhoneNumber}
-          </TextWrapper>
-        )}
-
-        {place.regularOpeningHours && (
-          <div className="flex flex-col w-full gap-1">
-            <div className="flex items-center gap-2">
-              <StatusIndicator isOpen={place.regularOpeningHours.openNow} />
-              <span className="text-xs text-muted-foreground">
-                {formatUtcOffset(place.utcOffsetMinutes)}
-              </span>
-              {place.regularOpeningHours && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="h-6 p-1"
-                  onClick={() => setShowHours(!showHours)}
-                >
-                  <ChevronDown
-                    className={cn('h-4 w-4 transition-transform', {
-                      'rotate-180': showHours,
-                    })}
-                  />
-                </Button>
-              )}
-            </div>
-
-            {showHours && (
-              <OpeningHoursContent
-                regularOpeningHours={place.regularOpeningHours}
-              />
-            )}
-          </div>
-        )}
-
+        {/* Website */}
         {place.websiteUri && (
-          <Button variant="link" className="h-auto p-0" asChild>
+          <div className="flex gap-3">
+            <ExternalLink className="h-5 w-5 text-muted-foreground shrink-0" />
             <a
               href={place.websiteUri}
               target="_blank"
-              rel="noreferrer"
-              className="flex items-center"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline"
             >
-              Visit Website
-              <ExternalLink className="ml-1 h-3 w-3" />
+              {new URL(place.websiteUri).hostname}
+            </a>
+          </div>
+        )}
+
+        {/* Phone */}
+        {place.internationalPhoneNumber && (
+          <div className="flex gap-3">
+            <Phone className="h-5 w-5 text-muted-foreground shrink-0" />
+            <TextWrapper
+              copyValue={place.internationalPhoneNumber}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              {place.internationalPhoneNumber}
+            </TextWrapper>
+          </div>
+        )}
+
+        {/* Price Level */}
+        {place.priceLevel && (
+          <div className="flex gap-3">
+            <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
+            <span className="text-sm">
+              {PRICE_LEVELS[place.priceLevel]}
+              <span className="text-muted-foreground"> · Price level</span>
+            </span>
+          </div>
+        )}
+
+        {/* Description */}
+        {place.editorialSummary && (
+          <div className="flex gap-3">
+            <Info className="h-5 w-5 text-muted-foreground shrink-0" />
+            <TextWrapper
+              width="100%"
+              copyValue={place.editorialSummary.text}
+              className="text-sm text-muted-foreground"
+            >
+              {place.editorialSummary.text}
+            </TextWrapper>
+          </div>
+        )}
+
+        {/* Primary Type - Moved from header */}
+        {place.primaryType && (
+          <div className="flex gap-3">
+            <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
+            <Badge variant="outline">{place.primaryType}</Badge>
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* Fixed action buttons */}
+    <div className="flex flex-col gap-2 pt-4">
+      <div className="flex gap-2">
+        {place.googleMapsUri && (
+          <Button className="flex-1" variant="default" asChild>
+            <a
+              href={place.googleMapsUri}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2"
+            >
+              <MapPin className="h-4 w-4" />
+              Directions
             </a>
           </Button>
         )}
-
-        <Button variant="link" className="h-auto p-0" asChild>
-          <a
-            href={place.googleMapsUri}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center"
-          >
-            View on Google Maps
-            <ExternalLink className="ml-1 h-3 w-3" />
-          </a>
-        </Button>
-
-        {place.editorialSummary && (
-          <p className="text-sm text-muted-foreground">
-            {place.editorialSummary.text}
-          </p>
+        {place.websiteUri && (
+          <Button className="flex-1" variant="outline" asChild>
+            <a
+              href={place.websiteUri}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Website
+            </a>
+          </Button>
         )}
+      </div>
+    </div>
+  </div>
+)
+
+const PlaceHoursTab = ({ place }: { place: Place }) => {
+  return (
+    <div className="h-full overflow-auto">
+      {place.regularOpeningHours ? (
+        <div className="flex flex-col">
+          <OpeningHoursContent
+            regularOpeningHours={place.regularOpeningHours}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          <div className="text-sm text-muted-foreground">
+            No opening hours available
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const PlaceTagsTab = ({ place }: { place: Place }) => (
+  <div className="space-y-4">
+    {place.types && place.types.length > 0 && (
+      <div className="flex flex-wrap gap-2">
+        {place.types.map((type) => (
+          <Badge key={type} variant="secondary">
+            {type}
+          </Badge>
+        ))}
+      </div>
+    )}
+  </div>
+)
+
+export const PlacePopup = ({ place }: PlacePopupProps) => {
+  return (
+    <Card className="h-[350px] w-[320px] flex flex-col overflow-hidden">
+      <CardHeader className="pb-2">
+        {/* Main Title */}
+        <CardTitle className="flex flex-col gap-2">
+          <div className="text-lg font-semibold">{place.displayName}</div>
+          <div className="flex items-center gap-2 text-sm">
+            {place.rating ? (
+              <div className="flex items-center gap-1">
+                <span className="font-medium">{place.rating.toFixed(1)}</span>
+                <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                <span className="text-muted-foreground">
+                  ({place.userRatingCount?.toLocaleString() ?? 0})
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                No reviews
+              </div>
+            )}
+            {place.regularOpeningHours && (
+              <StatusIndicator isOpen={place.regularOpeningHours.openNow} />
+            )}
+          </div>
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+        <Tabs defaultValue="info" className="flex flex-col h-full">
+          <TabsList
+            className="p-0 grid grid-cols-3 h-[45px] shrink-0 items-center bg-transparent"
+            aria-label="Place details"
+          >
+            <TabsTrigger
+              value="info"
+              aria-label="Information"
+              className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+            >
+              Information
+            </TabsTrigger>
+            <TabsTrigger
+              value="hours"
+              aria-label="Opening hours"
+              className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+            >
+              Opening hours
+            </TabsTrigger>
+            <TabsTrigger
+              value="tags"
+              aria-label="Categories"
+              className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+            >
+              Categories
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex-1 p-4 overflow-hidden flex flex-col">
+            <TabsContent
+              value="info"
+              className="mt-0 h-full flex-1 overflow-auto"
+            >
+              <PlaceInfoTab place={place} />
+            </TabsContent>
+
+            <TabsContent
+              value="hours"
+              className="mt-0 h-full flex-1 overflow-auto"
+            >
+              <PlaceHoursTab place={place} />
+            </TabsContent>
+
+            <TabsContent
+              value="tags"
+              className="mt-0 h-full flex-1 overflow-auto"
+            >
+              <PlaceTagsTab place={place} />
+            </TabsContent>
+          </div>
+        </Tabs>
       </CardContent>
     </Card>
   )
