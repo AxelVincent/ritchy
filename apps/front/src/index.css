@@ -23,6 +23,14 @@ body {
 
 @layer base {
   :root {
+    /* Dezoom 10% */
+    --scale-factor: 0.9;
+    --radius: calc(0.5rem * var(--scale-factor));
+    --font-size: calc(1rem * var(--scale-factor));
+    --ring-offset-width: calc(2px * var(--scale-factor));
+    --ring-offset-width: calc(2px * var(--scale-factor));
+
+    /* Colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
