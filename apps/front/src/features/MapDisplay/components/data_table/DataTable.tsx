@@ -40,7 +40,7 @@ interface DataTableProps<TData, TValue> {
 }
 
 // Add a fixed height for table rows
-const ROW_HEIGHT = '40px' // Adjust this value as needed
+const ROW_HEIGHT = '34px' // Adjust this value as needed
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
