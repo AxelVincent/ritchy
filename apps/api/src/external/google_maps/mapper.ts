@@ -19,7 +19,6 @@ const objectMapper = (place: PreferredPlace) => ({
   priceRange: place.priceRange,
   rating: place.rating,
   userRatingCount: place.userRatingCount,
-  shortFormattedAddress: place.shortFormattedAddress,
   googleMapsUri: place.googleMapsUri || '',
   internationalPhoneNumber: place.internationalPhoneNumber,
   utcOffsetMinutes: place.utcOffsetMinutes || 0,
@@ -28,6 +27,7 @@ const objectMapper = (place: PreferredPlace) => ({
   addressComponents: place.addressComponents || [],
   address: {
     formattedAddress: place.formattedAddress || '',
+    shortFormattedAddress: place.shortFormattedAddress || '',
     country:
       place.addressComponents?.find((component) =>
         component.types.includes('country'),

@@ -69,6 +69,20 @@ export const validateAllSearchResultFieldsHaveColumns = (
       continue
     }
 
+    if (key === 'location') {
+      // Check for both latitude and longitude columns
+      const locationKeys = ['latitude', 'longitude']
+      for (const locationKey of locationKeys) {
+        const hasLocationColumn = columns.some(
+          (column) => column.field === `location.${locationKey}`,
+        )
+        if (!hasLocationColumn) {
+          missingFields.push(`location.${locationKey}`)
+        }
+      }
+      continue
+    }
+
     const hasColumn = columns.some((column) => column.field === key)
     if (!hasColumn) {
       missingFields.push(key)
@@ -124,7 +138,7 @@ export const DataExport = ({ data }: DataExportProps) => {
         {
           header: 'Website',
           field: 'websiteUri',
-          accessor: (row: SearchResult): string => row.websiteUri || 'N/A',
+          accessor: (row: SearchResult): string => row.websiteUri || '',
         },
         {
           header: 'Emails',
@@ -134,7 +148,7 @@ export const DataExport = ({ data }: DataExportProps) => {
               : null
             return enrichData && !('error' in enrichData)
               ? enrichData.emails.join(', ')
-              : 'N/A'
+              : ''
           },
         },
         ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
@@ -143,14 +157,14 @@ export const DataExport = ({ data }: DataExportProps) => {
             const enrichData = row.websiteUri
               ? enrichmentMap.get(row.websiteUri)
               : null
-            if (!enrichData || 'error' in enrichData) return 'N/A'
-            return enrichData.socialLinks[platform]?.join(', ') || 'N/A'
+            if (!enrichData || 'error' in enrichData) return ''
+            return enrichData.socialLinks[platform]?.join(', ') || ''
           },
         })),
         {
           header: 'Google Maps URL',
           field: 'googleMapsUri',
-          accessor: (row: SearchResult): string => row.googleMapsUri || 'N/A',
+          accessor: (row: SearchResult): string => row.googleMapsUri || '',
         },
         {
           header: 'Categories',
@@ -161,83 +175,85 @@ export const DataExport = ({ data }: DataExportProps) => {
           header: 'Phone',
           field: 'internationalPhoneNumber',
           accessor: (row: SearchResult): string =>
-            row.internationalPhoneNumber || 'N/A',
+            row.internationalPhoneNumber || '',
         },
         {
           header: 'Rating',
           field: 'rating',
-          accessor: (row: SearchResult): string =>
-            row.rating?.toString() || 'N/A',
+          accessor: (row: SearchResult): string => row.rating?.toString() || '',
         },
         {
           header: 'Number of Reviews',
           field: 'userRatingCount',
           accessor: (row: SearchResult): string =>
-            row.userRatingCount?.toString() || 'N/A',
+            row.userRatingCount?.toString() || '',
         },
         {
           header: 'Full Address',
           field: 'address.formattedAddress',
           accessor: (row: SearchResult): string =>
-            row.address.formattedAddress || 'N/A',
+            row.address.formattedAddress || '',
+        },
+        {
+          header: 'Short Address',
+          field: 'address.shortFormattedAddress',
+          accessor: (row: SearchResult): string =>
+            row.address.shortFormattedAddress || '',
         },
         {
           header: 'Country',
           field: 'address.country',
-          accessor: (row: SearchResult): string => row.address.country || 'N/A',
+          accessor: (row: SearchResult): string => row.address.country || '',
         },
         {
           header: 'Locality',
           field: 'address.locality',
-          accessor: (row: SearchResult): string =>
-            row.address.locality || 'N/A',
+          accessor: (row: SearchResult): string => row.address.locality || '',
         },
         {
           header: 'Sublocality',
           field: 'address.sublocality',
           accessor: (row: SearchResult): string =>
-            row.address.sublocality || 'N/A',
+            row.address.sublocality || '',
         },
         {
           header: 'Postal Code',
           field: 'address.postalCode',
-          accessor: (row: SearchResult): string =>
-            row.address.postalCode || 'N/A',
+          accessor: (row: SearchResult): string => row.address.postalCode || '',
         },
         {
           header: 'Postal Code Suffix',
           field: 'address.postalCodeSuffix',
           accessor: (row: SearchResult): string =>
-            row.address.postalCodeSuffix || 'N/A',
+            row.address.postalCodeSuffix || '',
         },
         {
           header: 'Plus Code',
           field: 'address.plusCode',
-          accessor: (row: SearchResult): string =>
-            row.address.plusCode || 'N/A',
+          accessor: (row: SearchResult): string => row.address.plusCode || '',
         },
         {
           header: 'Street',
           field: 'address.street',
-          accessor: (row: SearchResult): string => row.address.street || 'N/A',
+          accessor: (row: SearchResult): string => row.address.street || '',
         },
         {
           header: 'Neighborhood',
           field: 'address.neighborhood',
           accessor: (row: SearchResult): string =>
-            row.address.neighborhood || 'N/A',
+            row.address.neighborhood || '',
         },
         {
           header: 'Administrative Area Level 1',
           field: 'address.administrativeAreaLevel1',
           accessor: (row: SearchResult): string =>
-            row.address.administrativeAreaLevel1 || 'N/A',
+            row.address.administrativeAreaLevel1 || '',
         },
         {
           header: 'Administrative Area Level 2',
           field: 'address.administrativeAreaLevel2',
           accessor: (row: SearchResult): string =>
-            row.address.administrativeAreaLevel2 || 'N/A',
+            row.address.administrativeAreaLevel2 || '',
         },
         {
           header: 'Regular Opening Hours',
@@ -246,7 +262,7 @@ export const DataExport = ({ data }: DataExportProps) => {
             const hours = row.regularOpeningHours
 
             // Handle cases where no opening hours data exists
-            if (!hours) return 'N/A'
+            if (!hours) return ''
 
             // If we have weekday descriptions, use those as they're pre-formatted
             if (hours.weekdayDescriptions?.length) {
@@ -273,33 +289,37 @@ export const DataExport = ({ data }: DataExportProps) => {
               return hours.openNow ? 'Currently Open' : 'Currently Closed'
             }
 
-            return 'N/A'
+            return ''
           },
         },
         {
-          header: 'Location (lat, lng)',
-          field: 'location',
+          header: 'Latitude',
+          field: 'location.latitude',
           accessor: (row: SearchResult): string =>
-            row.location
-              ? `${row.location.latitude}, ${row.location.longitude}`
-              : 'N/A',
+            row.location?.latitude?.toString() || '',
+        },
+        {
+          header: 'Longitude',
+          field: 'location.longitude',
+          accessor: (row: SearchResult): string =>
+            row.location?.longitude?.toString() || '',
         },
         {
           header: 'Primary Type',
           field: 'primaryType',
-          accessor: (row: SearchResult): string => row.primaryType || 'N/A',
+          accessor: (row: SearchResult): string => row.primaryType || '',
         },
         {
           header: 'Price Level',
           field: 'priceLevel',
           accessor: (row: SearchResult): string =>
-            row.priceLevel?.toString() || 'N/A',
+            row.priceLevel?.toString() || '',
         },
         {
           header: 'Price Range',
           field: 'priceRange',
           accessor: (row: SearchResult): string => {
-            if (!row.priceRange) return 'N/A'
+            if (!row.priceRange) return ''
 
             const formatPrice = (price: {
               currencyCode: string
@@ -314,25 +334,19 @@ export const DataExport = ({ data }: DataExportProps) => {
 
             const start = row.priceRange.startPrice
               ? formatPrice(row.priceRange.startPrice)
-              : 'N/A'
+              : ''
             const end = row.priceRange.endPrice
               ? formatPrice(row.priceRange.endPrice)
-              : 'N/A'
+              : ''
 
             return `${start} - ${end}`
           },
         },
         {
-          header: 'Short Address',
-          field: 'shortFormattedAddress',
-          accessor: (row: SearchResult): string =>
-            row.shortFormattedAddress || 'N/A',
-        },
-        {
           header: 'Editorial Summary',
           field: 'editorialSummary',
           accessor: (row: SearchResult): string =>
-            row.editorialSummary?.text || 'N/A',
+            row.editorialSummary?.text || '',
         },
       ]
 

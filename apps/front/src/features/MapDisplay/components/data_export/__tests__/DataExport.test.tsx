@@ -42,7 +42,7 @@ describe('DataExport', () => {
         types: ['restaurant'],
         address: {
           formattedAddress: '123 Test St',
-          // Add all required address fields
+          shortFormattedAddress: '',
           country: 'US',
           locality: 'Test City',
           sublocality: '',
@@ -54,7 +54,6 @@ describe('DataExport', () => {
           administrativeAreaLevel1: 'Test State',
           administrativeAreaLevel2: '',
         },
-        // Add other required fields
         googleMapsUri: '',
         internationalPhoneNumber: '',
         rating: undefined,
@@ -63,7 +62,6 @@ describe('DataExport', () => {
         primaryType: 'restaurant',
         priceLevel: undefined,
         priceRange: undefined,
-        shortFormattedAddress: '',
         editorialSummary: undefined,
         regularOpeningHours: undefined,
         utcOffsetMinutes: 0,
@@ -88,7 +86,6 @@ describe('DataExport', () => {
           header: 'ID',
           field: 'id',
         }),
-        // ... you can add more column expectations if needed
       ]),
     })
     expect(validateAndExportToCsvMock).not.toThrow()

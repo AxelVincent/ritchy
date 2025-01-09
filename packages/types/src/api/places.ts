@@ -140,7 +140,6 @@ export const PlaceSchema = z.object({
   priceRange: PriceRangeSchema.optional(),
   rating: z.number().optional(),
   userRatingCount: z.number().optional(),
-  shortFormattedAddress: z.string().optional(),
   utcOffsetMinutes: z.number(),
   regularOpeningHours: OpeningHoursSchema.optional(),
   googleMapsUri: z.string(),
@@ -148,7 +147,8 @@ export const PlaceSchema = z.object({
   editorialSummary: LocalizedTextSchema.optional(),
   addressComponents: z.array(AddressComponentSchema).optional(),
   address: z.object({
-    formattedAddress: z.string(),
+    formattedAddress: z.string().optional(),
+    shortFormattedAddress: z.string().optional(),
     country: z.string().optional(),
     locality: z.string().optional(),
     sublocality: z.string().optional(),
