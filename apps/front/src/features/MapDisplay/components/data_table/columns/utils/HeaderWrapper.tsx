@@ -24,7 +24,7 @@ export const HeaderWrapper = ({
   return (
     <div className="flex flex-col gap-2 p-2" style={widthStyle}>
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger>
           <Button
             variant="ghost"
             onClick={
@@ -32,7 +32,17 @@ export const HeaderWrapper = ({
                 ? () => column.toggleSorting(column.getIsSorted() === 'asc')
                 : undefined
             }
-            className={`h-8 hover:bg-transparent ${!canSort ? 'cursor-default' : ''}`}
+            onKeyDown={
+              canSort
+                ? (e) => {
+                    if (e.key === 'Enter') {
+                      column.toggleSorting(column.getIsSorted() === 'asc')
+                    }
+                  }
+                : undefined
+            }
+            className={`h-8 px-4 py-2 ${!canSort ? 'cursor-default' : ''}`}
+            disabled={!canSort}
           >
             <div className="flex items-center gap-1">
               <span className="font-medium">{title}</span>
