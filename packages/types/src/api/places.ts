@@ -159,6 +159,7 @@ export const PlaceSchema = z.object({
     neighborhood: z.string().optional(),
     administrativeAreaLevel1: z.string().optional(),
     administrativeAreaLevel2: z.string().optional(),
+    administrativeAreaLevel3: z.string().optional(),
   }),
 })
 

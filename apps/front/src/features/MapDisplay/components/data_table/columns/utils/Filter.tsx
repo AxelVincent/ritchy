@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -25,11 +24,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { DynamicBadgeList } from '@/features/MapDisplay/components/shared/DynamicBadgeList'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
 import { Check, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { DebouncedInput } from '../hooks/DebouncedInput'
 import { useUniqueValues } from '../hooks/UseUniqueValues'
 import type { FilterVariant } from '../types'
@@ -68,29 +68,7 @@ export function Filter({
 
   const renderMultiSelect = () => {
     const selected = (columnFilterValue as string[]) || []
-    const [visibleBadges, setVisibleBadges] = useState(2)
-    const containerRef = useRef<HTMLDivElement>(null)
     const [showTooltip, setShowTooltip] = useState(false)
-
-    useEffect(() => {
-      const calculateVisibleBadges = () => {
-        const container = containerRef.current
-        if (!container) return
-
-        const containerWidth = container.offsetWidth
-        // Approximate width calculation:
-        // - Each badge takes ~100px
-        // - Leave space for the clear button (~40px)
-        // - Leave some padding (~20px)
-        const availableWidth = containerWidth - 60
-        const possibleBadges = Math.floor(availableWidth / 100)
-        setVisibleBadges(Math.max(1, possibleBadges))
-      }
-
-      calculateVisibleBadges()
-      window.addEventListener('resize', calculateVisibleBadges)
-      return () => window.removeEventListener('resize', calculateVisibleBadges)
-    }, [])
 
     return (
       <TooltipProvider>
@@ -111,25 +89,12 @@ export function Filter({
                     <div className="flex-1">
                       {selected.length === 0 && 'Select...'}
                       {selected.length > 0 && (
-                        <div
-                          ref={containerRef}
-                          className="flex gap-1 items-center overflow-hidden"
-                        >
-                          {selected.slice(0, visibleBadges).map((value) => (
-                            <Badge
-                              variant="secondary"
-                              key={value}
-                              className="shrink-0"
-                            >
-                              {value}
-                            </Badge>
-                          ))}
-                          {selected.length > visibleBadges && (
-                            <Badge variant="secondary" className="shrink-0">
-                              +{selected.length - visibleBadges}
-                            </Badge>
-                          )}
-                        </div>
+                        <DynamicBadgeList
+                          items={selected}
+                          badgeVariant="secondary"
+                          containerPadding={60}
+                          characterWidth={4}
+                        />
                       )}
                     </div>
                     {selected.length > 0 && (

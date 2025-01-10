@@ -188,7 +188,11 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="Administrative Area Level 1" />
+    <HeaderWrapper
+      column={column}
+      title="Administrative Area Level 1"
+      width="250px"
+    />
   ),
   cell: ({ row }) => (
     <TextWrapper
@@ -208,7 +212,11 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="Administrative Area Level 2" />
+    <HeaderWrapper
+      column={column}
+      title="Administrative Area Level 2"
+      width="250px"
+    />
   ),
   cell: ({ row }) => (
     <TextWrapper
@@ -217,6 +225,30 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
       width="150px"
     >
       {row.original.address.administrativeAreaLevel2}
+    </TextWrapper>
+  ),
+}
+
+export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
+  id: 'administrativeAreaLevel3',
+  accessorKey: 'address.administrativeAreaLevel3',
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => (
+    <HeaderWrapper
+      column={column}
+      title="Administrative Area Level 3"
+      width="250px"
+    />
+  ),
+  cell: ({ row }) => (
+    <TextWrapper
+      copyValue={row.original.address.administrativeAreaLevel3}
+      truncate={true}
+      width="150px"
+    >
+      {row.original.address.administrativeAreaLevel3}
     </TextWrapper>
   ),
 }

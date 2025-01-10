@@ -1,10 +1,4 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
-import { Badge } from '@/components/ui/badge'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { DynamicBadgeList } from '@/features/MapDisplay/components/shared/DynamicBadgeList'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { HeaderWrapper } from './utils/HeaderWrapper'
@@ -26,42 +20,16 @@ export const typesColumn: ColumnDef<SearchResult> = {
   ),
   cell: ({ row }) => {
     const types = row.original.types
-    const displayCount = 2
-    const remainingCount = types.length - displayCount
 
     return (
-      <TextWrapper width="350px">
-        <div className="flex flex-row gap-2">
-          {types.slice(0, displayCount).map((type) => (
-            <Badge variant="secondary" key={type} className="shrink-0">
-              {type}
-            </Badge>
-          ))}
-          {remainingCount > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <div
-                  className="cursor-pointer"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  onKeyUp={(e) => e.stopPropagation()}
-                >
-                  <Badge variant="outline">+ {remainingCount}</Badge>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent>
-                <div className="flex flex-row gap-2 flex-wrap">
-                  {types.slice(displayCount).map((type) => (
-                    <Badge variant="secondary" key={type}>
-                      {type}
-                    </Badge>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
-      </TextWrapper>
+      <div className="w-[350px]">
+        <DynamicBadgeList
+          items={types}
+          badgeVariant="secondary"
+          containerClassName="w-[350px]"
+          containerPadding={60}
+        />
+      </div>
     )
   },
 }

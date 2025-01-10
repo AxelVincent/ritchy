@@ -68,6 +68,10 @@ const objectMapper = (place: PreferredPlace) => ({
       place.addressComponents?.find((component) =>
         component.types.includes('administrative_area_level_2'),
       )?.longText || '',
+    administrativeAreaLevel3:
+      place.addressComponents?.find((component) =>
+        component.types.includes('administrative_area_level_3'),
+      )?.longText || '',
   },
 })
 
