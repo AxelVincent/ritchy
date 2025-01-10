@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { toTitleCase } from '@/lib/toTitleCase'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnFiltersState, Table } from '@tanstack/react-table'
 
@@ -52,10 +53,7 @@ export const ActiveFilters = <TData extends SearchResult>({
           {activeFilters.map((filter) => {
             const column = table.getColumn(filter.id)
             const filterVariant = column?.columnDef.meta?.filterVariant
-            const columnName = filter.id
-              .split(/(?=[A-Z](?![0-9])|[0-9](?![0-9]))|(?:And)/)
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ')
+            const columnName = toTitleCase(filter.id)
 
             const formattedValue = formatFilterValue(
               filter.value as FilterValue,

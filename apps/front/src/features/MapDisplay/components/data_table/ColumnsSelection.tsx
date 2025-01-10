@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { toTitleCase } from '@/lib/toTitleCase'
 import type { Table } from '@tanstack/react-table'
 import { ChevronDown, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -94,10 +95,7 @@ export const ColumnsSelection = <TData,>({
                   handleVisibilityChange(column.id, !!value)
                 }
               >
-                {column.id
-                  .split(/(?=[A-Z])|(?:And)/)
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ')}
+                {toTitleCase(column.id)}
               </DropdownMenuCheckboxItem>
             ))}
         </ScrollArea>

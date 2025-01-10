@@ -256,6 +256,12 @@ export const DataExport = ({ data }: DataExportProps) => {
             row.address.administrativeAreaLevel2 || '',
         },
         {
+          header: 'Administrative Area Level 3',
+          field: 'address.administrativeAreaLevel3',
+          accessor: (row: SearchResult): string =>
+            row.address.administrativeAreaLevel3 || '',
+        },
+        {
           header: 'Regular Opening Hours',
           field: 'regularOpeningHours',
           accessor: (row: SearchResult): string => {
