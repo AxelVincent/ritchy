@@ -29,14 +29,14 @@ import { ColumnsSelection } from './ColumnsSelection'
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  onRowSelect: React.Dispatch<React.SetStateAction<string | null>>
+  setSelectedPlaceId: React.Dispatch<React.SetStateAction<string | null>>
   setDataTableRowSelection: React.Dispatch<
     React.SetStateAction<RowSelectionState>
   >
   dataTableRowSelection: RowSelectionState
-  mapBoxSelectedPlaceId: string | null
-  mapBoxHoveredPlaceId: string | null
+  selectedPlaceId: string | null
   listId?: string
+  onFilteredDataChange: (ids: Set<string>) => void
 }
 
 // Add a fixed height for table rows
@@ -45,12 +45,12 @@ const ROW_HEIGHT = '34px' // Adjust this value as needed
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
-  mapBoxSelectedPlaceId,
-  onRowSelect,
-  mapBoxHoveredPlaceId,
+  selectedPlaceId,
+  setSelectedPlaceId,
   setDataTableRowSelection,
   dataTableRowSelection,
   listId,
+  onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -124,10 +124,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const selectedRows = table.getSelectedRowModel().rows
 
   const handleRowInteraction = (row: Row<TData>) => {
-    if (mapBoxSelectedPlaceId === row.original.id) {
-      onRowSelect(null)
+    if (selectedPlaceId === row.original.id) {
+      setSelectedPlaceId(null)
     } else {
-      onRowSelect(row.original.id)
+      setSelectedPlaceId(row.original.id)
     }
   }
 
@@ -152,16 +152,25 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
   // Add this effect to handle scrolling
   useEffect(() => {
-    if (mapBoxSelectedPlaceId) {
+    if (selectedPlaceId) {
       const selectedRow = document.querySelector(
-        `tr[data-id="${mapBoxSelectedPlaceId}"]`,
+        `tr[data-id="${selectedPlaceId}"]`,
       )
       selectedRow?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       })
     }
-  }, [mapBoxSelectedPlaceId])
+  }, [selectedPlaceId])
+
+  // Add effect to track filtered results
+  // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
+  useEffect(() => {
+    const filteredIds = new Set(
+      table.getFilteredRowModel().rows.map((row) => row.original.id),
+    )
+    onFilteredDataChange(filteredIds)
+  }, [table.getFilteredRowModel().rows, onFilteredDataChange])
 
   return (
     <div className="flex flex-1 flex-col overflow-auto">
@@ -258,9 +267,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                 table.getRowModel().rows.map((row) => {
                   const backgroundClasses = cn(
                     'bg-background',
-                    mapBoxHoveredPlaceId === row.original.id &&
-                      'bg-gray-50 dark:bg-gray-900',
-                    mapBoxSelectedPlaceId === row.original.id &&
+                    selectedPlaceId === row.original.id &&
                       'bg-gray-50 dark:bg-gray-900',
                   )
 

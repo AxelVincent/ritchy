@@ -10,7 +10,6 @@ export const MarkerWithPopup = (
   place: Place,
   color: string,
   setSelectedPlaceId: (placeId: string | null) => void,
-  setMapBoxHoveredPlaceId: (placeId: string | null) => void,
 ) => {
   // Create a DOM node for React to render into
   const popupNode = document.createElement('div')
@@ -34,16 +33,6 @@ export const MarkerWithPopup = (
     .setPopup(popup)
 
   const element = marker.getElement()
-  // Add hover handlers to marker element
-  element.addEventListener('mouseenter', () => {
-    // console.log('🎯 marker hovered', place.id)
-    setMapBoxHoveredPlaceId(place.id)
-  })
-
-  element.addEventListener('mouseleave', () => {
-    // console.log('🎯 marker unhovered', place.id)
-    setMapBoxHoveredPlaceId(null)
-  })
 
   // Add click handler to marker element
   element.addEventListener('click', () => {

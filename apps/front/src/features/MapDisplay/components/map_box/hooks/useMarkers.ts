@@ -15,8 +15,8 @@ export const useMarkers = (
   searchResults: PlacesSearchResponse | null,
   dataTableRowSelection: RowSelectionState,
   setMapBoxSelectedPlaceId: (placeId: string | null) => void,
-  setMapBoxHoveredPlaceId: (placeId: string | null) => void,
-) => {
+  filteredPlaceIds: Set<string>,
+): MutableRefObject<Map<string, MarkerData>> => {
   const markersMapRef = useRef(new Map<string, MarkerData>()) // Stores active markers
 
   // Effect for creating/removing markers
@@ -37,7 +37,6 @@ export const useMarkers = (
           place,
           MARKER_COLORS.DEFAULT,
           setMapBoxSelectedPlaceId,
-          setMapBoxHoveredPlaceId,
         )
         marker.addTo(mapRef.current)
         markersMapRef.current.set(place.id, { marker, place })
@@ -51,15 +50,23 @@ export const useMarkers = (
       }
       markersMapRef.current.clear()
     }
-  }, [searchResults, mapRef, setMapBoxSelectedPlaceId, setMapBoxHoveredPlaceId])
+  }, [searchResults, mapRef, setMapBoxSelectedPlaceId])
 
   // Effect for updating marker colors
   useEffect(() => {
     if (!mapRef.current) return
 
-    for (const [placeId, markerData] of markersMapRef.current.entries()) {
+    const entries = Array.from(markersMapRef.current.entries())
+    for (const [placeId, markerData] of entries) {
       const isSelected = dataTableRowSelection[placeId] ?? false
-      const color = isSelected ? MARKER_COLORS.SELECTED : MARKER_COLORS.DEFAULT
+      const isFiltered = !filteredPlaceIds.has(placeId)
+
+      let color = MARKER_COLORS.DEFAULT
+      if (isFiltered) {
+        color = MARKER_COLORS.FILTERED
+      } else if (isSelected) {
+        color = MARKER_COLORS.SELECTED
+      }
 
       const wasPopupOpen = markerData.marker.getPopup()?.isOpen()
       const currentColor = markerData.marker._color
@@ -71,7 +78,6 @@ export const useMarkers = (
           markerData.place,
           color,
           setMapBoxSelectedPlaceId,
-          setMapBoxHoveredPlaceId,
         )
         newMarker.addTo(mapRef.current)
         if (wasPopupOpen) {
@@ -82,8 +88,8 @@ export const useMarkers = (
     }
   }, [
     dataTableRowSelection,
+    filteredPlaceIds,
     setMapBoxSelectedPlaceId,
-    setMapBoxHoveredPlaceId,
     mapRef,
   ])
 
