@@ -6,7 +6,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { OpeningHoursContent } from '@/features/MapDisplay/components/shared/OpeningHours'
 import { StatusIndicator } from '@/features/MapDisplay/components/shared/StatusIndicator'
 import type { Place } from '@ritchy/types'
-import { ExternalLink, Info, MapPin, Phone, Star, Tags } from 'lucide-react'
+import {
+  ExternalLink,
+  Info,
+  MapPin,
+  MapPinPlusInside,
+  Phone,
+  Star,
+  Tags,
+} from 'lucide-react'
 
 const PRICE_LEVELS = {
   PRICE_LEVEL_FREE: 'Free',
@@ -80,7 +88,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
         {/* Associated Lists */}
         {place.associatedLists && place.associatedLists.length > 0 && (
           <div className="flex gap-3">
-            <Star className="h-5 w-5 text-muted-foreground shrink-0" />
+            <MapPinPlusInside className="h-5 w-5 text-muted-foreground shrink-0" />
             <div className="flex flex-wrap gap-2">
               {place.associatedLists.map((list) => (
                 <Badge key={list.id} variant="secondary">
