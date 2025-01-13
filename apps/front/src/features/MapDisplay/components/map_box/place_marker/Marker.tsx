@@ -20,9 +20,14 @@ const createPopupContent = (place: Place): HTMLDivElement => {
 }
 
 // Pure function to create popup instance
-const createPopup = (): mapboxgl.Popup => {
+const createPopup = (isFiltered: boolean): mapboxgl.Popup => {
+  // Calculate offset based on marker size
+  const offset = isFiltered
+    ? MARKER_SETTINGS.popupOffsetFiltered
+    : MARKER_SETTINGS.popupOffsetActive
+
   return new mapboxgl.Popup({
-    offset: MARKER_SETTINGS.popupOffset,
+    offset,
     maxWidth: MARKER_SETTINGS.popupMaxWidth,
   })
 }
@@ -189,8 +194,8 @@ export const MarkerWithPopup = ({
   setSelectedPlaceId,
   isFiltered,
 }: MarkerProps): mapboxgl.Marker => {
-  // Create and configure popup
-  const popup = createPopup()
+  // Create and configure popup with size-aware offset
+  const popup = createPopup(isFiltered)
   const popupContent = createPopupContent(place)
   popup.setDOMContent(popupContent)
 

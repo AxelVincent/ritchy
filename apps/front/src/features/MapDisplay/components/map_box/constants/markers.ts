@@ -12,4 +12,6 @@ export const MARKER_SETTINGS = {
   scale: 0.8,
   popupOffset: 25,
   popupMaxWidth: '320px',
+  popupOffsetFiltered: 18,
+  popupOffsetActive: 32,
 } as const
