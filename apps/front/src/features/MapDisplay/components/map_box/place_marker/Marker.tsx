@@ -124,22 +124,20 @@ const createActiveMarkerSvg = (color: string, place: Place): SVGElement => {
     svg.appendChild(text)
   }
 
-  // Add inner white ring for saved places (if needed)
-  if (place.associatedLists?.length) {
-    const innerRing = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'path',
-    )
-    innerRing.setAttribute(
-      'd',
-      'M12 1.5C6.21 1.5 1.5 6.21 1.5 12c0 8.15 10.5 18.5 10.5 18.5S22.5 20.15 22.5 12c0-5.79-4.71-10.5-10.5-10.5z',
-    )
-    innerRing.setAttribute('fill', 'none')
-    innerRing.setAttribute('stroke', '#ffffff')
-    innerRing.setAttribute('stroke-width', '0.5')
-    innerRing.setAttribute('stroke-opacity', '0.9')
-    svg.appendChild(innerRing)
-  }
+  // Add inner white ring
+  const innerRing = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'path',
+  )
+  innerRing.setAttribute(
+    'd',
+    'M12 1.5C6.21 1.5 1.5 6.21 1.5 12c0 8.15 10.5 18.5 10.5 18.5S22.5 20.15 22.5 12c0-5.79-4.71-10.5-10.5-10.5z',
+  )
+  innerRing.setAttribute('fill', 'none')
+  innerRing.setAttribute('stroke', '#ffffff')
+  innerRing.setAttribute('stroke-width', '0.5')
+  innerRing.setAttribute('stroke-opacity', '0.9')
+  svg.appendChild(innerRing)
 
   return svg
 }
