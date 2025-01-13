@@ -8,6 +8,7 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { postTextSearchV1 } from '../external/google_maps/text_search_V1'
+import { findListAssociationsForPlaces } from '../services/lists/findListAssociationsForPlaces'
 import { getLargestSquareFromCoordinates } from '../utils/geo_utils'
 
 /**
@@ -30,6 +31,8 @@ export const searchPlaces = async (
       res.status(400).json({ error: 'Request body is required' })
     }
 
+    const userId = req.auth.userId
+
     // Validate request body
     const parsedBody = PlacesSearchRequestBodySchema.parse(req.body)
 
@@ -49,8 +52,23 @@ export const searchPlaces = async (
     }
     const results = await postTextSearchV1(requestBody)
 
+    const associations = await findListAssociationsForPlaces(
+      results.map((result) => result.id),
+      userId,
+    )
+    logger.info({
+      msg: 'Associations',
+      event: 'associations',
+      metadata: { associations },
+    })
+
+    const mappedResults = results.map((result) => ({
+      ...result,
+      associatedLists: associations.get(result.id),
+    }))
+    console.log(mappedResults)
     // Validate response
-    const validatedResults = PlacesSearchResponseSchema.parse(results)
+    const validatedResults = PlacesSearchResponseSchema.parse(mappedResults)
     res.json(validatedResults)
   } catch (error) {
     if (error instanceof z.ZodError) {

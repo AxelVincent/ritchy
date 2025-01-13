@@ -18,3 +18,15 @@
   box-shadow: none;
   overflow: hidden;
 }
+
+.mapboxgl-popup {
+  z-index: 2;
+}
+
+.marker.filtered-marker {
+  z-index: 0;
+}
+
+.marker.active-marker {
+  z-index: 1;
+}

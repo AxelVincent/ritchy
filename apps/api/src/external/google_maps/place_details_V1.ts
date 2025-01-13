@@ -54,6 +54,7 @@ export async function getPlaceDetailsV1(placeId: string): Promise<Place> {
     }
 
     const data = await fetchPlaceDetails(placeId)
+
     AdvancedPlaceSchema.parse(data)
 
     const result = mapToPlaceDetails(data)

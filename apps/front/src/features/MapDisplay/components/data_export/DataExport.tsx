@@ -354,6 +354,14 @@ export const DataExport = ({ data }: DataExportProps) => {
           accessor: (row: SearchResult): string =>
             row.editorialSummary?.text || '',
         },
+        {
+          header: 'Associated Lists',
+          field: 'associatedLists',
+          accessor: (row: SearchResult): string =>
+            row.associatedLists
+              ?.map((list) => `${list.emoji} ${list.name}`)
+              .join('| ') || '',
+        },
       ]
 
       validateAllSearchResultFieldsHaveColumns(columns)

@@ -77,6 +77,20 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
           </div>
         )}
 
+        {/* Associated Lists */}
+        {place.associatedLists && place.associatedLists.length > 0 && (
+          <div className="flex gap-3">
+            <Star className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="flex flex-wrap gap-2">
+              {place.associatedLists.map((list) => (
+                <Badge key={list.id} variant="secondary">
+                  {list.emoji} {list.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Price Level */}
         {place.priceLevel && (
           <div className="flex gap-3">

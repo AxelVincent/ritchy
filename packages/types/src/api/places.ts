@@ -129,6 +129,12 @@ export const PlacesSearchRequestBodySchema = z.object({
   resultsQuantity: z.number().positive(),
 })
 
+export const PlaceListAssociationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  emoji: z.string(),
+})
+
 export const PlaceSchema = z.object({
   id: z.string(),
   displayName: z.string(),
@@ -161,6 +167,7 @@ export const PlaceSchema = z.object({
     administrativeAreaLevel2: z.string().optional(),
     administrativeAreaLevel3: z.string().optional(),
   }),
+  associatedLists: z.array(PlaceListAssociationSchema).optional(),
 })
 
 export const PlacesSearchResponseSchema = z.array(PlaceSchema)
@@ -181,3 +188,4 @@ export type PlacesSearchResponse = z.infer<typeof PlacesSearchResponseSchema>
 export type PlacesSearchApiResponse = z.infer<
   typeof PlacesSearchApiResponseSchema
 >
+export type PlaceListAssociation = z.infer<typeof PlaceListAssociationSchema>

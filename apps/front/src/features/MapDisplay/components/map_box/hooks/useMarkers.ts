@@ -33,11 +33,12 @@ export const useMarkers = (
     for (const place of searchResults) {
       if (place.location) {
         // Always start with default color - colors will be updated by the other effect
-        const marker = MarkerWithPopup(
+        const marker = MarkerWithPopup({
           place,
-          MARKER_COLORS.DEFAULT,
-          setMapBoxSelectedPlaceId,
-        )
+          color: MARKER_COLORS.DEFAULT,
+          setSelectedPlaceId: setMapBoxSelectedPlaceId,
+          isFiltered: false,
+        })
         marker.addTo(mapRef.current)
         markersMapRef.current.set(place.id, { marker, place })
       }
@@ -73,12 +74,14 @@ export const useMarkers = (
 
       // Only update if the color actually changed
       if (currentColor !== color) {
+        console.log('updating marker color', placeId, currentColor, color)
         markerData.marker.remove()
-        const newMarker = MarkerWithPopup(
-          markerData.place,
+        const newMarker = MarkerWithPopup({
+          place: markerData.place,
           color,
-          setMapBoxSelectedPlaceId,
-        )
+          setSelectedPlaceId: setMapBoxSelectedPlaceId,
+          isFiltered,
+        })
         newMarker.addTo(mapRef.current)
         if (wasPopupOpen) {
           newMarker.togglePopup()

@@ -6,6 +6,7 @@ declare module '@tanstack/react-table' {
     cellClassName?: string
     label?: string
     filterVariant?: 'text' | 'range' | 'select' | 'multi-select'
+    getFacetedUniqueValues?: (rows: RowData[]) => string[]
   }
 
   interface FilterFns {
