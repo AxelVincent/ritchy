@@ -19,6 +19,7 @@ import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Check, Copy, ExternalLink, type LucideIcon, Mail } from 'lucide-react'
 import { useState } from 'react'
+import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const SocialCard = ({
   platform,
@@ -124,7 +125,10 @@ const LinkItem = ({
 export const socialEmailColumn: ColumnDef<SearchResult> = {
   id: 'socialsAndEmails',
   accessorKey: 'socialsAndEmails',
-  header: () => <TextWrapper>Socials & Emails</TextWrapper>,
+  enableColumnFilter: false,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Socials & Emails" />
+  ),
   cell: ({ row }) => {
     const website = row.original.websiteUri
     const enrichQuery = useEnrichWebsite(website)
@@ -143,9 +147,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
       return (
         <TextWrapper>
           {!website ? (
-            <Button variant="secondary" size="sm" disabled className="w-32">
-              No website
-            </Button>
+            <></>
           ) : (
             <div className="flex gap-2">
               <Button

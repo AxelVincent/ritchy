@@ -99,7 +99,15 @@ const config = {
       },
     },
   },
-  plugins: [animate, require('tailwindcss-animate')],
+  plugins: [
+    animate,
+    require('tailwindcss-animate'),
+    ({ addBase }) => {
+      addBase({
+        html: { fontSize: '90%' },
+      })
+    },
+  ],
 } satisfies Config
 
 export default config

@@ -11,10 +11,10 @@ export function NavMain() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton asChild tooltip="Search">
+        <SidebarMenuButton asChild tooltip="Explore places">
           <Link to="/search">
             <Search className="text-muted-foreground text-sm" />
-            <p className="pl-2 font-medium">Search</p>
+            <p className="pl-2 font-medium">Explore places</p>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>

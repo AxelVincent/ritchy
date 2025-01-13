@@ -54,7 +54,10 @@ export function NavCustomLists() {
     <SidebarGroup>
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <SidebarMenuButton className="w-full justify-between">
+          <SidebarMenuButton
+            className="w-full justify-between"
+            tooltip="Create new list"
+          >
             {open ? (
               <>
                 <span>Lists</span>

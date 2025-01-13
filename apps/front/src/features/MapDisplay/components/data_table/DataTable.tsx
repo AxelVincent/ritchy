@@ -1,14 +1,8 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/MapDisplay/components/data_export/DataExport'
-import { AddItemsToListDialog } from '@/features/MapDisplay/components/data_table/AddItemsToListDialog'
+import { AddItemsToListDialog } from '@/features/lists/components/AddItemsToListDialog'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -20,36 +14,43 @@ import {
   type VisibilityState,
   flexRender,
   getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { ChevronDown } from 'lucide-react'
-import { useState } from 'react'
-import { DeleteItemsFromListDialog } from './DeleteItemsFromListDialog'
+import { useEffect, useState } from 'react'
+import { DeleteItemsFromListDialog } from '../../../lists/components/DeleteItemsFromListDialog'
+import { ActiveFilters } from './ActiveFilters'
+import { ColumnsSelection } from './ColumnsSelection'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  onRowSelect: React.Dispatch<React.SetStateAction<string | null>>
+  setSelectedPlaceId: React.Dispatch<React.SetStateAction<string | null>>
   setDataTableRowSelection: React.Dispatch<
     React.SetStateAction<RowSelectionState>
   >
   dataTableRowSelection: RowSelectionState
-  mapBoxSelectedPlaceId: string | null
-  mapBoxHoveredPlaceId: string | null
+  selectedPlaceId: string | null
   listId?: string
+  onFilteredDataChange: (ids: Set<string>) => void
 }
+
+// Add a fixed height for table rows
+const ROW_HEIGHT = '34px' // Adjust this value as needed
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
-  mapBoxSelectedPlaceId,
-  onRowSelect,
-  mapBoxHoveredPlaceId,
+  selectedPlaceId,
+  setSelectedPlaceId,
   setDataTableRowSelection,
   dataTableRowSelection,
   listId,
+  onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -67,7 +68,50 @@ export const DataTable = <TData extends SearchResult, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setDataTableRowSelection,
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getRowId: (row) => row.id,
+    defaultColumn: {
+      minSize: 60,
+      maxSize: 800,
+      filterFn: (row, columnId, filterValue) => {
+        const column = table.getColumn(columnId)
+        const value = row.getValue(columnId)
+
+        switch (column?.columnDef.meta?.filterVariant) {
+          case 'multi-select':
+            return (
+              (filterValue as string[]).length === 0 ||
+              (filterValue as string[]).includes(value as string)
+            )
+
+          case 'select':
+            return !filterValue || value === filterValue
+
+          case 'range': {
+            const [min, max] = filterValue as [number, number]
+            const numValue =
+              value === '' || value === null || value === undefined
+                ? 0
+                : Number(value)
+            return (!min || numValue >= min) && (!max || numValue <= max)
+          }
+
+          case 'text':
+            return (
+              !filterValue ||
+              String(value)
+                .toLowerCase()
+                .includes(String(filterValue).toLowerCase())
+            )
+
+          default:
+            return true
+        }
+      },
+    },
+    columnResizeMode: 'onChange',
     state: {
       sorting,
       columnFilters,
@@ -80,20 +124,25 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const selectedRows = table.getSelectedRowModel().rows
 
   const handleRowInteraction = (row: Row<TData>) => {
-    if (mapBoxSelectedPlaceId === row.original.id) {
-      onRowSelect(null)
+    if (selectedPlaceId === row.original.id) {
+      setSelectedPlaceId(null)
     } else {
-      onRowSelect(row.original.id)
+      setSelectedPlaceId(row.original.id)
     }
   }
 
-  const handleRowClick = (e: React.MouseEvent, row: Row<TData>) => {
-    // Ignore if the click target is an interactive element
+  const handleRowClick = (
+    e: React.MouseEvent,
+    row: Row<TData>,
+    isFirstColumn: boolean,
+  ) => {
+    // Return early if it's the first column or if the click is on an interactive element
     if (
-      e.target instanceof Element &&
-      (e.target.closest('button') ||
-        e.target.closest('a') ||
-        e.target.closest('[role="button"]'))
+      isFirstColumn ||
+      (e.target instanceof Element &&
+        (e.target.closest('button') ||
+          e.target.closest('a') ||
+          e.target.closest('[role="button"]')))
     ) {
       return
     }
@@ -101,20 +150,32 @@ export const DataTable = <TData extends SearchResult, TValue>({
     handleRowInteraction(row)
   }
 
+  // Add this effect to handle scrolling
+  useEffect(() => {
+    if (selectedPlaceId) {
+      const selectedRow = document.querySelector(
+        `tr[data-id="${selectedPlaceId}"]`,
+      )
+      selectedRow?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }
+  }, [selectedPlaceId])
+
+  // Add effect to track filtered results
+  // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
+  useEffect(() => {
+    const filteredIds = new Set(
+      table.getFilteredRowModel().rows.map((row) => row.original.id),
+    )
+    onFilteredDataChange(filteredIds)
+  }, [table.getFilteredRowModel().rows, onFilteredDataChange])
+
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
-        <div className="flex flex-row justify-between items-center p-4">
-          {/* <Input
-            placeholder="Filter name..."
-            value={
-              (table.getColumn('displayName')?.getFilterValue() as string) ?? ''
-            }
-            onChange={(event) =>
-              table.getColumn('displayName')?.setFilterValue(event.target.value)
-            }
-            className=""
-          /> */}
+        <div className="flex flex-row justify-between items-center p-4 gap-2">
           {listId ? (
             <>
               <DeleteItemsFromListDialog
@@ -162,45 +223,17 @@ export const DataTable = <TData extends SearchResult, TValue>({
               )}
             </>
           )}
-          <DataExport data={data} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id
-                        .split(/(?=[A-Z])|(?:And)/)
-                        .map(
-                          (word) =>
-                            word.charAt(0).toUpperCase() + word.slice(1),
-                        )
-                        .join(' ')}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <DataExport
+              data={table.getFilteredRowModel().rows.map((row) => row.original)}
+            />
+            <ColumnsSelection table={table} />
+          </div>
         </div>
       </div>
       <div className="flex-1 overflow-scroll min-h-0 min-w-0 border">
         <div className="w-[100px] h-[100px]">
-          <table className="border-separate border-spacing-0 min-w-full border-spacing-0">
+          <table className="w-full border-collapse ">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="hover:bg-transparent">
@@ -211,11 +244,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         key={header.id}
                         className={cn(
                           header.column.columnDef.meta?.headerClassName,
-                          'px-4 py-0 border-b border-s-0 sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
-                          idx === 0 && 'sticky left-0 z-20 border-r border-s-0',
+                          'px-4 py-0 border-b border-r sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
+                          idx === 0 && 'sticky left-0 z-20',
                         )}
                       >
-                        <TextWrapper>
+                        <TextWrapper width="100%">
                           {header.isPlaceholder
                             ? null
                             : flexRender(
@@ -234,17 +267,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
                 table.getRowModel().rows.map((row) => {
                   const backgroundClasses = cn(
                     'bg-background',
-                    mapBoxHoveredPlaceId === row.original.id &&
-                      'bg-gray-100 dark:bg-gray-900',
-                    mapBoxSelectedPlaceId === row.original.id &&
-                      'bg-gray-100 dark:bg-gray-900',
+                    selectedPlaceId === row.original.id &&
+                      'bg-gray-50 dark:bg-gray-900',
                   )
 
                   return (
                     <tr
                       key={row.original.id}
+                      data-id={row.original.id}
                       data-state={row.getIsSelected() && 'selected'}
-                      onClick={(e) => handleRowClick(e, row)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault()
@@ -252,19 +283,29 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         }
                       }}
                       tabIndex={0}
-                      className={cn(backgroundClasses, 'cursor-pointer')}
+                      className={cn(backgroundClasses)}
+                      style={{ height: ROW_HEIGHT }}
                     >
                       {row.getVisibleCells().map((cell, idx) => (
                         <td
                           key={cell.id}
+                          onClick={(e) => handleRowClick(e, row, idx === 0)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              handleRowClick(
+                                e as unknown as React.MouseEvent,
+                                row,
+                                idx === 0,
+                              )
+                            }
+                          }}
                           className={cn(
-                            'px-4 py-1 whitespace-nowrap border-b border-s-0',
+                            'px-4 py-1 whitespace-nowrap border-b border-r overflow-hidden',
                             idx === 0 &&
-                              cn(
-                                'sticky left-0 z-10 border-r border-s-0',
-                                backgroundClasses,
-                              ),
+                              cn('sticky left-0 z-10', backgroundClasses),
                           )}
+                          style={{ height: ROW_HEIGHT }}
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
@@ -286,8 +327,13 @@ export const DataTable = <TData extends SearchResult, TValue>({
           </table>
         </div>
       </div>
-      <div className="flex justify-between items-center p-4">
-        <Label>{table.getRowModel().rows.length} Results</Label>
+      <div className="flex justify-between items-center p-4 gap-4">
+        <Label className="flex-shrink-0">
+          {table.getRowModel().rows.length} Results
+        </Label>
+        <div className="flex-1 min-w-0">
+          <ActiveFilters table={table} />
+        </div>
       </div>
     </div>
   )

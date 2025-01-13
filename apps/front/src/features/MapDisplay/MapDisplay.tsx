@@ -1,14 +1,13 @@
-import { columns } from './components/data_table/Columns'
 import { DataTable } from './components/data_table/DataTable'
 import { MapBox } from './components/map_box/MapBox'
 import { PlacesTextSearch } from './components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from './constants'
 
-import { mockData } from '@/api/queries/places/mock/mockData'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
+import { EmptyListState } from '@/features/lists/components/EmptyListState'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type {
   ListContentApiResponse,
@@ -16,6 +15,7 @@ import type {
 } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
+import { columns } from './components/data_table/Columns'
 import type { Location } from './types'
 
 interface MapDisplayProps {
@@ -43,7 +43,7 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
       if (listId && listData && !('error' in listData)) {
         return listData.items
       }
-      return process.env.NODE_ENV === 'development' ? mockData : []
+      return process.env.NODE_ENV === 'development' ? [] : []
     },
   )
 
@@ -55,17 +55,20 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   }, [listId, listData])
 
   // Search and selection state
-  const [dataTableSelectedPlaceId, setDataTableSelectedPlaceId] = useState<
-    string | null
-  >(null)
-  const [mapBoxHoveredPlaceId, setMapBoxHoveredPlaceId] = useState<
-    string | null
-  >(null)
-  const [mapBoxSelectedPlaceId, setMapBoxSelectedPlaceId] = useState<
-    string | null
-  >(null)
   const [dataTableRowSelection, setDataTableRowSelection] =
     useState<RowSelectionState>({})
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
+  const [filteredPlaceIds, setFilteredPlaceIds] = useState<Set<string>>(
+    () =>
+      new Set(
+        listId && listData && !('error' in listData)
+          ? listData.items.map((item) => item.id)
+          : searchResults.map((item) => item.id),
+      ),
+  )
+
+  // Add a safety check to ensure we never pass undefined
+  const safeFilteredPlaceIds = filteredPlaceIds ?? new Set<string>()
 
   // Effects
   useEffect(() => {
@@ -74,31 +77,29 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
     }
   }, [location])
 
+  useEffect(() => {
+    console.log('filteredPlaceIds changed:', filteredPlaceIds)
+  }, [filteredPlaceIds])
+
   if (loading) {
     return <LoadingSpinner message="Detecting your location..." />
   }
 
   if (error) {
-    console.warn('Geolocation error:', error)
+    // console.warn('Geolocation error:', error)
+  }
+
+  if (
+    listId &&
+    listData &&
+    !('error' in listData) &&
+    listData.items.length === 0
+  ) {
+    return <EmptyListState listId={listId} />
   }
 
   return (
     <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel className="flex-1">
-        <MapBox
-          onLocationChange={setLocation}
-          searchResults={searchResults}
-          dataTableSelectedPlaceId={dataTableSelectedPlaceId}
-          setMapBoxSelectedPlaceId={setMapBoxSelectedPlaceId}
-          setMapBoxHoveredPlaceId={setMapBoxHoveredPlaceId}
-          userLocation={location}
-          dataTableRowSelection={dataTableRowSelection}
-          radiusInMeters={radiusInMeters}
-          setRadiusInMeters={setRadiusInMeters}
-          listId={listId}
-        />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
       <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
         {!listId && (
           <PlacesTextSearch
@@ -111,12 +112,26 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
         <DataTable
           columns={columns}
           data={searchResults}
-          onRowSelect={setDataTableSelectedPlaceId}
-          mapBoxSelectedPlaceId={mapBoxSelectedPlaceId}
-          mapBoxHoveredPlaceId={mapBoxHoveredPlaceId}
+          setSelectedPlaceId={setSelectedPlaceId}
+          selectedPlaceId={selectedPlaceId}
           setDataTableRowSelection={setDataTableRowSelection}
           dataTableRowSelection={dataTableRowSelection}
           listId={listId}
+          onFilteredDataChange={setFilteredPlaceIds}
+        />
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel className="flex-1">
+        <MapBox
+          onLocationChange={setLocation}
+          searchResults={searchResults}
+          selectedPlaceId={selectedPlaceId}
+          setSelectedPlaceId={setSelectedPlaceId}
+          userLocation={location}
+          dataTableRowSelection={dataTableRowSelection}
+          radiusInMeters={radiusInMeters}
+          listId={listId}
+          filteredPlaceIds={safeFilteredPlaceIds}
         />
       </ResizablePanel>
     </ResizablePanelGroup>

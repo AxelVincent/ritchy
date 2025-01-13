@@ -1,25 +1,17 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
-import { Button } from '@/components/ui/button'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown } from 'lucide-react'
+import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const ratingCountColumn: ColumnDef<SearchResult> = {
   id: 'userRatingCount',
   accessorKey: 'userRatingCount',
-  header: ({ column }) => {
-    return (
-      <TextWrapper>
-        <Button
-          variant="secondary"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Reviews
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      </TextWrapper>
-    )
+  meta: {
+    filterVariant: 'range',
   },
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Reviews" width="250px" />
+  ),
   enableSorting: true,
   sortingFn: 'alphanumeric',
   sortUndefined: -1,
@@ -32,7 +24,7 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
         {count ? (
           <span>{count.toLocaleString()} reviews</span>
         ) : (
-          <span className="text-muted-foreground">No reviews</span>
+          <span className="text-muted-foreground">0 reviews</span>
         )}
       </TextWrapper>
     )

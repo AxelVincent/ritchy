@@ -10,7 +10,7 @@ import mapboxgl, { type LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkers } from './hooks/useMarkers'
 
-const DEBUG = process.env.NODE_ENV === 'development'
+const DEBUG = false
 
 const debugLog = (...args: unknown[]) => {
   if (DEBUG) {
@@ -29,26 +29,25 @@ type LocationChangeEvent = {
 interface MapBoxProps {
   onLocationChange: (location: LocationChangeEvent) => void
   searchResults: PlacesSearchResponse | null
-  dataTableSelectedPlaceId: string | null
-  setMapBoxSelectedPlaceId: (placeId: string | null) => void
-  setMapBoxHoveredPlaceId: (placeId: string | null) => void
+  selectedPlaceId: string | null
+  setSelectedPlaceId: (placeId: string | null) => void
   userLocation: Location
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
-  setRadiusInMeters: (radius: number) => void
   listId?: string
+  filteredPlaceIds: Set<string>
 }
 
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
   searchResults,
-  dataTableSelectedPlaceId,
-  setMapBoxSelectedPlaceId,
-  setMapBoxHoveredPlaceId,
+  selectedPlaceId,
+  setSelectedPlaceId,
   userLocation,
   dataTableRowSelection,
   radiusInMeters,
   listId,
+  filteredPlaceIds,
 }) => {
   debugLog('MapBox render:', { userLocation, radiusInMeters, listId })
 
@@ -223,18 +222,18 @@ export const MapBox: FC<MapBoxProps> = ({
     mapRef,
     searchResults,
     dataTableRowSelection,
-    setMapBoxSelectedPlaceId,
-    setMapBoxHoveredPlaceId,
+    setSelectedPlaceId,
+    filteredPlaceIds,
   )
 
   // Selection state effect
   useEffect(() => {
     debugLog('Selection state effect', {
-      dataTableSelectedPlaceId,
+      selectedPlaceId,
       currentSelectedPlaceIdRef,
       mapRef,
     })
-    if (!mapRef.current || !dataTableSelectedPlaceId) {
+    if (!mapRef.current || !selectedPlaceId) {
       debugLog('Selection state skipped: no map or no selection')
       return
     }
@@ -251,12 +250,12 @@ export const MapBox: FC<MapBoxProps> = ({
       }
     }
 
-    if (!dataTableSelectedPlaceId) {
+    if (!selectedPlaceId) {
       currentSelectedPlaceIdRef.current = null
       return
     }
 
-    const markerData = markersMapRef.current.get(dataTableSelectedPlaceId)
+    const markerData = markersMapRef.current.get(selectedPlaceId)
     if (!markerData?.marker.getLngLat()) {
       debugLog('No marker location found for selection')
       return
@@ -289,7 +288,7 @@ export const MapBox: FC<MapBoxProps> = ({
     if (!markerData.marker.getPopup()?.isOpen()) {
       markerData.marker.togglePopup()
     }
-    currentSelectedPlaceIdRef.current = dataTableSelectedPlaceId
+    currentSelectedPlaceIdRef.current = selectedPlaceId
 
     // Reset flag after movement completes
     const onMoveEnd = () => {
@@ -297,7 +296,7 @@ export const MapBox: FC<MapBoxProps> = ({
       mapRef.current?.off('moveend', onMoveEnd)
     }
     mapRef.current.on('moveend', onMoveEnd)
-  }, [dataTableSelectedPlaceId, mapRef, markersMapRef])
+  }, [selectedPlaceId, mapRef, markersMapRef])
 
   return (
     <>

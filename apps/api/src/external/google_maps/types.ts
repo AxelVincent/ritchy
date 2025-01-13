@@ -1,15 +1,15 @@
-import { LocationSchema, OpeningHoursSchema } from '@ritchy/types'
+import {
+  AddressComponentSchema,
+  LocationSchema,
+  MoneySchema,
+  OpeningHoursSchema,
+  PriceLevelEnum,
+  PriceRangeSchema,
+} from '@ritchy/types'
 import { z } from 'zod'
 
 const LocalizedTextSchema = z.object({
   text: z.string(),
-  languageCode: z.string(),
-})
-
-const AddressComponentSchema = z.object({
-  longText: z.string(),
-  shortText: z.string(),
-  types: z.array(z.string()),
   languageCode: z.string(),
 })
 
@@ -80,12 +80,6 @@ const FuelTypeEnum = z.enum([
   'BIO_DIESEL',
   'TRUCK_DIESEL',
 ])
-
-const MoneySchema = z.object({
-  currencyCode: z.string(),
-  units: z.string(),
-  nanos: z.number().optional(),
-})
 
 const FuelPriceSchema = z.object({
   type: FuelTypeEnum,
@@ -232,21 +226,8 @@ export const AdvancedPlaceSchema = BasicPlaceSchema.extend({
   currentSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
   internationalPhoneNumber: z.string().optional(),
   nationalPhoneNumber: z.string().optional(),
-  priceLevel: z
-    .enum([
-      'PRICE_LEVEL_FREE',
-      'PRICE_LEVEL_INEXPENSIVE',
-      'PRICE_LEVEL_MODERATE',
-      'PRICE_LEVEL_EXPENSIVE',
-      'PRICE_LEVEL_VERY_EXPENSIVE',
-    ])
-    .optional(),
-  priceRange: z
-    .object({
-      startPrice: MoneySchema.optional(),
-      endPrice: MoneySchema.optional(),
-    })
-    .optional(),
+  priceLevel: PriceLevelEnum.optional(),
+  priceRange: PriceRangeSchema.optional(),
   rating: z.number().min(1).max(5).optional(),
   regularOpeningHours: OpeningHoursSchema.optional(),
   regularSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
@@ -372,9 +353,6 @@ export const ADVANCED_PLACE_KEYS_PLACE_DETAILS = generatePlaceKeys(
 )
 export const ADVANCED_PLACE_KEYS_TEXT_SEARCH =
   generatePlaceKeys(AdvancedPlaceSchema)
-
-// Stage 4 keys
-export const PREFERRED_PLACE_KEYS = generatePlaceKeys(PreferredPlaceSchema)
 
 // Type Inference for Place Stages
 export type IDSOnlyPlace = z.infer<typeof IDSOnlyPlaceSchema>

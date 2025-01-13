@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
 import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
-import { mockData } from './mockData'
+import { findListAssociationsForPlaces } from '../../services/lists/findListAssociationsForPlaces'
 
 export const getListContent = async (
   req: Request<{ id: string }>,
@@ -44,11 +44,20 @@ export const getListContent = async (
       places.map((place) => getPlaceDetailsV1(place.placeId)),
     )
 
+    const associations = await findListAssociationsForPlaces(
+      places.map((place) => place.placeId),
+      userId,
+      listId,
+    )
+
     res.json({
       id: String(result[0].id),
       name: result[0].name,
       emoji: result[0].emoji,
-      items: placeDetails,
+      items: placeDetails.map((place) => ({
+        ...place,
+        associatedLists: associations.get(place.id),
+      })),
       createdAt: result[0].createdAt.toISOString(),
       updatedAt: result[0].updatedAt.toISOString(),
     })

@@ -5,11 +5,14 @@ declare module '@tanstack/react-table' {
     headerClassName?: string
     cellClassName?: string
     label?: string
+    filterVariant?: 'text' | 'range' | 'select' | 'multi-select'
+    getFacetedUniqueValues?: (rows: RowData[]) => string[]
   }
 
   interface FilterFns {
     inDateRange?: FilterFn<unknown>
     arrSome?: FilterFn<unknown>
+    multiSelectFilterFn?: FilterFn<unknown>
   }
 
   // https://github.com/TanStack/table/discussions/4554

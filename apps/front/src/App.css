@@ -41,3 +41,26 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Scrollbar styles for dark mode */
+:root {
+  scrollbar-color: #666 #201c1c; /* thumb and track colors */
+}
+
+/* For Webkit browsers (Chrome, Safari, etc.) */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #201c1c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #666;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}

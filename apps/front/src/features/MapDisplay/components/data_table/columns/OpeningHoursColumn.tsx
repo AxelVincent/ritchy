@@ -15,28 +15,26 @@ import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { OpeningHoursContent } from '../../shared/OpeningHours'
 import { StatusIndicator } from '../../shared/StatusIndicator'
+import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const openingHoursColumn: ColumnDef<SearchResult> = {
   id: 'regularOpeningHours',
   accessorKey: 'regularOpeningHours',
-  header: () => <TextWrapper>Opening Hours</TextWrapper>,
+  enableColumnFilter: false,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Opening Hours" width="150px" />
+  ),
   cell: ({ row }) => {
     const regularOpeningHours = row.original.regularOpeningHours
     const utcOffsetMinutes = row.original.utcOffsetMinutes
     // console.log(row.original)
 
     if (!regularOpeningHours) {
-      return (
-        <TextWrapper>
-          <Button variant="secondary" size="sm" disabled className="w-32">
-            No hours
-          </Button>
-        </TextWrapper>
-      )
+      return <></>
     }
 
     return (
-      <TextWrapper>
+      <TextWrapper width="100%">
         <Dialog>
           <DialogTrigger asChild>
             <Button

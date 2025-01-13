@@ -1,3 +1,9 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Label } from '@radix-ui/react-dropdown-menu'
 import { useState } from 'react'
 
@@ -5,57 +11,108 @@ interface TextWrapperProps {
   children: React.ReactNode
   copyValue?: string
   truncate?: boolean
-  maxWidth?: string
+  width?: string
+  className?: string
 }
 
 export const TextWrapper = ({
   children,
   copyValue,
   truncate = true,
-  maxWidth,
+  width,
+  className,
 }: TextWrapperProps) => {
   const [copied, setCopied] = useState(false)
+  const [isTextTruncated, setIsTextTruncated] = useState(false)
 
-  const handleCopy = () => {
+  const handleCopy = (e?: React.MouseEvent | React.KeyboardEvent) => {
     if (!copyValue) return
+    e?.stopPropagation()
     navigator.clipboard.writeText(copyValue)
     setCopied(true)
     setTimeout(() => setCopied(false), 500)
   }
 
-  const baseClassName = `mx-0.5 text-sm text-left ${truncate ? 'truncate' : ''}`
-  const style = maxWidth ? { maxWidth } : undefined
+  const style = width ? { width } : { width: '150px' }
+  const copyHandlers = copyValue
+    ? {
+        onClick: (e: React.MouseEvent) => handleCopy(e),
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleCopy(e)
+          }
+        },
+      }
+    : {}
 
-  if (!copyValue) {
+  if (!truncate || !isTextTruncated) {
     return (
-      <div
-        className={baseClassName}
-        style={style}
-        title={truncate ? String(children) : undefined}
-      >
-        {children}
-      </div>
+      <TooltipProvider delayDuration={200}>
+        <div className={`flex gap-2 w-full text-sm ${className}`} style={style}>
+          {copyValue ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label
+                  className={`text-sm ${truncate ? 'truncate' : ''} cursor-pointer hover:text-primary`}
+                  ref={(el) => {
+                    if (el && truncate) {
+                      const isOverflowing = el.scrollWidth > el.clientWidth
+                      setIsTextTruncated(isOverflowing)
+                    }
+                  }}
+                  {...copyHandlers}
+                >
+                  {copied ? (
+                    <span className="text-sm text-green-500">Copied!</span>
+                  ) : (
+                    children
+                  )}
+                </Label>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-sm">Click to copy</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Label
+              className="text-sm"
+              ref={(el) => {
+                if (el && truncate) {
+                  const isOverflowing = el.scrollWidth > el.clientWidth
+                  setIsTextTruncated(isOverflowing)
+                }
+              }}
+            >
+              {children}
+            </Label>
+          )}
+        </div>
+      </TooltipProvider>
     )
   }
 
   return (
-    <div
-      className={`flex gap-2 w-full cursor-pointer hover:text-primary ${baseClassName}`}
-      style={style}
-      onClick={handleCopy}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleCopy()
-        }
-      }}
-    >
-      <Label
-        className={` ${truncate ? 'truncate' : ''}`}
-        title={truncate ? String(children) : undefined}
-      >
-        {copied ? <span className="text-green-500">Copied!</span> : children}
-      </Label>
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={`text-sm truncate ${className || ''}`} style={style}>
+            <span
+              className={copyValue ? 'cursor-pointer hover:text-primary' : ''}
+              {...copyHandlers}
+            >
+              {copied ? (
+                <span className="text-sm text-green-500">Copied!</span>
+              ) : (
+                children
+              )}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p className="max-w-[300px] break-words text-sm">{children}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }

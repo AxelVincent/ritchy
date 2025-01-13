@@ -114,7 +114,7 @@ export const PlacesTextSearch = ({
                   placeholder="Restaurant, surf shop, cocktail bar, etc."
                   minLength={3}
                   required
-                  className={isLoading ? 'pr-24' : 'pr-8'}
+                  className={searchText ? 'pr-8' : ''}
                   onKeyDown={handleKeyDown}
                 />
                 {searchText && (

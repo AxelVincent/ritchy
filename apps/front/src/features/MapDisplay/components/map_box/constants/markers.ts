@@ -1,10 +1,17 @@
 export const MARKER_COLORS = {
   DEFAULT: '#22c55e',
   SELECTED: '#3b82f6',
-} as const
+  FILTERED: '#9ca3af',
+} as {
+  DEFAULT: string
+  SELECTED: string
+  FILTERED: string
+}
 
 export const MARKER_SETTINGS = {
   scale: 0.8,
   popupOffset: 25,
-  popupMaxWidth: '300px',
+  popupMaxWidth: '320px',
+  popupOffsetFiltered: 18,
+  popupOffsetActive: 32,
 } as const

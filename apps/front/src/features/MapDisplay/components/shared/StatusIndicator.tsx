@@ -10,7 +10,7 @@ export const StatusIndicator = ({ isOpen }: StatusIndicatorProps) => (
     <Badge
       variant="secondary"
       className={cn(
-        'transition-none hover:bg-none',
+        'transition-none hover:bg-none whitespace-nowrap',
         isOpen
           ? 'bg-green-600 text-white hover:bg-green-600'
           : 'bg-red-600 text-white hover:bg-red-600',
