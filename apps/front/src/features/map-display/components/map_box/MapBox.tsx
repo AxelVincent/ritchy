@@ -46,7 +46,7 @@ export const MapBox: FC<MapBoxProps> = ({
   selectedPlaceId,
   setSelectedPlaceId,
   userLocation,
-  // dataTableRowSelection,
+  dataTableRowSelection,
   radiusInMeters,
   listId,
   filteredPlaceIds,
@@ -57,9 +57,6 @@ export const MapBox: FC<MapBoxProps> = ({
   const currentSelectedPlaceIdRef = useRef<string | null>(null)
   const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const isSelectionMovement = useRef(false)
-  // const [popupContainers, setPopupContainers] = useState(
-  //   new Map<string, HTMLElement>(),
-  // )
 
   const initialCenter = useMemo(() => {
     debugLog('Calculating initial center:', userLocation)
@@ -222,11 +219,20 @@ export const MapBox: FC<MapBoxProps> = ({
     updateSquareData(mapRef.current.getCenter(), radiusInMeters)
   }, [radiusInMeters, mapRef, updateSquareData, listId])
 
+  // Add this before the useMarkerManager call
+  useEffect(() => {
+    console.debug('[MapBox] searchResults changed:', {
+      count: searchResults?.length,
+      results: searchResults,
+    })
+  }, [searchResults])
+
   // Replace the manual marker management with the hook
   const { openPopups, popupContainers, markersRef } = useMarkerManager({
     map: mapRef.current,
-    places: searchResults ?? [],
+    places: searchResults,
     filteredPlaceIds,
+    dataTableRowSelection,
     onMarkerClick: setSelectedPlaceId,
   })
 
