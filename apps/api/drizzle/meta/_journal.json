@@ -36,6 +36,13 @@
       "when": 1735300496816,
       "tag": "0004_spicy_dust",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1736881129661,
+      "tag": "0005_amusing_champions",
+      "breakpoints": true
     }
   ]
 }

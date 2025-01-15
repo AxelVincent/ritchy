@@ -1,4 +1,4 @@
-import type { Location } from '@/features/MapDisplay/types'
+import type { Location } from '@/features/map-display/types'
 import { useEffect, useRef, useState } from 'react'
 
 interface GeolocationState {

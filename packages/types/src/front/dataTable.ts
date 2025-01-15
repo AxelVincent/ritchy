@@ -1,5 +1,5 @@
 import type { z } from 'zod'
-import { PlaceSchema } from '../api/places'
+import { PlaceSchema } from '../api/places/places'
 
 export const searchResultSchema = PlaceSchema
 

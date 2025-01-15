@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useLists } from '@/features/MapDisplay/hooks/useLists'
+import { useLists } from '@/features/map-display/hooks/useLists'
 import { useToast } from '@/hooks/use-toast'
 
 interface DeleteItemsFromListDialogProps {

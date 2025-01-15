@@ -24,12 +24,12 @@ function InnerApp() {
 export const App = () => {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
-      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <QueryProvider>
+      <QueryProvider>
+        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
           <InnerApp />
-        </QueryProvider>
-        <Toaster />
-      </ThemeProvider>
+          <Toaster />
+        </ThemeProvider>
+      </QueryProvider>
     </ClerkProvider>
   )
 }
