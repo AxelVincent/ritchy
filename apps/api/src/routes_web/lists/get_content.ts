@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import type { ListContentApiResponse } from '@ritchy/types'
+import type { ListContentApiResponse, Place } from '@ritchy/types'
 import { sql } from 'drizzle-orm'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -40,9 +40,44 @@ export const getListContent = async (
       .from(listPlace)
       .where(eq(listPlace.listId, listId))
 
-    const placeDetails = await Promise.all(
+    const placeDetailsResults = await Promise.allSettled(
       places.map((place) => getPlaceDetailsV1(place.placeId)),
     )
+
+    // Analyze results
+    const cacheHits = placeDetailsResults.filter(
+      (result) => result.status === 'fulfilled' && result.value.fromCache,
+    ).length
+    const cacheMisses = placeDetailsResults.filter(
+      (result) => result.status === 'fulfilled' && !result.value.fromCache,
+    ).length
+    const errors = placeDetailsResults.filter(
+      (result) => result.status === 'rejected',
+    ).length
+
+    logger.info({
+      msg: 'Place details retrieval summary',
+      event: 'place_details_summary',
+      metadata: {
+        totalPlaces: places.length,
+        cacheHits,
+        cacheMisses,
+        errors,
+        listId,
+      },
+    })
+
+    const placeDetails = placeDetailsResults
+      .filter(
+        (
+          result,
+        ): result is PromiseFulfilledResult<Place & { fromCache: boolean }> =>
+          result.status === 'fulfilled',
+      )
+      .map((result) => {
+        const { fromCache, ...place } = result.value
+        return place
+      })
 
     const associations = await findListAssociationsForPlaces(
       places.map((place) => place.placeId),

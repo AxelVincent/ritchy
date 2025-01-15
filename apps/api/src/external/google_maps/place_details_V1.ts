@@ -40,47 +40,19 @@ async function fetchPlaceDetails(placeId: string): Promise<AdvancedPlace> {
   return response.json()
 }
 
-export async function getPlaceDetailsV1(placeId: string): Promise<Place> {
-  try {
-    // Check cache first
-    const cachedPlace = placeCache.get<Place>(placeId)
-    if (cachedPlace) {
-      logger.info({
-        msg: 'Retrieved place details from cache',
-        event: 'google_place_details_cache_hit',
-        metadata: { placeId },
-      })
-      return cachedPlace
-    }
-
-    const data = await fetchPlaceDetails(placeId)
-
-    AdvancedPlaceSchema.parse(data)
-
-    const result = mapToPlaceDetails(data)
-
-    // Store in cache
-    placeCache.set(placeId, result)
-
-    logger.info({
-      msg: 'Google Place Details API request successful',
-      event: 'google_place_details_api_success',
-      metadata: {
-        placeId,
-        resultId: result.id,
-      },
-    })
-
-    return result
-  } catch (error) {
-    logger.error({
-      msg: 'Google Place Details API request failed',
-      event: 'google_place_details_api_failure',
-      metadata: {
-        error,
-        placeId,
-      },
-    })
-    throw error
+export async function getPlaceDetailsV1(
+  placeId: string,
+): Promise<Place & { fromCache: boolean }> {
+  // Check cache first
+  const cachedPlace = placeCache.get<Place>(placeId)
+  if (cachedPlace) {
+    return { ...cachedPlace, fromCache: true }
   }
+
+  const data = await fetchPlaceDetails(placeId)
+  AdvancedPlaceSchema.parse(data)
+  const result = mapToPlaceDetails(data)
+  placeCache.set(placeId, result)
+
+  return { ...result, fromCache: false }
 }
