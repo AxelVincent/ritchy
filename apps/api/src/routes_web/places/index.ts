@@ -4,7 +4,7 @@ import { searchPlaces } from './search'
 
 const placesRouter: Router = express.Router()
 
-placesRouter.get('/search', searchPlaces)
+placesRouter.post('/search', searchPlaces)
 
 placesRouter.use('', notesRouter)
 
