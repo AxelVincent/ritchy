@@ -40,8 +40,9 @@ export const getListContent = async (
       .from(listPlace)
       .where(eq(listPlace.listId, listId))
 
+    // Get place details with rate limiting
     const placeDetailsResults = await Promise.allSettled(
-      places.map((place) => getPlaceDetailsV1(place.placeId)),
+      places.map(async (place) => getPlaceDetailsV1(place.placeId)),
     )
 
     // Analyze results
@@ -105,6 +106,7 @@ export const getListContent = async (
       })
       res.status(400).json({
         error: 'Invalid request data',
+        message: 'Invalid request data',
         details: error.errors,
       })
       return
@@ -115,6 +117,9 @@ export const getListContent = async (
       event: 'get_list_content_error',
       metadata: { error },
     })
-    res.status(500).json({ error: 'Failed to get list content' })
+    res.status(500).json({
+      error: 'Failed to get list content',
+      message: 'Failed to get list content',
+    })
   }
 }
