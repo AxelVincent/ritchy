@@ -22,7 +22,8 @@
     "build": "tsup",
     "build:clean": "rm -rf dist && pnpm build",
     "start": "NODE_ENV=production node dist/index.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "5.0.66",
@@ -37,6 +38,7 @@
     "drizzle-orm": "0.36.4",
     "express": "4.21.1",
     "fast-xml-parser": "4.5.0",
+    "ioredis": "5.4.2",
     "node-cache": "5.1.2",
     "p-limit": "6.1.0",
     "pino-http": "10.3.0",
@@ -53,7 +55,8 @@
     "drizzle-kit": "0.28.1",
     "tsup": "8.3.5",
     "tsx": "4.19.2",
-    "typescript": "5.7.2"
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
   },
   "engines": {
     "node": ">=22.1.0"
