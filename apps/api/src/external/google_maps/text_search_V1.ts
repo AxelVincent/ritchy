@@ -1,10 +1,17 @@
 import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
-import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
+import {
+  divideSquareIntoFour,
+  getLargestSquareFromCoordinates,
+} from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
-import type { PlacesSearchResponse } from '@ritchy/types'
-import { mapToPlacesSearchResult } from './mapper'
+import type {
+  PlacesSearchRequestBody,
+  PlacesSearchResponse,
+} from '@ritchy/types'
+import { REDIS_KEYS } from '../../lib/redis/keys'
+import { redisClient } from '../../lib/redis/redis'
 import {
   ADVANCED_PLACE_KEYS_TEXT_SEARCH,
   type GooglePlacesTextSearchRequestBody,
@@ -12,6 +19,8 @@ import {
   type GooglePlacesTextSearchResponse,
   GooglePlacesTextSearchResponseSchema,
 } from './types'
+import { mapToPlacesSearchResult } from './utils/mapper'
+import { placesApiQueue } from './utils/places_api_queue'
 
 async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
@@ -51,44 +60,109 @@ async function fetchSinglePage(
 }
 
 export async function postTextSearchV1(
-  requestBody: GooglePlacesTextSearchRequestBody,
+  requestBody: PlacesSearchRequestBody,
 ): Promise<PlacesSearchResponse> {
-  const validatedRequest =
-    GooglePlacesTextSearchRequestBodySchema.parse(requestBody)
+  const largestSquare = getLargestSquareFromCoordinates(
+    requestBody.locationBias.circle.center,
+    requestBody.locationBias.circle.radiusInMeters,
+  )
+
+  // 60 potential results
+  // 1 * 3 = 3 requests
+  // 3 * 0.04 = 0.12 $
+  // 0.12 / 2 = 0.06 $
+  const squares60 = [largestSquare]
+  // 240 potential results
+  // 4 * 3 = 12 requests
+  // 12 * 0.04 = 0.48 $
+  // 0.48 / 2 = 0.24 $
+  const squares240 = divideSquareIntoFour(largestSquare, 0.95)
+  // 240 * 4 = 960 potential results
+  // 12 * 4 = 48 requests
+  // 48 * 0.04 = 1.92 $
+  // 1.92 / 2 = 0.96 $
+  const squares960 = squares240.flatMap((square) =>
+    divideSquareIntoFour(square, 0.95),
+  )
+  // 960 * 4 = 3840 potential results
+  // 48 * 4 = 192 requests
+  // 192 * 0.04 = 7.68 $
+  // 7.68 / 2 = 3.84 $
+  const squares3840 = squares960.flatMap((square) =>
+    divideSquareIntoFour(square, 0.95),
+  )
+
+  const squares = (() => {
+    switch (requestBody.model) {
+      case 'PRO':
+        return squares3840
+      case 'EXPLORER':
+        return squares960
+      case 'NAVIGATOR':
+        return squares240
+      case 'DEFAULT':
+        return squares60
+      default:
+        return squares60
+    }
+  })()
 
   try {
     const allResults: GooglePlacesTextSearchResponse['places'] = []
-    let nextPageToken: string | undefined
-
-    do {
+    let apiRequestCount = 0
+    for (const square of squares) {
+      let nextPageToken: string | undefined
+      let currentSquareQuantity = 0
       const formattedRequest = {
-        textQuery: validatedRequest.textQuery,
-        locationRestriction: validatedRequest.locationRestriction,
+        textQuery: requestBody.textQuery,
+        locationRestriction: {
+          rectangle: {
+            low: square.southWest,
+            high: square.northEast,
+          },
+        },
         nextPageToken,
-        resultsQuantity: validatedRequest.resultsQuantity,
+        resultsQuantity: 60,
       }
 
-      const data = await fetchSinglePage(formattedRequest)
-      GooglePlacesTextSearchResponseSchema.parse(data)
+      const validatedRequest =
+        GooglePlacesTextSearchRequestBodySchema.parse(formattedRequest)
 
-      if (data.places) {
-        allResults.push(...data.places)
-      }
+      do {
+        const data = await placesApiQueue.addToQueue(async () =>
+          fetchSinglePage(validatedRequest),
+        )
+        GooglePlacesTextSearchResponseSchema.parse(data)
 
-      nextPageToken = data.nextPageToken // Update nextPageToken with the new token
+        if (data.places) {
+          allResults.push(...data.places)
+          currentSquareQuantity += data.places.length
+        }
 
-      // Add delay between requests as required by Google
-      if (nextPageToken) {
-        await new Promise((resolve) => setTimeout(resolve, 200))
-      }
+        nextPageToken = data.nextPageToken // Update nextPageToken with the new token
+        apiRequestCount++
+        // Stop if we have enough results or no more pages
+      } while (
+        nextPageToken &&
+        currentSquareQuantity < validatedRequest.resultsQuantity
+      )
+    }
 
-      // Stop if we have enough results or no more pages
-    } while (
-      nextPageToken &&
-      allResults.length < validatedRequest.resultsQuantity
+    const uniqueResults = allResults.filter(
+      (place, index, self) =>
+        index === self.findIndex((t) => t.id === place.id),
     )
 
-    const results = mapToPlacesSearchResult({ places: allResults })
+    // Cache each unique place
+    await Promise.all(
+      uniqueResults.map(async (place) => {
+        const key = REDIS_KEYS.place(place.id)
+        const mappedPlace = mapToPlacesSearchResult({ places: [place] })[0]
+        await redisClient.set(key, mappedPlace)
+      }),
+    )
+
+    const results = mapToPlacesSearchResult({ places: uniqueResults })
 
     logger.info({
       msg: 'Google Places API request successful',
@@ -97,7 +171,8 @@ export async function postTextSearchV1(
         query: requestBody.textQuery,
         resultIds: results.map((result) => result.id),
         resultCount: results.length,
-        pagesRequested: Math.ceil(results.length / 20),
+        pagesRequested: apiRequestCount,
+        cachedPlaces: uniqueResults.length,
       },
     })
 
