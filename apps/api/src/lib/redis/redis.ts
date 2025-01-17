@@ -41,6 +41,7 @@ const DEFAULT_TTL = 14 * 24 * 60 * 60 // 14 days in seconds
  * @returns Object containing Redis client and utility methods
  */
 export const createRedisClient = () => {
+  console.log(REDIS_CONFIG)
   const redis = new Redis({
     host: REDIS_CONFIG.HOST,
     port: REDIS_CONFIG.PORT,
