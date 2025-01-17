@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export const ApiErrorResponseSchema = z.object({
   error: z.string(),
+  message: z.string().optional(),
   details: z
     .array(
       z.object({

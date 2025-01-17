@@ -45,6 +45,7 @@ export const addPlaceNote = async (
       })
       res.status(400).json({
         error: 'Invalid request data',
+        message: 'Invalid request data',
         details: error.errors,
       })
       return
@@ -59,6 +60,9 @@ export const addPlaceNote = async (
         userId: req.auth.userId,
       },
     })
-    res.status(500).json({ error: 'Failed to add note' })
+    res.status(500).json({
+      error: 'Failed to add note',
+      message: 'Failed to add note',
+    })
   }
 }

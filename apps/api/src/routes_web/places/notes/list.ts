@@ -35,6 +35,9 @@ export const getPlaceNotes = async (
         placeId: req.params.placeId,
       },
     })
-    res.status(500).json({ error: 'Failed to get notes' })
+    res.status(500).json({
+      error: 'Failed to get notes',
+      message: 'Failed to get notes',
+    })
   }
 }

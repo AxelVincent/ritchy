@@ -47,6 +47,7 @@ export const createList = async (
       })
       res.status(400).json({
         error: 'Invalid request data',
+        message: 'Invalid request data',
         details: error.errors,
       })
       return
@@ -68,6 +69,9 @@ export const createList = async (
         userId: req.auth.userId,
       },
     })
-    res.status(500).json({ error: 'Failed to create list' })
+    res.status(500).json({
+      error: 'Failed to create list',
+      message: 'Failed to create list',
+    })
   }
 }

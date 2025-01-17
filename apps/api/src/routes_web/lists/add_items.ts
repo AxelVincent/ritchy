@@ -27,6 +27,7 @@ export const addItemsToList = async (
     if (Number.isNaN(listId)) {
       res.status(400).json({
         error: 'Invalid list ID',
+        message: 'Invalid list ID',
       })
       return
     }
@@ -44,6 +45,7 @@ export const addItemsToList = async (
     if (!result.length) {
       res.status(404).json({
         error: 'List not found',
+        message: 'List not found',
       })
       return
     }
@@ -100,6 +102,7 @@ export const addItemsToList = async (
       })
       res.status(400).json({
         error: 'Invalid request data',
+        message: 'Invalid request data',
         details: error.errors,
       })
       return
@@ -110,6 +113,9 @@ export const addItemsToList = async (
       event: 'add_items_error',
       metadata: { error },
     })
-    res.status(500).json({ error: 'Failed to add items to list' })
+    res.status(500).json({
+      error: 'Failed to add items to list',
+      message: 'Failed to add items to list',
+    })
   }
 }
