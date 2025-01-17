@@ -67,6 +67,7 @@ export async function postTextSearchV1(
     requestBody.locationBias.circle.radiusInMeters,
   )
 
+  const ratio = 1
   // 60 potential results
   // 1 * 3 = 3 requests
   // 3 * 0.04 = 0.12 $
@@ -76,20 +77,20 @@ export async function postTextSearchV1(
   // 4 * 3 = 12 requests
   // 12 * 0.04 = 0.48 $
   // 0.48 / 2 = 0.24 $
-  const squares240 = divideSquareIntoFour(largestSquare, 0.95)
+  const squares240 = divideSquareIntoFour(largestSquare, ratio)
   // 240 * 4 = 960 potential results
   // 12 * 4 = 48 requests
   // 48 * 0.04 = 1.92 $
   // 1.92 / 2 = 0.96 $
   const squares960 = squares240.flatMap((square) =>
-    divideSquareIntoFour(square, 0.95),
+    divideSquareIntoFour(square, ratio),
   )
   // 960 * 4 = 3840 potential results
   // 48 * 4 = 192 requests
   // 192 * 0.04 = 7.68 $
   // 7.68 / 2 = 3.84 $
   const squares3840 = squares960.flatMap((square) =>
-    divideSquareIntoFour(square, 0.95),
+    divideSquareIntoFour(square, ratio),
   )
 
   const squares = (() => {
@@ -110,25 +111,27 @@ export async function postTextSearchV1(
   try {
     const allResults: GooglePlacesTextSearchResponse['places'] = []
     let apiRequestCount = 0
+    const resultsQuantity = 60
     for (const square of squares) {
-      let nextPageToken: string | undefined
+      let nextPageToken = undefined
       let currentSquareQuantity = 0
-      const formattedRequest = {
-        textQuery: requestBody.textQuery,
-        locationRestriction: {
-          rectangle: {
-            low: square.southWest,
-            high: square.northEast,
-          },
-        },
-        nextPageToken,
-        resultsQuantity: 60,
-      }
-
-      const validatedRequest =
-        GooglePlacesTextSearchRequestBodySchema.parse(formattedRequest)
 
       do {
+        const formattedRequest = {
+          textQuery: requestBody.textQuery,
+          locationRestriction: {
+            rectangle: {
+              low: square.southWest,
+              high: square.northEast,
+            },
+          },
+          nextPageToken,
+          resultsQuantity,
+        }
+
+        const validatedRequest =
+          GooglePlacesTextSearchRequestBodySchema.parse(formattedRequest)
+
         const data = await placesApiQueue.addToQueue(async () =>
           fetchSinglePage(validatedRequest),
         )
@@ -142,16 +145,34 @@ export async function postTextSearchV1(
         nextPageToken = data.nextPageToken // Update nextPageToken with the new token
         apiRequestCount++
         // Stop if we have enough results or no more pages
-      } while (
-        nextPageToken &&
-        currentSquareQuantity < validatedRequest.resultsQuantity
-      )
+      } while (nextPageToken && currentSquareQuantity < resultsQuantity)
     }
 
-    const uniqueResults = allResults.filter(
-      (place, index, self) =>
-        index === self.findIndex((t) => t.id === place.id),
-    )
+    console.log('All results: ', allResults.length)
+
+    // Track duplicates for logging
+    const seenIds = new Set<string>()
+    const duplicates = new Set<string>()
+
+    const uniqueResults = allResults.filter((place) => {
+      if (seenIds.has(place.id)) {
+        duplicates.add(place.id)
+        return false
+      }
+      seenIds.add(place.id)
+      return true
+    })
+
+    logger.info({
+      msg: 'Duplicate places filtered',
+      event: 'places_deduplication',
+      metadata: {
+        totalPlaces: allResults.length,
+        uniquePlaces: uniqueResults.length,
+        duplicatesRemoved: duplicates.size,
+        duplicateIds: Array.from(duplicates),
+      },
+    })
 
     // Cache each unique place
     await Promise.all(

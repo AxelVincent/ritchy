@@ -64,8 +64,8 @@ export const searchPlaces = async (
       userId,
     )
     logger.info({
-      msg: 'Associations',
-      event: 'associations',
+      msg: 'List associations',
+      event: 'list_associations',
       metadata: { associations },
     })
 
