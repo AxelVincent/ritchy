@@ -126,7 +126,7 @@ export const PlacesSearchRequestBodySchema = z.object({
       radiusInMeters: z.number().positive(),
     }),
   }),
-  resultsQuantity: z.number().positive(),
+  model: z.enum(['DEFAULT', 'NAVIGATOR', 'EXPLORER', 'PRO']).default('DEFAULT'),
 })
 
 export const PlaceListAssociationSchema = z.object({

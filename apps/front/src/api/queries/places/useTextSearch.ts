@@ -12,19 +12,13 @@ const apiClient = createApiClient({
 
 export const useTextSearch = ({
   textQuery,
-  resultsQuantity,
   locationBias,
+  model,
 }: PlacesSearchRequestBody): UseQueryResult<PlacesSearchResponse> => {
   const { getToken } = useAuth()
 
   return useQuery({
-    queryKey: [
-      'places',
-      'text-search',
-      textQuery,
-      resultsQuantity,
-      locationBias,
-    ],
+    queryKey: ['places', 'text-search', textQuery, locationBias, model],
     queryFn: async () => {
       const token = await getToken()
       const response = await apiClient.fetchWithAuth(
@@ -33,12 +27,13 @@ export const useTextSearch = ({
           method: 'POST',
           body: JSON.stringify({
             textQuery,
-            resultsQuantity,
             locationBias,
+            model,
           }),
         },
         token,
       )
+
       return response
     },
     enabled: false,
