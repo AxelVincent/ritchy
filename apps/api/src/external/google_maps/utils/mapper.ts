@@ -3,7 +3,7 @@ import type {
   AdvancedPlace,
   GooglePlacesTextSearchResponse,
   PreferredPlace,
-} from './types'
+} from './../types'
 
 const objectMapper = (place: PreferredPlace) => ({
   id: place.id,

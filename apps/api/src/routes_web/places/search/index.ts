@@ -1,8 +1,8 @@
 import express, { type Router } from 'express'
-import { searchPlaces } from '../search'
+import { searchPlaces } from './search'
 
 const searchRouter: Router = express.Router()
 
-searchRouter.get('/search', searchPlaces)
+searchRouter.post('/', searchPlaces)
 
 export default searchRouter

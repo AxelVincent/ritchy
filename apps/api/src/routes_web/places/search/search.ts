@@ -7,9 +7,8 @@ import {
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
-import { findListAssociationsForPlaces } from '../../services/lists/findListAssociationsForPlaces'
-import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
+import { postTextSearchV1 } from '../../../external/google_maps/text_search_V1'
+import { findListAssociationsForPlaces } from '../../../services/lists/findListAssociationsForPlaces'
 
 /**
  * Searches for places based on text query and location bias
@@ -28,29 +27,37 @@ export const searchPlaces = async (
   try {
     // Add request validation
     if (!req.body) {
-      res.status(400).json({ error: 'Request body is required' })
+      res.status(400).json({
+        error: 'Request body is required',
+        message: 'Please provide search parameters',
+      })
     }
 
     const userId = req.auth.userId
 
-    // Validate request body
-    const parsedBody = PlacesSearchRequestBodySchema.parse(req.body)
-
-    const largestSquare = getLargestSquareFromCoordinates(
-      parsedBody.locationBias.circle.center,
-      parsedBody.locationBias.circle.radiusInMeters,
-    )
-    const requestBody = {
-      textQuery: parsedBody.textQuery,
-      locationRestriction: {
-        rectangle: {
-          low: largestSquare.southWest,
-          high: largestSquare.northEast,
-        },
-      },
-      resultsQuantity: parsedBody.resultsQuantity,
+    const model = req.body.model
+    if (model === 'PRO') {
+      if (
+        ![
+          // Ryan Staging / Prod
+          'user_2pLKf5Yr8yJfZQbultG2uJ8pgFm',
+          'user_2pLdQum1fXENokXcvNTsOdRWyts',
+          // Axel Staging / Prod
+          'user_2p7ZA02lG6WufI5SV3l6zyAoAIo',
+          'user_2pLd3diNenMMUy61qNECHbSlnHK',
+        ].includes(userId)
+      ) {
+        res.status(403).json({
+          error: 'Forbidden',
+          message: 'This feature is only available for PRO users',
+        })
+      }
     }
-    const results = await postTextSearchV1(requestBody)
+
+    // Validate request body
+    const validatedRequest = PlacesSearchRequestBodySchema.parse(req.body)
+
+    const results = await postTextSearchV1(validatedRequest)
 
     const associations = await findListAssociationsForPlaces(
       results.map((result) => result.id),

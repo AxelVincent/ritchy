@@ -1,10 +1,10 @@
 import express, { type Router } from 'express'
 import notesRouter from './notes'
-import { searchPlaces } from './search'
+import searchRouter from './search'
 
 const placesRouter: Router = express.Router()
 
-placesRouter.post('/search', searchPlaces)
+placesRouter.use('/search', searchRouter)
 
 placesRouter.use('', notesRouter)
 
