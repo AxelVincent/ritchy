@@ -6,6 +6,7 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const typesColumn: ColumnDef<SearchResult> = {
   id: 'types',
   accessorKey: 'types',
+  size: 350,
   enableColumnFilter: true,
   meta: {
     filterVariant: 'multi-select',

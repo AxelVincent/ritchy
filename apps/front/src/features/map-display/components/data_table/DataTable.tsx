@@ -1,4 +1,3 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { AddItemsToListDialog } from '@/features/lists/components/AddItemsToListDialog'
@@ -21,7 +20,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useEffect, useState } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useEffect, useRef, useState } from 'react'
 import { DeleteItemsFromListDialog } from '../../../lists/components/DeleteItemsFromListDialog'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
@@ -39,8 +39,16 @@ interface DataTableProps<TData, TValue> {
   onFilteredDataChange: (ids: Set<string>) => void
 }
 
+const perfMarks = {
+  tableInit: 'data-table-init',
+  virtualInit: 'virtualizer-init',
+  rowModelUpdate: 'row-model-update',
+  filterUpdate: 'filter-update',
+  renderComplete: 'render-complete',
+}
+
 // Add a fixed height for table rows
-const ROW_HEIGHT = '34px' // Adjust this value as needed
+const ROW_HEIGHT = '34px'
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
@@ -52,6 +60,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
   listId,
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
+  performance.mark(perfMarks.tableInit)
+
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -120,6 +130,49 @@ export const DataTable = <TData extends SearchResult, TValue>({
     },
   })
 
+  performance.measure('Table Initialization', perfMarks.tableInit)
+  performance.mark(perfMarks.virtualInit)
+
+  const tableContainerRef = useRef<HTMLDivElement>(null)
+  const rows = table.getRowModel().rows
+  const visibleColumns = table.getVisibleLeafColumns()
+
+  // Column virtualizer
+  const columnVirtualizer = useVirtualizer({
+    count: visibleColumns.length,
+    estimateSize: (index) => visibleColumns[index].getSize(),
+    getScrollElement: () => tableContainerRef.current,
+    horizontal: true,
+    overscan: 3,
+  })
+
+  // Row virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    estimateSize: () => 40,
+    getScrollElement: () => tableContainerRef.current,
+    measureElement:
+      typeof window !== 'undefined' &&
+      navigator.userAgent.indexOf('Firefox') === -1
+        ? (element) => element?.getBoundingClientRect().height
+        : undefined,
+    overscan: 20,
+  })
+
+  const virtualColumns = columnVirtualizer.getVirtualItems()
+  const virtualRows = rowVirtualizer.getVirtualItems()
+
+  // Calculate padding for columns
+  let virtualPaddingLeft: number | undefined
+  let virtualPaddingRight: number | undefined
+
+  if (columnVirtualizer && virtualColumns?.length) {
+    virtualPaddingLeft = virtualColumns[0]?.start ?? 0
+    virtualPaddingRight =
+      columnVirtualizer.getTotalSize() -
+      (virtualColumns[virtualColumns.length - 1]?.end ?? 0)
+  }
+
   // Get the selected rows data
   const selectedRows = table.getSelectedRowModel().rows
 
@@ -153,24 +206,51 @@ export const DataTable = <TData extends SearchResult, TValue>({
   // Add this effect to handle scrolling
   useEffect(() => {
     if (selectedPlaceId) {
-      const selectedRow = document.querySelector(
-        `tr[data-id="${selectedPlaceId}"]`,
+      // Find the index of the selected row in the full data set
+      const rowIndex = rows.findIndex(
+        (row) => row.original.id === selectedPlaceId,
       )
-      selectedRow?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      })
+      if (rowIndex !== -1) {
+        // First scroll without smooth behavior to ensure correct positioning
+        rowVirtualizer.scrollToIndex(rowIndex, { align: 'center' })
+
+        // Use requestAnimationFrame to ensure the initial scroll is complete
+        requestAnimationFrame(() => {
+          // Then apply smooth scrolling for visual polish
+          rowVirtualizer.scrollToIndex(rowIndex, {
+            align: 'center',
+            behavior: 'smooth',
+          })
+        })
+      }
     }
-  }, [selectedPlaceId])
+  }, [selectedPlaceId, rows, rowVirtualizer])
 
   // Add effect to track filtered results
   // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
   useEffect(() => {
+    performance.mark(perfMarks.filterUpdate)
     const filteredIds = new Set(
       table.getFilteredRowModel().rows.map((row) => row.original.id),
     )
     onFilteredDataChange(filteredIds)
+    performance.measure('Filter Update', perfMarks.filterUpdate)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
+
+  // Track row model updates
+  // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
+  useEffect(() => {
+    performance.mark(perfMarks.rowModelUpdate)
+    performance.measure('Row Model Update', perfMarks.rowModelUpdate)
+  }, [table.getRowModel().rows])
+
+  useEffect(() => {
+    return () => {
+      // Cleanup performance marks on unmount
+      performance.clearMarks()
+      performance.clearMeasures()
+    }
+  }, [])
 
   return (
     <div className="flex flex-1 flex-col overflow-auto">
@@ -231,101 +311,193 @@ export const DataTable = <TData extends SearchResult, TValue>({
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-scroll min-h-0 min-w-0 border">
-        <div className="w-[100px] h-[100px]">
-          <table className="w-full border-collapse ">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="hover:bg-transparent">
-                  {headerGroup.headers.map((header, idx) => {
-                    return (
-                      <th
-                        scope="col"
-                        key={header.id}
-                        className={cn(
-                          header.column.columnDef.meta?.headerClassName,
-                          'px-4 py-0 border-b border-r sticky top-0 z-10 bg-background text-secondary-foreground font-medium',
-                          idx === 0 && 'sticky left-0 z-20',
-                        )}
+      <div
+        ref={tableContainerRef}
+        className="container border-t border-b border-border p-0"
+        style={{
+          overflow: 'auto',
+          position: 'relative',
+          height: '100%',
+        }}
+      >
+        <table style={{ display: 'grid' }} className="border border-border">
+          <thead
+            style={{
+              display: 'grid',
+              position: 'sticky',
+              top: 0,
+              zIndex: 1,
+            }}
+            className="bg-background border-b border-border"
+          >
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr
+                key={headerGroup.id}
+                style={{ display: 'flex', width: '100%' }}
+              >
+                <th
+                  key={headerGroup.headers[0].id}
+                  style={{
+                    display: 'flex',
+                    width: headerGroup.headers[0].getSize(),
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 2,
+                  }}
+                  className="border-r border-border bg-background"
+                >
+                  {flexRender(
+                    headerGroup.headers[0].column.columnDef.header,
+                    headerGroup.headers[0].getContext(),
+                  )}
+                </th>
+                {virtualPaddingLeft ? (
+                  <th style={{ display: 'flex', width: virtualPaddingLeft }} />
+                ) : null}
+                {virtualColumns.map((vc) => {
+                  const header = headerGroup.headers[vc.index + 1]
+                  if (!header) return null
+                  return (
+                    <th
+                      key={header.id}
+                      style={{
+                        display: 'flex',
+                        width: header.getSize(),
+                      }}
+                      className={cn('border-r border-border', {
+                        'bg-background': vc.index === 0,
+                      })}
+                    >
+                      <div
+                        {...{
+                          className: header.column.getCanSort()
+                            ? 'cursor-pointer select-none'
+                            : '',
+                          onClick: header.column.getToggleSortingHandler(),
+                        }}
                       >
-                        <TextWrapper width="100%">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                        </TextWrapper>
-                      </th>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                      </div>
+                    </th>
+                  )
+                })}
+                {virtualPaddingRight ? (
+                  <th style={{ display: 'flex', width: virtualPaddingRight }} />
+                ) : null}
+              </tr>
+            ))}
+          </thead>
+          <tbody
+            style={{
+              display: 'grid',
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: 'relative',
+            }}
+          >
+            {virtualRows.map((virtualRow) => {
+              const row = rows[virtualRow.index]
+              const visibleCells = row.getVisibleCells()
+
+              return (
+                <tr
+                  data-index={virtualRow.index}
+                  ref={(node) => rowVirtualizer.measureElement(node)}
+                  key={row.id}
+                  style={{
+                    display: 'flex',
+                    position: 'absolute',
+                    transform: `translateY(${virtualRow.start}px)`,
+                    width: '100%',
+                    height: ROW_HEIGHT,
+                  }}
+                  className={cn('border-b border-border', {
+                    'bg-muted': row.getIsSelected(),
+                    'hover:bg-muted/50': !row.getIsSelected(),
+                    'bg-primary/10': selectedPlaceId === row.original.id,
+                  })}
+                >
+                  <td
+                    key={visibleCells[0].id}
+                    style={{
+                      display: 'flex',
+                      width: visibleCells[0].column.getSize(),
+                      position: 'sticky',
+                      left: 0,
+                      zIndex: 1,
+                      alignItems: 'center',
+                    }}
+                    className={cn('border-r border-border p-2 bg-background', {
+                      'bg-muted': row.getIsSelected(),
+                      'bg-primary/10': selectedPlaceId === row.original.id,
+                    })}
+                    onClick={(e) => handleRowClick(e, row, true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleRowClick(
+                          e as unknown as React.MouseEvent,
+                          row,
+                          true,
+                        )
+                      }
+                    }}
+                  >
+                    {flexRender(
+                      visibleCells[0].column.columnDef.cell,
+                      visibleCells[0].getContext(),
+                    )}
+                  </td>
+                  {virtualPaddingLeft ? (
+                    <td
+                      style={{ display: 'flex', width: virtualPaddingLeft }}
+                    />
+                  ) : null}
+                  {virtualColumns.map((vc) => {
+                    const cell = visibleCells[vc.index + 1]
+                    if (!cell) return null
+                    return (
+                      <td
+                        key={cell.id}
+                        style={{
+                          display: 'flex',
+                          width: cell.column.getSize(),
+                          alignItems: 'center',
+                        }}
+                        className={cn('border-r border-border p-2', {
+                          'bg-background': vc.index === 0,
+                          'bg-muted': vc.index === 0 && row.getIsSelected(),
+                          'bg-primary/10':
+                            vc.index === 0 &&
+                            selectedPlaceId === row.original.id,
+                        })}
+                        onClick={(e) => handleRowClick(e, row, vc.index === 0)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            handleRowInteraction(row)
+                          }
+                        }}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
                     )
                   })}
+                  {virtualPaddingRight ? (
+                    <td
+                      style={{ display: 'flex', width: virtualPaddingRight }}
+                    />
+                  ) : null}
                 </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => {
-                  const backgroundClasses = cn(
-                    'bg-background',
-                    selectedPlaceId === row.original.id &&
-                      'bg-gray-50 dark:bg-gray-900',
-                  )
-
-                  return (
-                    <tr
-                      key={row.original.id}
-                      data-id={row.original.id}
-                      data-state={row.getIsSelected() && 'selected'}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          handleRowInteraction(row)
-                        }
-                      }}
-                      tabIndex={0}
-                      className={cn(backgroundClasses)}
-                      style={{ height: ROW_HEIGHT }}
-                    >
-                      {row.getVisibleCells().map((cell, idx) => (
-                        <td
-                          key={cell.id}
-                          onClick={(e) => handleRowClick(e, row, idx === 0)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              handleRowClick(
-                                e as unknown as React.MouseEvent,
-                                row,
-                                idx === 0,
-                              )
-                            }
-                          }}
-                          className={cn(
-                            'px-4 py-1 whitespace-nowrap border-b border-r overflow-hidden',
-                            idx === 0 &&
-                              cn('sticky left-0 z-10', backgroundClasses),
-                          )}
-                          style={{ height: ROW_HEIGHT }}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
       <div className="flex justify-between items-center p-4 gap-4">
         <Label className="flex-shrink-0">

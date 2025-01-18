@@ -6,6 +6,7 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const phoneColumn: ColumnDef<SearchResult> = {
   id: 'internationalPhoneNumber',
   accessorKey: 'internationalPhoneNumber',
+  size: 150,
   meta: {
     filterVariant: 'text',
   },

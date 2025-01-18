@@ -14,6 +14,7 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const formattedAddressColumn: ColumnDef<SearchResult> = {
   id: 'formattedAddress',
   accessorKey: 'address.formattedAddress',
+  size: 150,
   meta: {
     filterVariant: 'text',
   },
@@ -36,6 +37,7 @@ export const formattedAddressColumn: ColumnDef<SearchResult> = {
 export const countryColumn: ColumnDef<SearchResult> = {
   id: 'country',
   accessorKey: 'address.country',
+  size: 150,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -54,6 +56,7 @@ export const countryColumn: ColumnDef<SearchResult> = {
 export const localityColumn: ColumnDef<SearchResult> = {
   id: 'locality',
   accessorKey: 'address.locality',
+  size: 150,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -72,6 +75,7 @@ export const localityColumn: ColumnDef<SearchResult> = {
 export const sublocalityColumn: ColumnDef<SearchResult> = {
   id: 'sublocality',
   accessorKey: 'address.sublocality',
+  size: 150,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -90,6 +94,7 @@ export const sublocalityColumn: ColumnDef<SearchResult> = {
 export const postalCodeColumn: ColumnDef<SearchResult> = {
   id: 'postalCode',
   accessorKey: 'address.postalCode',
+  size: 150,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -108,6 +113,7 @@ export const postalCodeColumn: ColumnDef<SearchResult> = {
 export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
   id: 'postalCodeSuffix',
   accessorKey: 'address.postalCodeSuffix',
+  size: 150,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -128,6 +134,7 @@ export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
 export const plusCodeColumn: ColumnDef<SearchResult> = {
   id: 'plusCode',
   accessorKey: 'address.plusCode',
+  size: 150,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -146,6 +153,7 @@ export const plusCodeColumn: ColumnDef<SearchResult> = {
 export const streetColumn: ColumnDef<SearchResult> = {
   id: 'street',
   accessorKey: 'address.street',
+  size: 150,
   meta: {
     filterVariant: 'text',
   },
@@ -164,6 +172,7 @@ export const streetColumn: ColumnDef<SearchResult> = {
 export const neighborhoodColumn: ColumnDef<SearchResult> = {
   id: 'neighborhood',
   accessorKey: 'address.neighborhood',
+  size: 150,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -184,6 +193,7 @@ export const neighborhoodColumn: ColumnDef<SearchResult> = {
 export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
   id: 'administrativeAreaLevel1',
   accessorKey: 'address.administrativeAreaLevel1',
+  size: 250,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -208,6 +218,7 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
 export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
   id: 'administrativeAreaLevel2',
   accessorKey: 'address.administrativeAreaLevel2',
+  size: 250,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -232,6 +243,7 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
 export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
   id: 'administrativeAreaLevel3',
   accessorKey: 'address.administrativeAreaLevel3',
+  size: 250,
   meta: {
     filterVariant: 'multi-select',
   },
@@ -256,6 +268,7 @@ export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
 export const addressComponentsColumn: ColumnDef<SearchResult> = {
   id: 'addressComponents',
   accessorKey: 'address.addressComponents',
+  size: 250,
   enableSorting: false,
   enableColumnFilter: false,
   header: ({ column }) => (

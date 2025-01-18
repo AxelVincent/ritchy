@@ -20,6 +20,7 @@ const formatPriceRange = (range: SearchResult['priceRange']) => {
 
 export const priceRangeColumn: ColumnDef<SearchResult> = {
   id: 'priceRange',
+  size: 200,
   accessorFn: (row) => formatPriceRange(row.priceRange),
   meta: {
     filterVariant: 'multi-select',

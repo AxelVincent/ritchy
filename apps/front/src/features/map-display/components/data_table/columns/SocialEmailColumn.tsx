@@ -125,6 +125,7 @@ const LinkItem = ({
 export const socialEmailColumn: ColumnDef<SearchResult> = {
   id: 'socialsAndEmails',
   accessorKey: 'socialsAndEmails',
+  size: 150,
   enableColumnFilter: false,
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Socials & Emails" />

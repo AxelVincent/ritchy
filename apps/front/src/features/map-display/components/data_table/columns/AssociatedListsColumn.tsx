@@ -12,6 +12,7 @@ const NO_LISTS_LABEL = 'No lists'
 
 export const associatedListsColumn: ColumnDef<SearchResult> = {
   id: 'associatedLists',
+  size: 200,
   accessorFn: (row) => {
     const lists = row.associatedLists ?? []
     return lists.length ? lists.map(formatList) : [NO_LISTS_LABEL]

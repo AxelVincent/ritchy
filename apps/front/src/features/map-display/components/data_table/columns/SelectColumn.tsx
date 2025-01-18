@@ -5,6 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 export const selectColumn: ColumnDef<SearchResult> = {
   id: 'select',
   enableColumnFilter: false,
+  size: 5,
   header: ({ table }) => (
     <div className="flex items-center justify-center">
       <Checkbox

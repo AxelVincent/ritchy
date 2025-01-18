@@ -6,6 +6,7 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const descriptionColumn: ColumnDef<SearchResult> = {
   id: 'description',
   accessorKey: 'description',
+  size: 250,
   meta: {
     filterVariant: 'text',
   },

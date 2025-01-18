@@ -15,6 +15,7 @@ const getDomainFromUrl = (url: string): string => {
 export const websiteColumn: ColumnDef<SearchResult> = {
   id: 'websiteUri',
   accessorKey: 'websiteUri',
+  size: 170,
   meta: {
     filterVariant: 'text',
   },

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { toTitleCase } from '@/lib/toTitleCase'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnFiltersState, Table } from '@tanstack/react-table'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 interface ActiveFiltersProps<TData> {
   table: Table<TData>
@@ -34,24 +34,46 @@ const hasActiveFilters = (filters: ColumnFiltersState): boolean => {
   return filters.some((filter) => isValidFilterValue(filter.value))
 }
 
+const perfMarks = {
+  filterCheck: 'filter-check',
+  filterRender: 'filter-render',
+  filterClear: 'filter-clear',
+}
+
 export const ActiveFilters = <TData extends SearchResult>({
   table,
 }: ActiveFiltersProps<TData>): React.ReactElement | null => {
   const columnFilters = table.getState().columnFilters
 
-  const hasActiveFiltersValue = useMemo(
-    () => hasActiveFilters(columnFilters),
-    [columnFilters],
-  )
+  const hasActiveFiltersValue = useMemo(() => {
+    performance.mark(perfMarks.filterCheck)
+    const result = hasActiveFilters(columnFilters)
+    performance.measure('Filter Check', perfMarks.filterCheck)
+    return result
+  }, [columnFilters])
 
-  const activeFilters = useMemo(
-    () => columnFilters.filter((filter) => isValidFilterValue(filter.value)),
-    [columnFilters],
-  )
+  const activeFilters = useMemo(() => {
+    performance.mark(perfMarks.filterRender)
+    const filters = columnFilters.filter((filter) =>
+      isValidFilterValue(filter.value),
+    )
+    performance.measure('Filter Render Prep', perfMarks.filterRender)
+    return filters
+  }, [columnFilters])
 
   const handleClearFilters = (): void => {
+    performance.mark(perfMarks.filterClear)
     table.resetColumnFilters()
+    performance.measure('Filter Clear', perfMarks.filterClear)
   }
+
+  useEffect(() => {
+    return () => {
+      // Cleanup performance marks on unmount
+      performance.clearMarks()
+      performance.clearMeasures()
+    }
+  }, [])
 
   if (!hasActiveFiltersValue) return null
 

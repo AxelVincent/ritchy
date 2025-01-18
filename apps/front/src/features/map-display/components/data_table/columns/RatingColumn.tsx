@@ -7,6 +7,7 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const ratingColumn: ColumnDef<SearchResult> = {
   id: 'rating',
   accessorKey: 'rating',
+  size: 250,
   meta: {
     filterVariant: 'range',
   },
