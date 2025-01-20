@@ -188,7 +188,6 @@ export async function postTextSearchV1(
       event: 'google_places_api_success',
       metadata: {
         query: requestBody.textQuery,
-        resultIds: results.map((result) => result.id),
         resultCount: results.length,
         pagesRequested: apiRequestCount,
         cachedPlaces: uniqueResults.length,

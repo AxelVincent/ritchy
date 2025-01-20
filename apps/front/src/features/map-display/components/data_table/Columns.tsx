@@ -18,6 +18,7 @@ import {
 import { associatedListsColumn } from './columns/AssociatedListsColumn'
 import { descriptionColumn } from './columns/DescriptionColumn'
 import { nameColumn } from './columns/NameColumn'
+import { notesColumn } from './columns/NotesColumns'
 import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { priceLevelColumn } from './columns/PriceLevelColumn'
@@ -37,6 +38,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   websiteColumn,
   phoneColumn,
   socialEmailColumn,
+  notesColumn,
   associatedListsColumn,
   primaryTypeColumn,
   typesColumn,

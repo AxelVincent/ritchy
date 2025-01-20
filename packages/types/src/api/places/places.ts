@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
+import { NoteSchema } from './notes'
 
 // Basic/Common Schemas
 export const LocationSchema = z.object({
@@ -168,6 +169,7 @@ export const PlaceSchema = z.object({
     administrativeAreaLevel3: z.string().optional(),
   }),
   associatedLists: z.array(PlaceListAssociationSchema).optional(),
+  notes: z.array(NoteSchema).optional(),
 })
 
 export const PlacesSearchResponseSchema = z.array(PlaceSchema)

@@ -3,7 +3,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { listPlace } from '../../db/schema'
 import { list } from '../../db/schema'
-export const findListAssociationsForPlaces = async (
+export const getListAssociationsByPlaceIds = async (
   googlePlaceIds: string[],
   userId: string,
   listId?: number,

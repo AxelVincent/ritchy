@@ -43,15 +43,11 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
                 place.address?.formattedAddress ?? 'Address not available'
               }
               truncate={true}
-              width="250px"
             >
               {place.address?.formattedAddress ?? 'Address not available'}
             </TextWrapper>
             {place.address?.neighborhood && (
-              <TextWrapper
-                width="100%"
-                className="text-sm text-muted-foreground"
-              >
+              <TextWrapper className="text-sm text-muted-foreground">
                 {place.address.neighborhood}
               </TextWrapper>
             )}
@@ -116,7 +112,6 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
           <div className="flex gap-3">
             <Info className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
-              width="100%"
               copyValue={place.editorialSummary.text}
               className="text-sm text-muted-foreground"
             >
@@ -205,7 +200,13 @@ const PlaceHoursTab = ({ place }: { place: Place }) => {
 
 const PlaceNotesTab = ({ place }: { place: Place }) => (
   <div className="h-full">
-    <Notes placeId={place.id} />
+    <Notes
+      placeId={place.id}
+      onNoteAdded={(note) => {
+        // Update the place's notes array directly
+        place.notes = [note, ...(place.notes || [])]
+      }}
+    />
   </div>
 )
 

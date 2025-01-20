@@ -1,13 +1,13 @@
 import { logger } from '@ritchy/logger'
 import type { ListContentApiResponse, Place } from '@ritchy/types'
-import { sql } from 'drizzle-orm'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
 import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
-import { findListAssociationsForPlaces } from '../../services/lists/findListAssociationsForPlaces'
+import { getListAssociationsByPlaceIds } from '../../services/lists/getListAssociationsByPlaceIds'
+import { getNotesByPlaceIds } from '../../services/notes/getNotesByPlaceIds'
 
 export const getListContent = async (
   req: Request<{ id: string }>,
@@ -80,11 +80,13 @@ export const getListContent = async (
         return place
       })
 
-    const associations = await findListAssociationsForPlaces(
-      places.map((place) => place.placeId),
+    const placeIds = places.map((place) => place.placeId)
+    const associations = await getListAssociationsByPlaceIds(
+      placeIds,
       userId,
       listId,
     )
+    const notes = await getNotesByPlaceIds(placeIds, userId)
 
     res.json({
       id: String(result[0].id),
@@ -93,6 +95,7 @@ export const getListContent = async (
       items: placeDetails.map((place) => ({
         ...place,
         associatedLists: associations.get(place.id),
+        notes: notes.get(place.id),
       })),
       createdAt: result[0].createdAt.toISOString(),
       updatedAt: result[0].updatedAt.toISOString(),

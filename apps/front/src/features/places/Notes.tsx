@@ -3,6 +3,7 @@ import { usePlaceNotesQuery } from '@/api/queries/places/notes/usePlaceNotes'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import type { Note } from '@ritchy/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowUpCircle, Loader2 } from 'lucide-react'
 import { useState } from 'react'
@@ -22,12 +23,16 @@ const NoteEditor = ({
     setContent('')
   }
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value)
+  }
+
   return (
     <div className="flex items-center">
       <Textarea
         placeholder="Add a note..."
         value={content}
-        onChange={(e) => setContent(e.target.value)}
+        onChange={handleChange}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault()
@@ -36,6 +41,11 @@ const NoteEditor = ({
         }}
         className="min-h-[36px] max-h-[36px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-2"
         disabled={isSubmitting}
+        style={{
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
+        }}
       />
       <div className="flex items-center gap-2">
         <Button
@@ -56,7 +66,13 @@ const NoteEditor = ({
   )
 }
 
-export const Notes = ({ placeId }: { placeId: string }) => {
+export const Notes = ({
+  placeId,
+  onNoteAdded,
+}: {
+  placeId: string
+  onNoteAdded?: (note: Note) => void
+}) => {
   const { data, isLoading, error } = usePlaceNotesQuery(placeId)
   const addNoteMutation = useAddPlaceNote()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -64,10 +80,11 @@ export const Notes = ({ placeId }: { placeId: string }) => {
   const handleAddNote = async (content: string) => {
     setIsSubmitting(true)
     try {
-      await addNoteMutation.mutateAsync({
+      const result = await addNoteMutation.mutateAsync({
         placeId,
         note: content,
       })
+      onNoteAdded?.(result as Note)
     } finally {
       setIsSubmitting(false)
     }
@@ -125,7 +142,7 @@ export const Notes = ({ placeId }: { placeId: string }) => {
                         addSuffix: true,
                       })}
                     </div>
-                    <div className="text-sm whitespace-pre-wrap mt-0.5">
+                    <div className="text-sm break-words whitespace-pre-wrap mt-0.5">
                       {note.note}
                     </div>
                   </div>

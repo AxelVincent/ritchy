@@ -8,7 +8,9 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { postTextSearchV1 } from '../../../external/google_maps/text_search_V1'
-import { findListAssociationsForPlaces } from '../../../services/lists/findListAssociationsForPlaces'
+
+import { getListAssociationsByPlaceIds } from '../../../services/lists/getListAssociationsByPlaceIds'
+import { getNotesByPlaceIds } from '../../../services/notes/getNotesByPlaceIds'
 
 /**
  * Searches for places based on text query and location bias
@@ -59,22 +61,28 @@ export const searchPlaces = async (
 
     const results = await postTextSearchV1(validatedRequest)
 
-    const associations = await findListAssociationsForPlaces(
-      results.map((result) => result.id),
-      userId,
-    )
-    logger.info({
-      msg: 'List associations',
-      event: 'list_associations',
-      metadata: { associations },
-    })
+    // Get associations and notes for each place
+    const placeIds = results.map((result) => result.id)
+    const associations = await getListAssociationsByPlaceIds(placeIds, userId)
+    const notes = await getNotesByPlaceIds(placeIds, userId)
 
+    // Map results with associations and notes
     const mappedResults = results.map((result) => ({
       ...result,
       associatedLists: associations.get(result.id),
+      notes: notes.get(result.id),
     }))
+
     // Validate response
     const validatedResults = PlacesSearchResponseSchema.parse(mappedResults)
+
+    logger.info({
+      msg: 'Search places',
+      event: 'search_places',
+      metadata: {
+        results: validatedResults.length,
+      },
+    })
     res.json(validatedResults)
   } catch (error) {
     if (error instanceof z.ZodError) {
