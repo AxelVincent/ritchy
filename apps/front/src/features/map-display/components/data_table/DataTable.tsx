@@ -386,10 +386,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     width: '100%',
                     height: ROW_HEIGHT,
                   }}
-                  className={cn('border-b border-border', {
-                    'hover:bg-muted/50': !row.getIsSelected(),
-                    'bg-muted': selectedPlaceId === row.original.id,
-                  })}
+                  className="border-b border-border"
                 >
                   <td
                     key={visibleCells[0].id}
@@ -402,8 +399,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       alignItems: 'center',
                     }}
                     className={cn('border-r border-border bg-background', {
-                      'hover:bg-muted/50': !row.getIsSelected(),
-                      'bg-muted': selectedPlaceId === row.original.id,
+                      'bg-primary-foreground':
+                        selectedPlaceId === row.original.id,
                     })}
                     onClick={(e) => handleRowClick(e, row, true)}
                     onKeyDown={(e) => {
@@ -439,9 +436,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           alignItems: 'center',
                         }}
                         className={cn('border-r border-border', {
-                          'hover:bg-muted/50': !row.getIsSelected(),
                           'bg-background': vc.index === 0,
-                          'bg-muted': selectedPlaceId === row.original.id,
+                          'bg-primary-foreground':
+                            selectedPlaceId === row.original.id,
                         })}
                         onClick={(e) => handleRowClick(e, row, vc.index === 0)}
                         onKeyDown={(e) => {
