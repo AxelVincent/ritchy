@@ -11,16 +11,16 @@ interface TextWrapperProps {
   children: React.ReactNode
   copyValue?: string
   truncate?: boolean
-  width?: string
   className?: string
+  showTooltip?: boolean
 }
 
 export const TextWrapper = ({
   children,
   copyValue,
   truncate = true,
-  width,
   className,
+  showTooltip = true,
 }: TextWrapperProps) => {
   const [copied, setCopied] = useState(false)
   const [isTextTruncated, setIsTextTruncated] = useState(false)
@@ -33,7 +33,6 @@ export const TextWrapper = ({
     setTimeout(() => setCopied(false), 500)
   }
 
-  const style = width ? { width } : { width: '150px' }
   const copyHandlers = copyValue
     ? {
         onClick: (e: React.MouseEvent) => handleCopy(e),
@@ -46,79 +45,62 @@ export const TextWrapper = ({
       }
     : {}
 
-  if (!truncate || !isTextTruncated) {
+  const content = (
+    <span
+      className={copyValue ? 'cursor-pointer hover:text-primary' : ''}
+      {...copyHandlers}
+    >
+      {copied ? (
+        <span className="text-sm text-green-500">Copied!</span>
+      ) : (
+        children
+      )}
+    </span>
+  )
+
+  const shouldShowFullTooltip = truncate && isTextTruncated && showTooltip
+  const baseClassName = `w-full text-sm p-2 ${className || ''} ${
+    truncate ? 'truncate' : ''
+  }`
+
+  const checkTruncation = (el: HTMLElement | null) => {
+    if (el && truncate) {
+      const isOverflowing = el.scrollWidth > el.clientWidth
+      setIsTextTruncated(isOverflowing)
+    }
+  }
+
+  if (shouldShowFullTooltip) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div
-          className={`flex gap-2 w-full text-sm p-2 ${className}`}
-          style={style}
-        >
-          {copyValue ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Label
-                  className={`text-sm ${truncate ? 'truncate' : ''} cursor-pointer hover:text-primary`}
-                  ref={(el) => {
-                    if (el && truncate) {
-                      const isOverflowing = el.scrollWidth > el.clientWidth
-                      setIsTextTruncated(isOverflowing)
-                    }
-                  }}
-                  {...copyHandlers}
-                >
-                  {copied ? (
-                    <span className="text-sm text-green-500">Copied!</span>
-                  ) : (
-                    children
-                  )}
-                </Label>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p className="text-sm">Click to copy</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <Label
-              className={`text-sm ${truncate ? 'truncate' : ''}`}
-              ref={(el) => {
-                if (el && truncate) {
-                  const isOverflowing = el.scrollWidth > el.clientWidth
-                  setIsTextTruncated(isOverflowing)
-                }
-              }}
-            >
-              {children}
-            </Label>
-          )}
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className={baseClassName}>{content}</div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p className="max-w-[300px] break-words text-sm">{children}</p>
+          </TooltipContent>
+        </Tooltip>
       </TooltipProvider>
     )
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div
-            className={`text-sm truncate p-2 ${className || ''}`}
-            style={style}
-          >
-            <span
-              className={copyValue ? 'cursor-pointer hover:text-primary' : ''}
-              {...copyHandlers}
-            >
-              {copied ? (
-                <span className="text-sm text-green-500">Copied!</span>
-              ) : (
-                children
-              )}
-            </span>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p className="max-w-[300px] break-words text-sm">{children}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className={baseClassName}>
+      {copyValue && showTooltip ? (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Label ref={checkTruncation}>{content}</Label>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="text-sm">Click to copy</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <Label ref={checkTruncation}>{content}</Label>
+      )}
+    </div>
   )
 }

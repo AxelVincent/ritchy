@@ -28,7 +28,7 @@ export const websiteColumn: ColumnDef<SearchResult> = {
 
     return (
       <div className="flex items-center gap-1">
-        <TextWrapper truncate={true} width="150px">
+        <TextWrapper truncate={true}>
           <a href={website} target="_blank" rel="noopener noreferrer">
             {getDomainFromUrl(website)}
           </a>

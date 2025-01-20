@@ -34,7 +34,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
     }
 
     return (
-      <TextWrapper width="100%">
+      <TextWrapper>
         <Dialog>
           <DialogTrigger asChild>
             <Button

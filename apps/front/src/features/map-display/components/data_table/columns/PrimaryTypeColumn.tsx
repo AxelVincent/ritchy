@@ -15,7 +15,7 @@ export const primaryTypeColumn: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Primary Type" width="250px" />
   ),
   cell: ({ row }) => (
-    <TextWrapper truncate={true} width="250px">
+    <TextWrapper truncate={true}>
       {row.original.primaryType && (
         <Badge variant="secondary">{row.original.primaryType}</Badge>
       )}
