@@ -1,6 +1,5 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { actionsColumn } from './columns/ActionsColumn'
 import {
   addressComponentsColumn,
   administrativeAreaLevel1Column,
@@ -60,5 +59,5 @@ export const columns: ColumnDef<SearchResult>[] = [
   administrativeAreaLevel3Column,
   descriptionColumn,
   addressComponentsColumn,
-  actionsColumn,
+  // actionsColumn,
 ]

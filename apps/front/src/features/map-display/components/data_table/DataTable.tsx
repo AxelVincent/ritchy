@@ -39,14 +39,6 @@ interface DataTableProps<TData, TValue> {
   onFilteredDataChange: (ids: Set<string>) => void
 }
 
-const perfMarks = {
-  tableInit: 'data-table-init',
-  virtualInit: 'virtualizer-init',
-  rowModelUpdate: 'row-model-update',
-  filterUpdate: 'filter-update',
-  renderComplete: 'render-complete',
-}
-
 // Add a fixed height for table rows
 const ROW_HEIGHT = '34px'
 
@@ -60,8 +52,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
   listId,
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
-  performance.mark(perfMarks.tableInit)
-
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -129,9 +119,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
       rowSelection: dataTableRowSelection,
     },
   })
-
-  performance.measure('Table Initialization', perfMarks.tableInit)
-  performance.mark(perfMarks.virtualInit)
 
   const tableContainerRef = useRef<HTMLDivElement>(null)
   const rows = table.getRowModel().rows
@@ -229,28 +216,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
   // Add effect to track filtered results
   // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
   useEffect(() => {
-    performance.mark(perfMarks.filterUpdate)
     const filteredIds = new Set(
       table.getFilteredRowModel().rows.map((row) => row.original.id),
     )
     onFilteredDataChange(filteredIds)
-    performance.measure('Filter Update', perfMarks.filterUpdate)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
-
-  // Track row model updates
-  // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
-  useEffect(() => {
-    performance.mark(perfMarks.rowModelUpdate)
-    performance.measure('Row Model Update', perfMarks.rowModelUpdate)
-  }, [table.getRowModel().rows])
-
-  useEffect(() => {
-    return () => {
-      // Cleanup performance marks on unmount
-      performance.clearMarks()
-      performance.clearMeasures()
-    }
-  }, [])
 
   return (
     <div className="flex flex-1 flex-col overflow-auto">
@@ -320,7 +290,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
           height: '100%',
         }}
       >
-        <table style={{ display: 'grid' }} className="border border-border">
+        <table style={{ display: 'grid' }} className="">
           <thead
             style={{
               display: 'grid',
@@ -328,7 +298,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
               top: 0,
               zIndex: 1,
             }}
-            className="bg-background border-b border-border"
+            className="bg-background"
           >
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
@@ -344,7 +314,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     left: 0,
                     zIndex: 2,
                   }}
-                  className="border-r border-border bg-background"
+                  className="border-r border-b border-border bg-background"
                 >
                   {flexRender(
                     headerGroup.headers[0].column.columnDef.header,
@@ -364,9 +334,12 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         display: 'flex',
                         width: header.getSize(),
                       }}
-                      className={cn('border-r border-border', {
-                        'bg-background': vc.index === 0,
-                      })}
+                      className={cn(
+                        'border-r border-b border-border bg-background',
+                        {
+                          'bg-background': vc.index === 0,
+                        },
+                      )}
                     >
                       <div
                         {...{
@@ -414,9 +387,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     height: ROW_HEIGHT,
                   }}
                   className={cn('border-b border-border', {
-                    'bg-muted': row.getIsSelected(),
                     'hover:bg-muted/50': !row.getIsSelected(),
-                    'bg-primary/10': selectedPlaceId === row.original.id,
+                    'bg-muted': selectedPlaceId === row.original.id,
                   })}
                 >
                   <td
@@ -429,9 +401,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       zIndex: 1,
                       alignItems: 'center',
                     }}
-                    className={cn('border-r border-border p-2 bg-background', {
-                      'bg-muted': row.getIsSelected(),
-                      'bg-primary/10': selectedPlaceId === row.original.id,
+                    className={cn('border-r border-border bg-background', {
+                      'hover:bg-muted/50': !row.getIsSelected(),
+                      'bg-muted': selectedPlaceId === row.original.id,
                     })}
                     onClick={(e) => handleRowClick(e, row, true)}
                     onKeyDown={(e) => {
@@ -466,12 +438,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           width: cell.column.getSize(),
                           alignItems: 'center',
                         }}
-                        className={cn('border-r border-border p-2', {
+                        className={cn('border-r border-border', {
+                          'hover:bg-muted/50': !row.getIsSelected(),
                           'bg-background': vc.index === 0,
-                          'bg-muted': vc.index === 0 && row.getIsSelected(),
-                          'bg-primary/10':
-                            vc.index === 0 &&
-                            selectedPlaceId === row.original.id,
+                          'bg-muted': selectedPlaceId === row.original.id,
                         })}
                         onClick={(e) => handleRowClick(e, row, vc.index === 0)}
                         onKeyDown={(e) => {

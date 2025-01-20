@@ -148,8 +148,6 @@ export async function postTextSearchV1(
       } while (nextPageToken && currentSquareQuantity < resultsQuantity)
     }
 
-    console.log('All results: ', allResults.length)
-
     // Track duplicates for logging
     const seenIds = new Set<string>()
     const duplicates = new Set<string>()

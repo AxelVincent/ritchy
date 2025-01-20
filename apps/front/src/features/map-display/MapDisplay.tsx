@@ -95,41 +95,43 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   }
 
   return (
-    <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
-        {!listId && (
-          <PlacesTextSearch
-            location={currentLocation}
-            onResultsChange={setSearchResults}
-            radiusInMeters={radiusInMeters}
-            setRadiusInMeters={setRadiusInMeters}
+    <div className="flex flex-col h-full">
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
+          {!listId && (
+            <PlacesTextSearch
+              location={currentLocation}
+              onResultsChange={setSearchResults}
+              radiusInMeters={radiusInMeters}
+              setRadiusInMeters={setRadiusInMeters}
+            />
+          )}
+          <DataTable
+            columns={columns}
+            data={searchResults}
+            setSelectedPlaceId={setSelectedPlaceId}
+            selectedPlaceId={selectedPlaceId}
+            setDataTableRowSelection={setDataTableRowSelection}
+            dataTableRowSelection={dataTableRowSelection}
+            listId={listId}
+            onFilteredDataChange={setFilteredPlaceIds}
           />
-        )}
-        <DataTable
-          columns={columns}
-          data={searchResults}
-          setSelectedPlaceId={setSelectedPlaceId}
-          selectedPlaceId={selectedPlaceId}
-          setDataTableRowSelection={setDataTableRowSelection}
-          dataTableRowSelection={dataTableRowSelection}
-          listId={listId}
-          onFilteredDataChange={setFilteredPlaceIds}
-        />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel className="flex-1">
-        <MapBox
-          onLocationChange={setLocation}
-          searchResults={searchResults}
-          selectedPlaceId={selectedPlaceId}
-          setSelectedPlaceId={setSelectedPlaceId}
-          userLocation={location}
-          dataTableRowSelection={dataTableRowSelection}
-          radiusInMeters={radiusInMeters}
-          listId={listId}
-          filteredPlaceIds={safeFilteredPlaceIds}
-        />
-      </ResizablePanel>
-    </ResizablePanelGroup>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel className="flex-1">
+          <MapBox
+            onLocationChange={setLocation}
+            searchResults={searchResults}
+            selectedPlaceId={selectedPlaceId}
+            setSelectedPlaceId={setSelectedPlaceId}
+            userLocation={location}
+            dataTableRowSelection={dataTableRowSelection}
+            radiusInMeters={radiusInMeters}
+            listId={listId}
+            filteredPlaceIds={safeFilteredPlaceIds}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   )
 }

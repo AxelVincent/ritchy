@@ -42,9 +42,7 @@ export const DebouncedInput = ({
         {...props}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className={`${props.className || ''} h-8 ${
-          value ? 'pr-8' : ''
-        } placeholder:text-sm`}
+        className={`placeholder:text-xs font-medium ${props.className || ''} h-8 ${value ? 'pr-8' : ''} `}
       />
       {value && (
         <Button

@@ -1,7 +1,6 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
-import { Badge } from '@/components/ui/badge'
 import type { SearchResult } from '@ritchy/types'
-import type { Column, ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
+import { DynamicBadgeList } from '../../shared/DynamicBadgeList'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const formatList = (
@@ -49,22 +48,12 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
     if (!lists?.length) return null
 
     return (
-      <TextWrapper truncate={true} width="200px">
-        {lists.map((list, index) => (
-          <Badge
-            key={list.id}
-            variant="secondary"
-            className={index > 0 ? 'ml-1' : ''}
-          >
-            {list.emoji} {list.name}
-          </Badge>
-        ))}
-      </TextWrapper>
+      <DynamicBadgeList
+        items={lists.map(formatList)}
+        badgeVariant="secondary"
+        containerClassName="w-[200px]"
+        containerPadding={60}
+      />
     )
   },
-}
-
-export const useUniqueValues = (column: Column<SearchResult>) => {
-  const values = column.getFacetedUniqueValues()
-  return Array.from(values.keys()).map(String).sort()
 }

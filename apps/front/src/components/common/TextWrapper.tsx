@@ -49,7 +49,10 @@ export const TextWrapper = ({
   if (!truncate || !isTextTruncated) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className={`flex gap-2 w-full text-sm ${className}`} style={style}>
+        <div
+          className={`flex gap-2 w-full text-sm p-2 ${className}`}
+          style={style}
+        >
           {copyValue ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -76,7 +79,7 @@ export const TextWrapper = ({
             </Tooltip>
           ) : (
             <Label
-              className="text-sm"
+              className={`text-sm ${truncate ? 'truncate' : ''}`}
               ref={(el) => {
                 if (el && truncate) {
                   const isOverflowing = el.scrollWidth > el.clientWidth
@@ -96,7 +99,10 @@ export const TextWrapper = ({
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={`text-sm truncate ${className || ''}`} style={style}>
+          <div
+            className={`text-sm truncate p-2 ${className || ''}`}
+            style={style}
+          >
             <span
               className={copyValue ? 'cursor-pointer hover:text-primary' : ''}
               {...copyHandlers}
