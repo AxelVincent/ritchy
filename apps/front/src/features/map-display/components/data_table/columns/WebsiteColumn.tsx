@@ -27,13 +27,11 @@ export const websiteColumn: ColumnDef<SearchResult> = {
     if (!website) return <TextWrapper>-</TextWrapper>
 
     return (
-      <div className="flex items-center gap-1">
-        <TextWrapper truncate={true}>
-          <a href={website} target="_blank" rel="noopener noreferrer">
-            {getDomainFromUrl(website)}
-          </a>
-        </TextWrapper>
-      </div>
+      <TextWrapper truncate={true}>
+        <a href={website} target="_blank" rel="noopener noreferrer">
+          {getDomainFromUrl(website)}
+        </a>
+      </TextWrapper>
     )
   },
 }
