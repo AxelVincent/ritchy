@@ -129,10 +129,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
   // Column virtualizer
   const columnVirtualizer = useVirtualizer({
     count: visibleColumns.length,
-    estimateSize: (index) => visibleColumns[index].getSize(),
+    estimateSize: (index) => {
+      // First column (checkbox) is typically smaller
+      if (index === 0) return 60
+      // Use actual column size or fallback to default 200
+      return visibleColumns[index].getSize() || 200
+    },
     getScrollElement: () => tableContainerRef.current,
     horizontal: true,
-    overscan: 1,
+    overscan: 2, // Increased for smoother horizontal scrolling
   })
 
   // Row virtualizer

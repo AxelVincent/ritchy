@@ -7,12 +7,12 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const primaryTypeColumn: ColumnDef<SearchResult> = {
   id: 'primaryType',
   accessorKey: 'primaryType',
-  size: 250,
+  size: 200,
   meta: {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="Primary Type" width="250px" />
+    <HeaderWrapper column={column} title="Primary Type" />
   ),
   cell: ({ row, table }) => (
     <ColumnPinCell

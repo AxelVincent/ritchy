@@ -21,7 +21,7 @@ const formatPriceLevel = (level: SearchResult['priceLevel']) => {
 export const priceLevelColumn: ColumnDef<SearchResult> = {
   id: 'priceLevel',
   accessorFn: (row) => formatPriceLevel(row.priceLevel),
-  size: 150,
+  size: 200,
   meta: {
     filterVariant: 'multi-select',
   },

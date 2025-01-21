@@ -12,20 +12,17 @@ import { Filter } from './Filter'
 export const HeaderWrapper = ({
   column,
   title,
-  width,
 }: {
   column: Column<SearchResult>
   title: string
-  width?: string
 }) => {
-  const widthStyle = width ? { width } : { width: '150px' }
   const canSort = column.getCanSort()
 
   return (
-    <div className="flex flex-col gap-2 p-2" style={widthStyle}>
-      <div className="sort-container">
+    <div className="w-full flex flex-col gap-2 p-2">
+      <div className="w-full">
         <Tooltip>
-          <TooltipTrigger asChild>
+          <TooltipTrigger className="w-full">
             <Button
               variant="ghost"
               onClick={(e) => {
@@ -44,10 +41,10 @@ export const HeaderWrapper = ({
                     }
                   : undefined
               }
-              className={`h-8 px-4 py-2 ${!canSort ? 'cursor-default' : ''}`}
+              className={`w-full h-8 px-4 py-2 ${!canSort ? 'cursor-default' : ''}`}
               disabled={!canSort}
             >
-              <div className="flex items-center gap-1">
+              <div className="w-full flex items-center justify-between">
                 <span className="font-medium">{title}</span>
                 {canSort &&
                   (column.getIsSorted() === 'asc' ? (
@@ -80,7 +77,7 @@ export const HeaderWrapper = ({
 
       {column.getCanFilter() && (
         <div
-          className="filter-container"
+          className="w-full filter-container"
           onKeyDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}

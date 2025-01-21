@@ -15,13 +15,11 @@ const getDomainFromUrl = (url: string): string => {
 export const websiteColumn: ColumnDef<SearchResult> = {
   id: 'websiteUri',
   accessorKey: 'websiteUri',
-  size: 170,
+  size: 200,
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Website" width="150px" />
-  ),
+  header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
   cell: ({ row, table }) => {
     const website = row.getValue('websiteUri') as string
     return (

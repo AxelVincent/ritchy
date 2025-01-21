@@ -4,7 +4,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useEffect, useRef, useState } from 'react'
 
 interface DynamicBadgeListProps {
   items: string[]
@@ -20,58 +19,20 @@ export const DynamicBadgeList = ({
   badgeVariant = 'secondary',
   containerClassName = '',
   badgeClassName = '',
-  containerPadding = 60,
-  characterWidth = 4.6,
 }: DynamicBadgeListProps) => {
-  const [visibleBadges, setVisibleBadges] = useState(2)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const calculateVisibleBadges = () => {
-      const container = containerRef.current
-      if (!container) return
-
-      const containerWidth = container.offsetWidth
-      const availableWidth = containerWidth - containerPadding
-
-      let currentWidth = 0
-      let visibleCount = 0
-
-      for (const item of items) {
-        const badgeWidth = item.length * characterWidth + 24 + 8
-
-        if (currentWidth + badgeWidth <= availableWidth) {
-          currentWidth += badgeWidth
-          visibleCount++
-        } else {
-          break
-        }
-      }
-
-      setVisibleBadges(Math.max(1, visibleCount))
-    }
-
-    calculateVisibleBadges()
-    window.addEventListener('resize', calculateVisibleBadges)
-    return () => window.removeEventListener('resize', calculateVisibleBadges)
-  }, [items, characterWidth, containerPadding])
-
-  const remainingCount = items.length - visibleBadges
+  const remainingCount = items.length - 1
 
   return (
-    <div
-      ref={containerRef}
-      className={`flex gap-2 items-center ${containerClassName}`}
-    >
-      {items.slice(0, visibleBadges).map((item) => (
+    <div className={`flex gap-2 items-center ${containerClassName}`}>
+      {items.length > 0 && (
         <Badge
           variant={badgeVariant}
-          key={item}
+          key={items[0]}
           className={`shrink-0 ${badgeClassName}`}
         >
-          {item}
+          {items[0]}
         </Badge>
-      ))}
+      )}
       {remainingCount > 0 && (
         <Popover>
           <PopoverTrigger asChild>
@@ -86,7 +47,7 @@ export const DynamicBadgeList = ({
           </PopoverTrigger>
           <PopoverContent>
             <div className="flex flex-row gap-2 flex-wrap">
-              {items.slice(visibleBadges).map((item) => (
+              {items.slice(1).map((item) => (
                 <Badge variant={badgeVariant} key={item}>
                   {item}
                 </Badge>

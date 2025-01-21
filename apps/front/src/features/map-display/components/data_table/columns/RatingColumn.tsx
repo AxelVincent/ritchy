@@ -7,13 +7,11 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const ratingColumn: ColumnDef<SearchResult> = {
   id: 'rating',
   accessorKey: 'rating',
-  size: 250,
+  size: 200,
   meta: {
     filterVariant: 'range',
   },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Rating" width="250px" />
-  ),
+  header: ({ column }) => <HeaderWrapper column={column} title="Rating" />,
   enableSorting: true,
   sortingFn: 'alphanumeric',
   sortUndefined: -1,

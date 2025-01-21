@@ -7,7 +7,7 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const typesColumn: ColumnDef<SearchResult> = {
   id: 'types',
   accessorKey: 'types',
-  size: 350,
+  size: 200,
   enableColumnFilter: true,
   meta: {
     filterVariant: 'multi-select',
@@ -17,9 +17,7 @@ export const typesColumn: ColumnDef<SearchResult> = {
     const rowTypes = row.getValue(id) as string[]
     return filterValue.some((filter) => rowTypes.includes(filter))
   },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Types" width="350px" />
-  ),
+  header: ({ column }) => <HeaderWrapper column={column} title="Types" />,
   cell: ({ row, table }) => {
     const types = row.original.types
 

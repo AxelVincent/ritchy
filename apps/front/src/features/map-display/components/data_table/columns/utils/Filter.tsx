@@ -199,7 +199,7 @@ export function Filter({
                           : ''
                       }`}
                       className={cn(
-                        'w-full min-w-[100px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+                        'w-full min-w-[60px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
                         isInvalid && 'border-red-500',
                       )}
                     />
@@ -240,7 +240,7 @@ export function Filter({
                         ? `(${column.getFacetedMinMaxValues()?.[1]})`
                         : ''
                     }`}
-                    className="w-full min-w-[100px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    className="w-full min-w-[60px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
                 </div>
               </div>

@@ -20,10 +20,10 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const openingHoursColumn: ColumnDef<SearchResult> = {
   id: 'regularOpeningHours',
   accessorKey: 'regularOpeningHours',
-  size: 170,
+  size: 200,
   enableColumnFilter: false,
   header: ({ column }) => (
-    <HeaderWrapper column={column} title="Opening Hours" width="150px" />
+    <HeaderWrapper column={column} title="Opening Hours" />
   ),
   cell: ({ row, table }) => {
     const regularOpeningHours = row.original.regularOpeningHours

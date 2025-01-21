@@ -6,12 +6,12 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const descriptionColumn: ColumnDef<SearchResult> = {
   id: 'description',
   accessorKey: 'description',
-  size: 250,
+  size: 200,
   meta: {
     filterVariant: 'text',
   },
   header: ({ column }) => {
-    return <HeaderWrapper column={column} title="Description" width="250px" />
+    return <HeaderWrapper column={column} title="Description" />
   },
   cell: ({ row, table }) => {
     return (

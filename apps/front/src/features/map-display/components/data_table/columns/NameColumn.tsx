@@ -12,7 +12,7 @@ export const nameColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => {
-    return <HeaderWrapper column={column} title="Name" width="200px" />
+    return <HeaderWrapper column={column} title="Name" />
   },
   cell: ({ row, table }) => {
     return (

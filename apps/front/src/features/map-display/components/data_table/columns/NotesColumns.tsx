@@ -7,7 +7,7 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 export const notesColumn: ColumnDef<SearchResult> = {
   id: 'notes',
   accessorKey: 'notes',
-  size: 150,
+  size: 200,
   enableColumnFilter: false,
   header: ({ column }) => <HeaderWrapper column={column} title="Notes" />,
   cell: ({ row, table }) => {
