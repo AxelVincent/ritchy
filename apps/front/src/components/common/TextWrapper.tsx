@@ -33,31 +33,29 @@ interface TextWrapperProps {
 
 // Memoized action button component
 const ActionButton = React.memo(
-  ({ action, id }: { action: Action; id: string }) => {
+  ({ action }: { action: Action; id: string }) => {
     const Icon = ICONS[action.icon]
     return (
-      <TooltipProvider key={id} delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation()
-                action.onClick(e)
-              }}
-              className="h-5 w-5 p-2 rounded-sm"
-              size="icon"
-            >
-              <Icon className="text-muted-foreground" />
-            </Button>
-          </TooltipTrigger>
-          {action.label && (
-            <TooltipContent side="bottom">
-              <p className="text-xs">{action.label}</p>
-            </TooltipContent>
-          )}
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation()
+              action.onClick(e)
+            }}
+            className="h-5 w-5 p-2 rounded-sm"
+            size="icon"
+          >
+            <Icon className="text-muted-foreground" />
+          </Button>
+        </TooltipTrigger>
+        {action.label && (
+          <TooltipContent side="bottom">
+            <p className="text-xs">{action.label}</p>
+          </TooltipContent>
+        )}
+      </Tooltip>
     )
   },
 )
@@ -81,9 +79,9 @@ export const TextWrapper = React.memo(
     }, [children])
 
     return (
-      <div className="group relative w-full h-full flex items-center p-2">
-        {isTextContent ? (
-          <TooltipProvider>
+      <TooltipProvider delayDuration={200}>
+        <div className="group relative w-full h-full flex items-center p-2">
+          {isTextContent ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Label className={cn('flex-1 min-w-0', 'truncate', className)}>
@@ -94,23 +92,25 @@ export const TextWrapper = React.memo(
                 <p className="text-xs">{textContent}</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <Label className={cn('flex-1 min-w-0', className)}>{children}</Label>
-        )}
+          ) : (
+            <Label className={cn('flex-1 min-w-0', className)}>
+              {children}
+            </Label>
+          )}
 
-        {actions.length > 0 && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 bg-background rounded-md p-0.5 border border-border">
-            {actions.map((action) => (
-              <ActionButton
-                key={`${id}-${action.icon}`}
-                action={action}
-                id={id}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {actions.length > 0 && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 bg-background rounded-md p-0.5 border border-border">
+              {actions.map((action) => (
+                <ActionButton
+                  key={`${id}-${action.icon}`}
+                  action={action}
+                  id={id}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </TooltipProvider>
     )
   },
 )
