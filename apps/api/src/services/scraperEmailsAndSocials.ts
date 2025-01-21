@@ -167,7 +167,8 @@ async function scrapeEmailsAndSocials(
     })
 
     // More strict email regex that avoids matching URLs
-    const emailRegex = /(?:[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g
+    const emailRegex =
+      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
     // Helper function to validate email format
     const isValidEmail = (email: string): boolean => {
