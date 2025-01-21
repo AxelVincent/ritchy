@@ -38,7 +38,7 @@ export const searchPlaces = async (
     const userId = req.auth.userId
 
     const model = req.body.model
-    if (model === 'PRO') {
+    if (model === 'PRO' || model === 'EXPLORER') {
       if (
         ![
           // Ryan Staging / Prod
@@ -51,7 +51,7 @@ export const searchPlaces = async (
       ) {
         res.status(403).json({
           error: 'Forbidden',
-          message: 'This feature is only available for PRO users',
+          message: 'This feature is only available for EXPLORER/PRO users',
         })
       }
     }

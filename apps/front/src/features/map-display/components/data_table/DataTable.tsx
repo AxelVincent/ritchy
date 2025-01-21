@@ -137,7 +137,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     },
     getScrollElement: () => tableContainerRef.current,
     horizontal: true,
-    overscan: 2, // Increased for smoother horizontal scrolling
+    overscan: 5, // Increased for smoother horizontal scrolling
   })
 
   // Row virtualizer
