@@ -39,6 +39,9 @@ export const getLists = async (
       event: 'get_lists_error',
       metadata: { error },
     })
-    res.status(500).json({ error: 'Failed to fetch lists' })
+    res.status(500).json({
+      error: 'Failed to fetch lists',
+      message: 'Failed to fetch lists',
+    })
   }
 }

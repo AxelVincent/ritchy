@@ -1,18 +1,17 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
 import type { Place } from '@ritchy/types'
-import NodeCache from 'node-cache'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 
-import { mapToPlaceDetails } from './mapper'
+import { REDIS_KEYS } from '../../lib/redis/keys'
+import { redisClient } from '../../lib/redis/redis'
 import {
   ADVANCED_PLACE_KEYS_PLACE_DETAILS,
   type AdvancedPlace,
   AdvancedPlaceSchema,
 } from './types'
-
-// Initialize cache with 1 week TTL (in seconds)
-const placeCache = new NodeCache({ stdTTL: 7 * 24 * 60 * 60 })
+import { mapToPlaceDetails } from './utils/mapper'
+import { placesApiQueue } from './utils/places_api_queue'
 
 async function fetchPlaceDetails(placeId: string): Promise<AdvancedPlace> {
   const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places/${placeId}`)
@@ -40,47 +39,22 @@ async function fetchPlaceDetails(placeId: string): Promise<AdvancedPlace> {
   return response.json()
 }
 
-export async function getPlaceDetailsV1(placeId: string): Promise<Place> {
-  try {
-    // Check cache first
-    const cachedPlace = placeCache.get<Place>(placeId)
-    if (cachedPlace) {
-      logger.info({
-        msg: 'Retrieved place details from cache',
-        event: 'google_place_details_cache_hit',
-        metadata: { placeId },
-      })
-      return cachedPlace
-    }
-
-    const data = await fetchPlaceDetails(placeId)
-
-    AdvancedPlaceSchema.parse(data)
-
-    const result = mapToPlaceDetails(data)
-
-    // Store in cache
-    placeCache.set(placeId, result)
-
-    logger.info({
-      msg: 'Google Place Details API request successful',
-      event: 'google_place_details_api_success',
-      metadata: {
-        placeId,
-        resultId: result.id,
-      },
-    })
-
-    return result
-  } catch (error) {
-    logger.error({
-      msg: 'Google Place Details API request failed',
-      event: 'google_place_details_api_failure',
-      metadata: {
-        error,
-        placeId,
-      },
-    })
-    throw error
+export async function getPlaceDetailsV1(
+  placeId: string,
+): Promise<Place & { fromCache: boolean }> {
+  const key = REDIS_KEYS.place(placeId)
+  // Check cache first
+  const cachedPlace = await redisClient.get<Place>(key)
+  if (cachedPlace) {
+    return { ...cachedPlace, fromCache: true }
   }
+
+  const data = await placesApiQueue.addToQueue(async () =>
+    fetchPlaceDetails(placeId),
+  )
+  AdvancedPlaceSchema.parse(data)
+  const result = mapToPlaceDetails(data)
+  await redisClient.set(key, result)
+
+  return { ...result, fromCache: false }
 }

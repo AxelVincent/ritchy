@@ -17,6 +17,7 @@ export const deleteList = async (
     if (Number.isNaN(listId)) {
       res.status(400).json({
         error: 'Invalid list ID',
+        message: 'Invalid list ID',
       })
       return
     }
@@ -33,6 +34,7 @@ export const deleteList = async (
     if (!result.length) {
       res.status(404).json({
         error: 'List not found',
+        message: 'List not found',
       })
       return
     }
@@ -53,6 +55,9 @@ export const deleteList = async (
       event: 'delete_list_error',
       metadata: { error },
     })
-    res.status(500).json({ error: 'Failed to delete list' })
+    res.status(500).json({
+      error: 'Failed to delete list',
+      message: 'Failed to delete list',
+    })
   }
 }

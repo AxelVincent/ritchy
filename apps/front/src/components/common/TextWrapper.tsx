@@ -1,118 +1,119 @@
+import { Button } from '@/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Label } from '@radix-ui/react-dropdown-menu'
-import { useState } from 'react'
+import { cn } from '@/lib/utils'
+import { Label } from '@radix-ui/react-label'
+import { Copy, MapPinned, MessageSquareText, Trash } from 'lucide-react'
+import React from 'react'
+
+// Move ICONS outside component to avoid recreation
+const ICONS = {
+  Copy,
+  MapPinned,
+  Trash,
+  MessageSquareText,
+} as const
+
+export interface Action {
+  icon: keyof typeof ICONS
+  onClick: (e: React.MouseEvent) => void
+  label?: string
+}
 
 interface TextWrapperProps {
   children: React.ReactNode
-  copyValue?: string
-  truncate?: boolean
-  width?: string
   className?: string
+  actions?: Action[]
+  id: string
 }
 
-export const TextWrapper = ({
-  children,
-  copyValue,
-  truncate = true,
-  width,
-  className,
-}: TextWrapperProps) => {
-  const [copied, setCopied] = useState(false)
-  const [isTextTruncated, setIsTextTruncated] = useState(false)
+// Memoized action button component
+const ActionButton = React.memo(
+  ({ action }: { action: Action; id: string }) => {
+    const Icon = ICONS[action.icon]
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation()
+              action.onClick(e)
+            }}
+            className="h-5 w-5 p-2 rounded-sm"
+            size="icon"
+          >
+            <Icon className="text-muted-foreground" />
+          </Button>
+        </TooltipTrigger>
+        {action.label && (
+          <TooltipContent side="bottom">
+            <p className="text-xs">{action.label}</p>
+          </TooltipContent>
+        )}
+      </Tooltip>
+    )
+  },
+)
 
-  const handleCopy = (e?: React.MouseEvent | React.KeyboardEvent) => {
-    if (!copyValue) return
-    e?.stopPropagation()
-    navigator.clipboard.writeText(copyValue)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 500)
-  }
+export const TextWrapper = React.memo(
+  ({ children, className, actions = [], id }: TextWrapperProps) => {
+    // Cache the text content check
+    const { isTextContent, textContent } = React.useMemo(() => {
+      const isText =
+        typeof children === 'string' ||
+        (React.isValidElement(children) &&
+          typeof children.props.children === 'string')
 
-  const style = width ? { width } : { width: '150px' }
-  const copyHandlers = copyValue
-    ? {
-        onClick: (e: React.MouseEvent) => handleCopy(e),
-        onKeyDown: (e: React.KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            handleCopy(e)
-          }
-        },
-      }
-    : {}
+      const content = isText
+        ? typeof children === 'string'
+          ? children
+          : children.props.children
+        : null
 
-  if (!truncate || !isTextTruncated) {
+      return { isTextContent: isText, textContent: content }
+    }, [children])
+
     return (
       <TooltipProvider delayDuration={200}>
-        <div className={`flex gap-2 w-full text-sm ${className}`} style={style}>
-          {copyValue ? (
+        <div className="group relative w-full h-full flex items-center p-2">
+          {isTextContent ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Label
-                  className={`text-sm ${truncate ? 'truncate' : ''} cursor-pointer hover:text-primary`}
-                  ref={(el) => {
-                    if (el && truncate) {
-                      const isOverflowing = el.scrollWidth > el.clientWidth
-                      setIsTextTruncated(isOverflowing)
-                    }
-                  }}
-                  {...copyHandlers}
-                >
-                  {copied ? (
-                    <span className="text-sm text-green-500">Copied!</span>
-                  ) : (
-                    children
-                  )}
+                <Label className={cn('flex-1 min-w-0', 'truncate', className)}>
+                  {children}
                 </Label>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p className="text-sm">Click to copy</p>
+                <p className="text-xs">{textContent}</p>
               </TooltipContent>
             </Tooltip>
           ) : (
-            <Label
-              className="text-sm"
-              ref={(el) => {
-                if (el && truncate) {
-                  const isOverflowing = el.scrollWidth > el.clientWidth
-                  setIsTextTruncated(isOverflowing)
-                }
-              }}
-            >
+            <Label className={cn('flex-1 min-w-0', className)}>
               {children}
             </Label>
+          )}
+
+          {actions.length > 0 && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 bg-background rounded-md p-0.5 border border-border">
+              {actions.map((action) => (
+                <ActionButton
+                  key={`${id}-${action.icon}`}
+                  action={action}
+                  id={id}
+                />
+              ))}
+            </div>
           )}
         </div>
       </TooltipProvider>
     )
-  }
+  },
+)
 
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={`text-sm truncate ${className || ''}`} style={style}>
-            <span
-              className={copyValue ? 'cursor-pointer hover:text-primary' : ''}
-              {...copyHandlers}
-            >
-              {copied ? (
-                <span className="text-sm text-green-500">Copied!</span>
-              ) : (
-                children
-              )}
-            </span>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p className="max-w-[300px] break-words text-sm">{children}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )
-}
+TextWrapper.displayName = 'TextWrapper'
+ActionButton.displayName = 'ActionButton'

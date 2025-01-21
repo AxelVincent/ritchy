@@ -20,14 +20,28 @@ export const createApiClient = ({ baseUrl, headers = {} }: ApiClientConfig) => {
       },
     })
 
+    const data = await response.json()
+
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(
-        `API Error: ${response.status} - ${errorText || response.statusText}`,
-      )
+      // Handle structured API errors
+      if (data && (data.error || data.message || data.details)) {
+        throw {
+          status: response.status,
+          error: data.error,
+          message: data.message || data.error,
+          details: data.details,
+        }
+      }
+
+      // Fallback for unstructured errors
+      throw {
+        status: response.status,
+        error: 'ApiError',
+        message: response.statusText,
+      }
     }
 
-    return response.json()
+    return data
   }
 
   return { fetchWithAuth }

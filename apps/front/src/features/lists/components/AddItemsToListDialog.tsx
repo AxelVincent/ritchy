@@ -6,8 +6,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useLists } from '@/features/MapDisplay/hooks/useLists'
 import { CreateListForm } from '@/features/lists/components/create-list-form'
+import { useLists } from '@/features/map-display/hooks/useLists'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 

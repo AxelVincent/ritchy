@@ -1,13 +1,13 @@
 import { logger } from '@ritchy/logger'
-import type { ListContentApiResponse } from '@ritchy/types'
-import { sql } from 'drizzle-orm'
+import type { ListContentApiResponse, Place } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
 import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
-import { findListAssociationsForPlaces } from '../../services/lists/findListAssociationsForPlaces'
+import { getListAssociationsByPlaceIds } from '../../services/lists/getListAssociationsByPlaceIds'
+import { getNotesByPlaceIds } from '../../services/notes/getNotesByPlaceIds'
 
 export const getListContent = async (
   req: Request<{ id: string }>,
@@ -40,15 +40,53 @@ export const getListContent = async (
       .from(listPlace)
       .where(eq(listPlace.listId, listId))
 
-    const placeDetails = await Promise.all(
-      places.map((place) => getPlaceDetailsV1(place.placeId)),
+    // Get place details with rate limiting
+    const placeDetailsResults = await Promise.allSettled(
+      places.map(async (place) => getPlaceDetailsV1(place.placeId)),
     )
 
-    const associations = await findListAssociationsForPlaces(
-      places.map((place) => place.placeId),
+    // Analyze results
+    const cacheHits = placeDetailsResults.filter(
+      (result) => result.status === 'fulfilled' && result.value.fromCache,
+    ).length
+    const cacheMisses = placeDetailsResults.filter(
+      (result) => result.status === 'fulfilled' && !result.value.fromCache,
+    ).length
+    const errors = placeDetailsResults.filter(
+      (result) => result.status === 'rejected',
+    ).length
+
+    logger.info({
+      msg: 'Place details retrieval summary',
+      event: 'place_details_summary',
+      metadata: {
+        totalPlaces: places.length,
+        cacheHits,
+        cacheMisses,
+        errors,
+        listId,
+      },
+    })
+
+    const placeDetails = placeDetailsResults
+      .filter(
+        (
+          result,
+        ): result is PromiseFulfilledResult<Place & { fromCache: boolean }> =>
+          result.status === 'fulfilled',
+      )
+      .map((result) => {
+        const { fromCache, ...place } = result.value
+        return place
+      })
+
+    const placeIds = places.map((place) => place.placeId)
+    const associations = await getListAssociationsByPlaceIds(
+      placeIds,
       userId,
       listId,
     )
+    const notes = await getNotesByPlaceIds(placeIds, userId)
 
     res.json({
       id: String(result[0].id),
@@ -57,6 +95,7 @@ export const getListContent = async (
       items: placeDetails.map((place) => ({
         ...place,
         associatedLists: associations.get(place.id),
+        notes: notes.get(place.id),
       })),
       createdAt: result[0].createdAt.toISOString(),
       updatedAt: result[0].updatedAt.toISOString(),
@@ -70,6 +109,7 @@ export const getListContent = async (
       })
       res.status(400).json({
         error: 'Invalid request data',
+        message: 'Invalid request data',
         details: error.errors,
       })
       return
@@ -80,6 +120,9 @@ export const getListContent = async (
       event: 'get_list_content_error',
       metadata: { error },
     })
-    res.status(500).json({ error: 'Failed to get list content' })
+    res.status(500).json({
+      error: 'Failed to get list content',
+      message: 'Failed to get list content',
+    })
   }
 }

@@ -34,3 +34,12 @@ export const listPlace = pgTable(
     ),
   }),
 )
+
+export const note = pgTable('note', {
+  id: serial('id').primaryKey(),
+  placeId: text('place_id').notNull(),
+  userId: text('user_id').notNull(),
+  note: text('note').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})

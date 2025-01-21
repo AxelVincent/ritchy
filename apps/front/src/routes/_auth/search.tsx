@@ -1,4 +1,4 @@
-import { MapDisplay } from '@/features/MapDisplay/MapDisplay'
+import { MapDisplay } from '@/features/map-display/MapDisplay'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_auth/search')({

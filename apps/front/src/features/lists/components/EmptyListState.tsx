@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { useLists } from '@/features/MapDisplay/hooks/useLists'
+import { useLists } from '@/features/map-display/hooks/useLists'
 import { useNavigate } from '@tanstack/react-router'
 
 interface EmptyListStateProps {

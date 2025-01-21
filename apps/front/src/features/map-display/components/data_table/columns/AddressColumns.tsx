@@ -1,0 +1,274 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import type { SearchResult } from '@ritchy/types'
+import type { ColumnDef } from '@tanstack/react-table'
+import { ColumnPinCopyCell } from './utils/ColumnCells'
+import { HeaderWrapper } from './utils/HeaderWrapper'
+
+export const formattedAddressColumn: ColumnDef<SearchResult> = {
+  id: 'formattedAddress',
+  accessorKey: 'address.formattedAddress',
+  size: 200,
+  meta: {
+    filterVariant: 'text',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="Address" />,
+  enableSorting: false,
+  cell: ({ row, table }) => {
+    const address = row.original.address.formattedAddress
+    if (!address) return null
+
+    return <ColumnPinCopyCell row={row} table={table} content={address} />
+  },
+}
+
+export const countryColumn: ColumnDef<SearchResult> = {
+  id: 'country',
+  accessorKey: 'address.country',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="Country" />,
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.country}
+    />
+  ),
+}
+
+export const localityColumn: ColumnDef<SearchResult> = {
+  id: 'locality',
+  accessorKey: 'address.locality',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="City" />,
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.locality}
+    />
+  ),
+}
+
+export const sublocalityColumn: ColumnDef<SearchResult> = {
+  id: 'sublocality',
+  accessorKey: 'address.sublocality',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="Sublocality" />,
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.sublocality}
+    />
+  ),
+}
+
+export const postalCodeColumn: ColumnDef<SearchResult> = {
+  id: 'postalCode',
+  accessorKey: 'address.postalCode',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="Postal Code" />,
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.postalCode}
+    />
+  ),
+}
+
+export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
+  id: 'postalCodeSuffix',
+  accessorKey: 'address.postalCodeSuffix',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Postal Code Suffix" />
+  ),
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.postalCodeSuffix}
+    />
+  ),
+}
+
+export const plusCodeColumn: ColumnDef<SearchResult> = {
+  id: 'plusCode',
+  accessorKey: 'address.plusCode',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="Plus Code" />,
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.plusCode}
+    />
+  ),
+}
+
+export const streetColumn: ColumnDef<SearchResult> = {
+  id: 'street',
+  accessorKey: 'address.street',
+  size: 200,
+  meta: {
+    filterVariant: 'text',
+  },
+  header: ({ column }) => <HeaderWrapper column={column} title="Street" />,
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.street}
+    />
+  ),
+}
+
+export const neighborhoodColumn: ColumnDef<SearchResult> = {
+  id: 'neighborhood',
+  accessorKey: 'address.neighborhood',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Neighborhood" />
+  ),
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.neighborhood}
+    />
+  ),
+}
+
+export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
+  id: 'administrativeAreaLevel1',
+  accessorKey: 'address.administrativeAreaLevel1',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Administ. Area Level 1" />
+  ),
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.administrativeAreaLevel1}
+    />
+  ),
+}
+
+export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
+  id: 'administrativeAreaLevel2',
+  accessorKey: 'address.administrativeAreaLevel2',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Administ. Area Level 2" />
+  ),
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.administrativeAreaLevel2}
+    />
+  ),
+}
+
+export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
+  id: 'administrativeAreaLevel3',
+  accessorKey: 'address.administrativeAreaLevel3',
+  size: 200,
+  meta: {
+    filterVariant: 'multi-select',
+  },
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Administ. Area Level 3" />
+  ),
+  cell: ({ row, table }) => (
+    <ColumnPinCopyCell
+      row={row}
+      table={table}
+      content={row.original.address.administrativeAreaLevel3}
+    />
+  ),
+}
+
+export const addressComponentsColumn: ColumnDef<SearchResult> = {
+  id: 'addressComponents',
+  accessorKey: 'address.addressComponents',
+  size: 200,
+  enableSorting: false,
+  enableColumnFilter: false,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Address Components" />
+  ),
+  cell: ({ row }) => {
+    const components = row.original.addressComponents
+    if (!components?.length) return null
+
+    return (
+      <TextWrapper id={row.original.id} actions={[]}>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              {`${components.length} components`}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Address Components</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              {components.map((component) => (
+                <div
+                  key={component.longText}
+                  className="flex items-center justify-between border-b pb-2"
+                >
+                  <span className="text-sm font-medium">
+                    {component.longText}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {component.types?.join(', ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </TextWrapper>
+    )
+  },
+}
