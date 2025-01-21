@@ -76,6 +76,8 @@ export function Filter({
           <TooltipTrigger asChild>
             <div
               className="space-y-1.5 sm:space-y-2"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
             >
@@ -172,6 +174,8 @@ export function Filter({
           <TooltipTrigger asChild>
             <div
               className="space-y-1.5 sm:space-y-2"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
             >
@@ -202,7 +206,10 @@ export function Filter({
                     {hasValue && (
                       <Button
                         variant="ghost"
-                        onClick={() => column.setFilterValue(undefined)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          column.setFilterValue(undefined)
+                        }}
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center bg-white"
                         size="icon"
                       >
@@ -269,7 +276,10 @@ export function Filter({
         {columnFilterValue !== undefined && columnFilterValue !== '' && (
           <Button
             variant="ghost"
-            onClick={() => column.setFilterValue(undefined)}
+            onClick={(e) => {
+              e.stopPropagation()
+              column.setFilterValue(undefined)
+            }}
             className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center bg-white"
             size="icon"
           >
@@ -294,7 +304,10 @@ export function Filter({
         {columnFilterValue !== undefined && columnFilterValue !== '' && (
           <Button
             variant="ghost"
-            onClick={() => column.setFilterValue(undefined)}
+            onClick={(e) => {
+              e.stopPropagation()
+              column.setFilterValue(undefined)
+            }}
             className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center bg-white"
             size="icon"
           >
