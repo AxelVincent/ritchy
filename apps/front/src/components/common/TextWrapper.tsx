@@ -1,105 +1,136 @@
+import { Button } from '@/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Label } from '@radix-ui/react-dropdown-menu'
-import { useState } from 'react'
+import { cn } from '@/lib/utils'
+import { Label } from '@radix-ui/react-label'
+import { Copy, MapPinned, MessageSquareText, Trash } from 'lucide-react'
+import React, { useEffect } from 'react'
+
+// Create a map of allowed icons
+const ICONS = {
+  Copy,
+  MapPinned,
+  Trash,
+  MessageSquareText,
+} as const
+
+interface Action {
+  icon: keyof typeof ICONS
+  onClick: (e: React.MouseEvent) => void
+  label?: string
+}
 
 interface TextWrapperProps {
   children: React.ReactNode
-  copyValue?: string
-  truncate?: boolean
   className?: string
-  showTooltip?: boolean
+  actions?: Action[]
+  id?: string
 }
 
 export const TextWrapper = ({
   children,
-  copyValue,
-  truncate = true,
   className,
-  showTooltip = true,
+  actions = [],
+  id,
 }: TextWrapperProps) => {
-  const [copied, setCopied] = useState(false)
-  const [isTextTruncated, setIsTextTruncated] = useState(false)
+  const labelRef = React.useRef<HTMLLabelElement>(null)
+  const [isTruncated, setIsTruncated] = React.useState(false)
+  const [isTextContent, setIsTextContent] = React.useState(false)
 
-  const handleCopy = (e?: React.MouseEvent | React.KeyboardEvent) => {
-    if (!copyValue) return
-    e?.stopPropagation()
-    navigator.clipboard.writeText(copyValue)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 500)
-  }
-
-  const copyHandlers = copyValue
-    ? {
-        onClick: (e: React.MouseEvent) => handleCopy(e),
-        onKeyDown: (e: React.KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            handleCopy(e)
-          }
-        },
-      }
-    : {}
-
-  const content = (
-    <span
-      className={copyValue ? 'cursor-pointer hover:text-primary' : ''}
-      {...copyHandlers}
-    >
-      {copied ? (
-        <span className="text-sm text-green-500">Copied!</span>
-      ) : (
-        children
-      )}
-    </span>
-  )
-
-  const shouldShowFullTooltip = truncate && isTextTruncated && showTooltip
-  const baseClassName = `w-full text-sm p-2 ${className || ''} ${
-    truncate ? 'truncate' : ''
-  }`
-
-  const checkTruncation = (el: HTMLElement | null) => {
-    if (el && truncate) {
-      const isOverflowing = el.scrollWidth > el.clientWidth
-      setIsTextTruncated(isOverflowing)
+  // Check if children contains text content
+  useEffect(() => {
+    if (labelRef.current) {
+      const hasTextContent =
+        typeof children === 'string' ||
+        (React.isValidElement(children) &&
+          typeof children.props.children === 'string')
+      setIsTextContent(hasTextContent)
     }
-  }
+  }, [children])
 
-  if (shouldShowFullTooltip) {
-    return (
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className={baseClassName}>{content}</div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p className="max-w-[300px] break-words text-sm">{children}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    )
-  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    const checkTruncation = () => {
+      if (labelRef.current && isTextContent) {
+        setIsTruncated(
+          labelRef.current.scrollWidth > labelRef.current.clientWidth,
+        )
+      }
+    }
+
+    checkTruncation()
+    window.addEventListener('resize', checkTruncation)
+    return () => window.removeEventListener('resize', checkTruncation)
+  }, [children, isTextContent])
 
   return (
-    <div className={baseClassName}>
-      {copyValue && showTooltip ? (
-        <TooltipProvider delayDuration={200}>
+    <div className="group relative w-full h-full flex items-center p-2">
+      {isTruncated && isTextContent ? (
+        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Label ref={checkTruncation}>{content}</Label>
+              <Label
+                ref={labelRef}
+                className={cn(
+                  'flex-1 min-w-0',
+                  isTextContent && 'truncate',
+                  className,
+                )}
+              >
+                {children}
+              </Label>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p className="text-sm">Click to copy</p>
+              <p className="text-xs">{children}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       ) : (
-        <Label ref={checkTruncation}>{content}</Label>
+        <Label
+          ref={labelRef}
+          className={cn(
+            'flex-1 min-w-0',
+            isTextContent && 'truncate',
+            className,
+          )}
+        >
+          {children}
+        </Label>
+      )}
+      {actions.length > 0 && (
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 bg-background rounded-md p-0.5 border border-border">
+          {actions.map((action) => {
+            const Icon = ICONS[action.icon]
+            return (
+              <TooltipProvider key={id} delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        action.onClick(e)
+                      }}
+                      className="h-5 w-5 p-2 rounded-sm"
+                      size="icon"
+                    >
+                      <Icon className="text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  {action.label && (
+                    <TooltipContent side="bottom">
+                      <p className="text-xs">{action.label}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            )
+          })}
+        </div>
       )}
     </div>
   )

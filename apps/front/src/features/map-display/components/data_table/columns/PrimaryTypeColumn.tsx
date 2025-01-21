@@ -14,8 +14,19 @@ export const primaryTypeColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Primary Type" width="250px" />
   ),
-  cell: ({ row }) => (
-    <TextWrapper truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      id={row.original.id}
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+      ]}
+    >
       {row.original.primaryType && (
         <Badge variant="secondary">{row.original.primaryType}</Badge>
       )}

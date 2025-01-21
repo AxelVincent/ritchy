@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { toast } from '@/hooks/use-toast'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { HeaderWrapper } from './utils/HeaderWrapper'
@@ -22,12 +23,33 @@ export const formattedAddressColumn: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Address" width="150px" />
   ),
   enableSorting: false,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const address = row.original.address.formattedAddress
     if (!address) return null
 
     return (
-      <TextWrapper copyValue={address} truncate={true}>
+      <TextWrapper
+        actions={[
+          {
+            icon: 'MapPinned',
+            onClick: () => {
+              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+            },
+            label: 'Pin to map',
+          },
+          {
+            icon: 'Copy',
+            onClick: () => {
+              navigator.clipboard.writeText(row.original.displayName)
+              toast({
+                title: row.original.displayName,
+                description: 'Copied to clipboard',
+              })
+            },
+            label: 'Copy',
+          },
+        ]}
+      >
         {address}
       </TextWrapper>
     )
@@ -42,8 +64,29 @@ export const countryColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Country" />,
-  cell: ({ row }) => (
-    <TextWrapper copyValue={row.original.address.country} truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
+    >
       {row.original.address.country}
     </TextWrapper>
   ),
@@ -57,8 +100,29 @@ export const localityColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="City" />,
-  cell: ({ row }) => (
-    <TextWrapper copyValue={row.original.address.locality} truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
+    >
       {row.original.address.locality}
     </TextWrapper>
   ),
@@ -72,8 +136,29 @@ export const sublocalityColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Sublocality" />,
-  cell: ({ row }) => (
-    <TextWrapper copyValue={row.original.address.sublocality} truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
+    >
       {row.original.address.sublocality}
     </TextWrapper>
   ),
@@ -87,8 +172,29 @@ export const postalCodeColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Postal Code" />,
-  cell: ({ row }) => (
-    <TextWrapper copyValue={row.original.address.postalCode} truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
+    >
       {row.original.address.postalCode}
     </TextWrapper>
   ),
@@ -104,10 +210,28 @@ export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Postal Code Suffix" />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <TextWrapper
-      copyValue={row.original.address.postalCodeSuffix}
-      truncate={true}
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
     >
       {row.original.address.postalCodeSuffix}
     </TextWrapper>
@@ -122,8 +246,29 @@ export const plusCodeColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Plus Code" />,
-  cell: ({ row }) => (
-    <TextWrapper copyValue={row.original.address.plusCode} truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
+    >
       {row.original.address.plusCode}
     </TextWrapper>
   ),
@@ -137,8 +282,29 @@ export const streetColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Street" />,
-  cell: ({ row }) => (
-    <TextWrapper copyValue={row.original.address.street} truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
+    >
       {row.original.address.street}
     </TextWrapper>
   ),
@@ -154,8 +320,29 @@ export const neighborhoodColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Neighborhood" />
   ),
-  cell: ({ row }) => (
-    <TextWrapper copyValue={row.original.address.neighborhood} truncate={true}>
+  cell: ({ row, table }) => (
+    <TextWrapper
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
+    >
       {row.original.address.neighborhood}
     </TextWrapper>
   ),
@@ -175,10 +362,28 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
       width="250px"
     />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <TextWrapper
-      copyValue={row.original.address.administrativeAreaLevel1}
-      truncate={true}
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
     >
       {row.original.address.administrativeAreaLevel1}
     </TextWrapper>
@@ -199,10 +404,28 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
       width="250px"
     />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <TextWrapper
-      copyValue={row.original.address.administrativeAreaLevel2}
-      truncate={true}
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
     >
       {row.original.address.administrativeAreaLevel2}
     </TextWrapper>
@@ -223,10 +446,28 @@ export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
       width="250px"
     />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <TextWrapper
-      copyValue={row.original.address.administrativeAreaLevel3}
-      truncate={true}
+      actions={[
+        {
+          icon: 'MapPinned',
+          onClick: () => {
+            table.options.meta?.setSelectedPlaceId?.(row.original.id)
+          },
+          label: 'Pin to map',
+        },
+        {
+          icon: 'Copy',
+          onClick: () => {
+            navigator.clipboard.writeText(row.original.displayName)
+            toast({
+              title: row.original.displayName,
+              description: 'Copied to clipboard',
+            })
+          },
+          label: 'Copy',
+        },
+      ]}
     >
       {row.original.address.administrativeAreaLevel3}
     </TextWrapper>
@@ -242,38 +483,61 @@ export const addressComponentsColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Address Components" width="250px" />
   ),
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const components = row.original.addressComponents
     if (!components?.length) return null
 
     return (
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            {`${components.length} components`}
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Address Components</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            {components.map((component) => (
-              <div
-                key={component.longText}
-                className="flex items-center justify-between border-b pb-2"
-              >
-                <span className="text-sm font-medium">
-                  {component.longText}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {component.types?.join(', ')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TextWrapper
+        actions={[
+          {
+            icon: 'MapPinned',
+            onClick: () => {
+              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+            },
+            label: 'Pin to map',
+          },
+          {
+            icon: 'Copy',
+            onClick: () => {
+              navigator.clipboard.writeText(row.original.displayName)
+              toast({
+                title: row.original.displayName,
+                description: 'Copied to clipboard',
+              })
+            },
+            label: 'Copy',
+          },
+        ]}
+      >
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              {`${components.length} components`}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Address Components</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              {components.map((component) => (
+                <div
+                  key={component.longText}
+                  className="flex items-center justify-between border-b pb-2"
+                >
+                  <span className="text-sm font-medium">
+                    {component.longText}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {component.types?.join(', ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </TextWrapper>
     )
   },
 }

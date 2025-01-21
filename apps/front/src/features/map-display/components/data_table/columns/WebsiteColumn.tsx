@@ -22,15 +22,34 @@ export const websiteColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Website" width="150px" />
   ),
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const website = row.getValue('websiteUri') as string
-    if (!website) return <TextWrapper>-</TextWrapper>
-
     return (
-      <TextWrapper truncate={true}>
-        <a href={website} target="_blank" rel="noopener noreferrer">
-          {getDomainFromUrl(website)}
-        </a>
+      <TextWrapper
+        actions={[
+          {
+            icon: 'MapPinned',
+            onClick: () => {
+              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+            },
+            label: 'Pin to map',
+          },
+          {
+            icon: 'Copy',
+            onClick: () => {
+              navigator.clipboard.writeText(row.original.displayName)
+            },
+            label: 'Copy',
+          },
+        ]}
+      >
+        {website ? (
+          <a href={website} target="_blank" rel="noopener noreferrer">
+            {getDomainFromUrl(website)}
+          </a>
+        ) : (
+          '-'
+        )}
       </TextWrapper>
     )
   },

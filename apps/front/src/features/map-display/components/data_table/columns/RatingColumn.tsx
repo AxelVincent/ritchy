@@ -18,11 +18,22 @@ export const ratingColumn: ColumnDef<SearchResult> = {
   sortingFn: 'alphanumeric',
   sortUndefined: -1,
   sortDescFirst: true,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const rating = row.original.rating
 
     return (
-      <TextWrapper>
+      <TextWrapper
+        id={row.original.id}
+        actions={[
+          {
+            icon: 'MapPinned',
+            onClick: () => {
+              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+            },
+            label: 'Pin to map',
+          },
+        ]}
+      >
         {rating ? (
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />

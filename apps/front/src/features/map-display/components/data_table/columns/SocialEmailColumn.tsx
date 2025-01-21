@@ -130,13 +130,24 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Socials & Emails" />
   ),
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const website = row.original.websiteUri
     const enrichQuery = useEnrichWebsite(website)
 
     if (enrichQuery.isLoading) {
       return (
-        <TextWrapper>
+        <TextWrapper
+          id={row.original.id}
+          actions={[
+            {
+              icon: 'MapPinned',
+              onClick: () => {
+                table.options.meta?.setSelectedPlaceId?.(row.original.id)
+              },
+              label: 'Pin to map',
+            },
+          ]}
+        >
           <Button variant="outline" size="sm" disabled className="w-32">
             Loading...
           </Button>
@@ -146,7 +157,18 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
 
     if (!enrichQuery.data && !enrichQuery.isError) {
       return (
-        <TextWrapper>
+        <TextWrapper
+          id={row.original.id}
+          actions={[
+            {
+              icon: 'MapPinned',
+              onClick: () => {
+                table.options.meta?.setSelectedPlaceId?.(row.original.id)
+              },
+              label: 'Pin to map',
+            },
+          ]}
+        >
           {!website ? (
             <></>
           ) : (
@@ -202,7 +224,18 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
         Object.values(socialLinks).reduce((sum, urls) => sum + urls.length, 0)
 
       return (
-        <TextWrapper>
+        <TextWrapper
+          id={row.original.id}
+          actions={[
+            {
+              icon: 'MapPinned',
+              onClick: () => {
+                table.options.meta?.setSelectedPlaceId?.(row.original.id)
+              },
+              label: 'Pin to map',
+            },
+          ]}
+        >
           <Dialog>
             <DialogTrigger asChild>
               <Button

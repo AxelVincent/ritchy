@@ -7,7 +7,6 @@ import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
   type ColumnFiltersState,
-  type Row,
   type RowSelectionState,
   type SortingState,
   type VisibilityState,
@@ -118,6 +117,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
       columnVisibility,
       rowSelection: dataTableRowSelection,
     },
+    meta: {
+      setSelectedPlaceId,
+    },
   })
 
   const tableContainerRef = useRef<HTMLDivElement>(null)
@@ -162,33 +164,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
   // Get the selected rows data
   const selectedRows = table.getSelectedRowModel().rows
-
-  const handleRowInteraction = (row: Row<TData>) => {
-    if (selectedPlaceId === row.original.id) {
-      setSelectedPlaceId(null)
-    } else {
-      setSelectedPlaceId(row.original.id)
-    }
-  }
-
-  const handleRowClick = (
-    e: React.MouseEvent,
-    row: Row<TData>,
-    isFirstColumn: boolean,
-  ) => {
-    // Return early if it's the first column or if the click is on an interactive element
-    if (
-      isFirstColumn ||
-      (e.target instanceof Element &&
-        (e.target.closest('button') ||
-          e.target.closest('a') ||
-          e.target.closest('[role="button"]')))
-    ) {
-      return
-    }
-
-    handleRowInteraction(row)
-  }
 
   // Add this effect to handle scrolling
   useEffect(() => {
@@ -402,17 +377,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       'bg-primary-foreground':
                         selectedPlaceId === row.original.id,
                     })}
-                    onClick={(e) => handleRowClick(e, row, true)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        handleRowClick(
-                          e as unknown as React.MouseEvent,
-                          row,
-                          true,
-                        )
-                      }
-                    }}
                   >
                     {flexRender(
                       visibleCells[0].column.columnDef.cell,
@@ -440,13 +404,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           'bg-primary-foreground':
                             selectedPlaceId === row.original.id,
                         })}
-                        onClick={(e) => handleRowClick(e, row, vc.index === 0)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault()
-                            handleRowInteraction(row)
-                          }
-                        }}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,

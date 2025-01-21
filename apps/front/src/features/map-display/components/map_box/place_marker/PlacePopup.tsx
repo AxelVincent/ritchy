@@ -32,50 +32,64 @@ interface PlacePopupProps {
 const PlaceInfoTab = ({ place }: { place: Place }) => (
   <div className="h-full flex flex-col">
     {/* Scrollable content area */}
-    <div className="flex-1 overflow-y-auto">
-      <div className="flex flex-col gap-3">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      <div className="flex flex-col w-[260px]">
         {/* Address */}
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3 min-w-0 ">
           <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
-          <div className="space-y-1">
-            <TextWrapper
-              copyValue={
-                place.address?.formattedAddress ?? 'Address not available'
-              }
-              truncate={true}
-            >
-              {place.address?.formattedAddress ?? 'Address not available'}
-            </TextWrapper>
-            {place.address?.neighborhood && (
-              <TextWrapper className="text-sm text-muted-foreground">
-                {place.address.neighborhood}
-              </TextWrapper>
-            )}
-          </div>
+          <TextWrapper
+            actions={[
+              {
+                icon: 'Copy',
+                onClick: () => {
+                  navigator.clipboard.writeText(
+                    place.address?.formattedAddress ?? '',
+                  )
+                },
+                label: 'Copy',
+              },
+            ]}
+          >
+            {place.address?.formattedAddress ?? 'Address not available'}
+          </TextWrapper>
         </div>
 
         {/* Website */}
         {place.websiteUri && (
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <ExternalLink className="h-5 w-5 text-muted-foreground shrink-0" />
-            <a
-              href={place.websiteUri}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline"
+            <TextWrapper
+              actions={[
+                {
+                  icon: 'Copy',
+                  onClick: () => {
+                    navigator.clipboard.writeText(place.websiteUri)
+                  },
+                  label: 'Copy',
+                },
+              ]}
             >
               {new URL(place.websiteUri).hostname}
-            </a>
+            </TextWrapper>
           </div>
         )}
 
         {/* Phone */}
         {place.internationalPhoneNumber && (
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <Phone className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
-              copyValue={place.internationalPhoneNumber}
-              className="text-sm text-blue-600 hover:underline"
+              actions={[
+                {
+                  icon: 'Copy',
+                  onClick: () => {
+                    navigator.clipboard.writeText(
+                      place.address?.formattedAddress ?? '',
+                    )
+                  },
+                  label: 'Copy',
+                },
+              ]}
             >
               {place.internationalPhoneNumber}
             </TextWrapper>
@@ -84,26 +98,30 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
 
         {/* Associated Lists */}
         {place.associatedLists && place.associatedLists.length > 0 && (
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <MapPinPlusInside className="h-5 w-5 text-muted-foreground shrink-0" />
-            <div className="flex flex-wrap gap-2">
-              {place.associatedLists.map((list) => (
-                <Badge key={list.id} variant="secondary">
-                  {list.emoji} {list.name}
-                </Badge>
-              ))}
-            </div>
+            <TextWrapper>
+              <div className="flex flex-wrap gap-2 max-w-[250px]">
+                {place.associatedLists.map((list) => (
+                  <Badge key={list.id} variant="secondary">
+                    {list.emoji} {list.name}
+                  </Badge>
+                ))}
+              </div>
+            </TextWrapper>
           </div>
         )}
 
         {/* Price Level */}
         {place.priceLevel && (
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
-            <span className="text-sm">
-              {PRICE_LEVELS[place.priceLevel]}
-              <span className="text-muted-foreground"> · Price level</span>
-            </span>
+            <TextWrapper>
+              <span className="text-sm">
+                {PRICE_LEVELS[place.priceLevel]}
+                <span className="text-muted-foreground"> · Price level</span>
+              </span>
+            </TextWrapper>
           </div>
         )}
 
@@ -112,8 +130,17 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
           <div className="flex gap-3">
             <Info className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
-              copyValue={place.editorialSummary.text}
-              className="text-sm text-muted-foreground"
+              actions={[
+                {
+                  icon: 'Copy',
+                  onClick: () => {
+                    navigator.clipboard.writeText(
+                      place.editorialSummary?.text || '',
+                    )
+                  },
+                  label: 'Copy',
+                },
+              ]}
             >
               {place.editorialSummary.text}
             </TextWrapper>
@@ -122,30 +149,34 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
 
         {/* Primary Type */}
         {place.primaryType && (
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
-            <Badge variant="outline">{place.primaryType}</Badge>
+            <TextWrapper>
+              <Badge variant="outline">{place.primaryType}</Badge>
+            </TextWrapper>
           </div>
         )}
 
         {/* All Types/Tags */}
         {place.types && place.types.length > 0 && (
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3">
             <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
-            <div className="flex flex-wrap gap-2">
-              {place.types.map((type) => (
-                <Badge key={type} variant="secondary">
-                  {type}
-                </Badge>
-              ))}
-            </div>
+            <TextWrapper>
+              <div className="flex flex-wrap gap-2 max-w-[250px]">
+                {place.types.map((type) => (
+                  <Badge key={type} variant="secondary">
+                    {type}
+                  </Badge>
+                ))}
+              </div>
+            </TextWrapper>
           </div>
         )}
       </div>
     </div>
 
     {/* Fixed action buttons */}
-    <div className="flex flex-col gap-2 pt-4">
+    <div className="flex flex-col gap-2 pt-4 max-w-[320px]">
       <div className="flex gap-2">
         {place.googleMapsUri && (
           <Button className="flex-1" variant="default" asChild>

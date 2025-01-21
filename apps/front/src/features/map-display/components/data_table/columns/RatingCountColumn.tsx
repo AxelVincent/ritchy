@@ -17,11 +17,22 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
   sortingFn: 'alphanumeric',
   sortUndefined: -1,
   sortDescFirst: true,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const count = row.original.userRatingCount
 
     return (
-      <TextWrapper>
+      <TextWrapper
+        id={row.original.id}
+        actions={[
+          {
+            icon: 'MapPinned',
+            onClick: () => {
+              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+            },
+            label: 'Pin to map',
+          },
+        ]}
+      >
         {count ? (
           <span>{count.toLocaleString()} reviews</span>
         ) : (

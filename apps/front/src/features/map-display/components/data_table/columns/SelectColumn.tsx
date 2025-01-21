@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 export const selectColumn: ColumnDef<SearchResult> = {
   id: 'select',
   enableColumnFilter: false,
-  size: 70,
+  size: 65,
   header: ({ table }) => (
     <div className="w-full flex items-center justify-between gap-3 p-2">
       <div className="w-5 text-sm text-muted-foreground text-left">ID</div>

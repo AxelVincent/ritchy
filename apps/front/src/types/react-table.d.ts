@@ -9,6 +9,10 @@ declare module '@tanstack/react-table' {
     getFacetedUniqueValues?: (rows: RowData[]) => string[]
   }
 
+  interface TableMeta {
+    setSelectedPlaceId?: (placeId: string) => void
+  }
+
   interface FilterFns {
     inDateRange?: FilterFn<unknown>
     arrSome?: FilterFn<unknown>

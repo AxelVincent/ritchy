@@ -1,4 +1,5 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
+import { toast } from '@/hooks/use-toast'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { HeaderWrapper } from './utils/HeaderWrapper'
@@ -28,10 +29,32 @@ export const priceRangeColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Price Range" width="200px" />
   ),
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const formattedPrice = formatPriceRange(row.original.priceRange)
     return (
-      <TextWrapper>
+      <TextWrapper
+        id={row.original.id}
+        actions={[
+          {
+            icon: 'MapPinned',
+            onClick: () => {
+              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+            },
+            label: 'Pin to map',
+          },
+          {
+            icon: 'Copy',
+            onClick: () => {
+              navigator.clipboard.writeText(formattedPrice)
+              toast({
+                title: formattedPrice,
+                description: 'Copied to clipboard',
+              })
+            },
+            label: 'Copy',
+          },
+        ]}
+      >
         {formattedPrice === noPriceRange ? null : formattedPrice}
       </TextWrapper>
     )

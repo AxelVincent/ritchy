@@ -1,3 +1,4 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DynamicBadgeList } from '../../shared/DynamicBadgeList'
@@ -43,17 +44,32 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Lists" width="200px" />
   ),
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const lists = row.original.associatedLists
-    if (!lists?.length) return null
 
     return (
-      <DynamicBadgeList
-        items={lists.map(formatList)}
-        badgeVariant="secondary"
-        containerClassName="w-[200px]"
-        containerPadding={60}
-      />
+      <TextWrapper
+        actions={[
+          {
+            icon: 'MapPinned',
+            onClick: () => {
+              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+            },
+            label: 'Pin to map',
+          },
+        ]}
+      >
+        {lists?.length ? (
+          <DynamicBadgeList
+            items={lists.map(formatList)}
+            badgeVariant="secondary"
+            containerClassName="w-[200px]"
+            containerPadding={60}
+          />
+        ) : (
+          ''
+        )}
+      </TextWrapper>
     )
   },
 }
