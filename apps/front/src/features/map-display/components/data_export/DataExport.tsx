@@ -41,7 +41,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
     accessor: (row: SearchResult) => unknown
   }[],
 ) => {
-  const excludedFields = ['utcOffsetMinutes', 'addressComponents']
+  const excludedFields = ['utcOffsetMinutes', 'addressComponents', 'notes']
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
     searchResultSchema.shape,
