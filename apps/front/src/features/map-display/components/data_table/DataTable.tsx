@@ -132,7 +132,12 @@ export const DataTable = <TData extends SearchResult, TValue>({
     estimateSize: (index) => visibleColumns[index].getSize(),
     getScrollElement: () => tableContainerRef.current,
     horizontal: true,
-    overscan: 3,
+    overscan: 5, // Increased overscan for smoother scrolling
+    // Add measureElement for more accurate sizing
+    measureElement:
+      typeof window !== 'undefined'
+        ? (element) => element?.getBoundingClientRect().width
+        : undefined,
   })
 
   // Row virtualizer
