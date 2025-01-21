@@ -49,6 +49,7 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
 
     return (
       <TextWrapper
+        id={row.original.id}
         actions={[
           {
             icon: 'MapPinned',

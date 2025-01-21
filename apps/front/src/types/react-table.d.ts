@@ -11,6 +11,13 @@ declare module '@tanstack/react-table' {
 
   interface TableMeta {
     setSelectedPlaceId?: (placeId: string) => void
+    hoveredRowId?: string | null
+    onCellHover?: (
+      id: string,
+      displayName: string,
+      element: HTMLElement,
+    ) => void
+    onCellLeave?: () => void
   }
 
   interface FilterFns {

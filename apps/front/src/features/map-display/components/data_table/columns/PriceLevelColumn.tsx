@@ -1,7 +1,6 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
-import { toast } from '@/hooks/use-toast'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const noPriceLevel = 'No price level'
@@ -30,31 +29,11 @@ export const priceLevelColumn: ColumnDef<SearchResult> = {
   cell: ({ row, table }) => {
     const formattedLevel = formatPriceLevel(row.original.priceLevel)
     return (
-      <TextWrapper
-        id={row.original.id}
-        actions={[
-          {
-            icon: 'MapPinned',
-            onClick: () => {
-              table.options.meta?.setSelectedPlaceId?.(row.original.id)
-            },
-            label: 'Pin to map',
-          },
-          {
-            icon: 'Copy',
-            onClick: () => {
-              navigator.clipboard.writeText(formattedLevel)
-              toast({
-                title: formattedLevel,
-                description: 'Copied to clipboard',
-              })
-            },
-            label: 'Copy',
-          },
-        ]}
-      >
-        {formattedLevel === noPriceLevel ? null : formattedLevel}
-      </TextWrapper>
+      <ColumnPinCell
+        row={row}
+        table={table}
+        content={formattedLevel === noPriceLevel ? null : formattedLevel}
+      />
     )
   },
 }

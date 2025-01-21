@@ -132,12 +132,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     estimateSize: (index) => visibleColumns[index].getSize(),
     getScrollElement: () => tableContainerRef.current,
     horizontal: true,
-    overscan: 5, // Increased overscan for smoother scrolling
-    // Add measureElement for more accurate sizing
-    measureElement:
-      typeof window !== 'undefined'
-        ? (element) => element?.getBoundingClientRect().width
-        : undefined,
+    overscan: 1,
   })
 
   // Row virtualizer
@@ -150,7 +145,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       navigator.userAgent.indexOf('Firefox') === -1
         ? (element) => element?.getBoundingClientRect().height
         : undefined,
-    overscan: 20,
+    overscan: 10,
   })
 
   const virtualColumns = columnVirtualizer.getVirtualItems()

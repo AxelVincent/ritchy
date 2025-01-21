@@ -1,7 +1,7 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
 import { Badge } from '@/components/ui/badge'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const primaryTypeColumn: ColumnDef<SearchResult> = {
@@ -15,21 +15,14 @@ export const primaryTypeColumn: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Primary Type" width="250px" />
   ),
   cell: ({ row, table }) => (
-    <TextWrapper
-      id={row.original.id}
-      actions={[
-        {
-          icon: 'MapPinned',
-          onClick: () => {
-            table.options.meta?.setSelectedPlaceId?.(row.original.id)
-          },
-          label: 'Pin to map',
-        },
-      ]}
-    >
-      {row.original.primaryType && (
-        <Badge variant="secondary">{row.original.primaryType}</Badge>
-      )}
-    </TextWrapper>
+    <ColumnPinCell
+      row={row}
+      table={table}
+      content={
+        row.original.primaryType && (
+          <Badge variant="secondary">{row.original.primaryType}</Badge>
+        )
+      }
+    />
   ),
 }

@@ -1,8 +1,8 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
-import { toast } from '@/hooks/use-toast'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { HeaderWrapper } from './utils/HeaderWrapper'
+
+import { ColumnPinCopyCell } from './utils/ColumnCells'
 
 export const nameColumn: ColumnDef<SearchResult> = {
   id: 'displayName',
@@ -16,31 +16,11 @@ export const nameColumn: ColumnDef<SearchResult> = {
   },
   cell: ({ row, table }) => {
     return (
-      <TextWrapper
-        id={row.original.id}
-        actions={[
-          {
-            icon: 'MapPinned',
-            onClick: () => {
-              table.options.meta?.setSelectedPlaceId?.(row.original.id)
-            },
-            label: 'Pin to map',
-          },
-          {
-            icon: 'Copy',
-            onClick: () => {
-              navigator.clipboard.writeText(row.original.displayName)
-              toast({
-                title: row.original.displayName,
-                description: 'Copied to clipboard',
-              })
-            },
-            label: 'Copy',
-          },
-        ]}
-      >
-        {row.original.displayName}
-      </TextWrapper>
+      <ColumnPinCopyCell
+        row={row}
+        table={table}
+        content={row.original.displayName}
+      />
     )
   },
 }

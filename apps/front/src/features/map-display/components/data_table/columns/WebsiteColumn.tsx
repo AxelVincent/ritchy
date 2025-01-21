@@ -26,6 +26,7 @@ export const websiteColumn: ColumnDef<SearchResult> = {
     const website = row.getValue('websiteUri') as string
     return (
       <TextWrapper
+        id={row.original.id}
         actions={[
           {
             icon: 'MapPinned',

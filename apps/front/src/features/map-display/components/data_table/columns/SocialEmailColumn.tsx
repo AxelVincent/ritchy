@@ -199,7 +199,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
 
     if (enrichQuery.isError || 'error' in enrichQuery.data) {
       return (
-        <TextWrapper>
+        <TextWrapper id={row.original.id}>
           <Button
             variant="outline"
             size="sm"

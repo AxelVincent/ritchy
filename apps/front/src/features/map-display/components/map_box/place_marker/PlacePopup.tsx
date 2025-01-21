@@ -38,6 +38,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
         <div className="flex items-center gap-3 min-w-0 ">
           <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
           <TextWrapper
+            id={place.id}
             actions={[
               {
                 icon: 'Copy',
@@ -59,6 +60,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
           <div className="flex items-center gap-3">
             <ExternalLink className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
+              id={place.id}
               actions={[
                 {
                   icon: 'Copy',
@@ -79,6 +81,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
           <div className="flex items-center gap-3">
             <Phone className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
+              id={place.id}
               actions={[
                 {
                   icon: 'Copy',
@@ -100,7 +103,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
         {place.associatedLists && place.associatedLists.length > 0 && (
           <div className="flex items-center gap-3">
             <MapPinPlusInside className="h-5 w-5 text-muted-foreground shrink-0" />
-            <TextWrapper>
+            <TextWrapper id={place.id}>
               <div className="flex flex-wrap gap-2 max-w-[250px]">
                 {place.associatedLists.map((list) => (
                   <Badge key={list.id} variant="secondary">
@@ -116,7 +119,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
         {place.priceLevel && (
           <div className="flex items-center gap-3">
             <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
-            <TextWrapper>
+            <TextWrapper id={place.id}>
               <span className="text-sm">
                 {PRICE_LEVELS[place.priceLevel]}
                 <span className="text-muted-foreground"> · Price level</span>
@@ -130,6 +133,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
           <div className="flex gap-3">
             <Info className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
+              id={place.id}
               actions={[
                 {
                   icon: 'Copy',
@@ -151,7 +155,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
         {place.primaryType && (
           <div className="flex items-center gap-3">
             <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
-            <TextWrapper>
+            <TextWrapper id={place.id}>
               <Badge variant="outline">{place.primaryType}</Badge>
             </TextWrapper>
           </div>
@@ -161,7 +165,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
         {place.types && place.types.length > 0 && (
           <div className="flex items-center gap-3">
             <Tags className="h-5 w-5 text-muted-foreground shrink-0" />
-            <TextWrapper>
+            <TextWrapper id={place.id}>
               <div className="flex flex-wrap gap-2 max-w-[250px]">
                 {place.types.map((type) => (
                   <Badge key={type} variant="secondary">

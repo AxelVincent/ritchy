@@ -1,6 +1,6 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const ratingCountColumn: ColumnDef<SearchResult> = {
@@ -21,24 +21,17 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
     const count = row.original.userRatingCount
 
     return (
-      <TextWrapper
-        id={row.original.id}
-        actions={[
-          {
-            icon: 'MapPinned',
-            onClick: () => {
-              table.options.meta?.setSelectedPlaceId?.(row.original.id)
-            },
-            label: 'Pin to map',
-          },
-        ]}
-      >
-        {count ? (
-          <span>{count.toLocaleString()} reviews</span>
-        ) : (
-          <span className="text-muted-foreground">0 reviews</span>
-        )}
-      </TextWrapper>
+      <ColumnPinCell
+        row={row}
+        table={table}
+        content={
+          count ? (
+            <span>{count.toLocaleString()} reviews</span>
+          ) : (
+            <span className="text-muted-foreground">0 reviews</span>
+          )
+        }
+      />
     )
   },
 }
