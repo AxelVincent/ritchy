@@ -1,6 +1,6 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import type { SearchResult } from '@ritchy/types'
+import type { Note, SearchResult } from '@ritchy/types'
 import type { Row, Table } from '@tanstack/react-table'
 import React from 'react'
 import {
@@ -18,8 +18,10 @@ interface BaseColumnCellProps {
   content: React.ReactNode
 }
 
-interface NotesColumnCellProps extends BaseColumnCellProps {
+export interface NotesColumnCellProps {
+  row: Row<SearchResult>
   place: SearchResult
+  content: Note | null
 }
 
 // For columns that need both pin and copy actions
@@ -75,6 +77,7 @@ export const ColumnPinCell = React.memo(function ColumnPinCell({
 export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
   row,
   place,
+  content,
 }: NotesColumnCellProps) {
   const actions = createColumnPinNoteActions(row.original.displayName, () => {
     const dialogTrigger = document.querySelector(
@@ -89,15 +92,13 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
     setNotes(place.notes || [])
   }, [place.notes])
 
-  const lastNote = notes.length > 0 ? notes[0] : null
-
   return (
     <TextWrapper id={row.original.id} actions={actions}>
       <Dialog modal={false}>
         <div className="group flex items-center w-full">
           <span className="text-muted-foreground text-sm truncate">
-            {lastNote
-              ? formatDistanceToNow(new Date(lastNote.created_at), {
+            {content
+              ? formatDistanceToNow(new Date(content.created_at), {
                   addSuffix: true,
                 })
               : ''}
@@ -115,9 +116,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
             <Notes
               placeId={place.id}
               onNoteAdded={(note) => {
-                // Update local state immutably
                 setNotes([note, ...notes])
-                // Update the original data immutably
                 place.notes = [note, ...notes]
               }}
             />
