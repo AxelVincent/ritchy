@@ -9,7 +9,7 @@ type CacheOptions = {
   prefix?: string
 }
 
-const DEFAULT_TTL = 14 * 24 * 60 * 60 // 14 days in seconds
+const DEFAULT_TTL = 90 * 24 * 60 * 60 // 90 days in seconds
 
 /**
  * Creates a Redis client with caching utilities
