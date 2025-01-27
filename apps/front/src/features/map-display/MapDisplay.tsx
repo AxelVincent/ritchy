@@ -16,7 +16,7 @@ import type {
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
 import { columns } from './components/data_table/Columns'
-import type { Location } from './types'
+import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
   listId?: string
@@ -34,7 +34,8 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
         }
       : DEFAULT_LOCATION
   const { location, error, loading } = useGeolocation(defaultLocation, !!listId)
-  const [currentLocation, setLocation] = useState<Location>(location)
+  const [currentLocation, setLocation] =
+    useState<MapboxLocationParameters>(location)
   const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
 
   // Update searchResults to use listData when available, fallback to mockData in development

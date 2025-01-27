@@ -2,7 +2,7 @@ import './styles.css'
 import { useMapInitialization } from '@/features/map-display/hooks/useMapInitialization'
 import { useMapSquare } from '@/features/map-display/hooks/useMapSquare'
 import { MAP_SETTINGS } from '@/features/map-display/types'
-import type { Location } from '@/features/map-display/types'
+import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { debounce } from '@/lib/debounce'
 import type { Place, PlacesSearchResponse } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
@@ -33,7 +33,7 @@ interface MapBoxProps {
   searchResults: PlacesSearchResponse | null
   selectedPlaceId: string | null
   setSelectedPlaceId: (placeId: string | null) => void
-  userLocation: Location
+  userLocation: MapboxLocationParameters
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
   listId?: string
@@ -58,15 +58,17 @@ export const MapBox: FC<MapBoxProps> = ({
   const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const isSelectionMovement = useRef(false)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const initialCenter = useMemo(() => {
     debugLog('Calculating initial center:', userLocation)
     return [userLocation.longitude, userLocation.latitude] as [number, number]
-  }, [userLocation])
+  }, [userLocation.latitude, userLocation.longitude])
 
   const mapRef = useMapInitialization(
     mapContainerRef,
     initialCenter,
     MAP_SETTINGS,
+    listId,
   )
 
   const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
