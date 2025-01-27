@@ -28,8 +28,27 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { CreateListForm } from '@/features/lists/components/create-list-form'
 import { cn } from '@/lib/utils'
 import { Link, useMatch } from '@tanstack/react-router'
-import { MoreHorizontal, Plus, Trash2 } from 'lucide-react'
+import { ListPlus, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+
+const CreateListDialog = ({
+  isOpen,
+  onOpenChange,
+}: { isOpen: boolean; onOpenChange: (open: boolean) => void }) => (
+  <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <DialogTrigger asChild>
+      <SidebarMenuButton tooltip="Create new list">
+        <ListPlus size={16} />
+      </SidebarMenuButton>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Create new list</DialogTitle>
+      </DialogHeader>
+      <CreateListForm onSuccess={() => onOpenChange(false)} />
+    </DialogContent>
+  </Dialog>
+)
 
 export function NavCustomLists() {
   const { open } = useSidebar()
@@ -52,29 +71,24 @@ export function NavCustomLists() {
 
   return (
     <SidebarGroup>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <SidebarMenuButton
-            className="w-full justify-between"
-            tooltip="Create new list"
-          >
-            {open ? (
-              <>
-                <span>Lists</span>
-                <Plus className="h-4 w-4" />
-              </>
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-          </SidebarMenuButton>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create new list</DialogTitle>
-          </DialogHeader>
-          <CreateListForm onSuccess={() => setIsDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      {open ? (
+        <SidebarGroupLabel>
+          <div className="w-full flex items-center">
+            <span className="flex-1">Lists</span>
+            <div className="flex-shrink-0">
+              <CreateListDialog
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+              />
+            </div>
+          </div>
+        </SidebarGroupLabel>
+      ) : (
+        <CreateListDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+        />
+      )}
       <SidebarMenu>
         {lists?.map((list) => (
           <SidebarMenuItem key={list.id}>

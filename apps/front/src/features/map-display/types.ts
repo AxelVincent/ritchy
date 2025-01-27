@@ -20,9 +20,9 @@ export const MAP_SETTINGS: MapSettings = {
 }
 
 export const RADIUS_SETTINGS: RadiusSettings = {
-  min: 100,
+  min: 500,
   max: 50000,
-  step: 100,
+  step: 500,
   initial: 5000,
 }
 
@@ -59,7 +59,7 @@ export interface MapLayerConfig {
   }
 }
 
-export interface Location {
+export interface MapboxLocationParameters {
   latitude: number
   longitude: number
   radiusInMeters: number
@@ -71,5 +71,5 @@ export interface ViewStyle {
 }
 
 export interface MapDisplayProps {
-  defaultLocation?: Location
+  defaultLocation?: MapboxLocationParameters
 }
