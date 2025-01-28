@@ -8,27 +8,29 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
-import type { SearchHistory } from '@ritchy/types'
+import type { Search } from '@ritchy/types'
 import { Link } from '@tanstack/react-router'
 import { History, Loader2, Minus, MoreHorizontal } from 'lucide-react'
 import React from 'react'
 
 type SearchGroup = {
   label: string
-  items: SearchHistory
+  items: Search
 }
 
-function groupSearchesByDate(searches: SearchHistory): SearchGroup[] {
+function groupSearchesByDate(searches: Search): SearchGroup[] {
   const now = new Date()
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
   // Group older searches by year
-  const olderSearches = searches.filter((s) => s.created_at < thirtyDaysAgo)
+  const olderSearches = searches.filter(
+    (s) => new Date(s.created_at) < thirtyDaysAgo,
+  )
   const yearGroups = olderSearches.reduce(
-    (acc: Record<number, SearchHistory>, search) => {
-      const year = search.created_at.getFullYear()
+    (acc: Record<number, Search>, search) => {
+      const year = new Date(search.created_at).getFullYear()
       acc[year] = acc[year] || []
       acc[year].push(search)
       return acc
@@ -39,19 +41,21 @@ function groupSearchesByDate(searches: SearchHistory): SearchGroup[] {
   return [
     {
       label: 'Today',
-      items: searches.filter((s) => s.created_at >= oneDayAgo),
+      items: searches.filter((s) => new Date(s.created_at) >= oneDayAgo),
     },
     {
       label: 'Previous 7 Days',
-      items: searches.filter(
-        (s) => s.created_at < oneDayAgo && s.created_at >= sevenDaysAgo,
-      ),
+      items: searches.filter((s) => {
+        const date = new Date(s.created_at)
+        return date < oneDayAgo && date >= sevenDaysAgo
+      }),
     },
     {
       label: 'Previous 30 Days',
-      items: searches.filter(
-        (s) => s.created_at < sevenDaysAgo && s.created_at >= thirtyDaysAgo,
-      ),
+      items: searches.filter((s) => {
+        const date = new Date(s.created_at)
+        return date < sevenDaysAgo && date >= thirtyDaysAgo
+      }),
     },
     ...Object.entries(yearGroups)
       .sort(([yearA], [yearB]) => Number(yearB) - Number(yearA))
@@ -64,7 +68,10 @@ function groupSearchesByDate(searches: SearchHistory): SearchGroup[] {
 
 export function NavHistory() {
   const { open } = useSidebar()
-  const { data: searches = [], isLoading } = useSearchesQuery()
+  const {
+    data: { searches = [] } = { searches: [] },
+    isLoading,
+  } = useSearchesQuery()
   const groups = groupSearchesByDate(searches)
   const [showAll, setShowAll] = React.useState(false)
 

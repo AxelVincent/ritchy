@@ -20,7 +20,7 @@ export const useCreateSearch = () => {
     ): Promise<CreateSearchApiResponse> => {
       const token = await getToken()
       const response = await apiClient.fetchWithAuth(
-        '/search',
+        '/searches',
         {
           method: 'POST',
           body: JSON.stringify(searchParams),
