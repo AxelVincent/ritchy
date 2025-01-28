@@ -1,4 +1,7 @@
 import {
+  integer,
+  numeric,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -39,6 +42,26 @@ export const note = pgTable('note', {
   placeId: text('place_id').notNull(),
   userId: text('user_id').notNull(),
   note: text('note').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+export const searchModelEnum = pgEnum('search_model', [
+  'DEFAULT',
+  'NAVIGATOR',
+  'EXPLORER',
+  'PRO',
+])
+
+export const search = pgTable('search', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: text('user_id').notNull(),
+  latitude: numeric('latitude').notNull(),
+  longitude: numeric('longitude').notNull(),
+  radiusInMeters: integer('radius_in_meters').notNull(),
+  placeName: text('place_name').notNull(),
+  keyword: text('keyword').notNull(),
+  model: searchModelEnum('model').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

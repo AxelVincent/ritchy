@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../common'
+import { PlaceSchema } from './places/places'
 
 export const SearchItemSchema = z.object({
   id: z.string().uuid(),
@@ -37,6 +38,29 @@ export const CreateSearchApiResponseSchema = z.union([
 export const GetSearchesResponseSchema = z.object({
   searches: SearchSchema,
 })
+
+export const GetSearchContentResponseSchema = z.array(PlaceSchema)
+
+export const GetSearchContentRequestParamsSchema = z.object({
+  searchId: z.string().uuid(),
+})
+
+export const GetSearchContentApiResponseSchema = z.union([
+  GetSearchContentResponseSchema,
+  ApiErrorResponseSchema,
+])
+
+export type GetSearchContentRequestParams = z.infer<
+  typeof GetSearchContentRequestParamsSchema
+>
+
+export type GetSearchContentResponse = z.infer<
+  typeof GetSearchContentResponseSchema
+>
+
+export type GetSearchContentApiResponse = z.infer<
+  typeof GetSearchContentApiResponseSchema
+>
 
 export type GetSearchesResponse = z.infer<typeof GetSearchesResponseSchema>
 export const GetSearchesApiResponseSchema = z.union([

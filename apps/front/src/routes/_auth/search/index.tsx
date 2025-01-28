@@ -43,16 +43,18 @@ function RouteComponent() {
     })
   }
 
+  const handleLocationChange = (newLocation: MapboxLocationParameters) => {
+    setCurrentLocation({
+      ...newLocation,
+    })
+  }
+
   // Update from geolocation only on initial load
   useEffect(() => {
     if (geoLocation && currentLocation === defaultLocation) {
       setCurrentLocation(geoLocation)
     }
   }, [geoLocation, currentLocation, defaultLocation])
-
-  const handleLocationChange = (newLocation: MapboxLocationParameters) => {
-    setCurrentLocation(newLocation)
-  }
 
   if (loading) {
     return <LoadingSpinner message="Detecting your location..." />

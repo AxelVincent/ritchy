@@ -5,8 +5,9 @@ import {
   CreateSearchRequestBodySchema,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
-import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
+import { db } from '../../db/db'
+import { search } from '../../db/schema'
 
 export const createSearch = async (
   req: Request<
@@ -19,12 +20,39 @@ export const createSearch = async (
   try {
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
 
-    console.log('parsedBody: ', parsedBody)
+    if (parsedBody.model === 'PRO' || parsedBody.model === 'EXPLORER') {
+      if (
+        ![
+          // Ryan Staging / Prod
+          'user_2pLKf5Yr8yJfZQbultG2uJ8pgFm',
+          'user_2pLdQum1fXENokXcvNTsOdRWyts',
+          // Axel Staging / Prod
+          'user_2p7ZA02lG6WufI5SV3l6zyAoAIo',
+          'user_2pLd3diNenMMUy61qNECHbSlnHK',
+        ].includes(req.auth.userId)
+      ) {
+        res.status(403).json({
+          error: 'Forbidden',
+          message: 'This feature is only available for EXPLORER/PRO users',
+        })
+      }
+    }
 
-    const id = uuidv4()
+    const [result] = await db
+      .insert(search)
+      .values({
+        userId: req.auth.userId,
+        latitude: parsedBody.location.latitude.toString(),
+        longitude: parsedBody.location.longitude.toString(),
+        radiusInMeters: parsedBody.radiusInMeters,
+        placeName: parsedBody.placeName,
+        keyword: parsedBody.keyword,
+        model: parsedBody.model,
+      })
+      .returning({ id: search.id })
 
     res.json({
-      id,
+      id: result.id,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {

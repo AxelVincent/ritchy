@@ -9,10 +9,7 @@ import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
 import { EmptyListState } from '@/features/lists/components/EmptyListState'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import type {
-  ListContentApiResponse,
-  PlacesSearchResponse,
-} from '@ritchy/types'
+import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
 import { columns } from './components/data_table/Columns'
@@ -20,16 +17,17 @@ import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
   listId?: string
-  listData?: ListContentApiResponse
+  searchId?: string
+  places?: Place[]
 }
 
-export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
+export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   // Core location state
   const defaultLocation =
-    listId && listData && !('error' in listData) && listData.items.length > 0
+    listId && places && places.length > 0
       ? {
-          latitude: listData.items[0].location.latitude,
-          longitude: listData.items[0].location.longitude,
+          latitude: places[0].location.latitude,
+          longitude: places[0].location.longitude,
           radiusInMeters: DEFAULT_LOCATION.radiusInMeters,
         }
       : DEFAULT_LOCATION
@@ -39,21 +37,19 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
 
   // Update searchResults to use listData when available, fallback to mockData in development
-  const [searchResults, setSearchResults] = useState<PlacesSearchResponse>(
-    () => {
-      if (listId && listData && !('error' in listData)) {
-        return listData.items
-      }
-      return process.env.NODE_ENV === 'development' ? [] : []
-    },
-  )
+  const [searchResults, setSearchResults] = useState<Place[]>(() => {
+    if (listId && places && places.length > 0) {
+      return places
+    }
+    return process.env.NODE_ENV === 'development' ? [] : []
+  })
 
   // Add effect to update searchResults when listData changes
   useEffect(() => {
-    if (listId && listData && !('error' in listData)) {
-      setSearchResults(listData.items)
+    if ((listId || searchId) && places && places.length > 0) {
+      setSearchResults(places)
     }
-  }, [listId, listData])
+  }, [listId, searchId, places])
 
   // Search and selection state
   const [dataTableRowSelection, setDataTableRowSelection] =
@@ -62,8 +58,8 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
   const [filteredPlaceIds, setFilteredPlaceIds] = useState<Set<string>>(
     () =>
       new Set(
-        listId && listData && !('error' in listData)
-          ? listData.items.map((item) => item.id)
+        listId && places && places.length > 0
+          ? places.map((item) => item.id)
           : searchResults.map((item) => item.id),
       ),
   )
@@ -86,12 +82,7 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
     // console.warn('Geolocation error:', error)
   }
 
-  if (
-    listId &&
-    listData &&
-    !('error' in listData) &&
-    listData.items.length === 0
-  ) {
+  if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
   }
 
@@ -121,7 +112,11 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
         <ResizableHandle withHandle />
         <ResizablePanel className="flex-1">
           <MapBox
-            onLocationChange={setLocation}
+            onLocationChange={(location) => {
+              setLocation({
+                ...location,
+              })
+            }}
             searchResults={searchResults}
             selectedPlaceId={selectedPlaceId}
             setSelectedPlaceId={setSelectedPlaceId}

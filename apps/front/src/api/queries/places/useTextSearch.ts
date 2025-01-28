@@ -1,20 +1,17 @@
 import { createApiClient } from '@/lib/api/createApiClient'
 import { useAuth } from '@clerk/clerk-react'
-import type {
-  PlacesSearchRequestBody,
-  PlacesSearchResponse,
-} from '@ritchy/types'
+import type { PlacesSearchRequestBody, Search } from '@ritchy/types'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
 const apiClient = createApiClient({
   baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
 })
-
+// TODO - TO REMOVE
 export const useTextSearch = ({
   textQuery,
   locationBias,
   model,
-}: PlacesSearchRequestBody): UseQueryResult<PlacesSearchResponse> => {
+}: PlacesSearchRequestBody): UseQueryResult<Search> => {
   const { getToken } = useAuth()
 
   return useQuery({

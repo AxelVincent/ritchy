@@ -35,6 +35,7 @@ export const addItemsToList = async (
     const userId = req.auth.userId
     const parsedBody = AddItemsToListRequestBodySchema.parse(req.body)
 
+    console.log('parsedBody', parsedBody, listId, userId)
     // Verify list ownership
     const result = await db
       .select()
@@ -82,8 +83,7 @@ export const addItemsToList = async (
         .onConflictDoUpdate({
           target: [listPlace.listId, listPlace.placeId],
           set: {
-            listId: sql`excluded.list_id`,
-            placeId: sql`excluded.place_id`,
+            updatedAt: new Date(),
           },
         })
     }

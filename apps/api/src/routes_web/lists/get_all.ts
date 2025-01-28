@@ -1,7 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { ListsApiResponse } from '@ritchy/types'
-import { sql } from 'drizzle-orm'
-import { eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
@@ -23,6 +22,7 @@ export const getLists = async (
       .from(list)
       .leftJoin(listPlace, eq(listPlace.listId, list.id))
       .where(eq(list.userId, req.auth.userId))
+      .orderBy(asc(list.updatedAt))
       .groupBy(list.id)
 
     res.json(

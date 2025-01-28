@@ -20,5 +20,5 @@ function RouteComponent() {
   if (error) return <div>Error: {error.message}</div>
   if (!data || 'error' in data) return null
 
-  return <MapDisplay key={listId} listId={listId} listData={data} />
+  return <MapDisplay key={listId} listId={listId} places={data.items} />
 }

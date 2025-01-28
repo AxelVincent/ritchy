@@ -1,6 +1,6 @@
 import { MARKER_COLORS } from '@/features/map-display/components/map_box/constants/markers'
 import { MarkerWithPopup } from '@/features/map-display/components/map_box/place_marker/Marker'
-import type { Place, PlacesSearchResponse } from '@ritchy/types'
+import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import type { Map as MapboxMap, Marker as MapboxMarker } from 'mapbox-gl'
 import { type MutableRefObject, useEffect, useRef } from 'react'
@@ -12,7 +12,7 @@ interface MarkerData {
 
 export const useMarkers = (
   mapRef: MutableRefObject<MapboxMap | null>,
-  searchResults: PlacesSearchResponse | null,
+  searchResults: Place[] | null,
   dataTableRowSelection: RowSelectionState,
   setMapBoxSelectedPlaceId: (placeId: string | null) => void,
   filteredPlaceIds: Set<string>,

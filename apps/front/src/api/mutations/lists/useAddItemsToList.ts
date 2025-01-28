@@ -39,6 +39,9 @@ export const useAddItemsToList = () => {
         queryKey: ['listContent', id],
         exact: true,
       })
+      queryClient.invalidateQueries({
+        queryKey: ['searchContent'],
+      })
     },
   })
 }

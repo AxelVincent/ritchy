@@ -50,6 +50,20 @@
       "when": 1738082413568,
       "tag": "0006_chunky_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1738094399099,
+      "tag": "0007_loud_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1738100051353,
+      "tag": "0008_cynical_the_order",
+      "breakpoints": true
     }
   ]
 }

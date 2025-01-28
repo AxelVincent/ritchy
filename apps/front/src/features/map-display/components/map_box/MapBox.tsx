@@ -4,7 +4,7 @@ import { useMapSquare } from '@/features/map-display/hooks/useMapSquare'
 import { MAP_SETTINGS } from '@/features/map-display/types'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { debounce } from '@/lib/debounce'
-import type { Place, PlacesSearchResponse } from '@ritchy/types'
+import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import mapboxgl, { type LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
@@ -30,7 +30,7 @@ type LocationChangeEvent = {
 // Improve props interface with more specific types
 interface MapBoxProps {
   onLocationChange: (location: LocationChangeEvent) => void
-  searchResults: PlacesSearchResponse | null
+  searchResults: Place[] | null
   selectedPlaceId: string | null
   setSelectedPlaceId: (placeId: string | null) => void
   userLocation: MapboxLocationParameters
@@ -177,7 +177,7 @@ export const MapBox: FC<MapBoxProps> = ({
           longitude: center.lng,
           radiusInMeters,
         })
-      }, 1000), // Adjust the delay (in ms) as needed
+      }, 1000),
     [onLocationChange, radiusInMeters],
   )
 

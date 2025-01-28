@@ -6,10 +6,7 @@ import {
 } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
-import type {
-  PlacesSearchRequestBody,
-  PlacesSearchResponse,
-} from '@ritchy/types'
+import type { Place, PlacesSearchRequestBody } from '@ritchy/types'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
 import {
@@ -61,7 +58,7 @@ async function fetchSinglePage(
 
 export async function postTextSearchV1(
   requestBody: PlacesSearchRequestBody,
-): Promise<PlacesSearchResponse> {
+): Promise<Place[]> {
   const largestSquare = getLargestSquareFromCoordinates(
     requestBody.locationBias.circle.center,
     requestBody.locationBias.circle.radiusInMeters,

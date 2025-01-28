@@ -39,13 +39,12 @@ export const PlacesTextSearch = ({
   onLocationChange,
 }: PlaceSearchProps) => {
   const [searchText, setSearchText] = useState('')
+  const [placeName, setPlaceName] = useState('')
   const [model, setModel] = useState<
     'DEFAULT' | 'NAVIGATOR' | 'EXPLORER' | 'PRO'
   >('DEFAULT')
-  const [currentLocation, setCurrentLocation] = useState<LocationParams>({
-    ...location,
-    radiusInMeters,
-  })
+  const [currentLocation, setCurrentLocation] =
+    useState<LocationParams>(location)
 
   useEffect(() => {
     setCurrentLocation({
@@ -60,16 +59,18 @@ export const PlacesTextSearch = ({
       return
     }
 
-    onSearch({
+    const searchParams: CreateSearchRequestBody = {
       location: {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
       },
       radiusInMeters: currentLocation.radiusInMeters,
-      placeName: searchText,
+      placeName: placeName,
       keyword: searchText,
       model,
-    })
+    }
+
+    onSearch(searchParams)
   }
 
   const handleClear = () => {
@@ -80,7 +81,7 @@ export const PlacesTextSearch = ({
         longitude: currentLocation.longitude,
       },
       radiusInMeters: currentLocation.radiusInMeters,
-      placeName: '',
+      placeName: placeName,
       keyword: '',
       model,
     })
@@ -93,16 +94,15 @@ export const PlacesTextSearch = ({
   }
 
   const handleLocationSelect = (newLocation: GeocodingResult) => {
-    setCurrentLocation({
+    const updatedLocation = {
       latitude: newLocation.center[1],
       longitude: newLocation.center[0],
-      radiusInMeters: 1000,
-    })
-    onLocationChange?.({
-      latitude: newLocation.center[1],
-      longitude: newLocation.center[0],
-      radiusInMeters: 1000,
-    })
+      radiusInMeters,
+    }
+
+    setCurrentLocation(updatedLocation)
+    onLocationChange?.(updatedLocation)
+    setPlaceName(newLocation.place_name)
   }
 
   return (

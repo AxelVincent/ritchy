@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 import type { Search } from '@ritchy/types'
-import { Link } from '@tanstack/react-router'
+import { Link, useMatch } from '@tanstack/react-router'
 import { History, Loader2, Minus, MoreHorizontal } from 'lucide-react'
 import React from 'react'
 
@@ -68,6 +68,10 @@ function groupSearchesByDate(searches: Search): SearchGroup[] {
 
 export function NavHistory() {
   const { open } = useSidebar()
+  const match = useMatch({
+    from: '/_auth/search/$searchId',
+    shouldThrow: false,
+  })
   const {
     data: { searches = [] } = { searches: [] },
     isLoading,
@@ -120,6 +124,7 @@ export function NavHistory() {
                       asChild
                       tooltip={`${search.keyword} - ${search.locationFormatted}`}
                       className={cn('justify-between')}
+                      isActive={match?.params.searchId === search.id}
                     >
                       <Link to={`/search/${search.id}`}>
                         {open ? (
