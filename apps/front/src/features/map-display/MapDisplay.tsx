@@ -17,11 +17,10 @@ import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
   listId?: string
-  searchId?: string
   places?: Place[]
 }
 
-export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
+export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
   // Core location state
   const defaultLocation =
     listId && places && places.length > 0
@@ -46,10 +45,10 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
 
   // Add effect to update searchResults when listData changes
   useEffect(() => {
-    if ((listId || searchId) && places && places.length > 0) {
+    if (listId && places && places.length > 0) {
       setSearchResults(places)
     }
-  }, [listId, searchId, places])
+  }, [listId, places])
 
   // Search and selection state
   const [dataTableRowSelection, setDataTableRowSelection] =
