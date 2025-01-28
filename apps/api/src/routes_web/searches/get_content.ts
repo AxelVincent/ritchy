@@ -5,7 +5,7 @@ import {
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
-import { logger } from 'packages/logger/dist'
+import { logger } from '@ritchy/logger'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
