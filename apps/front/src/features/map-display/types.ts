@@ -14,7 +14,7 @@ export interface RadiusSettings {
 
 export const MAP_SETTINGS: MapSettings = {
   style: 'mapbox://styles/mapbox/streets-v12',
-  zoom: 10,
+  zoom: 12,
   maxZoom: 30,
   minZoom: 5,
 }
