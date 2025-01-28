@@ -94,11 +94,9 @@ const recentSearches = [
   },
 ]
 
-export const useSearchHistoryQuery = (): UseQueryResult<
-  typeof recentSearches
-> => {
+export const useSearchesQuery = (): UseQueryResult<typeof recentSearches> => {
   return useQuery({
-    queryKey: ['searchHistory'],
+    queryKey: ['searches'],
     queryFn: async () => recentSearches,
   })
 }

@@ -1,4 +1,3 @@
-import { useTextSearch } from '@/api/queries/places/useTextSearch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,12 +9,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import type { PlacesSearchResponse } from '@ritchy/types'
 import { Search } from 'lucide-react'
 
 import { LocationAutocomplete } from '@/components/mapbox/LocationAutocomplete'
 import { RADIUS_SETTINGS } from '@/features/map-display/types'
+import type { CreateSearchRequestBody, GeocodingResult } from '@ritchy/types'
 import { useEffect, useState } from 'react'
+
 interface LocationParams {
   latitude: number
   longitude: number
@@ -24,7 +24,7 @@ interface LocationParams {
 
 interface PlaceSearchProps {
   location: LocationParams
-  onResultsChange: (results: PlacesSearchResponse) => void
+  onSearch: (params: CreateSearchRequestBody) => void
   className?: string
   radiusInMeters: number
   setRadiusInMeters: (radiusInMeters: number) => void
@@ -33,7 +33,7 @@ interface PlaceSearchProps {
 
 export const PlacesTextSearch = ({
   location,
-  onResultsChange,
+  onSearch,
   radiusInMeters,
   setRadiusInMeters,
   onLocationChange,
@@ -47,20 +47,6 @@ export const PlacesTextSearch = ({
     radiusInMeters,
   })
 
-  const { data, refetch, isLoading, isError, error } = useTextSearch({
-    textQuery: searchText,
-    locationBias: {
-      circle: {
-        center: {
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-        },
-        radiusInMeters: currentLocation.radiusInMeters,
-      },
-    },
-    model,
-  })
-
   useEffect(() => {
     setCurrentLocation({
       ...location,
@@ -68,23 +54,36 @@ export const PlacesTextSearch = ({
     })
   }, [location, radiusInMeters])
 
-  useEffect(() => {
-    if (data) {
-      onResultsChange(data)
-    }
-  }, [data, onResultsChange])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (searchText.length < 3) {
       return
     }
-    await refetch()
+
+    onSearch({
+      location: {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      },
+      radiusInMeters: currentLocation.radiusInMeters,
+      placeName: searchText,
+      keyword: searchText,
+      model,
+    })
   }
 
   const handleClear = () => {
     setSearchText('')
-    onResultsChange([])
+    onSearch({
+      location: {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      },
+      radiusInMeters: currentLocation.radiusInMeters,
+      placeName: '',
+      keyword: '',
+      model,
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -93,9 +92,17 @@ export const PlacesTextSearch = ({
     }
   }
 
-  const handleLocationSelect = (newLocation: LocationParams) => {
-    setCurrentLocation(newLocation)
-    onLocationChange?.(newLocation)
+  const handleLocationSelect = (newLocation: GeocodingResult) => {
+    setCurrentLocation({
+      latitude: newLocation.center[1],
+      longitude: newLocation.center[0],
+      radiusInMeters: 1000,
+    })
+    onLocationChange?.({
+      latitude: newLocation.center[1],
+      longitude: newLocation.center[0],
+      radiusInMeters: 1000,
+    })
   }
 
   return (
@@ -212,31 +219,15 @@ export const PlacesTextSearch = ({
             <Button
               type="submit"
               variant="default"
-              disabled={isLoading || searchText.length < 3}
+              disabled={searchText.length < 3}
               className="w-full sm:w-auto mb-1"
             >
-              {isLoading ? (
-                'Searching...'
-              ) : (
-                <>
-                  <Search className="w-4 h-4 mr-2" />
-                  Search
-                </>
-              )}
+              <Search className="w-4 h-4 mr-2" />
+              Search
             </Button>
           </div>
         </div>
       </form>
-
-      {isError && (
-        <div className="mt-4 p-3 bg-destructive/10 rounded-md">
-          <p className="text-sm text-destructive">
-            {isError
-              ? error.message
-              : 'Failed to search places. Please check your connection and try again.'}
-          </p>
-        </div>
-      )}
     </div>
   )
 }

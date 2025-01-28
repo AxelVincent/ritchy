@@ -1,4 +1,4 @@
-import { useSearchHistoryQuery } from '@/api/queries/search/useSearchHistory'
+import { useSearchesQuery } from '@/api/queries/search/useSearches'
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -64,8 +64,8 @@ function groupSearchesByDate(searches: SearchHistory): SearchGroup[] {
 
 export function NavHistory() {
   const { open } = useSidebar()
-  const { data: recentSearches = [], isLoading } = useSearchHistoryQuery()
-  const groups = groupSearchesByDate(recentSearches)
+  const { data: searches = [], isLoading } = useSearchesQuery()
+  const groups = groupSearchesByDate(searches)
   const [showAll, setShowAll] = React.useState(false)
 
   const visibleGroups = React.useMemo(() => {
@@ -142,7 +142,7 @@ export function NavHistory() {
               </SidebarMenu>
             </div>
           ))}
-          {recentSearches.length > 5 && (
+          {searches.length > 5 && (
             <SidebarMenuItem key="show-more" className="list-none">
               <SidebarMenuButton
                 onClick={() => setShowAll(!showAll)}

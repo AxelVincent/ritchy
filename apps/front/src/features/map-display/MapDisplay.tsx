@@ -102,7 +102,7 @@ export const MapDisplay = ({ listId, listData }: MapDisplayProps) => {
           {!listId && (
             <PlacesTextSearch
               location={currentLocation}
-              onResultsChange={setSearchResults}
+              onSearch={() => {}}
               radiusInMeters={radiusInMeters}
               setRadiusInMeters={setRadiusInMeters}
             />

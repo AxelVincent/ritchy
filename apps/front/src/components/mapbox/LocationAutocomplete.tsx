@@ -1,11 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 
-import type { MapboxLocationParameters } from '@/features/map-display/types'
-import {
-  type GeocodingResult,
-  debouncedSearchLocations,
-} from '@/lib/mapbox/geocoding'
+import { debouncedSearchLocations } from '@/lib/mapbox/geocoding'
 import { Command as CommandPrimitive } from 'cmdk'
 import {
   CommandGroup,
@@ -15,28 +11,30 @@ import {
 } from '../ui/command'
 
 import { cn } from '@/lib/utils'
+import type { GeocodingResult, MapboxGeocodeResponse } from '@ritchy/types'
 import { Check } from 'lucide-react'
 import { LoadingSpinner } from '../ui/loading-spinner'
 interface LocationAutocompleteProps {
-  onLocationSelect: (location: MapboxLocationParameters) => void
+  onLocationSelect: (location: GeocodingResult) => void
 }
 
 export function LocationAutocomplete({
   onLocationSelect,
 }: LocationAutocompleteProps) {
-  const [locations, setLocations] = useState<GeocodingResult>({
-    options: [],
-    value: null,
+  const [locations, setLocations] = useState<MapboxGeocodeResponse>({
+    features: [],
+    attribution: '',
+    type: 'FeatureCollection',
   })
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const [isOpen, setOpen] = useState(false)
-  const [selected, setSelected] = useState<GeocodingResult['options'][number]>()
+  const [selected, setSelected] = useState<GeocodingResult>()
   const [inputValue, setInputValue] = useState('')
 
   const debouncedHandleSearch = useCallback(async (value: string) => {
     if (!value) {
-      setLocations({ options: [], value: null })
+      setLocations({ features: [], attribution: '', type: 'FeatureCollection' })
       return
     }
 
@@ -60,14 +58,10 @@ export function LocationAutocomplete({
   )
 
   const handleSelectOption = useCallback(
-    (selectedOption: GeocodingResult['options'][number]) => {
-      setInputValue(selectedOption.place_formatted)
+    (selectedOption: GeocodingResult) => {
+      setInputValue(selectedOption.place_name)
       setSelected(selectedOption)
-      onLocationSelect({
-        latitude: selectedOption.coordinates[1],
-        longitude: selectedOption.coordinates[0],
-        radiusInMeters: 1000,
-      })
+      onLocationSelect(selectedOption)
       setTimeout(() => {
         inputRef?.current?.blur()
       }, 0)
@@ -80,13 +74,13 @@ export function LocationAutocomplete({
       const input = inputRef.current
       if (!input) return
 
-      if (!isOpen && locations.value !== null) {
+      if (!isOpen && locations.features.length > 0) {
         setOpen(true)
       }
 
       if (event.key === 'Enter' && input.value !== '') {
-        const optionToSelect = locations.options.find(
-          (option) => option.name === input.value,
+        const optionToSelect = locations.features.find(
+          (feature) => feature.text === input.value,
         )
         if (optionToSelect) {
           handleSelectOption(optionToSelect)
@@ -102,7 +96,7 @@ export function LocationAutocomplete({
 
   const handleBlur = useCallback(() => {
     setOpen(false)
-    setInputValue(selected?.place_formatted ?? '')
+    setInputValue(selected?.place_name ?? '')
   }, [selected])
 
   return (
@@ -133,33 +127,32 @@ export function LocationAutocomplete({
                 <LoadingSpinner />
               </div>
             ) : null}
-            {locations.options.length > 0 && !loading ? (
+            {locations.features.length > 0 && !loading ? (
               <CommandGroup>
-                {locations.options.map((option) => {
-                  const isSelected =
-                    selected?.place_formatted === option.place_formatted
+                {locations.features.map((feature) => {
+                  const isSelected = selected?.place_name === feature.place_name
                   return (
                     <CommandItem
-                      key={option.place_formatted}
-                      value={option.place_formatted}
+                      key={feature.place_name}
+                      value={feature.place_name}
                       onMouseDown={(event) => {
                         event.preventDefault()
                         event.stopPropagation()
                       }}
-                      onSelect={() => handleSelectOption(option)}
+                      onSelect={() => handleSelectOption(feature)}
                       className={cn(
                         'flex w-full items-center gap-2 cursor-pointer',
                         !isSelected ? 'pl-8' : null,
                       )}
                     >
                       {isSelected ? <Check className="w-4" /> : null}
-                      {option.place_formatted}
+                      {feature.place_name}
                     </CommandItem>
                   )
                 })}
               </CommandGroup>
             ) : null}
-            {!loading && locations.value !== null ? (
+            {!loading && locations.attribution !== '' ? (
               <CommandPrimitive.Empty className="select-none rounded-sm px-2 py-3 text-center text-sm">
                 No results found
               </CommandPrimitive.Empty>

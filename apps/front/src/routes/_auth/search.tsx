@@ -1,9 +1,11 @@
+import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { MapBox } from '@/features/map-display/components/map_box/MapBox'
 import { PlacesTextSearch } from '@/features/map-display/components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import type { CreateSearchRequestBody } from '@ritchy/types'
 
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
@@ -25,20 +27,20 @@ function RouteComponent() {
     defaultLocation.radiusInMeters,
   )
 
-  const triggerSearch = () => {
-    console.log('triggerSearch')
+  const createSearchMutation = useCreateSearch()
+
+  const triggerSearch = (search: CreateSearchRequestBody) => {
+    createSearchMutation.mutate(search)
   }
 
   // Update from geolocation only on initial load
   useEffect(() => {
-    console.log('geoLocation: ', geoLocation)
     if (geoLocation && currentLocation === defaultLocation) {
       setCurrentLocation(geoLocation)
     }
   }, [geoLocation, currentLocation, defaultLocation])
 
   const handleLocationChange = (newLocation: MapboxLocationParameters) => {
-    console.log('newLocation: ', newLocation)
     setCurrentLocation(newLocation)
   }
 
@@ -50,7 +52,7 @@ function RouteComponent() {
     <div className="flex flex-col h-full">
       <PlacesTextSearch
         location={currentLocation}
-        onResultsChange={triggerSearch}
+        onSearch={triggerSearch}
         radiusInMeters={radiusInMeters}
         setRadiusInMeters={setRadiusInMeters}
         onLocationChange={handleLocationChange}
