@@ -1,10 +1,10 @@
+import { logger } from '@ritchy/logger'
 import {
   type CreateSearchApiResponse,
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
-import { logger } from 'packages/logger/dist'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
