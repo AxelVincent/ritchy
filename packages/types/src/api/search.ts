@@ -3,10 +3,10 @@ import { ApiErrorResponseSchema } from '../common'
 
 export const SearchItemSchema = z.object({
   id: z.string().uuid(),
-  location_formatted: z.string().min(1),
+  locationFormatted: z.string().min(1),
   keyword: z.string().min(1),
-  created_at: z.date(),
-  updated_at: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 export const SearchSchema = z.array(SearchItemSchema)

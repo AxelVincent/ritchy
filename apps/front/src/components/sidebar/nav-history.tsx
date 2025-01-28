@@ -26,11 +26,11 @@ function groupSearchesByDate(searches: Search): SearchGroup[] {
 
   // Group older searches by year
   const olderSearches = searches.filter(
-    (s) => new Date(s.created_at) < thirtyDaysAgo,
+    (s) => new Date(s.createdAt) < thirtyDaysAgo,
   )
   const yearGroups = olderSearches.reduce(
     (acc: Record<number, Search>, search) => {
-      const year = new Date(search.created_at).getFullYear()
+      const year = new Date(search.createdAt).getFullYear()
       acc[year] = acc[year] || []
       acc[year].push(search)
       return acc
@@ -41,19 +41,19 @@ function groupSearchesByDate(searches: Search): SearchGroup[] {
   return [
     {
       label: 'Today',
-      items: searches.filter((s) => new Date(s.created_at) >= oneDayAgo),
+      items: searches.filter((s) => new Date(s.createdAt) >= oneDayAgo),
     },
     {
       label: 'Previous 7 Days',
       items: searches.filter((s) => {
-        const date = new Date(s.created_at)
+        const date = new Date(s.createdAt)
         return date < oneDayAgo && date >= sevenDaysAgo
       }),
     },
     {
       label: 'Previous 30 Days',
       items: searches.filter((s) => {
-        const date = new Date(s.created_at)
+        const date = new Date(s.createdAt)
         return date < sevenDaysAgo && date >= thirtyDaysAgo
       }),
     },
@@ -118,7 +118,7 @@ export function NavHistory() {
                   <SidebarMenuItem key={search.id}>
                     <SidebarMenuButton
                       asChild
-                      tooltip={`${search.keyword} - ${search.location_formatted}`}
+                      tooltip={`${search.keyword} - ${search.locationFormatted}`}
                       className={cn('justify-between')}
                     >
                       <Link to={`/search/${search.id}`}>
@@ -133,9 +133,9 @@ export function NavHistory() {
                               </p>
                               <p
                                 className="flex-shrink-0 w-20 text-xs text-muted-foreground truncate text-left"
-                                title={search.location_formatted}
+                                title={search.locationFormatted}
                               >
-                                {search.location_formatted}
+                                {search.locationFormatted}
                               </p>
                             </div>
                           </>
