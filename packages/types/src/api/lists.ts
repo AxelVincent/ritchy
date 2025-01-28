@@ -4,7 +4,7 @@ import { PlaceSchema } from './places/places'
 
 // Basic/Common Schemas
 export const ListResponseSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   emoji: z.string(),
   itemCount: z.number(),
@@ -15,7 +15,7 @@ export const ListResponseSchema = z.object({
 export const ListsResponseSchema = z.array(ListResponseSchema)
 
 export const ListContentResponseSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   emoji: z.string(),
   items: z.array(PlaceSchema),
@@ -34,7 +34,7 @@ export const AddItemsToListRequestBodySchema = z.object({
 })
 
 export const AddItemsToListRequestParamsSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
 })
 
 export const AddItemsToListRequestSchema = z.object({
@@ -47,7 +47,7 @@ export const DeleteItemsFromListRequestBodySchema = z.object({
 })
 
 export const DeleteItemsFromListRequestParamsSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
 })
 
 export const DeleteItemsFromListRequestSchema = z.object({
@@ -57,7 +57,7 @@ export const DeleteItemsFromListRequestSchema = z.object({
 
 // Response Schemas with Error Handling
 export const CreateListResponseSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   emoji: z.string(),
   createdAt: z.string(),
@@ -102,7 +102,7 @@ export const DeleteItemsFromListApiResponseSchema = z.union([
 
 // Add these new schemas
 export const DeleteListRequestParamsSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
 })
 
 export const DeleteListResponseSchema = z.object({

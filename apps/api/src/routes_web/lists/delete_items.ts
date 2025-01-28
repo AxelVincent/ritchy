@@ -21,7 +21,7 @@ export const deleteItemsFromList = async (
   res: Response<DeleteItemsFromListApiResponse>,
 ): Promise<void> => {
   try {
-    const listId = Number.parseInt(req.params.id)
+    const listId = req.params.id
     if (Number.isNaN(listId)) {
       res.status(400).json({
         error: 'Invalid list ID',

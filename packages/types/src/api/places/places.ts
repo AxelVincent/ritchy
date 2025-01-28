@@ -131,13 +131,13 @@ export const PlacesSearchRequestBodySchema = z.object({
 })
 
 export const PlaceListAssociationSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   emoji: z.string(),
 })
 
 export const PlaceSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   displayName: z.string(),
   websiteUri: z.string(),
   location: LocationSchema,

@@ -13,18 +13,18 @@ export const getNotesByPlaceIds = async (
     .where(and(inArray(note.placeId, placeIds), eq(note.userId, userId)))
     .orderBy(desc(note.createdAt))
 
-  return notes.reduce((acc, note) => {
-    const formattedNote = {
-      id: note.id,
-      place_id: note.placeId,
-      note: note.note,
-      user_id: note.userId,
-      created_at: note.createdAt.toISOString(),
-      updated_at: note.updatedAt.toISOString(),
+  return notes.reduce((acc, dbNote) => {
+    const formattedNote: Note = {
+      id: String(dbNote.id),
+      placeId: dbNote.placeId,
+      note: dbNote.note,
+      userId: dbNote.userId,
+      createdAt: dbNote.createdAt.toISOString(),
+      updatedAt: dbNote.updatedAt.toISOString(),
     }
 
-    const placeNotes = acc.get(note.placeId) ?? []
-    acc.set(note.placeId, [...placeNotes, formattedNote])
+    const placeNotes = acc.get(dbNote.placeId) ?? []
+    acc.set(dbNote.placeId, [...placeNotes, formattedNote])
     return acc
   }, new Map<string, Array<Note>>())
 }

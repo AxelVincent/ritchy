@@ -23,8 +23,8 @@ export const addItemsToList = async (
   res: Response<AddItemsToListApiResponse>,
 ): Promise<void> => {
   try {
-    const listId = Number.parseInt(req.params.id)
-    if (Number.isNaN(listId)) {
+    const listId = req.params.id
+    if (!listId) {
       res.status(400).json({
         error: 'Invalid list ID',
         message: 'Invalid list ID',

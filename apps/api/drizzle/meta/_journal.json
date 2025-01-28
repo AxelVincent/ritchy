@@ -43,6 +43,13 @@
       "when": 1736881129661,
       "tag": "0005_amusing_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1738082413568,
+      "tag": "0006_chunky_bastion",
+      "breakpoints": true
     }
   ]
 }

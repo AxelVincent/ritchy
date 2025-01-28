@@ -98,7 +98,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
         <div className="group flex items-center w-full">
           <span className="text-muted-foreground text-sm truncate">
             {content
-              ? formatDistanceToNow(new Date(content.created_at), {
+              ? formatDistanceToNow(new Date(content.createdAt), {
                   addSuffix: true,
                 })
               : ''}

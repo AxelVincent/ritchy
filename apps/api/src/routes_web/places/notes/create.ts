@@ -1,9 +1,5 @@
 import { logger } from '@ritchy/logger'
-import {
-  type AddNoteApiResponse,
-  type AddNoteRequest,
-  AddNoteRequestSchema,
-} from '@ritchy/types'
+import { type AddNoteApiResponse, AddNoteRequestSchema } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../../db/db'
@@ -30,11 +26,11 @@ export const addPlaceNote = async (
 
     res.json({
       id: result.id,
-      place_id: result.placeId,
+      placeId: result.placeId,
       note: result.note,
-      user_id: result.userId,
-      created_at: result.createdAt.toISOString(),
-      updated_at: result.updatedAt.toISOString(),
+      userId: result.userId,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
     })
   } catch (error) {
     if (error instanceof z.ZodError) {

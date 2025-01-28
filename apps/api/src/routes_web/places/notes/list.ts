@@ -19,11 +19,11 @@ export const getPlaceNotes = async (
     res.json(
       notes.map((n) => ({
         id: n.id,
-        place_id: n.placeId,
+        placeId: n.placeId,
         note: n.note,
-        user_id: n.userId,
-        created_at: n.createdAt.toISOString(),
-        updated_at: n.updatedAt.toISOString(),
+        userId: n.userId,
+        createdAt: n.createdAt.toISOString(),
+        updatedAt: n.updatedAt.toISOString(),
       })),
     )
   } catch (error) {

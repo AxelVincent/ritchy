@@ -138,7 +138,7 @@ export const Notes = ({
                   {/* Note content */}
                   <div className="flex-1 pt-1">
                     <div className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(note.created_at), {
+                      {formatDistanceToNow(new Date(note.createdAt), {
                         addSuffix: true,
                       })}
                     </div>
