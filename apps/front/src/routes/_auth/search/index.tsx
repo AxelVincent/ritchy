@@ -60,7 +60,6 @@ function RouteComponent() {
     return <LoadingSpinner message="Detecting your location..." />
   }
 
-  console.log(radiusInMeters)
   return (
     <div className="flex flex-col h-full">
       <PlacesTextSearch
