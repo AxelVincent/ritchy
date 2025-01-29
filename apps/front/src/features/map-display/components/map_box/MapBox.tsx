@@ -36,7 +36,7 @@ interface MapBoxProps {
   userLocation: MapboxLocationParameters
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
-  listId?: string
+  isSearch: boolean
   filteredPlaceIds: Set<string>
 }
 
@@ -48,10 +48,10 @@ export const MapBox: FC<MapBoxProps> = ({
   userLocation,
   dataTableRowSelection,
   radiusInMeters,
-  listId,
+  isSearch,
   filteredPlaceIds,
 }) => {
-  debugLog('MapBox render:', { userLocation, radiusInMeters, listId })
+  debugLog('MapBox render:', { userLocation, radiusInMeters, isSearch })
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const currentSelectedPlaceIdRef = useRef<string | null>(null)
@@ -68,7 +68,7 @@ export const MapBox: FC<MapBoxProps> = ({
     mapContainerRef,
     initialCenter,
     MAP_SETTINGS,
-    listId,
+    isSearch,
   )
 
   const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
@@ -101,11 +101,11 @@ export const MapBox: FC<MapBoxProps> = ({
 
   // Map initialization effect
   useEffect(() => {
-    debugLog('Map initialization effect running', { listId })
-    if (!mapRef.current || listId) {
+    debugLog('Map initialization effect running', { isSearch })
+    if (!mapRef.current || !isSearch) {
       debugLog('Map initialization skipped:', {
         hasMap: !!mapRef.current,
-        listId,
+        isSearch,
       })
       return
     }
@@ -166,7 +166,7 @@ export const MapBox: FC<MapBoxProps> = ({
         debugLog('Error setting up map layers:', error)
       }
     })
-  }, [radiusInMeters, mapRef, calculateSquareCoordinates, listId])
+  }, [radiusInMeters, mapRef, calculateSquareCoordinates, isSearch])
 
   // Create a memoized debounced handler
   const debouncedLocationChange = useMemo(
@@ -183,8 +183,8 @@ export const MapBox: FC<MapBoxProps> = ({
 
   // Map movement effect
   useEffect(() => {
-    debugLog('Setting up map movement handlers', { listId })
-    if (!mapRef.current || listId) {
+    debugLog('Setting up map movement handlers', { isSearch })
+    if (!mapRef.current || !isSearch) {
       debugLog('Map movement setup skipped')
       return
     }
@@ -208,18 +208,18 @@ export const MapBox: FC<MapBoxProps> = ({
     mapRef,
     updateSquareData,
     debouncedLocationChange,
-    listId,
+    isSearch,
   ])
 
   // Square update effect
   useEffect(() => {
-    debugLog('Square update effect', { listId })
-    if (!mapRef.current || listId) {
+    debugLog('Square update effect', { isSearch })
+    if (!mapRef.current || !isSearch) {
       debugLog('Square update skipped')
       return
     }
     updateSquareData(mapRef.current.getCenter(), radiusInMeters)
-  }, [radiusInMeters, mapRef, updateSquareData, listId])
+  }, [radiusInMeters, mapRef, updateSquareData, isSearch])
 
   // Add this before the useMarkerManager call
   useEffect(() => {

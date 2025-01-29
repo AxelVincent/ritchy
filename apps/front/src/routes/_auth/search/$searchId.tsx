@@ -20,6 +20,5 @@ function RouteComponent() {
   if (error) return <div>Error: {error.message}</div>
   if (!data || 'error' in data) return null
 
-  // TODO : Fix listId bug
-  return <MapDisplay key={searchId} listId={searchId} places={data} />
+  return <MapDisplay isSearch={false} places={data} />
 }

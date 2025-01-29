@@ -1,14 +1,11 @@
 import { DataTable } from '@/features/map-display/components/data_table/DataTable'
 import { MapBox } from '@/features/map-display/components/map_box/MapBox'
-import { PlacesTextSearch } from '@/features/map-display/components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 
-import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
 import { EmptyListState } from '@/features/lists/components/EmptyListState'
-import { useGeolocation } from '@/hooks/useGeolocation'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
@@ -16,28 +13,31 @@ import { columns } from './components/data_table/Columns'
 import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
+  isSearch: boolean
   listId?: string
-  places?: Place[]
+  places: Place[]
 }
 
-export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
+export const MapDisplay = ({ isSearch, listId, places }: MapDisplayProps) => {
   // Core location state
   const defaultLocation =
-    listId && places && places.length > 0
+    places && places.length > 0
       ? {
           latitude: places[0].location.latitude,
           longitude: places[0].location.longitude,
           radiusInMeters: DEFAULT_LOCATION.radiusInMeters,
         }
       : DEFAULT_LOCATION
-  const { location, error, loading } = useGeolocation(defaultLocation, !!listId)
+
   const [currentLocation, setLocation] =
-    useState<MapboxLocationParameters>(location)
-  const [radiusInMeters, setRadiusInMeters] = useState(location.radiusInMeters)
+    useState<MapboxLocationParameters>(defaultLocation)
+  // const [radiusInMeters, setRadiusInMeters] = useState(
+  //   defaultLocation.radiusInMeters,
+  // )
 
   // Update searchResults to use listData when available, fallback to mockData in development
   const [searchResults, setSearchResults] = useState<Place[]>(() => {
-    if (listId && places && places.length > 0) {
+    if (places && places.length > 0) {
       return places
     }
     return process.env.NODE_ENV === 'development' ? [] : []
@@ -45,10 +45,10 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
 
   // Add effect to update searchResults when listData changes
   useEffect(() => {
-    if (listId && places && places.length > 0) {
+    if (places && places.length > 0) {
       setSearchResults(places)
     }
-  }, [listId, places])
+  }, [places])
 
   // Search and selection state
   const [dataTableRowSelection, setDataTableRowSelection] =
@@ -57,7 +57,7 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
   const [filteredPlaceIds, setFilteredPlaceIds] = useState<Set<string>>(
     () =>
       new Set(
-        listId && places && places.length > 0
+        places && places.length > 0
           ? places.map((item) => item.id)
           : searchResults.map((item) => item.id),
       ),
@@ -68,18 +68,10 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
 
   // Effects
   useEffect(() => {
-    if (location) {
-      setLocation(location)
+    if (currentLocation) {
+      setLocation(currentLocation)
     }
-  }, [location])
-
-  if (loading) {
-    return <LoadingSpinner message="Detecting your location..." />
-  }
-
-  if (error) {
-    // console.warn('Geolocation error:', error)
-  }
+  }, [currentLocation])
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
@@ -89,14 +81,6 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
     <div className="flex flex-col h-full">
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
-          {!listId && (
-            <PlacesTextSearch
-              location={currentLocation}
-              onSearch={() => {}}
-              radiusInMeters={radiusInMeters}
-              setRadiusInMeters={setRadiusInMeters}
-            />
-          )}
           <DataTable
             columns={columns}
             data={searchResults}
@@ -104,13 +88,13 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
             selectedPlaceId={selectedPlaceId}
             setDataTableRowSelection={setDataTableRowSelection}
             dataTableRowSelection={dataTableRowSelection}
-            listId={listId}
             onFilteredDataChange={setFilteredPlaceIds}
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="flex-1">
           <MapBox
+            isSearch={isSearch}
             onLocationChange={(location) => {
               setLocation({
                 ...location,
@@ -119,10 +103,9 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
             searchResults={searchResults}
             selectedPlaceId={selectedPlaceId}
             setSelectedPlaceId={setSelectedPlaceId}
-            userLocation={location}
+            userLocation={currentLocation}
             dataTableRowSelection={dataTableRowSelection}
-            radiusInMeters={radiusInMeters}
-            listId={listId}
+            radiusInMeters={currentLocation.radiusInMeters}
             filteredPlaceIds={safeFilteredPlaceIds}
           />
         </ResizablePanel>

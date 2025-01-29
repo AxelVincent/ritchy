@@ -60,6 +60,7 @@ function RouteComponent() {
     return <LoadingSpinner message="Detecting your location..." />
   }
 
+  console.log(radiusInMeters)
   return (
     <div className="flex flex-col h-full">
       <PlacesTextSearch
@@ -77,7 +78,7 @@ function RouteComponent() {
         userLocation={currentLocation}
         dataTableRowSelection={{}}
         radiusInMeters={radiusInMeters}
-        listId={undefined}
+        isSearch={true}
         filteredPlaceIds={new Set()}
       />
     </div>

@@ -13,7 +13,7 @@ export const useMapInitialization = (
   mapContainerRef: React.RefObject<HTMLDivElement>,
   initialCenter: [number, number],
   settings: MapSettings,
-  listId?: string,
+  isSearch: boolean,
 ) => {
   const mapRef = useRef<mapboxgl.Map | null>(null)
 
@@ -53,7 +53,7 @@ export const useMapInitialization = (
 
       let controls: IControl[] = []
 
-      if (listId) {
+      if (!isSearch) {
         // Initialize controls
         controls = [
           new MapboxGeocoder({
