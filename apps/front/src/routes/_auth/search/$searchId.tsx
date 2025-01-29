@@ -16,7 +16,7 @@ function RouteComponent() {
   const { searchId } = Route.useLoaderData()
   const { data, isLoading, error } = useSearchContentQuery(searchId)
 
-  if (isLoading) return <LoadingSpinner message="Loading list content..." />
+  if (isLoading) return <LoadingSpinner message="Loading search content..." />
   if (error) return <div>Error: {error.message}</div>
   if (!data || 'error' in data) return null
 
