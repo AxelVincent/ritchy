@@ -35,7 +35,7 @@
     "cors": "2.8.5",
     "dotenv": "16.4.7",
     "drizzle-orm": "0.36.4",
-    "express": "4.21.1",
+    "express": "4.21.2",
     "fast-xml-parser": "4.5.0",
     "ioredis": "5.4.2",
     "p-limit": "6.1.0",
