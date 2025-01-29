@@ -88,19 +88,9 @@ export function Filter({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-full justify-between relative group hover:bg-transparent"
+                    className="h-8 w-full max-w-[200px] overflow-hidden justify-between relative group hover:bg-transparent"
+                    style={{ direction: 'rtl' }}
                   >
-                    <div className="flex-1">
-                      {selected.length === 0 && 'Select...'}
-                      {selected.length > 0 && (
-                        <DynamicBadgeList
-                          items={selected}
-                          badgeVariant="secondary"
-                          containerPadding={60}
-                          characterWidth={4}
-                        />
-                      )}
-                    </div>
                     {selected.length > 0 && (
                       <Button
                         variant="ghost"
@@ -114,6 +104,17 @@ export function Filter({
                         <X className="opacity-50 hover:opacity-100" />
                       </Button>
                     )}
+                    <div className="flex-1" style={{ direction: 'ltr' }}>
+                      {selected.length === 0 && 'Select...'}
+                      {selected.length > 0 && (
+                        <DynamicBadgeList
+                          items={selected}
+                          badgeVariant="secondary"
+                          containerPadding={60}
+                          characterWidth={4}
+                        />
+                      )}
+                    </div>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent

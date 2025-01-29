@@ -320,7 +320,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       <div
                         {...{
                           className: header.column.getCanSort()
-                            ? 'cursor-pointer select-none'
+                            ? 'w-full cursor-pointer select-none'
                             : '',
                           onClick: header.column.getToggleSortingHandler(),
                         }}
