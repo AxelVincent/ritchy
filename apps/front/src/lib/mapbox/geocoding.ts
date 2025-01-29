@@ -6,7 +6,7 @@ import { debounce } from '../debounce'
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN
 
-export const searchLocations = async (
+const searchLocations = async (
   query: string,
 ): Promise<MapboxGeocodeResponse> => {
   if (!query)

@@ -4,7 +4,7 @@ import { getPlaceNotes } from './list'
 
 const notesRouter: Router = express.Router()
 
-notesRouter.get('/:placeId/notes', getPlaceNotes)
-notesRouter.post('/:placeId/notes', addPlaceNote)
+notesRouter.get('/:placeId', getPlaceNotes)
+notesRouter.post('/:placeId', addPlaceNote)
 
 export default notesRouter

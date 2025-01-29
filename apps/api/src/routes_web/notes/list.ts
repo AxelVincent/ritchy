@@ -2,8 +2,8 @@ import { logger } from '@ritchy/logger'
 import type { NotesApiResponse } from '@ritchy/types'
 import { desc, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
-import { db } from '../../../db/db'
-import { note } from '../../../db/schema'
+import { db } from '../../db/db'
+import { note } from '../../db/schema'
 
 export const getPlaceNotes = async (
   req: Request<{ placeId: string }>,

@@ -18,7 +18,7 @@ export const usePlaceNotesQuery = (
       const token = await getToken()
 
       const response = await apiClient.fetchWithAuth(
-        `/places/${placeId}/notes`,
+        `/notes/${placeId}`,
         {
           method: 'GET',
         },

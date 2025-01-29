@@ -26,50 +26,8 @@ export const RADIUS_SETTINGS: RadiusSettings = {
   initial: 5000,
 }
 
-export interface MapCircleData {
-  type: 'Feature'
-  properties: {
-    radius_m: number
-  }
-  geometry: {
-    type: 'Point'
-    coordinates: [number, number]
-  }
-}
-
-export interface MapBoxProps {
-  initialCenter?: [number, number]
-}
-
-export interface CircleLayerData {
-  type: 'Feature'
-  properties: {
-    radius_m: number
-  }
-  geometry: {
-    type: 'Point'
-    coordinates: [number, number]
-  }
-}
-
-export interface MapLayerConfig {
-  circleLayer: {
-    id: string
-    paint: mapboxgl.CirclePaint
-  }
-}
-
 export interface MapboxLocationParameters {
   latitude: number
   longitude: number
   radiusInMeters: number
-}
-
-export interface ViewStyle {
-  mapStyle: { flex: string }
-  dataStyle: { flex: string }
-}
-
-export interface MapDisplayProps {
-  defaultLocation?: MapboxLocationParameters
 }

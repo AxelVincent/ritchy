@@ -13,7 +13,6 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
-import { Route as AuthPlacesImport } from './routes/_auth/places'
 import { Route as AuthSearchIndexImport } from './routes/_auth/search/index'
 import { Route as AuthSearchSearchIdImport } from './routes/_auth/search/$searchId'
 import { Route as AuthListsListIdImport } from './routes/_auth/lists/$listId'
@@ -29,12 +28,6 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
-} as any)
-
-const AuthPlacesRoute = AuthPlacesImport.update({
-  id: '/places',
-  path: '/places',
-  getParentRoute: () => AuthRoute,
 } as any)
 
 const AuthSearchIndexRoute = AuthSearchIndexImport.update({
@@ -73,13 +66,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthImport
       parentRoute: typeof rootRoute
     }
-    '/_auth/places': {
-      id: '/_auth/places'
-      path: '/places'
-      fullPath: '/places'
-      preLoaderRoute: typeof AuthPlacesImport
-      parentRoute: typeof AuthImport
-    }
     '/_auth/lists/$listId': {
       id: '/_auth/lists/$listId'
       path: '/lists/$listId'
@@ -107,14 +93,12 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 interface AuthRouteChildren {
-  AuthPlacesRoute: typeof AuthPlacesRoute
   AuthListsListIdRoute: typeof AuthListsListIdRoute
   AuthSearchSearchIdRoute: typeof AuthSearchSearchIdRoute
   AuthSearchIndexRoute: typeof AuthSearchIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthPlacesRoute: AuthPlacesRoute,
   AuthListsListIdRoute: AuthListsListIdRoute,
   AuthSearchSearchIdRoute: AuthSearchSearchIdRoute,
   AuthSearchIndexRoute: AuthSearchIndexRoute,
@@ -125,7 +109,6 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/places': typeof AuthPlacesRoute
   '/lists/$listId': typeof AuthListsListIdRoute
   '/search/$searchId': typeof AuthSearchSearchIdRoute
   '/search': typeof AuthSearchIndexRoute
@@ -134,7 +117,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
-  '/places': typeof AuthPlacesRoute
   '/lists/$listId': typeof AuthListsListIdRoute
   '/search/$searchId': typeof AuthSearchSearchIdRoute
   '/search': typeof AuthSearchIndexRoute
@@ -144,7 +126,6 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
-  '/_auth/places': typeof AuthPlacesRoute
   '/_auth/lists/$listId': typeof AuthListsListIdRoute
   '/_auth/search/$searchId': typeof AuthSearchSearchIdRoute
   '/_auth/search/': typeof AuthSearchIndexRoute
@@ -152,20 +133,13 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | ''
-    | '/places'
-    | '/lists/$listId'
-    | '/search/$searchId'
-    | '/search'
+  fullPaths: '/' | '' | '/lists/$listId' | '/search/$searchId' | '/search'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/places' | '/lists/$listId' | '/search/$searchId' | '/search'
+  to: '/' | '' | '/lists/$listId' | '/search/$searchId' | '/search'
   id:
     | '__root__'
     | '/'
     | '/_auth'
-    | '/_auth/places'
     | '/_auth/lists/$listId'
     | '/_auth/search/$searchId'
     | '/_auth/search/'
@@ -202,15 +176,10 @@ export const routeTree = rootRoute
     "/_auth": {
       "filePath": "_auth.tsx",
       "children": [
-        "/_auth/places",
         "/_auth/lists/$listId",
         "/_auth/search/$searchId",
         "/_auth/search/"
       ]
-    },
-    "/_auth/places": {
-      "filePath": "_auth/places.tsx",
-      "parent": "/_auth"
     },
     "/_auth/lists/$listId": {
       "filePath": "_auth/lists/$listId.tsx",

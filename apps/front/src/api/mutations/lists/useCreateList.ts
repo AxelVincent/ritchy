@@ -3,22 +3,6 @@ import { useAuth } from '@clerk/clerk-react'
 import type { CreateListRequest } from '@ritchy/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-// Default emojis to choose from
-export const DEFAULT_EMOJIS = [
-  '📍',
-  '🎯',
-  '⭐',
-  '💫',
-  '🌟',
-  '✨',
-  '💡',
-  '📌',
-  '🎪',
-  '🏰',
-  '🗺️',
-  '🌍',
-]
-
 const apiClient = createApiClient({
   baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
 })

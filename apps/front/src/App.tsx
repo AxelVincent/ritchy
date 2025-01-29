@@ -21,7 +21,7 @@ function InnerApp() {
   )
 }
 
-export const App = () => {
+const App = () => {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
       <QueryProvider>

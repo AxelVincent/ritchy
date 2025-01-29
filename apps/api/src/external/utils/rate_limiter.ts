@@ -62,7 +62,7 @@ const createRefill = (currentState: TokenBucketState): TokenBucketState => {
  * const metrics = limiter.getMetrics()
  * ```
  */
-export const createTokenBucket = (refillRate: number, capacity: number) => {
+const createTokenBucket = (refillRate: number, capacity: number) => {
   validateConfig(refillRate, capacity)
 
   let state: TokenBucketState = {

@@ -1,5 +1,5 @@
-import { useAddPlaceNote } from '@/api/mutations/places/notes/useAddPlaceNote'
-import { usePlaceNotesQuery } from '@/api/queries/places/notes/usePlaceNotes'
+import { useAddPlaceNote } from '@/api/mutations/notes/useAddPlaceNote'
+import { usePlaceNotesQuery } from '@/api/queries/notes/usePlaceNotes'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
