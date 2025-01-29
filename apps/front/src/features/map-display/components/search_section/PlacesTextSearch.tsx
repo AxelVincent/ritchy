@@ -114,6 +114,31 @@ export const PlacesTextSearch = ({
             <LocationAutocomplete onLocationSelect={handleLocationSelect} />
           </div>
           <div className="space-y-1.5 mb-1 sm:space-y-2 w-full">
+            <div className="flex justify-between">
+              <Label
+                htmlFor="radius-input"
+                className="text-sm font-medium text-foreground"
+              >
+                Research area
+              </Label>
+              <Label className="text-sm text-muted-foreground">
+                {radiusInMeters / 1000} km
+              </Label>
+            </div>
+            <div>
+              <Slider
+                id="radius-input"
+                min={RADIUS_SETTINGS.min}
+                max={RADIUS_SETTINGS.max}
+                step={RADIUS_SETTINGS.step}
+                value={[radiusInMeters]}
+                onValueChange={([newValue]) => setRadiusInMeters(newValue)}
+                aria-label="Radius"
+                className="cursor-pointer h-[32.4px]"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5 mb-1 sm:space-y-2 w-full">
             <Label htmlFor="search">What are you looking for?</Label>
             <div className="relative">
               <Input
@@ -138,31 +163,6 @@ export const PlacesTextSearch = ({
                   ✕
                 </Button>
               )}
-            </div>
-          </div>
-          <div className="space-y-1.5 mb-1 sm:space-y-2 w-full">
-            <div className="flex justify-between">
-              <Label
-                htmlFor="radius-input"
-                className="text-sm font-medium text-foreground"
-              >
-                Research area
-              </Label>
-              <Label className="text-sm text-muted-foreground">
-                {radiusInMeters / 1000} km
-              </Label>
-            </div>
-            <div>
-              <Slider
-                id="radius-input"
-                min={RADIUS_SETTINGS.min}
-                max={RADIUS_SETTINGS.max}
-                step={RADIUS_SETTINGS.step}
-                value={[radiusInMeters]}
-                onValueChange={([newValue]) => setRadiusInMeters(newValue)}
-                aria-label="Radius"
-                className="cursor-pointer h-[32.4px]"
-              />
             </div>
           </div>
           <div className="space-y-1.5 mb-1 sm:space-y-2 w-[100px]">
