@@ -8,7 +8,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '../ui/command'
+} from '../ui/command-location-dropdown'
 
 import { cn } from '@/lib/utils'
 import type { GeocodingResult, MapboxGeocodeResponse } from '@ritchy/types'
