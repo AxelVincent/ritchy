@@ -43,10 +43,8 @@ export function Filter({
 
   const columnFilterValue = column.getFilterValue()
 
-  const sortedUniqueValues = useUniqueValues(
-    column,
-    filterVariant as FilterVariant,
-  )
+  const sortedUniqueValues =
+    useUniqueValues(column, filterVariant as FilterVariant) ?? []
 
   const getFilterTooltip = (
     variant: FilterVariant,
@@ -67,8 +65,12 @@ export function Filter({
   }
 
   const renderMultiSelect = () => {
-    const selected = (columnFilterValue as string[]) || []
+    const selected = Array.isArray(columnFilterValue) ? columnFilterValue : []
     const [showTooltip, setShowTooltip] = useState(false)
+
+    const safeUniqueValues = Array.isArray(sortedUniqueValues)
+      ? sortedUniqueValues
+      : []
 
     return (
       <TooltipProvider>
@@ -86,19 +88,9 @@ export function Filter({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-full justify-between relative group hover:bg-transparent"
+                    className="h-8 w-full max-w-[200px] overflow-hidden justify-between relative group hover:bg-transparent"
+                    style={{ direction: 'rtl' }}
                   >
-                    <div className="flex-1">
-                      {selected.length === 0 && 'Select...'}
-                      {selected.length > 0 && (
-                        <DynamicBadgeList
-                          items={selected}
-                          badgeVariant="secondary"
-                          containerPadding={60}
-                          characterWidth={4}
-                        />
-                      )}
-                    </div>
                     {selected.length > 0 && (
                       <Button
                         variant="ghost"
@@ -112,14 +104,30 @@ export function Filter({
                         <X className="opacity-50 hover:opacity-100" />
                       </Button>
                     )}
+                    <div className="flex-1" style={{ direction: 'ltr' }}>
+                      {selected.length === 0 && 'Select...'}
+                      {selected.length > 0 && (
+                        <DynamicBadgeList
+                          items={selected}
+                          badgeVariant="secondary"
+                          containerPadding={60}
+                          characterWidth={4}
+                        />
+                      )}
+                    </div>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="p-0">
+                <PopoverContent
+                  className="p-0 w-[var(--trigger-width)]"
+                  style={{ minWidth: 'var(--trigger-width)' }}
+                  align="start"
+                  sideOffset={4}
+                >
                   <Command>
                     <CommandInput placeholder="Search..." />
                     <CommandEmpty>No items found.</CommandEmpty>
                     <CommandGroup className="max-h-[200px] overflow-auto">
-                      {sortedUniqueValues.map((value) => (
+                      {safeUniqueValues.map((value) => (
                         <CommandItem
                           key={value}
                           onSelect={() => {
@@ -140,7 +148,7 @@ export function Filter({
                                 : 'opacity-0',
                             )}
                           />
-                          {value as string}
+                          {String(value)}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -266,7 +274,7 @@ export function Filter({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            {sortedUniqueValues.map((value) => (
+            {(sortedUniqueValues || []).map((value) => (
               <SelectItem key={value} value={value.toString()}>
                 {value as string}
               </SelectItem>

@@ -1,14 +1,16 @@
 import {
   integer,
+  numeric,
+  pgEnum,
   pgTable,
-  serial,
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core'
 
 export const list = pgTable('list', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
   emoji: text('emoji').notNull(),
   userId: text('user_id'),
@@ -19,8 +21,8 @@ export const list = pgTable('list', {
 export const listPlace = pgTable(
   'list_place',
   {
-    id: serial('id').primaryKey(),
-    listId: integer('list_id')
+    id: uuid('id').defaultRandom().primaryKey(),
+    listId: uuid('list_id')
       .notNull()
       .references(() => list.id),
     placeId: text('place_id').notNull(),
@@ -36,10 +38,30 @@ export const listPlace = pgTable(
 )
 
 export const note = pgTable('note', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').defaultRandom().primaryKey(),
   placeId: text('place_id').notNull(),
   userId: text('user_id').notNull(),
   note: text('note').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+export const searchModelEnum = pgEnum('search_model', [
+  'DEFAULT',
+  'NAVIGATOR',
+  'EXPLORER',
+  'PRO',
+])
+
+export const search = pgTable('search', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: text('user_id').notNull(),
+  latitude: numeric('latitude').notNull(),
+  longitude: numeric('longitude').notNull(),
+  radiusInMeters: integer('radius_in_meters').notNull(),
+  placeName: text('place_name').notNull(),
+  keyword: text('keyword').notNull(),
+  model: searchModelEnum('model').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

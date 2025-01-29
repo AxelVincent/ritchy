@@ -13,6 +13,7 @@ export const useMapInitialization = (
   mapContainerRef: React.RefObject<HTMLDivElement>,
   initialCenter: [number, number],
   settings: MapSettings,
+  isSearch: boolean,
 ) => {
   const mapRef = useRef<mapboxgl.Map | null>(null)
 
@@ -50,24 +51,38 @@ export const useMapInitialization = (
         console.error('Mapbox error:', e)
       })
 
-      // Initialize controls
-      const controls: IControl[] = [
-        new MapboxGeocoder({
-          accessToken: mapboxgl.accessToken,
-          marker: false,
-          flyTo: { duration: 0 },
-          mapboxgl,
-          placeholder: 'Location',
-        }) as IControl,
-        new mapboxgl.NavigationControl(),
-        new mapboxgl.FullscreenControl(),
-        new mapboxgl.GeolocateControl({
-          positionOptions: { enableHighAccuracy: true },
-          trackUserLocation: true,
-          showUserHeading: true,
-          fitBoundsOptions: { maxZoom: 15, animate: false },
-        }),
-      ]
+      let controls: IControl[] = []
+
+      if (!isSearch) {
+        // Initialize controls
+        controls = [
+          new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            marker: false,
+            flyTo: { duration: 0 },
+            mapboxgl,
+            placeholder: 'Location',
+          }) as IControl,
+          new mapboxgl.NavigationControl(),
+          new mapboxgl.FullscreenControl(),
+          new mapboxgl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            showUserHeading: true,
+            fitBoundsOptions: { maxZoom: 15, animate: false },
+          }),
+        ]
+      } else {
+        controls = [
+          new mapboxgl.NavigationControl(),
+          new mapboxgl.FullscreenControl(),
+          new mapboxgl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            showUserHeading: true,
+          }),
+        ]
+      }
 
       // Add controls to map
       for (const control of controls) {

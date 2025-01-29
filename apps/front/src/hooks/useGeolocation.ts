@@ -1,14 +1,14 @@
-import type { Location } from '@/features/map-display/types'
+import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { useEffect, useRef, useState } from 'react'
 
 interface GeolocationState {
-  location: Location
+  location: MapboxLocationParameters
   error: string | null
   loading: boolean
 }
 
 export const useGeolocation = (
-  defaultLocation: Location,
+  defaultLocation: MapboxLocationParameters,
   skipGeolocation: boolean,
   runOnce = false,
 ) => {

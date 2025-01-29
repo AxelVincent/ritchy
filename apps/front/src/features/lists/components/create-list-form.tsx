@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 import { EMOJI_CATEGORIES } from './emojis'
 
-export const ALL_EMOJIS = Object.values(EMOJI_CATEGORIES).flatMap(
+const ALL_EMOJIS = Object.values(EMOJI_CATEGORIES).flatMap(
   (category) => category.emojis,
 )
 

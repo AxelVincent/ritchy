@@ -1,5 +1,5 @@
-import { useAddPlaceNote } from '@/api/mutations/places/notes/useAddPlaceNote'
-import { usePlaceNotesQuery } from '@/api/queries/places/notes/usePlaceNotes'
+import { useAddPlaceNote } from '@/api/mutations/notes/useAddPlaceNote'
+import { usePlaceNotesQuery } from '@/api/queries/notes/usePlaceNotes'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
@@ -138,7 +138,7 @@ export const Notes = ({
                   {/* Note content */}
                   <div className="flex-1 pt-1">
                     <div className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(note.created_at), {
+                      {formatDistanceToNow(new Date(note.createdAt), {
                         addSuffix: true,
                       })}
                     </div>

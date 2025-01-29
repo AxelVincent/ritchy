@@ -335,17 +335,6 @@ const generatePlaceKeys = (
     : placeKeys
 }
 
-// Stage 0 keys
-export const IDS_ONLY_PLACE_KEYS = generatePlaceKeys(IDSOnlyPlaceSchema)
-
-// Stage 1 keys
-export const LOCATION_ONLY_PLACE_KEYS = generatePlaceKeys(
-  LocationOnlyPlaceSchema,
-)
-
-// Stage 2 keys
-export const BASIC_PLACE_KEYS = generatePlaceKeys(BasicPlaceSchema)
-
 // Stage 3 keys
 export const ADVANCED_PLACE_KEYS_PLACE_DETAILS = generatePlaceKeys(
   AdvancedPlaceSchema,
@@ -355,13 +344,8 @@ export const ADVANCED_PLACE_KEYS_TEXT_SEARCH =
   generatePlaceKeys(AdvancedPlaceSchema)
 
 // Type Inference for Place Stages
-export type IDSOnlyPlace = z.infer<typeof IDSOnlyPlaceSchema>
-export type LocationOnlyPlace = z.infer<typeof LocationOnlyPlaceSchema>
-export type BasicPlace = z.infer<typeof BasicPlaceSchema>
 export type AdvancedPlace = z.infer<typeof AdvancedPlaceSchema>
 export type PreferredPlace = z.infer<typeof PreferredPlaceSchema>
-export type AreaSummary = z.infer<typeof AreaSummarySchema>
-export type AddressDescriptor = z.infer<typeof AddressDescriptorSchema>
 
 // Type Inference for TextSearch Request/Response
 export type GooglePlacesTextSearchRequestBody = z.infer<

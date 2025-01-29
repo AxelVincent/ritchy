@@ -3,12 +3,12 @@ import { ApiErrorResponseSchema } from '../../common'
 
 // Basic Schema
 export const NoteSchema = z.object({
-  id: z.number(),
-  place_id: z.string(),
+  id: z.string().uuid(),
+  placeId: z.string(),
   note: z.string(),
-  user_id: z.string(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  userId: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 })
 
 export const NotesResponseSchema = z.array(NoteSchema)

@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from '../../common'
 import { NoteSchema } from './notes'
 
 // Basic/Common Schemas
@@ -131,7 +130,7 @@ export const PlacesSearchRequestBodySchema = z.object({
 })
 
 export const PlaceListAssociationSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   emoji: z.string(),
 })
@@ -172,22 +171,11 @@ export const PlaceSchema = z.object({
   notes: z.array(NoteSchema).optional(),
 })
 
-export const PlacesSearchResponseSchema = z.array(PlaceSchema)
-
-export const PlacesSearchApiResponseSchema = z.union([
-  PlacesSearchResponseSchema,
-  ApiErrorResponseSchema,
-])
-
 // Type inference from schemas
 export type Location = z.infer<typeof LocationSchema>
 export type Place = z.infer<typeof PlaceSchema>
 export type OpeningHours = z.infer<typeof OpeningHoursSchema>
 export type PlacesSearchRequestBody = z.infer<
   typeof PlacesSearchRequestBodySchema
->
-export type PlacesSearchResponse = z.infer<typeof PlacesSearchResponseSchema>
-export type PlacesSearchApiResponse = z.infer<
-  typeof PlacesSearchApiResponseSchema
 >
 export type PlaceListAssociation = z.infer<typeof PlaceListAssociationSchema>

@@ -6,7 +6,7 @@ import { list } from '../../db/schema'
 export const getListAssociationsByPlaceIds = async (
   googlePlaceIds: string[],
   userId: string,
-  listId?: number,
+  listId?: string,
 ): Promise<Map<string, PlaceListAssociation[]>> => {
   const placeIdSet = new Set(googlePlaceIds)
 

@@ -11,11 +11,12 @@
     "format:fix": "turbo run format:fix",
     "test": "turbo run test",
     "clean": "turbo run clean",
-    "coverage": "pnpm typecheck && pnpm check:fix && pnpm format:fix"
+    "coverage": "pnpm typecheck && pnpm check:fix && pnpm format:fix && pnpm unused",
+    "unused": "knip"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "prettier": "^3.2.5",
+    "knip": "5.43.6",
     "turbo": "^2.2.3",
     "typescript": "5.7.2"
   },

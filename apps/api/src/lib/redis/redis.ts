@@ -9,7 +9,7 @@ type CacheOptions = {
   prefix?: string
 }
 
-const DEFAULT_TTL = 14 * 24 * 60 * 60 // 14 days in seconds
+const DEFAULT_TTL = 90 * 24 * 60 * 60 // 90 days in seconds
 
 /**
  * Creates a Redis client with caching utilities
@@ -40,7 +40,7 @@ const DEFAULT_TTL = 14 * 24 * 60 * 60 // 14 days in seconds
  *
  * @returns Object containing Redis client and utility methods
  */
-export const createRedisClient = () => {
+const createRedisClient = () => {
   // https://docs.railway.com/guides/private-networking#ioredis
   const URL = `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
   const redis = new Redis(URL, {

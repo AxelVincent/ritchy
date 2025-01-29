@@ -14,7 +14,7 @@ export const getListContent = async (
   res: Response<ListContentApiResponse>,
 ): Promise<void> => {
   try {
-    const listId = Number.parseInt(req.params.id)
+    const listId = req.params.id
     const userId = req.auth.userId
 
     // Verify list ownership

@@ -14,62 +14,20 @@ export interface RadiusSettings {
 
 export const MAP_SETTINGS: MapSettings = {
   style: 'mapbox://styles/mapbox/streets-v12',
-  zoom: 10,
+  zoom: 12,
   maxZoom: 30,
   minZoom: 5,
 }
 
 export const RADIUS_SETTINGS: RadiusSettings = {
-  min: 100,
+  min: 500,
   max: 50000,
-  step: 100,
+  step: 500,
   initial: 5000,
 }
 
-export interface MapCircleData {
-  type: 'Feature'
-  properties: {
-    radius_m: number
-  }
-  geometry: {
-    type: 'Point'
-    coordinates: [number, number]
-  }
-}
-
-export interface MapBoxProps {
-  initialCenter?: [number, number]
-}
-
-export interface CircleLayerData {
-  type: 'Feature'
-  properties: {
-    radius_m: number
-  }
-  geometry: {
-    type: 'Point'
-    coordinates: [number, number]
-  }
-}
-
-export interface MapLayerConfig {
-  circleLayer: {
-    id: string
-    paint: mapboxgl.CirclePaint
-  }
-}
-
-export interface Location {
+export interface MapboxLocationParameters {
   latitude: number
   longitude: number
   radiusInMeters: number
-}
-
-export interface ViewStyle {
-  mapStyle: { flex: string }
-  dataStyle: { flex: string }
-}
-
-export interface MapDisplayProps {
-  defaultLocation?: Location
 }
