@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { GetSearchesApiResponse } from '@ritchy/types'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
@@ -16,6 +16,7 @@ export const getSearches = async (
       .select()
       .from(search)
       .where(eq(search.userId, userId))
+      .orderBy(desc(search.createdAt))
 
     res.json({
       searches: result.map((search) => ({
