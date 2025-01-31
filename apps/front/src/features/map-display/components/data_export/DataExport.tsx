@@ -9,6 +9,7 @@ import {
   searchResultSchema,
 } from '@ritchy/types'
 import { type QueryClient, useQueryClient } from '@tanstack/react-query'
+import { Download } from 'lucide-react'
 import { useState } from 'react'
 
 /**
@@ -390,6 +391,7 @@ export const DataExport = ({ data }: DataExportProps) => {
 
   return (
     <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+      <Download className="w-4 h-4" />
       {isExporting ? 'Exporting...' : `Export to CSV (${data.length})`}
     </Button>
   )
