@@ -11,22 +11,26 @@ const showCopiedToast = (displayName: string) => {
 
 export const createColumnPinCopyActions = (
   id: string,
-  text: string,
+  text: string | null,
   setSelectedPlaceId?: (id: string) => void,
 ): Action[] => [
   {
-    icon: 'MapPinned',
+    icon: 'MapPinned' as const,
     onClick: () => setSelectedPlaceId?.(id),
     label: 'Pin to map',
   },
-  {
-    icon: 'Copy',
-    onClick: () => {
-      navigator.clipboard.writeText(text)
-      showCopiedToast(text)
-    },
-    label: 'Copy',
-  },
+  ...(text
+    ? [
+        {
+          icon: 'Copy' as const,
+          onClick: () => {
+            navigator.clipboard.writeText(text)
+            showCopiedToast(text)
+          },
+          label: 'Copy',
+        },
+      ]
+    : []),
 ]
 
 export const createColumnPinActions = (
@@ -41,16 +45,14 @@ export const createColumnPinActions = (
 ]
 
 export const createColumnPinNoteActions = (
-  text: string,
+  id: string,
   openNotesDialog: () => void,
+  setSelectedPlaceId?: (id: string) => void,
 ): Action[] => [
   {
-    icon: 'Copy',
-    onClick: () => {
-      navigator.clipboard.writeText(text)
-      showCopiedToast(text)
-    },
-    label: 'Copy',
+    icon: 'MapPinned' as const,
+    onClick: () => setSelectedPlaceId?.(id),
+    label: 'Pin to map',
   },
   {
     icon: 'MessageSquareText',

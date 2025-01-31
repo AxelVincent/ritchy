@@ -1,6 +1,6 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ColumnPinCopyCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const getDomainFromUrl = (url: string): string => {
@@ -23,33 +23,11 @@ export const websiteColumn: ColumnDef<SearchResult> = {
   cell: ({ row, table }) => {
     const website = row.getValue('websiteUri') as string
     return (
-      <TextWrapper
-        id={row.original.id}
-        actions={[
-          {
-            icon: 'MapPinned',
-            onClick: () => {
-              table.options.meta?.setSelectedPlaceId?.(row.original.id)
-            },
-            label: 'Pin to map',
-          },
-          {
-            icon: 'Copy',
-            onClick: () => {
-              navigator.clipboard.writeText(row.original.displayName)
-            },
-            label: 'Copy',
-          },
-        ]}
-      >
-        {website ? (
-          <a href={website} target="_blank" rel="noopener noreferrer">
-            {getDomainFromUrl(website)}
-          </a>
-        ) : (
-          '-'
-        )}
-      </TextWrapper>
+      <ColumnPinCopyCell
+        row={row}
+        table={table}
+        content={website ? getDomainFromUrl(website) : ''}
+      />
     )
   },
 }

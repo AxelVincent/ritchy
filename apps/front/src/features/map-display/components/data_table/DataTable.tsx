@@ -20,6 +20,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { Plus, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { DeleteItemsFromListDialog } from '../../../lists/components/DeleteItemsFromListDialog'
 import { ActiveFilters } from './ActiveFilters'
@@ -221,12 +222,14 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     variant="default"
                     onClick={() => setShowAddListDialog(true)}
                   >
+                    <Plus className="w-4 h-4" />
                     Add {selectedRows.length} item(s) to list
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() => setShowDeleteListDialog(true)}
                   >
+                    <Trash className="w-4 h-4" />
                     Remove {selectedRows.length} items
                   </Button>
                 </div>
@@ -244,6 +247,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   variant="default"
                   onClick={() => setShowAddListDialog(true)}
                 >
+                  <Plus className="w-4 h-4" />
                   Add {selectedRows.length} item(s) to list
                 </Button>
               )}
