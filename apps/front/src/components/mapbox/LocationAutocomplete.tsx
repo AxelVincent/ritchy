@@ -117,7 +117,7 @@ export function LocationAutocomplete({
       <div className="relative mt-1">
         <div
           className={cn(
-            'animate-in fade-in-0 zoom-in-95 absolute top-0 z-10 w-full rounded-xl bg-white outline-none',
+            'animate-in fade-in-0 zoom-in-95 absolute top-0 z-10 w-full bg-background rounded-xl outline-none',
             isOpen ? 'block' : 'hidden',
           )}
         >
