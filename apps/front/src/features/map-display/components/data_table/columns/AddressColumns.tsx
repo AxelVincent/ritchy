@@ -41,7 +41,7 @@ export const countryColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.country}
+      content={row.original.address.country ?? null}
     />
   ),
 }
@@ -58,7 +58,7 @@ export const localityColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.locality}
+      content={row.original.address.locality ?? null}
     />
   ),
 }
@@ -75,7 +75,7 @@ export const sublocalityColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.sublocality}
+      content={row.original.address.sublocality ?? null}
     />
   ),
 }
@@ -92,7 +92,7 @@ export const postalCodeColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.postalCode}
+      content={row.original.address.postalCode ?? null}
     />
   ),
 }
@@ -111,7 +111,7 @@ export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.postalCodeSuffix}
+      content={row.original.address.postalCodeSuffix ?? null}
     />
   ),
 }
@@ -128,7 +128,7 @@ export const plusCodeColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.plusCode}
+      content={row.original.address.plusCode ?? null}
     />
   ),
 }
@@ -145,7 +145,7 @@ export const streetColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.street}
+      content={row.original.address.street ?? null}
     />
   ),
 }
@@ -164,7 +164,7 @@ export const neighborhoodColumn: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.neighborhood}
+      content={row.original.address.neighborhood ?? null}
     />
   ),
 }
@@ -183,7 +183,7 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.administrativeAreaLevel1}
+      content={row.original.address.administrativeAreaLevel1 ?? null}
     />
   ),
 }
@@ -202,7 +202,7 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.administrativeAreaLevel2}
+      content={row.original.address.administrativeAreaLevel2 ?? null}
     />
   ),
 }
@@ -221,7 +221,7 @@ export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
     <ColumnPinCopyCell
       row={row}
       table={table}
-      content={row.original.address.administrativeAreaLevel3}
+      content={row.original.address.administrativeAreaLevel3 ?? null}
     />
   ),
 }

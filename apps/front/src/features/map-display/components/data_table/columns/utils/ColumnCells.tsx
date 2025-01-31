@@ -18,8 +18,13 @@ interface BaseColumnCellProps {
   content: React.ReactNode
 }
 
+interface ColumnPinCopyCellProps extends BaseColumnCellProps {
+  content: string | null
+}
+
 export interface NotesColumnCellProps {
   row: Row<SearchResult>
+  table: Table<SearchResult>
   place: SearchResult
   content: Note | null
 }
@@ -29,19 +34,15 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
   row,
   table,
   content,
-}: BaseColumnCellProps) {
+}: ColumnPinCopyCellProps) {
   const actions = React.useMemo(
     () =>
       createColumnPinCopyActions(
         row.original.id,
-        row.original.displayName,
+        content,
         table.options.meta?.setSelectedPlaceId,
       ),
-    [
-      row.original.id,
-      row.original.displayName,
-      table.options.meta?.setSelectedPlaceId,
-    ],
+    [row.original.id, content, table.options.meta?.setSelectedPlaceId],
   )
 
   return (
@@ -76,15 +77,20 @@ export const ColumnPinCell = React.memo(function ColumnPinCell({
 // Specialized cell component for notes
 export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
   row,
+  table,
   place,
   content,
 }: NotesColumnCellProps) {
-  const actions = createColumnPinNoteActions(row.original.displayName, () => {
-    const dialogTrigger = document.querySelector(
-      `[data-notes-dialog-trigger="${row.original.id}"]`,
-    ) as HTMLButtonElement
-    dialogTrigger?.click()
-  })
+  const actions = createColumnPinNoteActions(
+    row.original.id,
+    () => {
+      const dialogTrigger = document.querySelector(
+        `[data-notes-dialog-trigger="${row.original.id}"]`,
+      ) as HTMLButtonElement
+      dialogTrigger?.click()
+    },
+    table.options.meta?.setSelectedPlaceId,
+  )
 
   const [notes, setNotes] = React.useState(place.notes || [])
 
