@@ -89,6 +89,7 @@ export const MapDisplay = ({ isSearch, listId, places }: MapDisplayProps) => {
             setDataTableRowSelection={setDataTableRowSelection}
             dataTableRowSelection={dataTableRowSelection}
             onFilteredDataChange={setFilteredPlaceIds}
+            listId={listId}
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
