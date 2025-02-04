@@ -1,11 +1,16 @@
 # Build stage
-FROM node:22-alpine AS base
+FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+
+# Fix Corepack key mismatch issue
+RUN corepack disable \
+    && rm -rf ~/.cache/corepack \
+    && corepack enable \
+    && corepack prepare pnpm@latest --activate
 
 # Install turbo and pnpm
-RUN pnpm install -g turbo
+RUN npm install -g pnpm turbo
 
 # Builder Stage
 FROM base AS builder
@@ -34,8 +39,8 @@ ENV VITE_MAPBOX_ACCESS_TOKEN=$VITE_MAPBOX_ACCESS_TOKEN
 COPY --from=builder /app/out/full/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Install dependencies
-RUN pnpm install
+# Install dependencies and verify versions
+RUN pnpm install && pnpm -v && node -v
 
 # Build the project
 RUN pnpm turbo build --filter=front...
