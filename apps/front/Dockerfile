@@ -3,14 +3,9 @@ FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-# Fix Corepack key mismatch issue
-RUN corepack disable \
-    && rm -rf ~/.cache/corepack \
-    && corepack enable \
-    && corepack prepare pnpm@latest --activate
 
 # Install turbo and pnpm
-RUN npm install -g pnpm turbo
+RUN npm install -g pnpm@9.7.1 turbo
 
 # Builder Stage
 FROM base AS builder
