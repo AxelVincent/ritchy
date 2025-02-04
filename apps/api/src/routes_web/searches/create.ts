@@ -20,21 +20,26 @@ export const createSearch = async (
   try {
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
 
-    if (parsedBody.model === 'PRO' || parsedBody.model === 'EXPLORER') {
+    if (
+      parsedBody.model === 'NAVIGATOR' ||
+      parsedBody.model === 'PRO' ||
+      parsedBody.model === 'EXPLORER'
+    ) {
       if (
         ![
           // Ryan Staging / Prod
           'user_2pLKf5Yr8yJfZQbultG2uJ8pgFm',
           'user_2pLdQum1fXENokXcvNTsOdRWyts',
-          // Axel Staging / Prod
+          // // Axel Staging / Prod
           'user_2p7ZA02lG6WufI5SV3l6zyAoAIo',
           'user_2pLd3diNenMMUy61qNECHbSlnHK',
         ].includes(req.auth.userId)
       ) {
         res.status(403).json({
           error: 'Forbidden',
-          message: 'This feature is only available for EXPLORER/PRO users',
+          message: `This feature is only available for ${parsedBody.model} and above users`,
         })
+        return
       }
     }
 

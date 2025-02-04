@@ -4,6 +4,7 @@ import { MapBox } from '@/features/map-display/components/map_box/MapBox'
 import { PlacesTextSearch } from '@/features/map-display/components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
+import { toast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { CreateSearchRequestBody } from '@ritchy/types'
 
@@ -39,6 +40,13 @@ function RouteComponent() {
             params: { searchId: response.id },
           })
         }
+      },
+      onError: (error) => {
+        console.error(error)
+        toast({
+          title: error.message,
+          variant: 'destructive',
+        })
       },
     })
   }
