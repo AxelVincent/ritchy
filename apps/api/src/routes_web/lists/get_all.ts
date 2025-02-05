@@ -33,6 +33,7 @@ export const getLists = async (
         updatedAt: list.updatedAt.toISOString(),
       })),
     )
+    return
   } catch (error) {
     logger.error({
       msg: 'Get lists error',
@@ -43,5 +44,6 @@ export const getLists = async (
       error: 'Failed to fetch lists',
       message: 'Failed to fetch lists',
     })
+    return
   }
 }

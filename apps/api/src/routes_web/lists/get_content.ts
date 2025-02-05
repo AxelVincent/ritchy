@@ -100,6 +100,7 @@ export const getListContent = async (
       createdAt: result[0].createdAt.toISOString(),
       updatedAt: result[0].updatedAt.toISOString(),
     })
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -124,5 +125,6 @@ export const getListContent = async (
       error: 'Failed to get list content',
       message: 'Failed to get list content',
     })
+    return
   }
 }

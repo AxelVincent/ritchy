@@ -35,6 +35,7 @@ export const enrichWebsite = async (
     // Validate response
     const validatedData = EnrichResponseSchema.parse(enrichedData)
     res.json(validatedData)
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -55,5 +56,6 @@ export const enrichWebsite = async (
       metadata: { error },
     })
     res.status(500).json({ error: 'Failed to enrich website data' })
+    return
   }
 }

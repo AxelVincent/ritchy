@@ -38,6 +38,7 @@ export const createList = async (
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     })
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -73,5 +74,6 @@ export const createList = async (
       error: 'Failed to create list',
       message: 'Failed to create list',
     })
+    return
   }
 }
