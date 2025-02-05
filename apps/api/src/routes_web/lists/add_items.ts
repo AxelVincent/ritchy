@@ -93,6 +93,7 @@ export const addItemsToList = async (
       duplicates: duplicatePlaceIds.map(Number),
       added: newPlaceIds.map(Number),
     })
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -117,5 +118,6 @@ export const addItemsToList = async (
       error: 'Failed to add items to list',
       message: 'Failed to add items to list',
     })
+    return
   }
 }

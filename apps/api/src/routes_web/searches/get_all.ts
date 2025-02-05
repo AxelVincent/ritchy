@@ -28,11 +28,17 @@ export const getSearches = async (
         updatedAt: search.updatedAt,
       })),
     })
+    return
   } catch (error) {
     logger.error({
       msg: 'Get searches error',
       event: 'get_searches_error',
       metadata: { error },
     })
+    res.status(500).json({
+      error: 'Failed to get searches',
+      message: 'Failed to get searches',
+    })
+    return
   }
 }

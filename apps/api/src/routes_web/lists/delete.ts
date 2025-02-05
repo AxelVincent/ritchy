@@ -59,5 +59,6 @@ export const deleteList = async (
       error: 'Failed to delete list',
       message: 'Failed to delete list',
     })
+    return
   }
 }

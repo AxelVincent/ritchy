@@ -32,6 +32,7 @@ export const addPlaceNote = async (
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
     })
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -60,5 +61,6 @@ export const addPlaceNote = async (
       error: 'Failed to add note',
       message: 'Failed to add note',
     })
+    return
   }
 }

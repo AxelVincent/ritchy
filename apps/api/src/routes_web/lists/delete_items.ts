@@ -83,5 +83,6 @@ export const deleteItemsFromList = async (
       error: 'Failed to delete items from list',
       message: 'Failed to delete items from list',
     })
+    return
   }
 }

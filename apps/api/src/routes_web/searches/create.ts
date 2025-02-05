@@ -60,6 +60,7 @@ export const createSearch = async (
     res.json({
       id: result.id,
     })
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -94,5 +95,6 @@ export const createSearch = async (
       error: 'Failed to create search',
       message: 'Failed to create search',
     })
+    return
   }
 }

@@ -26,6 +26,7 @@ export const getPlaceNotes = async (
         updatedAt: n.updatedAt.toISOString(),
       })),
     )
+    return
   } catch (error) {
     logger.error({
       msg: 'Get place notes error',
@@ -39,5 +40,6 @@ export const getPlaceNotes = async (
       error: 'Failed to get notes',
       message: 'Failed to get notes',
     })
+    return
   }
 }

@@ -83,6 +83,7 @@ export const getSearchContent = async (
       },
     })
     res.json(validatedResults)
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -94,6 +95,7 @@ export const getSearchContent = async (
         error: 'Invalid request data',
         details: error.errors,
       })
+      return
     }
 
     logger.error({
@@ -102,5 +104,6 @@ export const getSearchContent = async (
       metadata: { error },
     })
     res.status(500).json({ error: 'Failed to get search content' })
+    return
   }
 }
