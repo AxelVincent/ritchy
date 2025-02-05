@@ -208,7 +208,7 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
           // biome-ignore lint/correctness/noChildrenProp: <explanation>
           children={([canSubmit, isSubmitting]) => (
             <Button type="submit" size="sm" disabled={!canSubmit}>
-              {isSubmitting ? '...' : 'Submit'}
+              {isSubmitting ? '...' : 'Create'}
             </Button>
           )}
         />

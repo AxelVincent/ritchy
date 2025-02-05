@@ -29,7 +29,7 @@ export function DeleteItemsFromListDialog({
     await deleteItemsFromList({ id: listId, items: selectedItems })
     toast({
       title: 'Removed from list',
-      description: `${selectedItems.length} item${
+      description: `${selectedItems.length} lead${
         selectedItems.length === 1 ? '' : 's'
       } removed from the list`,
     })
@@ -42,7 +42,7 @@ export function DeleteItemsFromListDialog({
         <DialogHeader>
           <DialogTitle>Remove from List</DialogTitle>
           <DialogDescription>
-            Are you sure you want to remove {selectedItems.length} item
+            Are you sure you want to remove {selectedItems.length} lead
             {selectedItems.length === 1 ? '' : 's'} from this list?
           </DialogDescription>
         </DialogHeader>

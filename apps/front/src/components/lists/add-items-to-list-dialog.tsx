@@ -1,3 +1,4 @@
+import { CreateListForm } from '@/components/lists/create-list-form'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -6,7 +7,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { CreateListForm } from '@/features/lists/components/create-list-form'
 import { useLists } from '@/features/map-display/hooks/useLists'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
@@ -69,7 +69,10 @@ export function AddItemsToListDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add to List</DialogTitle>
+          <DialogTitle>
+            Add {selectedItems.length} lead
+            {selectedItems.length === 1 ? '' : 's'} to a list
+          </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="max-h-[300px]">
@@ -94,7 +97,7 @@ export function AddItemsToListDialog({
             className="w-full"
             onClick={() => setShowNewListInput(true)}
           >
-            Create New List
+            Create new list
           </Button>
         )}
       </DialogContent>

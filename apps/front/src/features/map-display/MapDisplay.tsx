@@ -2,10 +2,10 @@ import { DataTable } from '@/features/map-display/components/data_table/DataTabl
 import { MapBox } from '@/features/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 
+import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
-import { EmptyListState } from '@/features/lists/components/EmptyListState'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
@@ -31,9 +31,6 @@ export const MapDisplay = ({ isSearch, listId, places }: MapDisplayProps) => {
 
   const [currentLocation, setLocation] =
     useState<MapboxLocationParameters>(defaultLocation)
-  // const [radiusInMeters, setRadiusInMeters] = useState(
-  //   defaultLocation.radiusInMeters,
-  // )
 
   // Update searchResults to use listData when available, fallback to mockData in development
   const [searchResults, setSearchResults] = useState<Place[]>(() => {

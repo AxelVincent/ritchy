@@ -11,7 +11,7 @@ import {
 import { Slider } from '@/components/ui/slider'
 import { Search } from 'lucide-react'
 
-import { LocationAutocomplete } from '@/components/mapbox/LocationAutocomplete'
+import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
 import { RADIUS_SETTINGS } from '@/features/map-display/types'
 import type { CreateSearchRequestBody, GeocodingResult } from '@ritchy/types'
 import { useEffect, useState } from 'react'

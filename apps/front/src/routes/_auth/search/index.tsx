@@ -1,7 +1,7 @@
 import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { PlacesTextSearch } from '@/components/search/places-text-search'
 import { MapBox } from '@/features/map-display/components/map_box/MapBox'
-import { PlacesTextSearch } from '@/features/map-display/components/search_section/PlacesTextSearch'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { toast } from '@/hooks/use-toast'
