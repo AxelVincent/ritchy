@@ -70,8 +70,8 @@ export function AddItemsToListDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            Add {selectedItems.length} business
-            {selectedItems.length === 1 ? '' : 'es'} to a list
+            Add {selectedItems.length} lead
+            {selectedItems.length === 1 ? '' : 's'} to a list
           </DialogTitle>
         </DialogHeader>
 

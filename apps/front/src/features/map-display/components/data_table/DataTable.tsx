@@ -223,16 +223,16 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     onClick={() => setShowAddListDialog(true)}
                   >
                     <Plus className="w-4 h-4" />
-                    Add {selectedRows.length} business
-                    {selectedRows.length === 1 ? '' : 'es'} to a list
+                    Add {selectedRows.length} lead
+                    {selectedRows.length === 1 ? '' : 's'} to a list
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() => setShowDeleteListDialog(true)}
                   >
                     <Trash className="w-4 h-4" />
-                    Remove {selectedRows.length} business
-                    {selectedRows.length === 1 ? '' : 'es'}
+                    Remove {selectedRows.length} lead
+                    {selectedRows.length === 1 ? '' : 's'}
                   </Button>
                 </div>
               )}
@@ -250,8 +250,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   onClick={() => setShowAddListDialog(true)}
                 >
                   <Plus className="w-4 h-4" />
-                  Add {selectedRows.length} business
-                  {selectedRows.length === 1 ? '' : 'es'} to a list
+                  Add {selectedRows.length} lead
+                  {selectedRows.length === 1 ? '' : 's'} to a list
                 </Button>
               )}
             </>

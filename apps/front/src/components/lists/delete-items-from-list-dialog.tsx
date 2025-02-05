@@ -29,8 +29,8 @@ export function DeleteItemsFromListDialog({
     await deleteItemsFromList({ id: listId, items: selectedItems })
     toast({
       title: 'Removed from list',
-      description: `${selectedItems.length} business${
-        selectedItems.length === 1 ? '' : 'es'
+      description: `${selectedItems.length} lead${
+        selectedItems.length === 1 ? '' : 's'
       } removed from the list`,
     })
     onOpenChange(false)
@@ -42,8 +42,8 @@ export function DeleteItemsFromListDialog({
         <DialogHeader>
           <DialogTitle>Remove from List</DialogTitle>
           <DialogDescription>
-            Are you sure you want to remove {selectedItems.length} business
-            {selectedItems.length === 1 ? '' : 'es'} from this list?
+            Are you sure you want to remove {selectedItems.length} lead
+            {selectedItems.length === 1 ? '' : 's'} from this list?
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2">
