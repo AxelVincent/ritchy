@@ -1,6 +1,6 @@
+import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { AddItemsToListDialog } from '@/features/lists/components/AddItemsToListDialog'
 import { DataExport } from '@/features/map-display/components/data_export/DataExport'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
@@ -22,7 +22,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Plus, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { DeleteItemsFromListDialog } from '../../../lists/components/DeleteItemsFromListDialog'
+import { DeleteItemsFromListDialog } from '../../../../components/lists/delete-items-from-list-dialog'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
 
@@ -223,14 +223,16 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     onClick={() => setShowAddListDialog(true)}
                   >
                     <Plus className="w-4 h-4" />
-                    Add {selectedRows.length} item(s) to list
+                    Add {selectedRows.length} business
+                    {selectedRows.length === 1 ? '' : 'es'} to a list
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() => setShowDeleteListDialog(true)}
                   >
                     <Trash className="w-4 h-4" />
-                    Remove {selectedRows.length} items
+                    Remove {selectedRows.length} business
+                    {selectedRows.length === 1 ? '' : 'es'}
                   </Button>
                 </div>
               )}
@@ -248,7 +250,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   onClick={() => setShowAddListDialog(true)}
                 >
                   <Plus className="w-4 h-4" />
-                  Add {selectedRows.length} item(s) to list
+                  Add {selectedRows.length} business
+                  {selectedRows.length === 1 ? '' : 'es'} to a list
                 </Button>
               )}
             </>

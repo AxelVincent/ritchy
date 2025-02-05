@@ -2,6 +2,7 @@
 
 import { useDeleteList } from '@/api/mutations/lists/useDeleteList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
+import { CreateListForm } from '@/components/lists/create-list-form'
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CreateListForm } from '@/features/lists/components/create-list-form'
 import { cn } from '@/lib/utils'
 import { Link, useMatch } from '@tanstack/react-router'
 import { ListPlus, MoreHorizontal, Trash2 } from 'lucide-react'

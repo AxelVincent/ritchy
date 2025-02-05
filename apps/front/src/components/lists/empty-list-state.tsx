@@ -17,7 +17,7 @@ export const EmptyListState = ({ listId }: EmptyListStateProps) => {
         {list?.emoji} {list?.name} is empty
       </h3>
       <p className="mb-6 text-sm text-muted-foreground">
-        Start exploring and add places to this list to build your collection
+        Start exploring and add businesses to this list to build your collection
       </p>
       <Button onClick={() => navigate({ to: '/search' })}>
         Explore places
