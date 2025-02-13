@@ -2,12 +2,13 @@ import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import type { SubscriptionPlan } from '@ritchy/types'
 import { Link } from '@tanstack/react-router'
 import { CheckIcon, Gift } from 'lucide-react'
 
 interface PricingTier {
   name: string
-  priceId: string
+  plan: SubscriptionPlan
   monthlyPrice: number
   yearlyPrice: number
   description: string
@@ -23,7 +24,7 @@ interface PricingTier {
 const pricingTiers: PricingTier[] = [
   {
     name: 'Navigator',
-    priceId: import.meta.env.VITE_STRIPE_NAVIGATOR_PRICE_ID,
+    plan: 'NAVIGATOR',
     monthlyPrice: 149,
     yearlyPrice: 99,
     description: 'Perfect for getting started',
@@ -42,7 +43,7 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: 'Explorer',
-    priceId: import.meta.env.VITE_STRIPE_EXPLORER_PRICE_ID,
+    plan: 'EXPLORER',
     monthlyPrice: 249,
     yearlyPrice: 149,
     description: 'Most popular choice',
@@ -62,7 +63,7 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: 'Pro',
-    priceId: import.meta.env.VITE_STRIPE_PRO_PRICE_ID,
+    plan: 'PRO',
     monthlyPrice: 499,
     yearlyPrice: 349,
     description: 'For power users',
@@ -174,7 +175,7 @@ export const PricingCards = ({ billingPeriod }: PricingCardsProps) => {
                   {isCurrentPlan ? (
                     <span>Current Plan</span>
                   ) : (
-                    <Link to="/checkout" search={{ priceId: tier.priceId }}>
+                    <Link to="/checkout" search={{ plan: tier.plan }}>
                       Get started
                       <span className="ml-2">→</span>
                     </Link>

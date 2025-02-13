@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
 export const CreateCheckoutSessionRequestBodySchema = z.object({
-  priceId: z.string(),
+  plan: z.enum(['FREE', 'EXPLORER', 'NAVIGATOR', 'PRO']),
 })
 
 export const CreateCheckoutSessionResponseSchema = z.object({

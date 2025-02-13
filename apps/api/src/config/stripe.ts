@@ -27,7 +27,7 @@ export const STRIPE_CONFIG = {
   },
 } as const
 
-const STRIPE_PLANS = {
+export const STRIPE_PLANS = {
   FREE: {
     name: 'FREE',
     priceId: null, // Free plan has no price ID

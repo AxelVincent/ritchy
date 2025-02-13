@@ -1,4 +1,5 @@
 import { useCreateCheckoutSession } from '@/api/mutations/payments/useCreateCheckoutSession'
+import type { SubscriptionPlan } from '@ritchy/types'
 import {
   EmbeddedCheckout,
   EmbeddedCheckoutProvider,
@@ -10,7 +11,7 @@ import { useEffect } from 'react'
 export const Route = createFileRoute('/_auth/checkout')({
   component: CheckoutComponent,
   validateSearch: (search) => ({
-    priceId: String(search.priceId),
+    plan: String(search.plan),
   }),
 })
 
@@ -22,7 +23,7 @@ const stripePromise = loadStripe(
 )
 
 function CheckoutComponent() {
-  const { priceId } = Route.useSearch()
+  const { plan } = Route.useSearch()
   const {
     mutate: createSession,
     data: checkoutSession,
@@ -30,10 +31,10 @@ function CheckoutComponent() {
   } = useCreateCheckoutSession()
 
   useEffect(() => {
-    if (priceId) {
-      createSession({ priceId })
+    if (plan) {
+      createSession({ plan: plan as SubscriptionPlan })
     }
-  }, [priceId, createSession])
+  }, [plan, createSession])
 
   if (isPending) {
     return (

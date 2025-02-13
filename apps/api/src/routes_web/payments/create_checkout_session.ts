@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import Stripe from 'stripe'
-import { STRIPE_CONFIG } from '../../config/stripe'
+import { STRIPE_CONFIG, STRIPE_PLANS, type StripePlan } from '../../config/stripe'
 import { db } from '../../db/db'
 import { subscription } from '../../db/schema'
 
@@ -57,11 +57,18 @@ export const createCheckoutSession = async (
     }
 
     // Continue with checkout session creation for new subscribers
+    const plan = req.body.plan as StripePlan
+    const priceId = STRIPE_PLANS[plan].priceId
+
+    if (!priceId) {
+      throw new Error(`Invalid plan: ${plan}`)
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [
         {
-          price: req.body.priceId,
+          price: priceId,
           quantity: 1,
         },
       ],
