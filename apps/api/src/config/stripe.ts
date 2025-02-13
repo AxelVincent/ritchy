@@ -57,5 +57,8 @@ export const getPlanFromPriceId = (priceId: string): StripePlan => {
   const plan = Object.entries(STRIPE_PLANS).find(
     ([_, planData]) => planData.priceId === priceId,
   )
+  if (!plan) {
+    console.warn(`No Stripe plan found for price ID: ${priceId}, defaulting to FREE plan`)
+  }
   return (plan?.[0] as StripePlan) ?? 'FREE'
 }
