@@ -2,24 +2,35 @@ import 'dotenv/config'
 import { clerkMiddleware, getAuth } from '@clerk/express'
 import { baseLogger, logger } from '@ritchy/logger'
 import cors from 'cors'
+import { eq } from 'drizzle-orm'
 import express, { type NextFunction } from 'express'
 import pinoHttp from 'pino-http'
+import { db } from './db/db'
+import { user as userTable } from './db/schema'
+import { ensureIdempotency } from './middleware/idempotency'
 import webRoutes from './routes_web'
+import webhookRoutes from './webhook'
 
 const app = express()
 
 // Body parser middleware
-app.use(express.json())
+app.use(
+  express.json({
+    verify: (req: express.Request, _res, buf) => {
+      req.rawBody = buf
+    },
+  }),
+)
 
 // Clerk middleware
 app.use(clerkMiddleware())
 
 // Authentication middleware
-const isAuthenticated = (
+const isAuthenticated = async (
   req: express.Request,
   res: express.Response,
   next: NextFunction,
-): void => {
+): Promise<void> => {
   try {
     const { userId, sessionId } = getAuth(req)
 
@@ -31,7 +42,20 @@ const isAuthenticated = (
       return
     }
 
-    req.auth = { userId, sessionId }
+    const user = await db
+      .select()
+      .from(userTable)
+      .where(eq(userTable.clerkId, userId))
+
+    if (!user) {
+      res.status(401).json({
+        error: 'Unauthorized',
+        message: 'User not found',
+      })
+      return
+    }
+
+    req.auth = { userId: user[0].id, sessionId }
     next()
   } catch (error) {
     logger.error({
@@ -109,6 +133,9 @@ app.get('/health', (_, res) => {
 
 // Web routes
 app.use('/web', isAuthenticated, webRoutes)
+
+// Webhook route
+app.use('/webhook', ensureIdempotency, webhookRoutes)
 
 // Start server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)

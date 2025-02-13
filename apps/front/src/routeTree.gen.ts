@@ -13,6 +13,8 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
+import { Route as AuthPricingImport } from './routes/_auth/pricing'
+import { Route as AuthCheckoutImport } from './routes/_auth/checkout'
 import { Route as AuthSearchIndexImport } from './routes/_auth/search/index'
 import { Route as AuthSearchSearchIdImport } from './routes/_auth/search/$searchId'
 import { Route as AuthListsListIdImport } from './routes/_auth/lists/$listId'
@@ -28,6 +30,18 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthPricingRoute = AuthPricingImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthCheckoutRoute = AuthCheckoutImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => AuthRoute,
 } as any)
 
 const AuthSearchIndexRoute = AuthSearchIndexImport.update({
@@ -66,6 +80,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthImport
       parentRoute: typeof rootRoute
     }
+    '/_auth/checkout': {
+      id: '/_auth/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AuthCheckoutImport
+      parentRoute: typeof AuthImport
+    }
+    '/_auth/pricing': {
+      id: '/_auth/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof AuthPricingImport
+      parentRoute: typeof AuthImport
+    }
     '/_auth/lists/$listId': {
       id: '/_auth/lists/$listId'
       path: '/lists/$listId'
@@ -93,12 +121,16 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 interface AuthRouteChildren {
+  AuthCheckoutRoute: typeof AuthCheckoutRoute
+  AuthPricingRoute: typeof AuthPricingRoute
   AuthListsListIdRoute: typeof AuthListsListIdRoute
   AuthSearchSearchIdRoute: typeof AuthSearchSearchIdRoute
   AuthSearchIndexRoute: typeof AuthSearchIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthCheckoutRoute: AuthCheckoutRoute,
+  AuthPricingRoute: AuthPricingRoute,
   AuthListsListIdRoute: AuthListsListIdRoute,
   AuthSearchSearchIdRoute: AuthSearchSearchIdRoute,
   AuthSearchIndexRoute: AuthSearchIndexRoute,
@@ -109,6 +141,8 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
+  '/checkout': typeof AuthCheckoutRoute
+  '/pricing': typeof AuthPricingRoute
   '/lists/$listId': typeof AuthListsListIdRoute
   '/search/$searchId': typeof AuthSearchSearchIdRoute
   '/search': typeof AuthSearchIndexRoute
@@ -117,6 +151,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
+  '/checkout': typeof AuthCheckoutRoute
+  '/pricing': typeof AuthPricingRoute
   '/lists/$listId': typeof AuthListsListIdRoute
   '/search/$searchId': typeof AuthSearchSearchIdRoute
   '/search': typeof AuthSearchIndexRoute
@@ -126,6 +162,8 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
+  '/_auth/checkout': typeof AuthCheckoutRoute
+  '/_auth/pricing': typeof AuthPricingRoute
   '/_auth/lists/$listId': typeof AuthListsListIdRoute
   '/_auth/search/$searchId': typeof AuthSearchSearchIdRoute
   '/_auth/search/': typeof AuthSearchIndexRoute
@@ -133,13 +171,29 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/lists/$listId' | '/search/$searchId' | '/search'
+  fullPaths:
+    | '/'
+    | ''
+    | '/checkout'
+    | '/pricing'
+    | '/lists/$listId'
+    | '/search/$searchId'
+    | '/search'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/lists/$listId' | '/search/$searchId' | '/search'
+  to:
+    | '/'
+    | ''
+    | '/checkout'
+    | '/pricing'
+    | '/lists/$listId'
+    | '/search/$searchId'
+    | '/search'
   id:
     | '__root__'
     | '/'
     | '/_auth'
+    | '/_auth/checkout'
+    | '/_auth/pricing'
     | '/_auth/lists/$listId'
     | '/_auth/search/$searchId'
     | '/_auth/search/'
@@ -176,10 +230,20 @@ export const routeTree = rootRoute
     "/_auth": {
       "filePath": "_auth.tsx",
       "children": [
+        "/_auth/checkout",
+        "/_auth/pricing",
         "/_auth/lists/$listId",
         "/_auth/search/$searchId",
         "/_auth/search/"
       ]
+    },
+    "/_auth/checkout": {
+      "filePath": "_auth/checkout.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/pricing": {
+      "filePath": "_auth/pricing.tsx",
+      "parent": "/_auth"
     },
     "/_auth/lists/$listId": {
       "filePath": "_auth/lists/$listId.tsx",

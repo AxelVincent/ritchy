@@ -1,8 +1,18 @@
 'use client'
 
-import { ChevronsUpDown, LogOut, Moon, Sun, UserRoundCog } from 'lucide-react'
+import {
+  ChevronsUpDown,
+  CreditCard,
+  LogOut,
+  Moon,
+  Rocket,
+  Sun,
+  UserRoundCog,
+} from 'lucide-react'
 import { useState } from 'react'
 
+import { useCreatePortalSession } from '@/api/mutations/payments/useCreatePortalSession'
+import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
@@ -22,15 +32,21 @@ import {
 } from '@/components/ui/sidebar'
 import { useTheme } from '@/providers/theme-provider'
 import { UserButton, UserProfile, useAuth, useUser } from '@clerk/clerk-react'
+import { useNavigate } from '@tanstack/react-router'
+import { Badge } from '../ui/badge'
 import { Label } from '../ui/label'
 
 export function NavUser() {
   const { isMobile } = useSidebar()
+  const navigate = useNavigate()
+  const { data } = useUserSubscription()
 
   const { user } = useUser()
   const { signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
+  const createPortalSession = useCreatePortalSession()
 
   return (
     <SidebarMenu>
@@ -41,22 +57,24 @@ export function NavUser() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              {/* <UserButton /> */}
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.imageUrl} alt={user?.fullName ?? ''} />
                 <AvatarFallback className="rounded-lg">
                   {user?.fullName?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight cursor-pointer">
-                <Label className="truncate font-semibold cursor-pointer">
+              <div className="flex flex-1 items-center gap-2 min-w-0">
+                <span className="truncate font-semibold min-w-0 flex-shrink">
                   {user?.fullName}
-                </Label>
-                <Label className="truncate text-xs cursor-pointer">
-                  {user?.emailAddresses[0]?.emailAddress}
-                </Label>
+                </span>
+                <Badge
+                  variant="secondary"
+                  className="w-fit text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 flex-shrink-0"
+                >
+                  {data?.plan ?? 'FREE'}
+                </Badge>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsUpDown className="ml-auto size-4 flex-shrink-0" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -66,15 +84,18 @@ export function NavUser() {
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <div className="flex items-center gap-2 px-1 py-1.5">
                 <UserButton />
-                <div className="grid flex-1 text-left text-sm leading-tight cursor-pointer">
-                  <Label className="truncate font-semibold cursor-pointer">
+                <div className="flex flex-1 items-center gap-2">
+                  <span className="truncate font-semibold">
                     {user?.fullName}
-                  </Label>
-                  <Label className="truncate text-xs cursor-pointer">
-                    {user?.emailAddresses[0]?.emailAddress}
-                  </Label>
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className="w-fit text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15"
+                  >
+                    {data?.plan ?? 'FREE'}
+                  </Badge>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -94,6 +115,28 @@ export function NavUser() {
                 />
                 <Label className="sr-only">Toggle theme</Label>
                 {theme === 'dark' ? 'Light' : 'Dark'} mode
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  navigate({ to: '/pricing' })
+                }}
+              >
+                <Rocket />
+                Pricing
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={async () => {
+                  const url = await createPortalSession.mutateAsync()
+                  window.location.href = url
+                }}
+              >
+                <CreditCard />
+                Manage subscription
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

@@ -4,10 +4,13 @@ import {
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
 } from '@ritchy/types'
+import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
+import { getUserPlan } from '../../services/subscription'
+import { type PlanType, hasModelAccess } from '../../utils/plan-access'
 
 export const createSearch = async (
   req: Request<
@@ -19,26 +22,28 @@ export const createSearch = async (
 ): Promise<void> => {
   try {
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
+    const plan = await getUserPlan(req.auth.userId)
 
-    if (
-      parsedBody.model === 'NAVIGATOR' ||
-      parsedBody.model === 'PRO' ||
-      parsedBody.model === 'EXPLORER'
-    ) {
-      if (
-        ![
-          // Ryan Staging / Prod
-          'user_2pLKf5Yr8yJfZQbultG2uJ8pgFm',
-          'user_2pLdQum1fXENokXcvNTsOdRWyts',
-          'user_2sOif4gn2JVlIMdOGpUEYVJOa3n',
-          // // Axel Staging / Prod
-          'user_2p7ZA02lG6WufI5SV3l6zyAoAIo',
-          'user_2pLd3diNenMMUy61qNECHbSlnHK',
-        ].includes(req.auth.userId)
-      ) {
+    if (!hasModelAccess(plan as PlanType, parsedBody.model)) {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: `This feature is only available for ${parsedBody.model} and above users`,
+      })
+      return
+    }
+
+    if (plan === 'FREE' && parsedBody.model === 'DEFAULT') {
+      const searchCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(search)
+        .where(and(eq(search.userId, req.auth.userId)))
+        .then((result) => Number(result[0].count))
+
+      if (searchCount >= 3) {
         res.status(403).json({
-          error: 'Forbidden',
-          message: `This feature is only available for ${parsedBody.model} and above users`,
+          error: 'Search limit reached',
+          message:
+            'Free plan users are limited to 3 DEFAULT searches. Please upgrade your plan for unlimited searches.',
         })
         return
       }

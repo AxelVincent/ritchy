@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { CreateSearchRequestBody } from '@ritchy/types'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
@@ -16,6 +17,21 @@ export const Route = createFileRoute('/_auth/search/')({
 })
 
 function RouteComponent() {
+  const utils = useQueryClient()
+
+  // Add this effect to handle subscription update
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (
+      params.get('portal_return') === 'true' ||
+      params.get('checkout_return') === 'true'
+    ) {
+      utils.invalidateQueries({ queryKey: ['userSubscription'] })
+      // Clean up the URL
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [utils])
+
   // Core location state
   const defaultLocation = DEFAULT_LOCATION
   const { location: geoLocation, loading } = useGeolocation(

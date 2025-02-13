@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS "uniq_user_id" ON "subscription" USING btree ("user_id");--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "subscription_user_id_unique" UNIQUE("user_id");
