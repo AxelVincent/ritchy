@@ -29,7 +29,6 @@ export const user = pgTable(
 
 export const list = pgTable('list', {
   id: uuid('id').defaultRandom().primaryKey(),
-  userIdNew: uuid('user_id_new'),
   name: text('name').notNull(),
   emoji: text('emoji').notNull(),
   userId: uuid('user_id')
@@ -64,7 +63,6 @@ export const note = pgTable('note', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id),
-  userIdNew: uuid('user_id_new'),
   note: text('note').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -82,7 +80,6 @@ export const search = pgTable('search', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id),
-  userIdNew: uuid('user_id_new'),
   latitude: numeric('latitude').notNull(),
   longitude: numeric('longitude').notNull(),
   radiusInMeters: integer('radius_in_meters').notNull(),
