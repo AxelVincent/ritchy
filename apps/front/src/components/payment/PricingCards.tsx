@@ -92,12 +92,6 @@ export const PricingCards = ({ billingPeriod }: PricingCardsProps) => {
   return (
     <div className="grid md:grid-cols-3 gap-8 mt-8">
       {pricingTiers.map((tier) => {
-        console.log({
-          subscriptionPlan: subscription?.plan,
-          tierName: tier.name,
-          normalized: tier.name.toLowerCase().replace(' ', ''),
-        })
-
         const isCurrentPlan =
           subscription?.plan?.toLowerCase() ===
           tier.name.toLowerCase().replace(' ', '')

@@ -23,7 +23,6 @@ export const useUserSubscription = (): UseQueryResult<
         },
         token,
       )
-      console.log(response)
 
       if ('error' in response) {
         throw new Error(response.message ?? response.error)
