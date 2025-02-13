@@ -49,7 +49,7 @@ function PricingComponent() {
           <div className="mt-4">
             <div className="inline-flex rounded-full bg-green-500/20 dark:bg-green-500/10 px-6 py-3">
               <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                Save up to 50% with annual plan
+                Save up to 40% with annual plan
                 <span className="mx-2">•</span>
                 Offer ends 02/28
               </p>
