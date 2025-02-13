@@ -2,9 +2,9 @@ import { logger } from '@ritchy/logger'
 import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import Stripe from 'stripe'
-import { STRIPE_CONFIG, getPlanFromPriceId } from '../config/stripe'
+import { STRIPE_CONFIG, getPlanFromProductId } from '../config/stripe'
 import { db } from '../db/db'
-import { user as userTable, subscription, webhookEvent } from '../db/schema'
+import { subscription, webhookEvent } from '../db/schema'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
   apiVersion: '2025-01-27.acacia',
@@ -120,14 +120,18 @@ export const stripeWebhook = async (
               stripePriceId: stripeEvent.items.data[0].price.id,
               stripeCustomerId: stripeEvent.customer as string,
               status: stripeEvent.status,
-              plan: getPlanFromPriceId(stripeEvent.items.data[0].price.id),
+              plan: getPlanFromProductId(
+                stripeEvent.items.data[0].plan.product as string,
+              ),
             })
             .onConflictDoUpdate({
               target: subscription.stripeSubscriptionId,
               set: {
                 stripePriceId: stripeEvent.items.data[0].price.id,
                 status: stripeEvent.status,
-                plan: getPlanFromPriceId(stripeEvent.items.data[0].price.id),
+                plan: getPlanFromProductId(
+                  stripeEvent.items.data[0].plan.product as string,
+                ),
                 updatedAt: new Date(),
               },
             })
