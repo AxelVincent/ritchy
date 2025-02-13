@@ -111,7 +111,7 @@ export const stripeWebhook = async (
           break
         }
 
-        case 'customer.subscription.created': {
+        case 'customer.subscription.updated': {
           await db
             .insert(subscription)
             .values({
@@ -138,27 +138,6 @@ export const stripeWebhook = async (
               id: stripeEvent.metadata.user_id,
             },
             metadata: { subscriptionId: stripeEvent.id, stripeEvent },
-          })
-          break
-        }
-
-        case 'customer.subscription.updated': {
-          await db
-            .update(subscription)
-            .set({
-              stripePriceId: stripeEvent.items.data[0].price.id,
-              status: stripeEvent.status,
-              plan: getPlanFromPriceId(stripeEvent.items.data[0].price.id),
-              updatedAt: new Date(),
-            })
-            .where(eq(subscription.stripeSubscriptionId, stripeEvent.id))
-          logger.info({
-            msg: 'Subscription updated',
-            event: 'subscription_updated',
-            user: {
-              id: stripeEvent.metadata.user_id,
-            },
-            metadata: { subscriptionId: stripeEvent.id },
           })
           break
         }
