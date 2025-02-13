@@ -24,14 +24,6 @@ export const createSearch = async (
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
     const plan = await getUserPlan(req.auth.userId)
 
-    if (!hasModelAccess(plan as PlanType, parsedBody.model)) {
-      res.status(403).json({
-        error: 'Forbidden',
-        message: `This feature is only available for ${parsedBody.model} and above users`,
-      })
-      return
-    }
-
     if (plan === 'FREE' && parsedBody.model === 'DEFAULT') {
       const searchCount = await db
         .select({ count: sql<number>`count(*)` })
@@ -47,6 +39,14 @@ export const createSearch = async (
         })
         return
       }
+    }
+
+    if (!hasModelAccess(plan as PlanType, parsedBody.model)) {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: `This feature is only available for ${parsedBody.model} and above users`,
+      })
+      return
     }
 
     const [result] = await db

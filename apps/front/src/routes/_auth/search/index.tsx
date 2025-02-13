@@ -1,6 +1,7 @@
 import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { PlacesTextSearch } from '@/components/search/places-text-search'
+import { Button } from '@/components/ui/button'
 import { MapBox } from '@/features/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
@@ -61,7 +62,12 @@ function RouteComponent() {
         console.error(error)
         toast({
           title: error.message,
-          variant: 'destructive',
+          variant: 'default',
+          action: (
+            <Button onClick={() => navigate({ to: '/pricing' })}>
+              View Plans
+            </Button>
+          ),
         })
       },
     })
