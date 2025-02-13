@@ -4,7 +4,7 @@ import type { Request, Response } from 'express'
 import Stripe from 'stripe'
 import { STRIPE_CONFIG, getPlanFromPriceId } from '../config/stripe'
 import { db } from '../db/db'
-import { subscription, webhookEvent } from '../db/schema'
+import { user as userTable, subscription, webhookEvent } from '../db/schema'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
   apiVersion: '2025-01-27.acacia',
@@ -21,7 +21,6 @@ export const stripeWebhook = async (
   res: Response<WebhookResponse>,
 ): Promise<void> => {
   let event: Stripe.Event
-
   try {
     const signature = req.headers['stripe-signature']
 
@@ -84,6 +83,9 @@ export const stripeWebhook = async (
           logger.info({
             msg: 'Trial ending for subscription',
             event: 'subscription_trial_ending',
+            user: {
+              id: stripeEvent.metadata.user_id,
+            },
             metadata: { subscriptionId: stripeEvent.id },
           })
           break
@@ -101,6 +103,9 @@ export const stripeWebhook = async (
           logger.info({
             msg: 'Subscription deleted',
             event: 'subscription_deleted',
+            user: {
+              id: stripeEvent.metadata.user_id,
+            },
             metadata: { subscriptionId: stripeEvent.id },
           })
           break
@@ -129,6 +134,9 @@ export const stripeWebhook = async (
           logger.info({
             msg: 'Subscription created/updated',
             event: 'subscription_created',
+            user: {
+              id: stripeEvent.metadata.user_id,
+            },
             metadata: { subscriptionId: stripeEvent.id, stripeEvent },
           })
           break
@@ -147,6 +155,9 @@ export const stripeWebhook = async (
           logger.info({
             msg: 'Subscription updated',
             event: 'subscription_updated',
+            user: {
+              id: stripeEvent.metadata.user_id,
+            },
             metadata: { subscriptionId: stripeEvent.id },
           })
           break
@@ -156,6 +167,9 @@ export const stripeWebhook = async (
           logger.warn({
             msg: 'Unhandled webhook event',
             event: 'webhook_unhandled_event',
+            user: {
+              id: stripeEvent.metadata.user_id,
+            },
             metadata: { eventType: event.type },
           })
         }
