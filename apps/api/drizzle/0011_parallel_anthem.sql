@@ -13,9 +13,24 @@ CREATE TABLE IF NOT EXISTS "subscription" (
 	CONSTRAINT "subscription_stripe_subscription_id_unique" UNIQUE("stripe_subscription_id")
 );
 --> statement-breakpoint
-ALTER TABLE "list" ADD COLUMN "user_id_new" uuid;--> statement-breakpoint
-ALTER TABLE "note" ADD COLUMN "user_id_new" uuid;--> statement-breakpoint
-ALTER TABLE "search" ADD COLUMN "user_id_new" uuid;--> statement-breakpoint
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'list' AND column_name = 'user_id_new') THEN
+        ALTER TABLE "list" ADD COLUMN "user_id_new" uuid;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'note' AND column_name = 'user_id_new') THEN
+        ALTER TABLE "note" ADD COLUMN "user_id_new" uuid;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                  WHERE table_name = 'search' AND column_name = 'user_id_new') THEN
+        ALTER TABLE "search" ADD COLUMN "user_id_new" uuid;
+    END IF;
+END $$;
+
 DO $$ BEGIN
  ALTER TABLE "subscription" ADD CONSTRAINT "subscription_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION

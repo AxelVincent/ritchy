@@ -10,10 +10,21 @@ CREATE TABLE IF NOT EXISTS "user" (
 	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
--- Add temporary UUID columns
-ALTER TABLE "list" ADD COLUMN "user_id_new" uuid;
-ALTER TABLE "note" ADD COLUMN "user_id_new" uuid;
-ALTER TABLE "search" ADD COLUMN "user_id_new" uuid;
+-- Add temporary UUID columns if they don't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'list' AND column_name = 'user_id_new') THEN
+        ALTER TABLE "list" ADD COLUMN "user_id_new" uuid;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'note' AND column_name = 'user_id_new') THEN
+        ALTER TABLE "note" ADD COLUMN "user_id_new" uuid;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'search' AND column_name = 'user_id_new') THEN
+        ALTER TABLE "search" ADD COLUMN "user_id_new" uuid;
+    END IF;
+END $$;
 --> statement-breakpoint
 -- Add foreign key constraints for new columns
 DO $$ BEGIN
