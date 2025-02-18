@@ -14,11 +14,12 @@ import { Search } from 'lucide-react'
 
 import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
+import { RADIUS_SETTINGS } from '@/features/map-display/types'
 import {
-  RADIUS_SETTINGS,
   PLAN_RADIUS_LIMITS,
-} from '@/features/map-display/types'
-import type { CreateSearchRequestBody, GeocodingResult } from '@ritchy/types'
+  type CreateSearchRequestBody,
+  type GeocodingResult,
+} from '@ritchy/types'
 import { useEffect, useState } from 'react'
 
 interface LocationParams {

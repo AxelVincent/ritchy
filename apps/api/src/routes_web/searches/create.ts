@@ -3,6 +3,7 @@ import {
   type CreateSearchApiResponse,
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
+  PLAN_RADIUS_LIMITS,
 } from '@ritchy/types'
 import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -24,6 +25,15 @@ export const createSearch = async (
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
     const plan = await getUserPlan(req.auth.userId)
 
+    const radiusLimit = PLAN_RADIUS_LIMITS[plan]
+    if (parsedBody.radiusInMeters > radiusLimit) {
+      res.status(403).json({
+        error: 'Radius limit exceeded',
+        message: `${plan} plan users are limited to a ${radiusLimit}m search radius`,
+      })
+      return
+    }
+    
     if (plan === 'FREE' && parsedBody.model === 'DEFAULT') {
       const searchCount = await db
         .select({ count: sql<number>`count(*)` })

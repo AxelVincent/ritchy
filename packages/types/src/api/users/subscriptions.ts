@@ -1,12 +1,19 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
+export const PLAN_RADIUS_LIMITS = {
+  FREE: 50000,
+  NAVIGATOR: 50000,
+  EXPLORER: 100000,
+  PRO: 150000,
+} as const
+
 // Match the database enum exactly
 export const SubscriptionPlanEnum = z.enum([
   'FREE',
   'EXPLORER',
-  'NAVIGATOR',
   'PRO',
+  'NAVIGATOR',
 ])
 
 export const UserSubscriptionResponseSchema = z.object({

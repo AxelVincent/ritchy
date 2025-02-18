@@ -26,13 +26,6 @@ export const RADIUS_SETTINGS: RadiusSettings = {
   max: 50000, // Default max for FREE/NAVIGATOR plans
 }
 
-export const PLAN_RADIUS_LIMITS = {
-  FREE: 50000,
-  NAVIGATOR: 50000,
-  EXPLORER: 100000,
-  PRO: 150000,
-} as const
-
 export interface MapboxLocationParameters {
   latitude: number
   longitude: number
