@@ -35,7 +35,6 @@ export const addItemsToList = async (
     const userId = req.auth.userId
     const parsedBody = AddItemsToListRequestBodySchema.parse(req.body)
 
-    console.log('parsedBody', parsedBody, listId, userId)
     // Verify list ownership
     const result = await db
       .select()
