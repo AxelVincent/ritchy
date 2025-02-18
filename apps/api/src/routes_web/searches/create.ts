@@ -34,6 +34,17 @@ export const createSearch = async (
       return
     }
     
+    // First check if user has model access, but make exception for FREE+DEFAULT combination
+    if (!hasModelAccess(plan as PlanType, parsedBody.model) && 
+        !(plan === 'FREE' && parsedBody.model === 'DEFAULT')) {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: `This feature is only available for ${parsedBody.model} and above users`,
+      })
+      return
+    }
+
+    // Then check search count limit for FREE+DEFAULT users
     if (plan === 'FREE' && parsedBody.model === 'DEFAULT') {
       const searchCount = await db
         .select({ count: sql<number>`count(*)` })
@@ -49,14 +60,6 @@ export const createSearch = async (
         })
         return
       }
-    }
-
-    if (!hasModelAccess(plan as PlanType, parsedBody.model)) {
-      res.status(403).json({
-        error: 'Forbidden',
-        message: `This feature is only available for ${parsedBody.model} and above users`,
-      })
-      return
     }
 
     const [result] = await db
