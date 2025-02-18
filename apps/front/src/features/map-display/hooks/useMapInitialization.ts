@@ -2,6 +2,7 @@ import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder'
 import mapboxgl, { type IControl } from 'mapbox-gl'
 import { useEffect, useRef } from 'react'
 import type { MapSettings } from '../types'
+import type { Place } from '@ritchy/types'
 
 const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string
 
@@ -9,24 +10,72 @@ if (!accessToken) {
   throw new Error('Mapbox access token is required')
 }
 
+const createControls = (searchResults?: Place[]): IControl[] => {
+  const baseControls = [
+    new mapboxgl.NavigationControl(),
+    new mapboxgl.FullscreenControl(),
+    new mapboxgl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+      showUserHeading: true,
+      fitBoundsOptions: { maxZoom: 15, animate: false },
+    }),
+  ]
+
+  if (searchResults) {
+    return [
+      new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        marker: false,
+        flyTo: { duration: 0 },
+        mapboxgl,
+        placeholder: 'Location',
+      }) as IControl,
+      ...baseControls,
+    ]
+  }
+
+  return baseControls
+}
+
+const calculateInitialBounds = (
+  initialCenter: [number, number],
+  searchResults?: Place[],
+): mapboxgl.LngLatBounds => {
+  if (searchResults) {
+    const bounds = new mapboxgl.LngLatBounds()
+    bounds.extend(initialCenter)
+    
+    for (const place of searchResults) {
+      const coordinates = [place.location.longitude, place.location.latitude] as [number, number]
+      bounds.extend(coordinates)
+    }
+
+    return bounds
+  }
+
+  return new mapboxgl.LngLatBounds(initialCenter, initialCenter)
+}
+
 export const useMapInitialization = (
   mapContainerRef: React.RefObject<HTMLDivElement>,
   initialCenter: [number, number],
   settings: MapSettings,
-  isSearch: boolean,
+  searchResults?: Place[],
 ) => {
   const mapRef = useRef<mapboxgl.Map | null>(null)
 
-  // Run initialization only once
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
 
-    // Set access token
     mapboxgl.accessToken = accessToken
 
-    // Initialize map with touch event handling
     try {
+      const initialBounds = calculateInitialBounds(initialCenter, searchResults)
+      console.log('initialBounds', initialBounds)
+
+      // Initialize map
       mapRef.current = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: settings.style,
@@ -34,62 +83,31 @@ export const useMapInitialization = (
         zoom: settings.zoom,
         maxZoom: settings.maxZoom,
         minZoom: settings.minZoom,
+        ...(initialBounds && {
+          bounds: initialBounds,
+          fitBoundsOptions: {
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            maxZoom: 15
+          }
+        })
       })
 
-      // Add passive touch event listeners
-      if (mapContainerRef.current) {
-        mapContainerRef.current.addEventListener('touchmove', () => {}, {
-          passive: true,
-        })
-        mapContainerRef.current.addEventListener('touchstart', () => {}, {
-          passive: true,
-        })
-      }
+      // Add passive touch events
+      const touchOptions = { passive: true }
+      mapContainerRef.current.addEventListener('touchmove', () => {}, touchOptions)
+      mapContainerRef.current.addEventListener('touchstart', () => {}, touchOptions)
 
       // Add error handling
       mapRef.current.on('error', (e) => {
         console.error('Mapbox error:', e)
       })
-
-      let controls: IControl[] = []
-
-      if (!isSearch) {
-        // Initialize controls
-        controls = [
-          new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            marker: false,
-            flyTo: { duration: 0 },
-            mapboxgl,
-            placeholder: 'Location',
-          }) as IControl,
-          new mapboxgl.NavigationControl(),
-          new mapboxgl.FullscreenControl(),
-          new mapboxgl.GeolocateControl({
-            positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true,
-            showUserHeading: true,
-            fitBoundsOptions: { maxZoom: 15, animate: false },
-          }),
-        ]
-      } else {
-        controls = [
-          new mapboxgl.NavigationControl(),
-          new mapboxgl.FullscreenControl(),
-          new mapboxgl.GeolocateControl({
-            positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true,
-            showUserHeading: true,
-          }),
-        ]
-      }
-
-      // Add controls to map
+      // Add controls
+      const controls = createControls(searchResults)
       for (const control of controls) {
         mapRef.current?.addControl(control)
       }
 
-      // Log all measurements
+      // Log performance measurements
       mapRef.current.once('load', () => {
         const measurements = performance.getEntriesByType('measure')
         console.table(
@@ -110,15 +128,15 @@ export const useMapInitialization = (
       mapRef.current?.remove()
       mapRef.current = null
     }
-  }, []) // Empty dependency array - run only once
+  }, [])
 
-  // Handle updates to center without reinitializing
+  // Handle updates to center
   useEffect(() => {
     if (!mapRef.current) return
     mapRef.current.setCenter(initialCenter)
   }, [initialCenter])
 
-  // Handle updates to settings without reinitializing
+  // Handle updates to settings
   useEffect(() => {
     if (!mapRef.current) return
     mapRef.current.setStyle(settings.style)
@@ -126,6 +144,26 @@ export const useMapInitialization = (
     mapRef.current.setMinZoom(settings.minZoom)
     mapRef.current.setZoom(settings.zoom)
   }, [settings])
+
+  // Handle updates to search results
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+      useEffect(() => {
+    if (!mapRef.current || !searchResults?.length) return
+
+    const bounds = new mapboxgl.LngLatBounds()
+    bounds.extend(initialCenter)
+    
+    for (const place of searchResults) {
+      const coordinates = [place.location.longitude, place.location.latitude] as [number, number]
+      bounds.extend(coordinates)
+    }
+
+    mapRef.current.fitBounds(bounds, {
+      padding: { top: 50, bottom: 50, left: 50, right: 50 },
+      maxZoom: 15,
+      duration: 500
+    })
+  }, [searchResults])
 
   return mapRef
 }

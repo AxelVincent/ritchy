@@ -1,8 +1,8 @@
 import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { SearchMap } from '@/components/mapbox/search-map'
 import { PlacesTextSearch } from '@/components/search/places-text-search'
 import { Button } from '@/components/ui/button'
-import { MapBox } from '@/features/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { toast } from '@/hooks/use-toast'
@@ -78,6 +78,7 @@ function RouteComponent() {
       ...newLocation,
     })
   }
+  console.log('currentLocation', currentLocation)
 
   // Update from geolocation only on initial load
   useEffect(() => {
@@ -99,16 +100,10 @@ function RouteComponent() {
         setRadiusInMeters={setRadiusInMeters}
         onLocationChange={handleLocationChange}
       />
-      <MapBox
+      <SearchMap
         onLocationChange={handleLocationChange}
-        searchResults={null}
-        selectedPlaceId={null}
-        setSelectedPlaceId={() => {}}
         userLocation={currentLocation}
-        dataTableRowSelection={{}}
         radiusInMeters={radiusInMeters}
-        isSearch={true}
-        filteredPlaceIds={new Set()}
       />
     </div>
   )

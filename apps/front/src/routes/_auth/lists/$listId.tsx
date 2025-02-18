@@ -1,5 +1,5 @@
 import { useListContentQuery } from '@/api/queries/lists/useListContent'
-import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { LoadingMessages } from '@/components/common/LoadingMessages'
 import { MapDisplay } from '@/features/map-display/MapDisplay'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -16,9 +16,9 @@ function RouteComponent() {
   const { listId } = Route.useLoaderData()
   const { data, isLoading, error } = useListContentQuery(listId)
 
-  if (isLoading) return <LoadingSpinner message="Loading list content..." />
+  if (isLoading) return <LoadingMessages />
   if (error) return <div>Error: {error.message}</div>
   if (!data || 'error' in data) return null
 
-  return <MapDisplay isSearch={false} listId={listId} places={data.items} />
+  return <MapDisplay key={listId} listId={listId} places={data.items} />
 }

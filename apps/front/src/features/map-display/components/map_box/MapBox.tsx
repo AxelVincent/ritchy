@@ -1,12 +1,11 @@
 import './styles.css'
 import { useMapInitialization } from '@/features/map-display/hooks/useMapInitialization'
-import { useMapSquare } from '@/features/map-display/hooks/useMapSquare'
 import { MAP_SETTINGS } from '@/features/map-display/types'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { debounce } from '@/lib/debounce'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
-import mapboxgl, { type LngLat } from 'mapbox-gl'
+import type { LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useMarkerManager } from './hooks/useMarkerManager'
@@ -36,7 +35,6 @@ interface MapBoxProps {
   userLocation: MapboxLocationParameters
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
-  isSearch: boolean
   filteredPlaceIds: Set<string>
 }
 
@@ -48,10 +46,9 @@ export const MapBox: FC<MapBoxProps> = ({
   userLocation,
   dataTableRowSelection,
   radiusInMeters,
-  isSearch,
   filteredPlaceIds,
 }) => {
-  debugLog('MapBox render:', { userLocation, radiusInMeters, isSearch })
+  debugLog('MapBox render:', { userLocation, radiusInMeters })
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const currentSelectedPlaceIdRef = useRef<string | null>(null)
@@ -68,10 +65,8 @@ export const MapBox: FC<MapBoxProps> = ({
     mapContainerRef,
     initialCenter,
     MAP_SETTINGS,
-    isSearch,
+    searchResults ?? [],
   )
-
-  const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
 
   // Resize observer effect
   useEffect(() => {
@@ -99,75 +94,6 @@ export const MapBox: FC<MapBoxProps> = ({
     }
   }, [mapRef])
 
-  // Map initialization effect
-  useEffect(() => {
-    debugLog('Map initialization effect running', { isSearch })
-    if (!mapRef.current || !isSearch) {
-      debugLog('Map initialization skipped:', {
-        hasMap: !!mapRef.current,
-        isSearch,
-      })
-      return
-    }
-
-    mapRef.current.on('load', () => {
-      debugLog('Map load event triggered')
-      if (!mapRef.current) {
-        debugLog('Map ref lost during load event')
-        return
-      }
-
-      debugLog('Creating center marker')
-      centerMarkerRef.current = new mapboxgl.Marker()
-        .setLngLat(mapRef.current.getCenter())
-        .addTo(mapRef.current)
-
-      debugLog('Adding square source')
-      try {
-        mapRef.current?.addSource('square', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'Polygon',
-              coordinates: [
-                calculateSquareCoordinates(
-                  mapRef.current.getCenter(),
-                  radiusInMeters,
-                ),
-              ],
-            },
-          },
-        })
-
-        debugLog('Adding square fill layer')
-        mapRef.current?.addLayer({
-          id: 'center-square',
-          type: 'fill',
-          source: 'square',
-          paint: {
-            'fill-color': 'blue',
-            'fill-opacity': 0.1,
-          },
-        })
-
-        debugLog('Adding square border layer')
-        mapRef.current?.addLayer({
-          id: 'center-square-border',
-          type: 'line',
-          source: 'square',
-          paint: {
-            'line-color': 'blue',
-            'line-width': 1,
-          },
-        })
-      } catch (error) {
-        debugLog('Error setting up map layers:', error)
-      }
-    })
-  }, [radiusInMeters, mapRef, calculateSquareCoordinates, isSearch])
-
   // Create a memoized debounced handler
   const debouncedLocationChange = useMemo(
     () =>
@@ -182,9 +108,10 @@ export const MapBox: FC<MapBoxProps> = ({
   )
 
   // Map movement effect
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    debugLog('Setting up map movement handlers', { isSearch })
-    if (!mapRef.current || !isSearch) {
+    debugLog('Setting up map movement handlers')
+    if (!mapRef.current) {
       debugLog('Map movement setup skipped')
       return
     }
@@ -195,7 +122,6 @@ export const MapBox: FC<MapBoxProps> = ({
       if (mapRef.current) {
         const center = mapRef.current.getCenter()
         centerMarkerRef.current?.setLngLat(center)
-        updateSquareData(center, radiusInMeters)
         debouncedLocationChange(center)
       }
     })
@@ -203,23 +129,7 @@ export const MapBox: FC<MapBoxProps> = ({
     return () => {
       debouncedLocationChange.cancel()
     }
-  }, [
-    radiusInMeters,
-    mapRef,
-    updateSquareData,
-    debouncedLocationChange,
-    isSearch,
-  ])
-
-  // Square update effect
-  useEffect(() => {
-    debugLog('Square update effect', { isSearch })
-    if (!mapRef.current || !isSearch) {
-      debugLog('Square update skipped')
-      return
-    }
-    updateSquareData(mapRef.current.getCenter(), radiusInMeters)
-  }, [radiusInMeters, mapRef, updateSquareData, isSearch])
+  }, [radiusInMeters, mapRef, debouncedLocationChange])
 
   // Add this before the useMarkerManager call
   useEffect(() => {
@@ -233,7 +143,7 @@ export const MapBox: FC<MapBoxProps> = ({
   const { openPopups, popupContainers, markersRef } = useMarkerManager({
     map: mapRef.current,
     places: searchResults,
-    filteredPlaceIds,
+    displayedPlaceIds: filteredPlaceIds,
     dataTableRowSelection,
     onMarkerClick: setSelectedPlaceId,
   })
@@ -316,7 +226,7 @@ export const MapBox: FC<MapBoxProps> = ({
       // Use flyTo for shorter distances
       mapRef.current.flyTo({
         center: markerLocation,
-        zoom: 12,
+        zoom: 15,
         speed: 0.8, // Reduce animation speed
         curve: 1, // Linear animation
       })

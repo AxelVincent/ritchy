@@ -1,5 +1,5 @@
 import { useSearchContentQuery } from '@/api/queries/search/useSearchContent'
-import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { LoadingMessages } from '@/components/common/LoadingMessages'
 import { MapDisplay } from '@/features/map-display/MapDisplay'
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -16,9 +16,9 @@ function RouteComponent() {
   const { searchId } = Route.useLoaderData()
   const { data, isLoading, error } = useSearchContentQuery(searchId)
 
-  if (isLoading) return <LoadingSpinner message="Loading search content..." />
+  if (isLoading) return <LoadingMessages />
   if (error) return <div>Error: {error.message}</div>
   if (!data || 'error' in data) return null
 
-  return <MapDisplay isSearch={false} places={data} />
+  return <MapDisplay key={searchId} places={data} />
 }
