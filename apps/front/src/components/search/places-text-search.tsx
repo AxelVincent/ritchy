@@ -14,7 +14,10 @@ import { Search } from 'lucide-react'
 
 import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
-import { RADIUS_SETTINGS } from '@/features/map-display/types'
+import {
+  RADIUS_SETTINGS,
+  PLAN_RADIUS_LIMITS,
+} from '@/features/map-display/types'
 import type { CreateSearchRequestBody, GeocodingResult } from '@ritchy/types'
 import { useEffect, useState } from 'react'
 
@@ -72,6 +75,29 @@ export const PlacesTextSearch = ({
       default:
         return modelType === 'DEFAULT'
     }
+  }
+
+  const getMaxRadius = () => {
+    const userPlan = subscription?.plan ?? 'FREE'
+    return PLAN_RADIUS_LIMITS[userPlan]
+  }
+
+  const getNextTierRadius = () => {
+    const userPlan = subscription?.plan ?? 'FREE'
+    switch (userPlan) {
+      case 'FREE':
+      case 'NAVIGATOR':
+        return PLAN_RADIUS_LIMITS.EXPLORER
+      case 'EXPLORER':
+        return PLAN_RADIUS_LIMITS.PRO
+      default:
+        return null
+    }
+  }
+
+  const isNearPlanLimit = () => {
+    const currentMax = getMaxRadius()
+    return radiusInMeters >= currentMax * 0.9 // Show upsell when within 90% of limit
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,15 +177,27 @@ export const PlacesTextSearch = ({
               >
                 Research area
               </Label>
-              <Label className="text-sm text-muted-foreground">
-                {radiusInMeters / 1000} km
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">
+                  {radiusInMeters / 1000} km
+                </Label>
+                {isNearPlanLimit() && getNextTierRadius() && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs text-primary font-medium"
+                    onClick={() => navigate({ to: '/pricing' })}
+                  >
+                    Upgrade for {(getNextTierRadius() ?? 0) / 1000} km
+                  </Button>
+                )}
+              </div>
             </div>
             <div>
               <Slider
                 id="radius-input"
                 min={RADIUS_SETTINGS.min}
-                max={RADIUS_SETTINGS.max}
+                max={getMaxRadius()}
                 step={RADIUS_SETTINGS.step}
                 value={[radiusInMeters]}
                 onValueChange={([newValue]) => setRadiusInMeters(newValue)}
