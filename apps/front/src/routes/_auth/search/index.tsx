@@ -1,13 +1,15 @@
 import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
+import { SearchMap } from '@/components/mapbox/search-map'
 import { PlacesTextSearch } from '@/components/search/places-text-search'
-import { MapBox } from '@/features/map-display/components/map_box/MapBox'
+import { Button } from '@/components/ui/button'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { toast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { CreateSearchRequestBody } from '@ritchy/types'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
@@ -16,6 +18,21 @@ export const Route = createFileRoute('/_auth/search/')({
 })
 
 function RouteComponent() {
+  const utils = useQueryClient()
+
+  // Add this effect to handle subscription update
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (
+      params.get('portal_return') === 'true' ||
+      params.get('checkout_return') === 'true'
+    ) {
+      utils.invalidateQueries({ queryKey: ['userSubscription'] })
+      // Clean up the URL
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [utils])
+
   // Core location state
   const defaultLocation = DEFAULT_LOCATION
   const { location: geoLocation, loading } = useGeolocation(
@@ -45,7 +62,12 @@ function RouteComponent() {
         console.error(error)
         toast({
           title: error.message,
-          variant: 'destructive',
+          variant: 'default',
+          action: (
+            <Button onClick={() => navigate({ to: '/pricing' })}>
+              View Plans
+            </Button>
+          ),
         })
       },
     })
@@ -56,6 +78,7 @@ function RouteComponent() {
       ...newLocation,
     })
   }
+  console.log('currentLocation', currentLocation)
 
   // Update from geolocation only on initial load
   useEffect(() => {
@@ -77,16 +100,10 @@ function RouteComponent() {
         setRadiusInMeters={setRadiusInMeters}
         onLocationChange={handleLocationChange}
       />
-      <MapBox
+      <SearchMap
         onLocationChange={handleLocationChange}
-        searchResults={null}
-        selectedPlaceId={null}
-        setSelectedPlaceId={() => {}}
         userLocation={currentLocation}
-        dataTableRowSelection={{}}
         radiusInMeters={radiusInMeters}
-        isSearch={true}
-        filteredPlaceIds={new Set()}
       />
     </div>
   )

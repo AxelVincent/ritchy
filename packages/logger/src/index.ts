@@ -3,6 +3,10 @@ import pino from 'pino'
 interface LogPayload {
   msg: string
   event: string
+  user?: {
+    id: string
+    email?: string
+  }
   metadata?: Record<string, unknown>
 }
 

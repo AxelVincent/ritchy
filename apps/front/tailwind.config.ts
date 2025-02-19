@@ -1,6 +1,9 @@
 import type { Config } from 'tailwindcss'
 import animate from 'tailwindcss-animate'
 const { fontFamily } = require('tailwindcss/defaultTheme')
+const {
+  default: flattenColorPalette,
+} = require('tailwindcss/lib/util/flattenColorPalette')
 
 const config = {
   darkMode: ['class'],
@@ -92,16 +95,26 @@ const config = {
             height: '0',
           },
         },
+        aurora: {
+          from: {
+            backgroundPosition: '50% 50%, 50% 50%',
+          },
+          to: {
+            backgroundPosition: '350% 50%, 350% 50%',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        aurora: 'aurora 60s linear infinite',
       },
     },
   },
   plugins: [
     animate,
     require('tailwindcss-animate'),
+    addVariablesForColors,
     ({ addBase }) => {
       addBase({
         html: { fontSize: '90%' },
@@ -109,5 +122,18 @@ const config = {
     },
   ],
 } satisfies Config
+
+// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+function addVariablesForColors({ addBase, theme }: any) {
+  const allColors = flattenColorPalette(theme('colors'))
+  const newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) => [`--${key}`, val]),
+  )
+
+  addBase({
+    ':root': newVars,
+  })
+}
 
 export default config

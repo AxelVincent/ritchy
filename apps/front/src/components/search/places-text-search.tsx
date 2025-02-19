@@ -9,11 +9,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
+import { useNavigate } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
 
+import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
 import { RADIUS_SETTINGS } from '@/features/map-display/types'
-import type { CreateSearchRequestBody, GeocodingResult } from '@ritchy/types'
+import {
+  type CreateSearchRequestBody,
+  type GeocodingResult,
+  PLAN_RADIUS_LIMITS,
+} from '@ritchy/types'
 import { useEffect, useState } from 'react'
 
 interface LocationParams {
@@ -38,6 +44,8 @@ export const PlacesTextSearch = ({
   setRadiusInMeters,
   onLocationChange,
 }: PlaceSearchProps) => {
+  const navigate = useNavigate()
+  const { data: subscription } = useUserSubscription()
   const [searchText, setSearchText] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [model, setModel] = useState<
@@ -52,6 +60,46 @@ export const PlacesTextSearch = ({
       radiusInMeters,
     })
   }, [location, radiusInMeters])
+
+  const isModelAvailable = (modelType: typeof model): boolean => {
+    const userPlan = subscription?.plan ?? 'FREE'
+
+    switch (userPlan) {
+      case 'FREE':
+        return modelType === 'DEFAULT'
+      case 'NAVIGATOR':
+        return ['DEFAULT', 'NAVIGATOR'].includes(modelType)
+      case 'EXPLORER':
+        return ['DEFAULT', 'NAVIGATOR', 'EXPLORER'].includes(modelType)
+      case 'PRO':
+        return true
+      default:
+        return modelType === 'DEFAULT'
+    }
+  }
+
+  const getMaxRadius = () => {
+    const userPlan = subscription?.plan ?? 'FREE'
+    return PLAN_RADIUS_LIMITS[userPlan]
+  }
+
+  const getNextTierRadius = () => {
+    const userPlan = subscription?.plan ?? 'FREE'
+    switch (userPlan) {
+      case 'FREE':
+      case 'NAVIGATOR':
+        return PLAN_RADIUS_LIMITS.EXPLORER
+      case 'EXPLORER':
+        return PLAN_RADIUS_LIMITS.PRO
+      default:
+        return null
+    }
+  }
+
+  const isNearPlanLimit = () => {
+    const currentMax = getMaxRadius()
+    return radiusInMeters >= currentMax * 0.9 // Show upsell when within 90% of limit
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,6 +153,15 @@ export const PlacesTextSearch = ({
     setPlaceName(newLocation.place_name)
   }
 
+  const handleModelChange = (value: typeof model) => {
+    if (!isModelAvailable(value)) {
+      navigate({ to: '/pricing' })
+      return
+    }
+
+    setModel(value)
+  }
+
   return (
     <div className="p-4">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -121,15 +178,27 @@ export const PlacesTextSearch = ({
               >
                 Research area
               </Label>
-              <Label className="text-sm text-muted-foreground">
-                {radiusInMeters / 1000} km
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">
+                  {radiusInMeters / 1000} km
+                </Label>
+                {isNearPlanLimit() && getNextTierRadius() && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs text-primary font-medium"
+                    onClick={() => navigate({ to: '/pricing' })}
+                  >
+                    Upgrade for {(getNextTierRadius() ?? 0) / 1000} km
+                  </Button>
+                )}
+              </div>
             </div>
             <div>
               <Slider
                 id="radius-input"
                 min={RADIUS_SETTINGS.min}
-                max={RADIUS_SETTINGS.max}
+                max={getMaxRadius()}
                 step={RADIUS_SETTINGS.step}
                 value={[radiusInMeters]}
                 onValueChange={([newValue]) => setRadiusInMeters(newValue)}
@@ -167,10 +236,7 @@ export const PlacesTextSearch = ({
           </div>
           <div className="space-y-1.5 mb-1 sm:space-y-2 w-[100px]">
             <Label htmlFor="model-select">Pricing model</Label>
-            <Select
-              value={model}
-              onValueChange={(value: typeof model) => setModel(value)}
-            >
+            <Select value={model} onValueChange={handleModelChange}>
               <SelectTrigger id="model-select" className="w-[100px]">
                 <SelectValue placeholder="Select a model">
                   {model === 'DEFAULT' && 'Default'}
@@ -180,35 +246,80 @@ export const PlacesTextSearch = ({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="DEFAULT">
-                  <div className="space-y-1">
+                <SelectItem value="DEFAULT" className="cursor-pointer">
+                  <div className="space-y-1 w-full">
                     <div>Default</div>
                     <div className="text-xs text-muted-foreground">
                       Basic search with up to 60 results
                     </div>
                   </div>
                 </SelectItem>
-                <SelectItem value="NAVIGATOR">
-                  <div className="space-y-1">
-                    <div>Navigator</div>
+                <SelectItem value="NAVIGATOR" className="cursor-pointer">
+                  <div className="space-y-1 w-full">
+                    <div className="flex items-center w-full">
+                      <span
+                        className={
+                          !isModelAvailable('NAVIGATOR')
+                            ? 'text-muted-foreground'
+                            : ''
+                        }
+                      >
+                        Navigator
+                      </span>
+                      {!isModelAvailable('NAVIGATOR') && (
+                        <span className="text-xs font-medium text-primary ml-auto">
+                          Upgrade
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       Enhanced search with up to 240 results
                     </div>
                   </div>
                 </SelectItem>
-                <SelectItem value="EXPLORER">
-                  <div className="space-y-1">
-                    <div>Explorer</div>
+                <SelectItem value="EXPLORER" className="cursor-pointer">
+                  <div className="space-y-1 w-full">
+                    <div className="flex items-center w-full">
+                      <span
+                        className={
+                          !isModelAvailable('EXPLORER')
+                            ? 'text-muted-foreground'
+                            : ''
+                        }
+                      >
+                        Explorer
+                      </span>
+                      {!isModelAvailable('EXPLORER') && (
+                        <span className="text-xs font-medium text-primary ml-auto">
+                          Upgrade
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      Advanced search with up to 960 results
+                      Advanced search with up to 1000 results
                     </div>
                   </div>
                 </SelectItem>
-                <SelectItem value="PRO">
-                  <div className="space-y-1">
-                    <div>Pro</div>
+                <SelectItem value="PRO" className="cursor-pointer">
+                  <div className="space-y-1 w-full">
+                    <div className="flex items-center w-full">
+                      <span
+                        className={
+                          !isModelAvailable('PRO')
+                            ? 'text-muted-foreground'
+                            : ''
+                        }
+                      >
+                        Pro
+                      </span>
+                      {!isModelAvailable('PRO') && (
+                        <span className="text-xs font-medium text-primary ml-auto">
+                          Upgrade
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      Premium search with up to 3840 results
+                      Premium search with up to 4000 results
                     </div>
                   </div>
                 </SelectItem>

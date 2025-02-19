@@ -16,133 +16,222 @@ type MarkerRef = {
 type UseMarkerManagerProps = {
   map: mapboxgl.Map | null
   places: Place[] | null
-  filteredPlaceIds: Set<string>
+  displayedPlaceIds: Set<string>
   dataTableRowSelection: RowSelectionState
   onMarkerClick?: (placeId: string) => void
+}
+
+// Move this outside the component to avoid recreating on each render
+const emptySet = new Set<string>()
+
+const addMarkerWithRetry = async (
+  marker: mapboxgl.Marker,
+  map: mapboxgl.Map,
+  maxRetries = 3,
+  delay = 100,
+): Promise<boolean> => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      marker.addTo(map)
+      return true
+    } catch (error) {
+      if (i === maxRetries - 1) {
+        console.error(
+          'Failed to add marker after',
+          maxRetries,
+          'attempts:',
+          error,
+        )
+        return false
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+  return false
 }
 
 export const useMarkerManager = ({
   map,
   places,
-  filteredPlaceIds,
+  displayedPlaceIds,
   dataTableRowSelection,
   onMarkerClick,
 }: UseMarkerManagerProps) => {
-  const [openPopups, setOpenPopups] = useState<Set<string>>(new Set())
+  const [openPopups, setOpenPopups] = useState<Set<string>>(emptySet)
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
+  const mapLoadedRef = useRef(false)
+
+  // Store previous values to prevent unnecessary updates
   const prevPlacesRef = useRef<Place[] | null>(null)
+  const prevDisplayedPlaceIdsRef = useRef<Set<string>>(new Set())
+  const prevSelectionRef = useRef<RowSelectionState>({})
 
+  // Main effect for marker management
   useEffect(() => {
-    if (prevPlacesRef.current !== places) {
-      prevPlacesRef.current = places
-    }
+    if (!map || !places) return
 
-    if (!map || !places) {
+    // Check if we actually need to update
+    const placesChanged = prevPlacesRef.current !== places
+    const displayedIdsChanged = !setsAreEqual(
+      prevDisplayedPlaceIdsRef.current,
+      displayedPlaceIds,
+    )
+    const selectionChanged = !objectsAreEqual(
+      prevSelectionRef.current,
+      dataTableRowSelection,
+    )
+
+    if (!placesChanged && !displayedIdsChanged && !selectionChanged) {
       return
     }
 
-    // Track existing marker IDs to remove stale ones
-    const currentPlaceIds = new Set(places.map((place) => place.id))
-    const removedMarkers: string[] = []
-    const updatedMarkers: string[] = []
-    const newMarkers: string[] = []
+    // Update refs for next comparison
+    prevPlacesRef.current = places
+    prevDisplayedPlaceIdsRef.current = new Set(displayedPlaceIds)
+    prevSelectionRef.current = { ...dataTableRowSelection }
 
-    // Remove stale markers
-    for (const [id, { marker }] of markersRef.current.entries()) {
-      if (!currentPlaceIds.has(id)) {
-        marker.remove()
-        markersRef.current.delete(id)
-        removedMarkers.push(id)
-      }
-    }
-
-    // Update or create markers
-    for (const place of places) {
-      const isFiltered = !filteredPlaceIds.has(place.id)
-      const isSelected = dataTableRowSelection[place.id] ?? false
-      const existing = markersRef.current.get(place.id)
-
-      let color = MARKER_COLORS.DEFAULT
-      if (isFiltered) {
-        color = MARKER_COLORS.FILTERED
-      } else if (isSelected) {
-        color = MARKER_COLORS.SELECTED
-      }
-
-      if (existing) {
-        // Update existing marker
-        updatedMarkers.push(place.id)
-        const element = existing.marker.getElement()
-        element.classList.toggle('filtered-marker', isFiltered)
-        element.classList.toggle('active-marker', !isFiltered)
-
-        const svg = isFiltered
-          ? createFilteredMarkerSvg()
-          : createActiveMarkerSvg(color, place)
-        element.innerHTML = '' // Clear existing content
-        element.appendChild(svg)
-
-        // Update marker position
-        existing.marker.setLngLat([
-          place.location.longitude,
-          place.location.latitude,
-        ])
-
-        // Update popup offset
-        const popup = existing.marker.getPopup()
-        if (popup) {
-          popup.options.offset = isFiltered
-            ? MARKER_SETTINGS.popupOffsetFiltered
-            : MARKER_SETTINGS.popupOffsetActive
-        }
-      } else {
-        // Create new marker
-        newMarkers.push(place.id)
-        const popupContainer = document.createElement('div')
-        const popup = new mapboxgl.Popup({
-          closeButton: true,
-          maxWidth: MARKER_SETTINGS.popupMaxWidth,
-          offset: isFiltered
-            ? MARKER_SETTINGS.popupOffsetFiltered
-            : MARKER_SETTINGS.popupOffsetActive,
+    const setupMarkers = async () => {
+      // Wait for map to be loaded if needed
+      if (!mapLoadedRef.current && !map.loaded()) {
+        await new Promise<void>((resolve) => {
+          const onLoad = () => {
+            mapLoadedRef.current = true
+            map.off('load', onLoad)
+            resolve()
+          }
+          map.on('load', onLoad)
         })
-          .setDOMContent(popupContainer)
-          .on('open', () =>
-            setOpenPopups((prev) => new Set(prev).add(place.id)),
-          )
-          .on('close', () =>
-            setOpenPopups((prev) => {
-              const next = new Set(prev)
-              next.delete(place.id)
-              return next
-            }),
-          )
+      }
+      // Update existing markers and create new ones
+      const currentPlaceIds = new Set(places.map((place) => place.id))
 
-        const marker = new mapboxgl.Marker({ scale: 1 })
-          .setLngLat([place.location.longitude, place.location.latitude])
-          .setPopup(popup)
-          .addTo(map)
+      // Remove stale markers
+      for (const [id, { marker }] of markersRef.current.entries()) {
+        if (!currentPlaceIds.has(id)) {
+          marker.remove()
+          markersRef.current.delete(id)
+        }
+      }
 
-        const element = marker.getElement()
-        element.classList.add('marker')
-        element.style.cursor = 'pointer'
-        element.style.transform = 'translate(-50%, -100%)'
-        element.classList.add(isFiltered ? 'filtered-marker' : 'active-marker')
+      // Update or create markers
+      for (const place of places) {
+        const isDisplayed = displayedPlaceIds.has(place.id)
+        const isSelected = dataTableRowSelection[place.id] ?? false
+        const existing = markersRef.current.get(place.id)
 
-        const svg = isFiltered
-          ? createFilteredMarkerSvg()
-          : createActiveMarkerSvg(color, place)
-        element.innerHTML = '' // Clear any existing content
-        element.appendChild(svg)
-
-        if (onMarkerClick) {
-          element.addEventListener('click', () => onMarkerClick(place.id))
+        let color = MARKER_COLORS.DEFAULT
+        if (!isDisplayed) {
+          color = MARKER_COLORS.FILTERED
+        } else if (isSelected) {
+          color = MARKER_COLORS.SELECTED
         }
 
-        markersRef.current.set(place.id, { marker, popupContainer })
+        if (!existing) {
+          try {
+            // Create new marker
+            const markerElement = document.createElement('div')
+            markerElement.classList.add('marker')
+            markerElement.style.cursor = 'pointer'
+            markerElement.style.transform = 'translate(-50%, -100%)'
+            markerElement.classList.add(
+              isDisplayed ? 'active-marker' : 'filtered-marker',
+            )
+
+            const svg = isDisplayed
+              ? createActiveMarkerSvg(color, place)
+              : createFilteredMarkerSvg()
+
+            if (svg) {
+              markerElement.appendChild(svg)
+            }
+
+            const popupContainer = document.createElement('div')
+            const popup = new mapboxgl.Popup({
+              closeButton: true,
+              maxWidth: MARKER_SETTINGS.popupMaxWidth,
+              offset: isDisplayed
+                ? MARKER_SETTINGS.popupOffsetActive
+                : MARKER_SETTINGS.popupOffsetFiltered,
+            })
+              .setDOMContent(popupContainer)
+              .on('open', () => {
+                setOpenPopups((prev) => new Set(prev).add(place.id))
+              })
+              .on('close', () => {
+                setOpenPopups((prev) => {
+                  const next = new Set(prev)
+                  next.delete(place.id)
+                  return next
+                })
+              })
+
+            const marker = new mapboxgl.Marker({
+              element: markerElement,
+              scale: 1,
+            })
+              .setLngLat([place.location.longitude, place.location.latitude])
+              .setPopup(popup)
+
+            // Use retry logic when adding marker to map
+            const added = await addMarkerWithRetry(marker, map)
+            if (added) {
+              if (onMarkerClick) {
+                markerElement.addEventListener('click', () =>
+                  onMarkerClick(place.id),
+                )
+              }
+              markersRef.current.set(place.id, { marker, popupContainer })
+            }
+          } catch (error) {
+            console.error('Error creating marker for place:', place.id, error)
+          }
+        } else {
+          // Update existing marker
+          const element = existing.marker.getElement()
+          element.classList.toggle('filtered-marker', !isDisplayed)
+          element.classList.toggle('active-marker', isDisplayed)
+
+          const svg = isDisplayed
+            ? createActiveMarkerSvg(color, place)
+            : createFilteredMarkerSvg()
+
+          if (svg && element) {
+            while (element.firstChild) {
+              element.removeChild(element.firstChild)
+            }
+            element.appendChild(svg)
+          }
+
+          existing.marker.setLngLat([
+            place.location.longitude,
+            place.location.latitude,
+          ])
+
+          const popup = existing.marker.getPopup()
+          if (popup) {
+            popup.options.offset = isDisplayed
+              ? MARKER_SETTINGS.popupOffsetActive
+              : MARKER_SETTINGS.popupOffsetFiltered
+          }
+        }
       }
     }
-  }, [map, places, filteredPlaceIds, dataTableRowSelection, onMarkerClick])
+
+    setupMarkers().catch((error) => {
+      console.error('Error in setupMarkers:', error)
+    })
+  }, [map, places, displayedPlaceIds, dataTableRowSelection, onMarkerClick])
+
+  // Cleanup effect - only run on unmount
+  useEffect(() => {
+    return () => {
+      for (const [, { marker }] of markersRef.current.entries()) {
+        marker.remove()
+      }
+      markersRef.current.clear()
+      mapLoadedRef.current = false
+    }
+  }, [])
 
   return {
     openPopups,
@@ -153,4 +242,20 @@ export const useMarkerManager = ({
       ),
     ),
   }
+}
+
+// Helper functions for comparison
+function setsAreEqual(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) return false
+  for (const item of a) {
+    if (!b.has(item)) return false
+  }
+  return true
+}
+
+function objectsAreEqual(a: RowSelectionState, b: RowSelectionState): boolean {
+  const aKeys = Object.keys(a)
+  const bKeys = Object.keys(b)
+  if (aKeys.length !== bKeys.length) return false
+  return aKeys.every((key) => a[key] === b[key])
 }

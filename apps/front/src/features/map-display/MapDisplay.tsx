@@ -13,12 +13,11 @@ import { columns } from './components/data_table/Columns'
 import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
-  isSearch: boolean
   listId?: string
   places: Place[]
 }
 
-export const MapDisplay = ({ isSearch, listId, places }: MapDisplayProps) => {
+export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
   // Core location state
   const defaultLocation =
     places && places.length > 0
@@ -92,7 +91,6 @@ export const MapDisplay = ({ isSearch, listId, places }: MapDisplayProps) => {
         <ResizableHandle withHandle />
         <ResizablePanel className="flex-1">
           <MapBox
-            isSearch={isSearch}
             onLocationChange={(location) => {
               setLocation({
                 ...location,
