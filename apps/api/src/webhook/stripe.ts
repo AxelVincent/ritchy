@@ -20,6 +20,15 @@ export const stripeWebhook = async (
   req: Request,
   res: Response<WebhookResponse>,
 ): Promise<void> => {
+  logger.info({
+    msg: 'Stripe webhook received',
+    event: 'webhook_received',
+    metadata: {
+      eventType: req.body?.type,
+      webhookKey: res.locals.webhookKey,
+    },
+  })
+
   let event: Stripe.Event
   try {
     const signature = req.headers['stripe-signature']
@@ -41,6 +50,15 @@ export const stripeWebhook = async (
       signature,
       STRIPE_CONFIG.API_KEYS.WEBHOOK_SECRET,
     )
+
+    logger.info({
+      msg: 'Webhook signature verified successfully',
+      event: 'webhook_signature_verified',
+      metadata: {
+        eventType: event.type,
+        webhookKey: res.locals.webhookKey,
+      },
+    })
   } catch (err) {
     logger.error({
       msg: 'Webhook signature verification failed',
@@ -77,6 +95,16 @@ export const stripeWebhook = async (
       })
       .returning()
 
+    logger.info({
+      msg: 'Webhook record created',
+      event: 'webhook_record_created',
+      metadata: {
+        webhookId: webhookRecord.id,
+        eventType: event.type,
+        webhookKey: res.locals.webhookKey,
+      },
+    })
+
     try {
       switch (event.type) {
         case 'customer.subscription.trial_will_end': {
@@ -86,12 +114,33 @@ export const stripeWebhook = async (
             user: {
               id: stripeEvent.metadata.user_id,
             },
-            metadata: { subscriptionId: stripeEvent.id },
+            metadata: {
+              subscriptionId: stripeEvent.id,
+              trialEnd: stripeEvent.trial_end,
+              daysUntilTrialEnd: stripeEvent.trial_end
+                ? Math.floor(
+                    (stripeEvent.trial_end - Date.now() / 1000) / 86400,
+                  )
+                : null,
+            },
           })
           break
         }
 
         case 'customer.subscription.deleted': {
+          logger.info({
+            msg: 'Processing subscription deletion',
+            event: 'subscription_deletion_started',
+            user: {
+              id: stripeEvent.metadata.user_id,
+            },
+            metadata: {
+              subscriptionId: stripeEvent.id,
+              currentStatus: stripeEvent.status,
+              cancelReason: stripeEvent.cancellation_details?.reason,
+            },
+          })
+
           await db
             .update(subscription)
             .set({
@@ -112,6 +161,22 @@ export const stripeWebhook = async (
         }
 
         case 'customer.subscription.updated': {
+          logger.info({
+            msg: 'Processing subscription update',
+            event: 'subscription_update_started',
+            user: {
+              id: stripeEvent.metadata.user_id,
+            },
+            metadata: {
+              subscriptionId: stripeEvent.id,
+              newPriceId: stripeEvent.items.data[0].price.id,
+              newStatus: stripeEvent.status,
+              newPlan: getPlanFromProductId(
+                stripeEvent.items.data[0].plan.product as string,
+              ),
+            },
+          })
+
           await db
             .insert(subscription)
             .values({
@@ -157,6 +222,15 @@ export const stripeWebhook = async (
           })
         }
       }
+
+      logger.info({
+        msg: 'Webhook processed successfully',
+        event: 'webhook_processed',
+        metadata: {
+          eventType: event.type,
+          webhookKey: res.locals.webhookKey,
+        },
+      })
 
       res.json({ received: true })
       return

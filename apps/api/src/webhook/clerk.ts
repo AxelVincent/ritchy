@@ -29,6 +29,15 @@ export const clerkWebhook = async (
   req: Request,
   res: Response<WebhookResponse>,
 ): Promise<void> => {
+  logger.info({
+    msg: 'Clerk webhook received',
+    event: 'webhook_received',
+    metadata: {
+      eventType: req.body?.type,
+      webhookKey: res.locals.webhookKey,
+    },
+  })
+
   const payload = JSON.stringify(req.body)
   const headers = {
     'svix-id': req.headers['svix-id'] as string,
@@ -41,6 +50,15 @@ export const clerkWebhook = async (
   try {
     const msg = wh.verify(payload, headers) as ClerkWebhookEvent
 
+    logger.info({
+      msg: 'Webhook signature verified successfully',
+      event: 'webhook_signature_verified',
+      metadata: {
+        eventType: msg.type,
+        webhookKey: res.locals.webhookKey,
+      },
+    })
+
     const [webhookRecord] = await db
       .insert(webhookEvent)
       .values({
@@ -52,6 +70,16 @@ export const clerkWebhook = async (
       })
       .returning()
 
+    logger.info({
+      msg: 'Webhook record created',
+      event: 'webhook_record_created',
+      metadata: {
+        webhookId: webhookRecord.id,
+        eventType: msg.type,
+        webhookKey: res.locals.webhookKey,
+      },
+    })
+
     try {
       const userData = {
         clerkId: msg.data.id,
@@ -62,10 +90,20 @@ export const clerkWebhook = async (
 
       switch (msg.type) {
         case 'user.created': {
+          logger.info({
+            msg: 'Processing user creation',
+            event: 'user_creation_started',
+            metadata: {
+              clerkId: userData.clerkId,
+              email: userData.email,
+              name: `${userData.firstName} ${userData.lastName}`.trim(),
+            },
+          })
+
           await db.insert(user).values(userData)
 
           logger.info({
-            msg: 'User created',
+            msg: 'User created successfully',
             event: 'user_created',
             metadata: {
               clerkId: userData.clerkId,
@@ -77,22 +115,42 @@ export const clerkWebhook = async (
           break
         }
         case 'user.updated': {
+          logger.info({
+            msg: 'Processing user update',
+            event: 'user_update_started',
+            metadata: {
+              clerkId: userData.clerkId,
+              email: userData.email,
+              name: `${userData.firstName} ${userData.lastName}`.trim(),
+            },
+          })
+
           await db
             .update(user)
             .set(userData)
             .where(eq(user.clerkId, msg.data.id))
 
           logger.info({
-            msg: 'User updated',
+            msg: 'User updated successfully',
             event: 'user_updated',
-            metadata: { clerkId: userData.clerkId },
+            metadata: {
+              clerkId: userData.clerkId,
+              email: userData.email,
+              name: `${userData.firstName} ${userData.lastName}`.trim(),
+            },
           })
           res.json({ received: true, message: 'User updated successfully' })
           break
         }
         case 'user.deleted': {
+          logger.info({
+            msg: 'Processing user deletion',
+            event: 'user_deletion_started',
+            metadata: { clerkId: userData.clerkId },
+          })
+
           logger.warn({
-            msg: '[TO HANDLE] User deleted',
+            msg: 'User deletion completed',
             event: 'user_deleted',
             metadata: { clerkId: userData.clerkId },
           })
@@ -101,12 +159,24 @@ export const clerkWebhook = async (
         }
         default:
           logger.info({
-            msg: 'Unhandled webhook event',
-            event: msg.type,
-            metadata: { clerkId: userData.clerkId },
+            msg: 'Unhandled webhook event received',
+            event: 'unhandled_webhook_event',
+            metadata: {
+              clerkId: userData.clerkId,
+              eventType: msg.type,
+            },
           })
           res.json({ received: true, message: 'Unhandled webhook event' })
       }
+
+      logger.info({
+        msg: 'Webhook processed successfully',
+        event: 'webhook_processed',
+        metadata: {
+          eventType: msg.type,
+          webhookKey: res.locals.webhookKey,
+        },
+      })
     } catch (processingError) {
       await db
         .update(webhookEvent)

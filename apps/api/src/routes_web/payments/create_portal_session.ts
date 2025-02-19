@@ -21,19 +21,61 @@ export const createPortalSession = async (
   >,
   res: Response<CreatePortalSessionApiResponse>,
 ): Promise<void> => {
+  logger.info({
+    msg: 'Portal session creation initiated',
+    event: 'portal_session_started',
+    user: { id: req.auth.userId },
+  })
+
   try {
     const userSubscription = await db
       .select()
       .from(subscription)
       .where(eq(subscription.userId, req.auth.userId))
 
-    if (!userSubscription) {
+    logger.info({
+      msg: 'Subscription status checked',
+      event: 'subscription_status_checked',
+      user: { id: req.auth.userId },
+      metadata: {
+        hasSubscription: userSubscription.length > 0,
+        subscriptionStatus: userSubscription[0]?.status,
+        stripeCustomerId: userSubscription[0]?.stripeCustomerId,
+      },
+    })
+
+    if (!userSubscription.length) {
+      logger.warn({
+        msg: 'No subscription found for user',
+        event: 'subscription_not_found',
+        user: { id: req.auth.userId },
+      })
       throw new Error('User has no subscription')
     }
+
+    logger.info({
+      msg: 'Creating portal session',
+      event: 'portal_session_creating',
+      user: { id: req.auth.userId },
+      metadata: {
+        stripeCustomerId: userSubscription[0].stripeCustomerId,
+        returnUrl: `${process.env.FRONTEND_BASE_URL}/search?portal_return=true`,
+      },
+    })
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: userSubscription[0].stripeCustomerId,
       return_url: `${process.env.FRONTEND_BASE_URL}/search?portal_return=true`,
+    })
+
+    logger.info({
+      msg: 'Portal session created successfully',
+      event: 'portal_session_created',
+      user: { id: req.auth.userId },
+      metadata: {
+        portalSessionId: portalSession.id,
+        portalSessionUrl: portalSession.url,
+      },
     })
 
     res.json({
@@ -43,8 +85,9 @@ export const createPortalSession = async (
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
-        msg: 'Validation error',
-        event: 'validation_error',
+        msg: 'Portal session validation error',
+        event: 'portal_session_validation_error',
+        user: { id: req.auth.userId },
         metadata: { error },
       })
       res.status(400).json({
@@ -55,8 +98,9 @@ export const createPortalSession = async (
     }
 
     logger.error({
-      msg: 'Create portal session error',
-      event: 'create_portal_session_error',
+      msg: 'Portal session creation failed',
+      event: 'portal_session_error',
+      user: { id: req.auth.userId },
       metadata: {
         error:
           error instanceof Error
@@ -66,7 +110,6 @@ export const createPortalSession = async (
                 stack: error.stack,
               }
             : error,
-        userId: req.auth.userId,
       },
     })
     res.status(500).json({

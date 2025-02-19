@@ -1,3 +1,4 @@
+import { logger } from '@ritchy/logger'
 import { z } from 'zod'
 
 const envSchema = z.object({
@@ -58,7 +59,13 @@ export const getPlanFromPriceId = (priceId: string): StripePlan => {
     ([_, planData]) => planData.priceId === priceId,
   )
   if (!plan) {
-    console.warn(`No Stripe plan found for price ID: ${priceId}, defaulting to FREE plan`)
+    logger.warn({
+      msg: `No Stripe plan found for price ID: ${priceId}, defaulting to FREE plan`,
+      event: 'get_plan_from_price_id',
+      metadata: {
+        priceId,
+      },
+    })
   }
   return (plan?.[0] as StripePlan) ?? 'FREE'
 }
@@ -69,9 +76,13 @@ export const getPlanFromProductId = (productId: string): StripePlan => {
     ([_, planData]) => planData.productId === productId,
   )
   if (!plan) {
-    console.warn(
-      `No Stripe plan found for product ID: ${productId}, defaulting to FREE plan`,
-    )
+    logger.warn({
+      msg: `No Stripe plan found for product ID: ${productId}, defaulting to FREE plan`,
+      event: 'get_plan_from_product_id',
+      metadata: {
+        productId,
+      },
+    })
   }
   return (plan?.[0] as StripePlan) ?? 'FREE'
 }
