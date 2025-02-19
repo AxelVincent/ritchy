@@ -49,7 +49,7 @@ export const LoadingMessages = () => {
   React.useEffect(() => {
     const interval = setInterval(() => {
       setMessageIndex((current) => (current + 1) % messages.length)
-    }, 7000)
+    }, 5000)
 
     return () => clearInterval(interval)
   }, [])
