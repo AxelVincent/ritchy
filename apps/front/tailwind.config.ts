@@ -98,19 +98,19 @@ const config = {
   					height: '0'
   				}
   			},
-			  aurora: {
-				from: {
-				  backgroundPosition: "50% 50%, 50% 50%",
-				},
-				to: {
-				  backgroundPosition: "350% 50%, 350% 50%",
-				}
-			  }
+  			aurora: {
+  				from: {
+  					backgroundPosition: '50% 50%, 50% 50%'
+  				},
+  				to: {
+  					backgroundPosition: '350% 50%, 350% 50%'
+  				}
+  			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-			  aurora: "aurora 60s linear infinite",
+  			aurora: 'aurora 60s linear infinite'
   		}
   	}
   },
