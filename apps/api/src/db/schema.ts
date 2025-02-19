@@ -16,6 +16,7 @@ export const user = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     clerkId: text('clerk_id').notNull().unique(),
     email: text('email').notNull().unique(),
+    userIdNew: uuid('user_id_new'),
     firstName: text('first_name'),
     lastName: text('last_name'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -34,6 +35,7 @@ export const list = pgTable('list', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id),
+  userIdNew: uuid('user_id_new'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -63,6 +65,7 @@ export const note = pgTable('note', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id),
+  userIdNew: uuid('user_id_new'),
   note: text('note').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -80,6 +83,7 @@ export const search = pgTable('search', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id),
+  userIdNew: uuid('user_id_new'),
   latitude: numeric('latitude').notNull(),
   longitude: numeric('longitude').notNull(),
   radiusInMeters: integer('radius_in_meters').notNull(),
