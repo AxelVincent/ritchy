@@ -43,7 +43,15 @@ const isAuthenticated = async (
     }
 
     const user = await db
-      .select()
+      .select({
+        id: userTable.id,
+        clerkId: userTable.clerkId,
+        email: userTable.email,
+        firstName: userTable.firstName,
+        lastName: userTable.lastName,
+        createdAt: userTable.createdAt,
+        updatedAt: userTable.updatedAt,
+      })
       .from(userTable)
       .where(eq(userTable.clerkId, userId))
 
