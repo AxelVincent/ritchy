@@ -125,10 +125,20 @@ async function migrateUsers() {
         .from(search)
         .where(isNull(search.userIdNew))
 
+      logger.info({
+        msg: 'Verifying reference updates...',
+        event: '[script/migrate-users]',
+        metadata: {
+          nullListCount: Number(listCount[0].count),
+          nullNoteCount: Number(noteCount[0].count),
+          nullSearchCount: Number(searchCount[0].count)
+        }
+      })
+
       if (
-        Number(listCount) > 0 ||
-        Number(noteCount) > 0 ||
-        Number(searchCount) > 0
+        Number(listCount[0].count) > 0 ||
+        Number(noteCount[0].count) > 0 ||
+        Number(searchCount[0].count) > 0
       ) {
         logger.error({
           msg: 'Orphaned records found:',
