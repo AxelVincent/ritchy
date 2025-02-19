@@ -1,8 +1,8 @@
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder'
+import type { Place } from '@ritchy/types'
 import mapboxgl, { type IControl } from 'mapbox-gl'
 import { useEffect, useRef } from 'react'
 import type { MapSettings } from '../types'
-import type { Place } from '@ritchy/types'
 
 const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string
 
@@ -45,9 +45,12 @@ const calculateInitialBounds = (
   if (searchResults) {
     const bounds = new mapboxgl.LngLatBounds()
     bounds.extend(initialCenter)
-    
+
     for (const place of searchResults) {
-      const coordinates = [place.location.longitude, place.location.latitude] as [number, number]
+      const coordinates = [
+        place.location.longitude,
+        place.location.latitude,
+      ] as [number, number]
       bounds.extend(coordinates)
     }
 
@@ -87,15 +90,23 @@ export const useMapInitialization = (
           bounds: initialBounds,
           fitBoundsOptions: {
             padding: { top: 50, bottom: 50, left: 50, right: 50 },
-            maxZoom: 15
-          }
-        })
+            maxZoom: 15,
+          },
+        }),
       })
 
       // Add passive touch events
       const touchOptions = { passive: true }
-      mapContainerRef.current.addEventListener('touchmove', () => {}, touchOptions)
-      mapContainerRef.current.addEventListener('touchstart', () => {}, touchOptions)
+      mapContainerRef.current.addEventListener(
+        'touchmove',
+        () => {},
+        touchOptions,
+      )
+      mapContainerRef.current.addEventListener(
+        'touchstart',
+        () => {},
+        touchOptions,
+      )
 
       // Add error handling
       mapRef.current.on('error', (e) => {
@@ -147,21 +158,24 @@ export const useMapInitialization = (
 
   // Handle updates to search results
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-      useEffect(() => {
+  useEffect(() => {
     if (!mapRef.current || !searchResults?.length) return
 
     const bounds = new mapboxgl.LngLatBounds()
     bounds.extend(initialCenter)
-    
+
     for (const place of searchResults) {
-      const coordinates = [place.location.longitude, place.location.latitude] as [number, number]
+      const coordinates = [
+        place.location.longitude,
+        place.location.latitude,
+      ] as [number, number]
       bounds.extend(coordinates)
     }
 
     mapRef.current.fitBounds(bounds, {
       padding: { top: 50, bottom: 50, left: 50, right: 50 },
       maxZoom: 15,
-      duration: 500
+      duration: 500,
     })
   }, [searchResults])
 

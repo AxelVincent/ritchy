@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion'
 import { AuroraBackground } from '@/components/ui/aurora-background'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { SignIn } from '@clerk/clerk-react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useIsMobile } from '@/hooks/useIsMobile'
+import { motion } from 'framer-motion'
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,

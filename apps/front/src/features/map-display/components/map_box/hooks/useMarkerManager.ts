@@ -28,7 +28,7 @@ const addMarkerWithRetry = async (
   marker: mapboxgl.Marker,
   map: mapboxgl.Map,
   maxRetries = 3,
-  delay = 100
+  delay = 100,
 ): Promise<boolean> => {
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -36,10 +36,15 @@ const addMarkerWithRetry = async (
       return true
     } catch (error) {
       if (i === maxRetries - 1) {
-        console.error('Failed to add marker after', maxRetries, 'attempts:', error)
+        console.error(
+          'Failed to add marker after',
+          maxRetries,
+          'attempts:',
+          error,
+        )
         return false
       }
-      await new Promise(resolve => setTimeout(resolve, delay))
+      await new Promise((resolve) => setTimeout(resolve, delay))
     }
   }
   return false
@@ -55,7 +60,7 @@ export const useMarkerManager = ({
   const [openPopups, setOpenPopups] = useState<Set<string>>(emptySet)
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
-  
+
   // Store previous values to prevent unnecessary updates
   const prevPlacesRef = useRef<Place[] | null>(null)
   const prevDisplayedPlaceIdsRef = useRef<Set<string>>(new Set())
@@ -67,8 +72,14 @@ export const useMarkerManager = ({
 
     // Check if we actually need to update
     const placesChanged = prevPlacesRef.current !== places
-    const displayedIdsChanged = !setsAreEqual(prevDisplayedPlaceIdsRef.current, displayedPlaceIds)
-    const selectionChanged = !objectsAreEqual(prevSelectionRef.current, dataTableRowSelection)
+    const displayedIdsChanged = !setsAreEqual(
+      prevDisplayedPlaceIdsRef.current,
+      displayedPlaceIds,
+    )
+    const selectionChanged = !objectsAreEqual(
+      prevSelectionRef.current,
+      dataTableRowSelection,
+    )
 
     if (!placesChanged && !displayedIdsChanged && !selectionChanged) {
       return
@@ -93,7 +104,7 @@ export const useMarkerManager = ({
       }
       // Update existing markers and create new ones
       const currentPlaceIds = new Set(places.map((place) => place.id))
-      
+
       // Remove stale markers
       for (const [id, { marker }] of markersRef.current.entries()) {
         if (!currentPlaceIds.has(id)) {
@@ -103,7 +114,7 @@ export const useMarkerManager = ({
       }
 
       // Update or create markers
-      for (const place of places) {        
+      for (const place of places) {
         const isDisplayed = displayedPlaceIds.has(place.id)
         const isSelected = dataTableRowSelection[place.id] ?? false
         const existing = markersRef.current.get(place.id)
@@ -122,7 +133,9 @@ export const useMarkerManager = ({
             markerElement.classList.add('marker')
             markerElement.style.cursor = 'pointer'
             markerElement.style.transform = 'translate(-50%, -100%)'
-            markerElement.classList.add(isDisplayed ? 'active-marker' : 'filtered-marker')
+            markerElement.classList.add(
+              isDisplayed ? 'active-marker' : 'filtered-marker',
+            )
 
             const svg = isDisplayed
               ? createActiveMarkerSvg(color, place)
@@ -142,10 +155,10 @@ export const useMarkerManager = ({
             })
               .setDOMContent(popupContainer)
               .on('open', () => {
-                setOpenPopups(prev => new Set(prev).add(place.id))
+                setOpenPopups((prev) => new Set(prev).add(place.id))
               })
               .on('close', () => {
-                setOpenPopups(prev => {
+                setOpenPopups((prev) => {
                   const next = new Set(prev)
                   next.delete(place.id)
                   return next
@@ -154,7 +167,7 @@ export const useMarkerManager = ({
 
             const marker = new mapboxgl.Marker({
               element: markerElement,
-              scale: 1
+              scale: 1,
             })
               .setLngLat([place.location.longitude, place.location.latitude])
               .setPopup(popup)
@@ -163,7 +176,9 @@ export const useMarkerManager = ({
             const added = await addMarkerWithRetry(marker, map)
             if (added) {
               if (onMarkerClick) {
-                markerElement.addEventListener('click', () => onMarkerClick(place.id))
+                markerElement.addEventListener('click', () =>
+                  onMarkerClick(place.id),
+                )
               }
               markersRef.current.set(place.id, { marker, popupContainer })
             }
@@ -202,7 +217,7 @@ export const useMarkerManager = ({
       }
     }
 
-    setupMarkers().catch(error => {
+    setupMarkers().catch((error) => {
       console.error('Error in setupMarkers:', error)
     })
   }, [map, places, displayedPlaceIds, dataTableRowSelection, onMarkerClick])
@@ -222,10 +237,9 @@ export const useMarkerManager = ({
     openPopups,
     markersRef,
     popupContainers: new Map(
-      Array.from(markersRef.current.entries()).map(([id, { popupContainer }]) => [
-        id,
-        popupContainer,
-      ])
+      Array.from(markersRef.current.entries()).map(
+        ([id, { popupContainer }]) => [id, popupContainer],
+      ),
     ),
   }
 }
@@ -243,5 +257,5 @@ function objectsAreEqual(a: RowSelectionState, b: RowSelectionState): boolean {
   const aKeys = Object.keys(a)
   const bKeys = Object.keys(b)
   if (aKeys.length !== bKeys.length) return false
-  return aKeys.every(key => a[key] === b[key])
+  return aKeys.every((key) => a[key] === b[key])
 }

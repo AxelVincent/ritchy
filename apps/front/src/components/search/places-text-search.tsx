@@ -16,9 +16,9 @@ import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
 import { RADIUS_SETTINGS } from '@/features/map-display/types'
 import {
-  PLAN_RADIUS_LIMITS,
   type CreateSearchRequestBody,
   type GeocodingResult,
+  PLAN_RADIUS_LIMITS,
 } from '@ritchy/types'
 import { useEffect, useState } from 'react'
 

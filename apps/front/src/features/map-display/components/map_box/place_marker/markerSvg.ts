@@ -48,7 +48,10 @@ export const createActiveMarkerSvg = (
 
     // Create text element for emoji instead of foreignObject
     if (place.associatedLists?.[0]) {
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      const text = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'text',
+      )
       text.setAttribute('x', '12')
       text.setAttribute('y', '14')
       text.setAttribute('text-anchor', 'middle')
@@ -61,7 +64,10 @@ export const createActiveMarkerSvg = (
     // Only add badge if there are more than one associated lists
     if (place.associatedLists && place.associatedLists.length > 1) {
       // Badge circle
-      const badge = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+      const badge = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'circle',
+      )
       badge.setAttribute('cx', '17')
       badge.setAttribute('cy', '5')
       badge.setAttribute('r', '4')
@@ -73,7 +79,10 @@ export const createActiveMarkerSvg = (
       svg.appendChild(badge)
 
       // Badge text
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text')
+      const text = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'text',
+      )
       text.setAttribute('x', '17')
       text.setAttribute('y', '7')
       text.setAttribute('text-anchor', 'middle')
@@ -84,7 +93,10 @@ export const createActiveMarkerSvg = (
     }
 
     // Add inner white ring
-    const innerRing = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    const innerRing = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'path',
+    )
     innerRing.setAttribute(
       'd',
       'M12 1.5C6.21 1.5 1.5 6.21 1.5 12c0 8.15 10.5 18.5 10.5 18.5S22.5 20.15 22.5 12c0-5.79-4.71-10.5-10.5-10.5z',
@@ -103,19 +115,25 @@ export const createActiveMarkerSvg = (
       color,
     })
     // Return a simple fallback SVG
-    const fallbackSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    const fallbackSvg = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'svg',
+    )
     fallbackSvg.setAttribute('viewBox', '0 0 24 32')
     fallbackSvg.setAttribute('width', '28')
     fallbackSvg.setAttribute('height', '32')
-    
-    const fallbackPath = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+
+    const fallbackPath = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'path',
+    )
     fallbackPath.setAttribute(
       'd',
       'M12 0C5.383 0 0 5.383 0 12c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
     )
     fallbackPath.setAttribute('fill', color)
     fallbackSvg.appendChild(fallbackPath)
-    
+
     return fallbackSvg
   }
 }

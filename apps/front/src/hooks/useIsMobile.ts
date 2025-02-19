@@ -19,4 +19,4 @@ export const useIsMobile = (breakpoint = 768) => {
   }, [breakpoint])
 
   return isMobile
-} 
+}
