@@ -7,7 +7,8 @@ import { createClerkClient } from '@clerk/backend'
 import { logger } from '@ritchy/logger'
 import { z } from 'zod'
 import { CLERK_CONFIG } from '../config/clerk'
-import { list, note, search, user as userTable } from '../db/schema'
+import { list, note, search, user as userTable, listPlace } from '../db/schema'
+import { inArray } from 'drizzle-orm'
 
 const userSchema = z.object({
   id: z.string(),
@@ -217,6 +218,28 @@ async function migrateUsers() {
 
         // Delete orphaned records
         if (Number(listCount[0].count) > 0) {
+          // First delete related list_place records
+          const orphanedListIds = await tx
+            .select({ id: list.id })
+            .from(list)
+            .where(isNull(list.userIdNew))
+            .then(rows => rows.map(r => r.id))
+
+          const deletedListPlaces = await tx
+            .delete(listPlace)
+            .where(inArray(listPlace.listId, orphanedListIds))
+            .returning()
+
+          logger.info({
+            msg: 'Deleted orphaned list_place records',
+            event: '[script/migrate-users]',
+            metadata: {
+              count: deletedListPlaces.length,
+              listIds: orphanedListIds
+            }
+          })
+
+          // Then delete the lists
           const deletedLists = await tx
             .delete(list)
             .where(isNull(list.userIdNew))
