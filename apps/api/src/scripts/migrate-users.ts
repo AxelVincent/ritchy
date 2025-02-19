@@ -204,21 +204,68 @@ async function migrateUsers() {
         }
       })
 
+      // Handle orphaned records by deletion
       if (
         Number(listCount[0].count) > 0 ||
         Number(noteCount[0].count) > 0 ||
         Number(searchCount[0].count) > 0
       ) {
-        logger.error({
-          msg: 'Orphaned records found:',
+        logger.info({
+          msg: 'Found orphaned records, deleting...',
+          event: '[script/migrate-users]'
+        })
+
+        // Delete orphaned records
+        if (Number(listCount[0].count) > 0) {
+          const deletedLists = await tx
+            .delete(list)
+            .where(isNull(list.userIdNew))
+            .returning()
+          
+          logger.info({
+            msg: 'Deleted orphaned lists',
+            event: '[script/migrate-users]',
+            metadata: {
+              count: deletedLists.length,
+              deletedIds: deletedLists.map(l => l.id)
+            }
+          })
+        }
+
+        if (Number(searchCount[0].count) > 0) {
+          const deletedSearches = await tx
+            .delete(search)
+            .where(isNull(search.userIdNew))
+            .returning()
+          
+          logger.info({
+            msg: 'Deleted orphaned searches',
+            event: '[script/migrate-users]',
+            metadata: {
+              count: deletedSearches.length,
+              deletedIds: deletedSearches.map(s => s.id)
+            }
+          })
+        }
+
+        // Verify again after deletion
+        const finalCounts = await Promise.all([
+          tx.select({ count: count() }).from(list).where(isNull(list.userIdNew)),
+          tx.select({ count: count() }).from(search).where(isNull(search.userIdNew))
+        ])
+
+        logger.info({
+          msg: 'Verification after deletion',
           event: '[script/migrate-users]',
           metadata: {
-            listCount,
-            noteCount,
-            searchCount,
-          },
+            remainingNullLists: Number(finalCounts[0][0].count),
+            remainingNullSearches: Number(finalCounts[1][0].count)
+          }
         })
-        throw new Error('Some records could not be mapped to new user IDs')
+
+        if (finalCounts.some(count => Number(count[0].count) > 0)) {
+          throw new Error('Some records still have null user_id_new even after deletion')
+        }
       }
 
       // 5. Drop old columns and rename new ones
