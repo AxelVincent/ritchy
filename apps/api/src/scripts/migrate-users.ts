@@ -71,6 +71,16 @@ async function migrateUsers() {
     await db.transaction(async (tx) => {
       // Insert users
       for (const user of users) {
+        logger.info({
+          msg: 'Inserting user',
+          event: '[script/migrate-users]',
+          metadata: {
+            userId: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          },
+        })
         await tx
           .insert(userTable)
           .values({
@@ -87,6 +97,63 @@ async function migrateUsers() {
         msg: 'Updating references...',
         event: '[script/migrate-users]',
       })
+
+      // Log current state before updates
+      const beforeCounts = await Promise.all([
+        tx.select({ count: count() }).from(list),
+        tx.select({ count: count() }).from(note),
+        tx.select({ count: count() }).from(search),
+      ])
+
+      logger.info({
+        msg: 'Current record counts before updates',
+        event: '[script/migrate-users]',
+        metadata: {
+          totalLists: Number(beforeCounts[0][0].count),
+          totalNotes: Number(beforeCounts[1][0].count),
+          totalSearches: Number(beforeCounts[2][0].count),
+        }
+      })
+
+      // Get sample of records that will be orphaned
+      const sampleOrphaned = await Promise.all([
+        tx.select({
+          id: list.id,
+          userId: list.userId,
+        })
+          .from(list)
+          .leftJoin(userTable, eq(list.userId, userTable.clerkId))
+          .where(isNull(userTable.id))
+          .limit(5),
+        tx.select({
+          id: note.id,
+          userId: note.userId,
+        })
+          .from(note)
+          .leftJoin(userTable, eq(note.userId, userTable.clerkId))
+          .where(isNull(userTable.id))
+          .limit(5),
+        tx.select({
+          id: search.id,
+          userId: search.userId,
+        })
+          .from(search)
+          .leftJoin(userTable, eq(search.userId, userTable.clerkId))
+          .where(isNull(userTable.id))
+          .limit(5),
+      ])
+
+      logger.info({
+        msg: 'Sample of records that will be orphaned',
+        event: '[script/migrate-users]',
+        metadata: {
+          sampleOrphanedLists: sampleOrphaned[0],
+          sampleOrphanedNotes: sampleOrphaned[1],
+          sampleOrphanedSearches: sampleOrphaned[2],
+        }
+      })
+
+      // Perform updates
       await tx
         .update(list)
         .set({
@@ -112,15 +179,15 @@ async function migrateUsers() {
         .where(eq(search.userId, userTable.clerkId))
 
       // Verify all references were updated
-      const listCount = await db
+      const listCount = await tx
         .select({ count: count() })
         .from(list)
         .where(isNull(list.userIdNew))
-      const noteCount = await db
+      const noteCount = await tx
         .select({ count: count() })
         .from(note)
         .where(isNull(note.userIdNew))
-      const searchCount = await db
+      const searchCount = await tx
         .select({ count: count() })
         .from(search)
         .where(isNull(search.userIdNew))
@@ -131,7 +198,9 @@ async function migrateUsers() {
         metadata: {
           nullListCount: Number(listCount[0].count),
           nullNoteCount: Number(noteCount[0].count),
-          nullSearchCount: Number(searchCount[0].count)
+          nullSearchCount: Number(searchCount[0].count),
+          clerkUserCount: users.length,
+          dbUserCount: await tx.select({ count: count() }).from(userTable).then(rows => Number(rows[0].count))
         }
       })
 
