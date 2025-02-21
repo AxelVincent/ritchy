@@ -1,12 +1,21 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import pino from 'pino'
+
+interface LogContext {
+  user?: {
+    id: string
+    email: string
+    firstName: string
+    lastName: string
+  }
+}
+
+// Create AsyncLocalStorage to store context
+const asyncLocalStorage = new AsyncLocalStorage<LogContext>()
 
 interface LogPayload {
   msg: string
   event: string
-  user?: {
-    id: string
-    email?: string
-  }
   metadata?: Record<string, unknown>
 }
 
@@ -35,12 +44,27 @@ const baseLogger = pino({
   serializers: pino.stdSerializers,
 })
 
-// Wrap the logger to enforce the payload structure
+// Wrap the logger to enforce the payload structure and inject context
 const logger = {
-  info: (payload: LogPayload) => baseLogger.info(payload),
-  error: (payload: LogPayload) => baseLogger.error(payload),
-  warn: (payload: LogPayload) => baseLogger.warn(payload),
-  debug: (payload: LogPayload) => baseLogger.debug(payload),
+  info: (payload: LogPayload) => {
+    const context = asyncLocalStorage.getStore()
+    baseLogger.info({ ...payload, ...(context || {}) })
+  },
+  error: (payload: LogPayload) => {
+    const context = asyncLocalStorage.getStore()
+    baseLogger.error({ ...payload, ...(context || {}) })
+  },
+  warn: (payload: LogPayload) => {
+    const context = asyncLocalStorage.getStore()
+    baseLogger.warn({ ...payload, ...(context || {}) })
+  },
+  debug: (payload: LogPayload) => {
+    const context = asyncLocalStorage.getStore()
+    baseLogger.debug({ ...payload, ...(context || {}) })
+  },
+  runWithContext: <T>(context: LogContext, fn: () => T): T => {
+    return asyncLocalStorage.run(context, fn)
+  },
 }
 
-export { logger, baseLogger }
+export { logger, baseLogger, type LogContext }

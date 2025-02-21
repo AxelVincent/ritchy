@@ -33,7 +33,7 @@ export const createCheckoutSession = async (
   logger.info({
     msg: 'Checkout session creation initiated',
     event: 'checkout_session_started',
-    user: { id: req.auth.userId },
+
     metadata: {
       requestedPlan: req.body.plan,
     },
@@ -46,7 +46,7 @@ export const createCheckoutSession = async (
     logger.info({
       msg: 'Checkout request validated',
       event: 'checkout_validation_passed',
-      user: { id: req.auth.userId },
+
       metadata: {
         plan: req.body.plan,
       },
@@ -64,7 +64,7 @@ export const createCheckoutSession = async (
     logger.info({
       msg: 'Current subscription status checked',
       event: 'subscription_status_checked',
-      user: { id: req.auth.userId },
+
       metadata: {
         hasExistingSubscription: !!userSubscription,
         subscriptionStatus: userSubscription?.status,
@@ -78,7 +78,6 @@ export const createCheckoutSession = async (
       logger.info({
         msg: 'Redirecting to customer portal for active subscription',
         event: 'redirect_to_customer_portal',
-        user: { id: req.auth.userId },
         metadata: {
           stripeCustomerId: userSubscription.stripeCustomerId,
           subscriptionStatus: userSubscription.status,
@@ -94,7 +93,6 @@ export const createCheckoutSession = async (
       logger.info({
         msg: 'Customer portal session created',
         event: 'customer_portal_created',
-        user: { id: req.auth.userId },
         metadata: {
           portalSessionId: portalSession.id,
         },
@@ -115,7 +113,6 @@ export const createCheckoutSession = async (
       logger.error({
         msg: 'Invalid plan requested',
         event: 'invalid_plan_error',
-        user: { id: req.auth.userId },
         metadata: {
           requestedPlan: plan,
           availablePlans: Object.keys(STRIPE_PLANS),
@@ -127,7 +124,7 @@ export const createCheckoutSession = async (
     logger.info({
       msg: 'Creating new checkout session',
       event: 'checkout_session_creating',
-      user: { id: req.auth.userId },
+
       metadata: {
         plan,
         priceId,
@@ -159,7 +156,7 @@ export const createCheckoutSession = async (
     logger.info({
       msg: 'Checkout session created successfully',
       event: 'checkout_session_created',
-      user: { id: req.auth.userId },
+
       metadata: {
         checkoutSessionId: session.id,
         plan,
@@ -177,7 +174,6 @@ export const createCheckoutSession = async (
       logger.info({
         msg: 'Checkout validation error',
         event: 'checkout_validation_error',
-        user: { id: req.auth.userId },
         metadata: {
           validationErrors: error.errors,
           requestBody: req.body,
@@ -193,7 +189,7 @@ export const createCheckoutSession = async (
     logger.error({
       msg: 'Checkout session creation failed',
       event: 'checkout_session_error',
-      user: { id: req.auth.userId },
+
       metadata: {
         error:
           error instanceof Error
