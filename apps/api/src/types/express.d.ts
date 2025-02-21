@@ -4,6 +4,9 @@ declare global {
       auth: {
         userId: string
         sessionId: string
+        email: string
+        firstName: string
+        lastName: string
       }
       rawBody: Buffer
     }

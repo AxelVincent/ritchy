@@ -24,7 +24,6 @@ export const createPortalSession = async (
   logger.info({
     msg: 'Portal session creation initiated',
     event: 'portal_session_started',
-    user: { id: req.auth.userId },
   })
 
   try {
@@ -36,7 +35,7 @@ export const createPortalSession = async (
     logger.info({
       msg: 'Subscription status checked',
       event: 'subscription_status_checked',
-      user: { id: req.auth.userId },
+
       metadata: {
         hasSubscription: userSubscription.length > 0,
         subscriptionStatus: userSubscription[0]?.status,
@@ -48,7 +47,6 @@ export const createPortalSession = async (
       logger.warn({
         msg: 'No subscription found for user',
         event: 'subscription_not_found',
-        user: { id: req.auth.userId },
       })
       throw new Error('User has no subscription')
     }
@@ -56,7 +54,7 @@ export const createPortalSession = async (
     logger.info({
       msg: 'Creating portal session',
       event: 'portal_session_creating',
-      user: { id: req.auth.userId },
+
       metadata: {
         stripeCustomerId: userSubscription[0].stripeCustomerId,
         returnUrl: `${process.env.FRONTEND_BASE_URL}/search?portal_return=true`,
@@ -71,7 +69,7 @@ export const createPortalSession = async (
     logger.info({
       msg: 'Portal session created successfully',
       event: 'portal_session_created',
-      user: { id: req.auth.userId },
+
       metadata: {
         portalSessionId: portalSession.id,
         portalSessionUrl: portalSession.url,
@@ -87,7 +85,6 @@ export const createPortalSession = async (
       logger.info({
         msg: 'Portal session validation error',
         event: 'portal_session_validation_error',
-        user: { id: req.auth.userId },
         metadata: { error },
       })
       res.status(400).json({
@@ -100,7 +97,7 @@ export const createPortalSession = async (
     logger.error({
       msg: 'Portal session creation failed',
       event: 'portal_session_error',
-      user: { id: req.auth.userId },
+
       metadata: {
         error:
           error instanceof Error

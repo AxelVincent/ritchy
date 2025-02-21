@@ -24,7 +24,7 @@ export const createSearch = async (
   logger.info({
     msg: 'Search creation initiated',
     event: 'search_creation_started',
-    user: { id: req.auth.userId },
+
     metadata: {
       requestBody: req.body,
     },
@@ -37,7 +37,7 @@ export const createSearch = async (
     logger.info({
       msg: 'Search request validated',
       event: 'search_validation_passed',
-      user: { id: req.auth.userId },
+
       metadata: {
         plan,
         model: parsedBody.model,
@@ -50,7 +50,6 @@ export const createSearch = async (
       logger.warn({
         msg: 'Search radius limit exceeded',
         event: 'search_radius_exceeded',
-        user: { id: req.auth.userId },
         metadata: {
           plan,
           requestedRadius: parsedBody.radiusInMeters,
@@ -71,7 +70,6 @@ export const createSearch = async (
       logger.warn({
         msg: 'Model access denied',
         event: 'search_model_access_denied',
-        user: { id: req.auth.userId },
         metadata: {
           plan,
           requestedModel: parsedBody.model,
@@ -94,7 +92,6 @@ export const createSearch = async (
       logger.info({
         msg: 'Free plan search count checked',
         event: 'search_count_checked',
-        user: { id: req.auth.userId },
         metadata: {
           currentSearchCount: searchCount,
           limit: 3,
@@ -105,7 +102,6 @@ export const createSearch = async (
         logger.warn({
           msg: 'Free plan search limit reached',
           event: 'search_limit_reached',
-          user: { id: req.auth.userId },
           metadata: {
             searchCount,
             limit: 3,
@@ -136,7 +132,6 @@ export const createSearch = async (
     logger.info({
       msg: 'Search created successfully',
       event: 'search_created',
-      user: { id: req.auth.userId },
       metadata: {
         searchId: result.id,
         plan,
@@ -158,7 +153,6 @@ export const createSearch = async (
       logger.info({
         msg: 'Search validation error',
         event: 'search_validation_error',
-        user: { id: req.auth.userId },
         metadata: {
           validationErrors: error.errors,
           requestBody: req.body,
@@ -174,7 +168,6 @@ export const createSearch = async (
     logger.error({
       msg: 'Search creation failed',
       event: 'search_creation_error',
-      user: { id: req.auth.userId },
       metadata: {
         error:
           error instanceof Error

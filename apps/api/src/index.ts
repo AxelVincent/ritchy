@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { clerkMiddleware, getAuth } from '@clerk/express'
-import { baseLogger, logger } from '@ritchy/logger'
+import { type LogContext, baseLogger, logger } from '@ritchy/logger'
 import cors from 'cors'
 import { eq } from 'drizzle-orm'
 import express, { type NextFunction } from 'express'
@@ -42,7 +42,7 @@ const isAuthenticated = async (
       return
     }
 
-    const user = await db
+    const [user] = await db
       .select({
         id: userTable.id,
         clerkId: userTable.clerkId,
@@ -63,8 +63,26 @@ const isAuthenticated = async (
       return
     }
 
-    req.auth = { userId: user[0].id, sessionId }
-    next()
+    req.auth = {
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
+      sessionId,
+    }
+
+    // Wrap the rest of the request handling in a context with user information
+    logger.runWithContext(
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName ?? '',
+          lastName: user.lastName ?? '',
+        },
+      },
+      () => next(),
+    )
   } catch (error) {
     logger.error({
       msg: 'Authentication error',
@@ -86,43 +104,35 @@ app.use(
     autoLogging: {
       ignore: (req) => req.method === 'OPTIONS',
     },
+    // Minimal request serialization
     serializers: {
       req(req) {
         return {
-          id: req.id,
           method: req.method,
           url: req.url,
           body: req.method === 'POST' ? req.raw.body : undefined,
           query: req.query,
           params: req.params,
-          headers: req.headers,
-          remoteAddress: req.remoteAddress,
-          remotePort: req.remotePort,
         }
       },
     },
-    customProps: (req, res) => ({
+    // Only include essential custom props
+    customProps: (req) => ({
       context: {
         userId: req.auth?.userId,
         sessionId: req.auth?.sessionId,
-      },
-      performance: {
-        responseTime: res.responseTime,
+        firstName: req.auth?.firstName,
+        lastName: req.auth?.lastName,
+        email: req.auth?.email,
       },
     }),
-    redact: [
-      'req.headers.authorization',
-      'req.headers.cookie',
-      '*.password',
-      '*.token',
-      '*.secret',
-    ],
-    customSuccessMessage: (req, res) => {
-      return `${req.method} ${req.url} - ${res.statusCode}`
-    },
-    customErrorMessage: (req, res, err) => {
-      return `${req.method} ${req.url} - ${res.statusCode} - ${err.message}`
-    },
+    // Redact sensitive data
+    redact: ['req.headers'],
+    // Simple log messages
+    customSuccessMessage: (req, res) =>
+      `${req.method} ${req.baseUrl}${req.url} - ${res.statusCode}`,
+    customErrorMessage: (req, res, err) =>
+      `${req.method} ${req.baseUrl}${req.url} - ${res.statusCode} - ${err.message}`,
   }),
 )
 
