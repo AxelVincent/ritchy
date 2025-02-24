@@ -69,6 +69,13 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
     }
   }, [currentLocation])
 
+  const [tableData, setTableData] = useState<Place[]>(places)
+
+  // Update effect to handle places changes
+  useEffect(() => {
+    setTableData(places)
+  }, [places])
+
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
   }
@@ -79,7 +86,8 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
         <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
           <DataTable
             columns={columns}
-            data={searchResults}
+            data={tableData}
+            setData={setTableData}
             setSelectedPlaceId={setSelectedPlaceId}
             selectedPlaceId={selectedPlaceId}
             setDataTableRowSelection={setDataTableRowSelection}

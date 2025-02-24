@@ -35,6 +35,7 @@ import { websiteColumn } from './columns/WebsiteColumn'
 export const columns: ColumnDef<SearchResult>[] = [
   selectColumn,
   nameColumn,
+  // asyncScoreColumn,
   websiteColumn,
   phoneColumn,
   socialEmailColumn,

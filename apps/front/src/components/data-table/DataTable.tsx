@@ -2,7 +2,9 @@ import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialo
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/map-display/components/data_export/DataExport'
+import { createApiClient } from '@/lib/api/createApiClient'
 import { cn } from '@/lib/utils'
+import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
@@ -20,8 +22,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Plus, Trash } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Loader2, Plus, Trash } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DeleteItemsFromListDialog } from '../lists/delete-items-from-list-dialog'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
@@ -37,14 +39,28 @@ interface DataTableProps<TData, TValue> {
   selectedPlaceId: string | null
   listId?: string
   onFilteredDataChange: (ids: Set<string>) => void
+  setData: React.Dispatch<React.SetStateAction<TData[]>>
 }
 
 // Add a fixed height for table rows
 const ROW_HEIGHT = '34px'
 
+// Define the EnrichmentState type
+export interface EnrichmentState {
+  emails: string[]
+  socialLinks: Record<string, string>
+  isLoading: boolean
+  error?: string
+}
+
+const apiClient = createApiClient({
+  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
+})
+
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
+  setData,
   selectedPlaceId,
   setSelectedPlaceId,
   setDataTableRowSelection,
@@ -57,6 +73,20 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [showAddListDialog, setShowAddListDialog] = useState(false)
   const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
+  const [pendingFetches, setPendingFetches] = useState(new Set<string>())
+
+  // Remove scoresRef, keep only enrichmentRef
+  const enrichmentRef = useRef<Record<string, EnrichmentState>>({})
+
+  // Update batchUpdate to handle only enrichment
+  const batchUpdate = useCallback(() => {
+    setData((currentData) =>
+      currentData.map((item) => ({
+        ...item,
+        enrichment: enrichmentRef.current[item.id] || item.enrichment,
+      })),
+    )
+  }, [setData])
 
   const table = useReactTable({
     data,
@@ -199,10 +229,82 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onFilteredDataChange(filteredIds)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
 
+  // Keep handleFetchEnrichment function
+  const handleFetchEnrichment = async () => {
+    const selectedRows = table.getSelectedRowModel().rows
+    const selectedIds = selectedRows
+      .filter((row) => row.original.websiteUri)
+      .map((row) => row.original.id)
+    if (selectedIds.length === 0) return
+
+    setPendingFetches(new Set(selectedIds))
+
+    // Set all selected rows to loading state
+    setData((currentData) =>
+      currentData.map((item) => ({
+        ...item,
+        enrichment: selectedIds.includes(item.id)
+          ? { emails: [], socialLinks: {}, isLoading: true }
+          : item.enrichment,
+      })),
+    )
+
+    let batchTimeout: NodeJS.Timeout
+
+    const scheduleBatchUpdate = () => {
+      clearTimeout(batchTimeout)
+      batchTimeout = setTimeout(batchUpdate, 1000)
+    }
+
+    const fetchPromises = selectedIds.map(async (id) => {
+      const website = data.find((item) => item.id === id)?.websiteUri
+      if (!website) {
+        enrichmentRef.current[id] = {
+          emails: [],
+          socialLinks: {},
+          error: 'No website available',
+          isLoading: false,
+        }
+        scheduleBatchUpdate()
+        return
+      }
+
+      try {
+        const response = await apiClient.fetchWithAuth(
+          `/enrich?id=${id}&website=${encodeURIComponent(website)}`,
+        )
+
+        enrichmentRef.current[id] = {
+          ...response,
+          isLoading: false,
+        }
+        scheduleBatchUpdate()
+      } catch (error) {
+        enrichmentRef.current[id] = {
+          emails: [],
+          socialLinks: {},
+          error: error instanceof Error ? error.message : 'Failed to fetch',
+          isLoading: false,
+        }
+        scheduleBatchUpdate()
+      } finally {
+        setPendingFetches((current) => {
+          const updated = new Set(current)
+          updated.delete(id)
+          return updated
+        })
+      }
+    })
+
+    await Promise.allSettled(fetchPromises)
+    batchUpdate()
+    enrichmentRef.current = {}
+  }
+
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
-        <div className="flex flex-row justify-between items-center p-4 gap-2">
+        <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto">
           {listId ? (
             <>
               <DeleteItemsFromListDialog
@@ -256,6 +358,31 @@ export const DataTable = <TData extends SearchResult, TValue>({
               )}
             </>
           )}
+          {selectedRows.length > 0 &&
+            selectedRows.some((row) => row.original.websiteUri) && (
+              <Button
+                variant="outline"
+                onClick={handleFetchEnrichment}
+                disabled={pendingFetches.size > 0}
+              >
+                {pendingFetches.size > 0 ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enriching ({pendingFetches.size} remaining)
+                  </>
+                ) : (
+                  <>
+                    <MagicWandIcon className="mr-2 h-4 w-4" />
+                    Enrich (
+                    {
+                      selectedRows.filter((row) => row.original.websiteUri)
+                        .length
+                    }
+                    )
+                  </>
+                )}
+              </Button>
+            )}
           <div className="flex items-center gap-2">
             <DataExport
               data={table.getFilteredRowModel().rows.map((row) => row.original)}
@@ -266,7 +393,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       </div>
       <div
         ref={tableContainerRef}
-        className="container border-t border-b border-border p-0"
+        className="border-t border-b border-border p-0"
         style={{
           overflow: 'auto',
           position: 'relative',
