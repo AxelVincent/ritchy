@@ -1,15 +1,13 @@
 import { logger } from '@ritchy/logger'
-import { type EnrichApiResponse, EnrichResponseSchema } from '@ritchy/types'
+import {
+  type EnrichApiResponse,
+  type EnrichRequestQuery,
+  EnrichRequestSchema,
+  EnrichResponseSchema,
+} from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { scrapeFromOptimizedUrls } from '../services/scraperEmailsAndSocials'
-
-// Request validation schema
-const EnrichRequestSchema = z.object({
-  website: z.string().url(),
-})
-
-type EnrichRequestQuery = z.infer<typeof EnrichRequestSchema>
 
 /**
  * Enriches website data with emails and social media links
@@ -27,13 +25,13 @@ export const enrichWebsite = async (
 ): Promise<void> => {
   try {
     // Validate query parameters
-    const { website } = EnrichRequestSchema.parse(req.query)
+    const { id, website } = EnrichRequestSchema.parse(req.query)
 
     // Call the scraper service
     const enrichedData = await scrapeFromOptimizedUrls(website, 5)
 
     // Validate response
-    const validatedData = EnrichResponseSchema.parse(enrichedData)
+    const validatedData = EnrichResponseSchema.parse({ id, ...enrichedData })
     res.json(validatedData)
     return
   } catch (error) {
