@@ -1,34 +1,15 @@
-import { enrichKeys } from '@/api/queries/enrich/useEnrichWebsite'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
 import {
-  type EnrichApiResponse,
+  type EnrichmentState,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
   searchResultSchema,
 } from '@ritchy/types'
-import { type QueryClient, useQueryClient } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
 import { useState } from 'react'
-
-/**
- * Helper function to safely retrieve enrichment data from the query cache
- * @param queryClient - TanStack Query client instance
- * @param websiteUri - Website URI to lookup enrichment data for
- * @returns EnrichApiResponse if found, null otherwise
- */
-const getEnrichmentData = (
-  queryClient: QueryClient,
-  websiteUri: string | null,
-): EnrichApiResponse | null => {
-  if (!websiteUri) return null
-  return (
-    queryClient.getQueryData<EnrichApiResponse>(
-      enrichKeys.website(websiteUri),
-    ) ?? null
-  )
-}
+import React from 'react'
 
 interface DataExportProps {
   /** Array of search results to export */
@@ -42,7 +23,13 @@ export const validateAllSearchResultFieldsHaveColumns = (
     accessor: (row: SearchResult) => unknown
   }[],
 ) => {
-  const excludedFields = ['utcOffsetMinutes', 'addressComponents', 'notes']
+  const excludedFields = [
+    'utcOffsetMinutes',
+    'addressComponents',
+    'notes',
+    'enrichment',
+    'asyncScore',
+  ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
     searchResultSchema.shape,
@@ -101,10 +88,9 @@ export const validateAllSearchResultFieldsHaveColumns = (
  * Component that handles exporting search results to CSV format.
  * Includes enrichment data from website scraping if available.
  */
-export const DataExport = ({ data }: DataExportProps) => {
+export const DataExport = React.memo(({ data }: DataExportProps) => {
   if (data.length === 0) return null
 
-  const queryClient = useQueryClient()
   const [isExporting, setIsExporting] = useState(false)
   const { toast } = useToast()
 
@@ -113,17 +99,36 @@ export const DataExport = ({ data }: DataExportProps) => {
       setIsExporting(true)
 
       // Create a Map of website URIs to enrichment data
-      const enrichmentMap = new Map(
+      const enrichmentMap = new Map<string, EnrichmentState>(
         data
           .filter((row) => row.websiteUri)
-          .map((row) => [
-            row.websiteUri,
-            getEnrichmentData(queryClient, row.websiteUri),
-          ]),
+          .map((row) => {
+            const enrichData = row.enrichment as EnrichmentState | undefined
+            if (!enrichData || enrichData.error) {
+              return [
+                // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                row.websiteUri!,
+                {
+                  id: row.id,
+                  emails: [],
+                  socialLinks: {} as Record<string, string[]>,
+                  isLoading: false,
+                },
+              ] as [string, EnrichmentState]
+            }
+            return [
+              // biome-ignore lint/style/noNonNullAssertion: <explanation>
+              row.websiteUri!,
+              {
+                id: row.id,
+                emails: enrichData.emails,
+                socialLinks: enrichData.socialLinks,
+                isLoading: false,
+              },
+            ] as [string, EnrichmentState]
+          }),
       )
-      queryClient.clear()
 
-      // In the DataExport component, add this const with type assertion
       const columns = [
         {
           header: 'ID',
@@ -146,9 +151,7 @@ export const DataExport = ({ data }: DataExportProps) => {
             const enrichData = row.websiteUri
               ? enrichmentMap.get(row.websiteUri)
               : null
-            return enrichData && !('error' in enrichData)
-              ? enrichData.emails.join(', ')
-              : ''
+            return enrichData?.emails?.join(', ') || ''
           },
         },
         ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
@@ -157,8 +160,7 @@ export const DataExport = ({ data }: DataExportProps) => {
             const enrichData = row.websiteUri
               ? enrichmentMap.get(row.websiteUri)
               : null
-            if (!enrichData || 'error' in enrichData) return ''
-            return enrichData.socialLinks[platform]?.join(', ') || ''
+            return enrichData?.socialLinks[platform]?.join(', ') || ''
           },
         })),
         {
@@ -395,4 +397,4 @@ export const DataExport = ({ data }: DataExportProps) => {
       {isExporting ? 'Exporting...' : `Export to CSV (${data.length})`}
     </Button>
   )
-}
+})
