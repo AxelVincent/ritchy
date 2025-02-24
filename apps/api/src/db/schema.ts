@@ -14,8 +14,8 @@ export const user = pgTable(
   'user',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    clerkId: text('clerk_id').notNull().unique(),
-    email: text('email').notNull().unique(),
+    clerkId: text('clerk_id').notNull(),
+    email: text('email').notNull(),
     firstName: text('first_name'),
     lastName: text('last_name'),
     userIdNew: text('user_id_new'),
@@ -24,7 +24,6 @@ export const user = pgTable(
   },
   (table) => ({
     uniqClerkId: uniqueIndex('uniq_clerk_id').on(table.clerkId),
-    uniqEmail: uniqueIndex('uniq_email').on(table.email),
   }),
 )
 
