@@ -24,7 +24,6 @@ export const user = pgTable(
   },
   (table) => ({
     uniqClerkId: uniqueIndex('uniq_clerk_id').on(table.clerkId),
-    uniqEmail: uniqueIndex('uniq_email').on(table.email),
   }),
 )
 

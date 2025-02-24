@@ -45,6 +45,7 @@
   "ignorePaths": ["**/node_modules/**"],
   "postUpdateOptions": ["yarnDedupeHighest"],
   "baseBranches": ["staging"],
+  "ignoreBranches": ["master", "main"],
   "automergeStrategy": "squash",
   "platformCommit": "auto",
   "dependencyDashboard": true,

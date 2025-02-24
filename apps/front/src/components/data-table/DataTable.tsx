@@ -22,7 +22,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Plus, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { DeleteItemsFromListDialog } from '../../../../components/lists/delete-items-from-list-dialog'
+import { DeleteItemsFromListDialog } from '../lists/delete-items-from-list-dialog'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
 

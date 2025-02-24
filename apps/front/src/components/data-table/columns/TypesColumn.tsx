@@ -1,4 +1,4 @@
-import { DynamicBadgeList } from '@/features/map-display/components/shared/DynamicBadgeList'
+import { DynamicBadgeList } from '@/components/common/DynamicBadgeList'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ColumnPinCell } from './utils/ColumnCells'
