@@ -27,6 +27,7 @@ export const websiteColumn: ColumnDef<SearchResult> = {
         row={row}
         table={table}
         content={website ? getDomainFromUrl(website) : ''}
+        href={website}
       />
     )
   },
