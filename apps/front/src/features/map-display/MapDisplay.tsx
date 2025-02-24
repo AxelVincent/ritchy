@@ -1,4 +1,4 @@
-import { DataTable } from '@/features/map-display/components/data_table/DataTable'
+import { DataTable } from '@/components/data-table/DataTable'
 import { MapBox } from '@/features/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/features/map-display/constants'
 
@@ -9,7 +9,7 @@ import { ResizablePanel } from '@/components/ui/resizable'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
-import { columns } from './components/data_table/Columns'
+import { columns } from '../../components/data-table/Columns'
 import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {

@@ -24,15 +24,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { DebouncedInput } from '@/features/map-display/components/data_table/columns/hooks/DebouncedInput'
-import { useUniqueValues } from '@/features/map-display/components/data_table/columns/hooks/UseUniqueValues'
-import type { FilterVariant } from '@/features/map-display/components/data_table/columns/types'
-import { DynamicBadgeList } from '@/features/map-display/components/shared/DynamicBadgeList'
+
+import { DynamicBadgeList } from '@/components/common/DynamicBadgeList'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
 import { Check, X } from 'lucide-react'
 import { useState } from 'react'
+import { DebouncedInput } from '../hooks/DebouncedInput'
+import { useUniqueValues } from '../hooks/UseUniqueValues'
+import type { FilterVariant } from '../types'
 
 export function Filter({
   column,

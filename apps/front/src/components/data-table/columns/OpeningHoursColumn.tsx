@@ -1,3 +1,5 @@
+import { OpeningHoursContent } from '@/components/common/OpeningHours'
+import { StatusIndicator } from '@/components/common/StatusIndicator'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,8 +14,6 @@ import { formatUtcOffset } from '@/lib/formatUtcOffset'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { OpeningHoursContent } from '../../shared/OpeningHours'
-import { StatusIndicator } from '../../shared/StatusIndicator'
 import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
