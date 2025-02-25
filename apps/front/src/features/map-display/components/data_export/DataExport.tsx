@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
 import {
-  type EnrichmentState,
+  type EnrichmentWithStatus,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
   searchResultSchema,
@@ -28,7 +28,6 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'addressComponents',
     'notes',
     'enrichment',
-    'asyncScore',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
@@ -99,12 +98,12 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
       setIsExporting(true)
 
       // Create a Map of website URIs to enrichment data
-      const enrichmentMap = new Map<string, EnrichmentState>(
+      const enrichmentMap = new Map<string, EnrichmentWithStatus>(
         data
           .filter((row) => row.websiteUri)
           .map((row) => {
             // Ensure we always create a valid EnrichmentState object
-            const baseEnrichmentState: EnrichmentState = {
+            const baseEnrichmentState: EnrichmentWithStatus = {
               id: row.id,
               emails: [],
               socialLinks: {},
@@ -112,14 +111,16 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
               error: undefined,
             }
 
-            const enrichData = row.enrichment as EnrichmentState | undefined
+            const enrichData = row.enrichment as
+              | EnrichmentWithStatus
+              | undefined
 
             if (!enrichData || enrichData.error) {
               const state = {
                 ...baseEnrichmentState,
                 error: enrichData?.error,
               }
-              return [row.websiteUri, state] as [string, EnrichmentState]
+              return [row.websiteUri, state] as [string, EnrichmentWithStatus]
             }
 
             const state = {
@@ -127,7 +128,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
               emails: enrichData.emails,
               socialLinks: enrichData.socialLinks,
             }
-            return [row.websiteUri, state] as [string, EnrichmentState]
+            return [row.websiteUri, state] as [string, EnrichmentWithStatus]
           }),
       )
 
