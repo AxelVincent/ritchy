@@ -32,6 +32,9 @@ export const ColumnsSelection = <TData,>({
     unknown
   > | null>(null)
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
+  const [dragOverDirection, setDragOverDirection] = useState<
+    'before' | 'after' | null
+  >(null)
 
   // Add a ref for the search input
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -116,7 +119,7 @@ export const ColumnsSelection = <TData,>({
     setDraggedColumn(column)
   }
 
-  // Update handleDragOver to show where the column will be placed
+  // Update handleDragOver to determine drop position more precisely
   const handleDragOver = (
     e: React.DragEvent<HTMLDivElement>,
     columnId: string,
@@ -124,6 +127,13 @@ export const ColumnsSelection = <TData,>({
     e.preventDefault()
     if (draggedColumn && draggedColumn.id !== columnId) {
       setDropTargetId(columnId)
+
+      // Determine if we're dropping before or after the target
+      const rect = e.currentTarget.getBoundingClientRect()
+      const mouseY = e.clientY
+      const threshold = rect.top + rect.height / 2
+
+      setDragOverDirection(mouseY < threshold ? 'before' : 'after')
     }
   }
 
@@ -131,12 +141,15 @@ export const ColumnsSelection = <TData,>({
   const handleDragEnd = () => {
     setDraggedColumn(null)
     setDropTargetId(null)
+    setDragOverDirection(null)
   }
 
-  // Handle drop
+  // Update handleDrop to use the direction
   const handleDrop = (targetColumn: Column<TData, unknown>) => {
     if (!draggedColumn || draggedColumn.id === targetColumn.id) {
       setDraggedColumn(null)
+      setDropTargetId(null)
+      setDragOverDirection(null)
       return
     }
 
@@ -146,14 +159,23 @@ export const ColumnsSelection = <TData,>({
         ? table.getState().columnOrder
         : table.getAllLeafColumns().map((column) => column.id)
 
-    // Create new order by moving dragged column before target column
+    // Create new order by moving dragged column before or after target column
     const sourceIndex = currentOrder.indexOf(draggedColumn.id)
     const targetIndex = currentOrder.indexOf(targetColumn.id)
 
     if (sourceIndex !== -1 && targetIndex !== -1) {
       const newOrder = [...currentOrder]
       newOrder.splice(sourceIndex, 1)
-      newOrder.splice(targetIndex, 0, draggedColumn.id)
+
+      // Insert at the correct position based on direction
+      const insertIndex =
+        dragOverDirection === 'after'
+          ? targetIndex
+          : sourceIndex < targetIndex
+            ? targetIndex - 1
+            : targetIndex
+
+      newOrder.splice(insertIndex, 0, draggedColumn.id)
 
       // Save and apply new order
       try {
@@ -165,6 +187,8 @@ export const ColumnsSelection = <TData,>({
     }
 
     setDraggedColumn(null)
+    setDropTargetId(null)
+    setDragOverDirection(null)
   }
 
   // Reset column order
@@ -298,12 +322,27 @@ export const ColumnsSelection = <TData,>({
                 onDragStart={() => handleDragStart(column)}
                 onDragOver={(e) => handleDragOver(e, column.id)}
                 onDragEnd={handleDragEnd}
-                onDragLeave={() => setDropTargetId(null)}
+                onDragLeave={() => {
+                  if (dropTargetId === column.id) {
+                    setDropTargetId(null)
+                    setDragOverDirection(null)
+                  }
+                }}
                 onDrop={() => handleDrop(column)}
-                className={`flex items-center px-2 py-1 hover:bg-accent ${
-                  draggedColumn?.id === column.id ? 'opacity-50' : ''
-                } ${dropTargetId === column.id ? 'border-t-2 border-primary' : ''}`}
+                className={`flex items-center px-2 py-1 hover:bg-accent relative ${
+                  draggedColumn?.id === column.id
+                    ? 'opacity-50 bg-accent/50'
+                    : ''
+                }`}
               >
+                {/* Drop indicator line */}
+                {dropTargetId === column.id && (
+                  <div
+                    className={`absolute left-0 right-0 h-0.5 bg-primary z-10 ${
+                      dragOverDirection === 'before' ? 'top-0' : 'bottom-0'
+                    }`}
+                  />
+                )}
                 <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
                 <DropdownMenuCheckboxItem
                   className="capitalize cursor-pointer flex-1"
