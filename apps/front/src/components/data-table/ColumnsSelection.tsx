@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { toTitleCase } from '@/lib/toTitleCase'
 import type { Column, Table } from '@tanstack/react-table'
 import { ChevronDown, GripVertical, Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 
 interface ColumnsSelectionProps<TData> {
@@ -32,6 +32,9 @@ export const ColumnsSelection = <TData,>({
     unknown
   > | null>(null)
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
+
+  // Add a ref for the search input
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Load initial visibility state
   useEffect(() => {
@@ -62,6 +65,18 @@ export const ColumnsSelection = <TData,>({
       localStorage.removeItem(ORDER_STORAGE_KEY)
     }
   }, [table])
+
+  // Add a useEffect to maintain focus when the dropdown is open
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      // Short timeout to ensure the dropdown is fully rendered
+      const timeoutId = setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 10)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [open, searchQuery])
 
   // Save visibility state on changes
   const handleVisibilityChange = (columnId: string, value: boolean) => {
@@ -221,10 +236,22 @@ export const ColumnsSelection = <TData,>({
         <div className="flex items-center border-b px-3 py-2">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
+            ref={searchInputRef}
             className="flex h-8 w-full rounded-md bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
             placeholder="Search columns..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              // Ensure input keeps focus after state update
+              e.currentTarget.focus()
+            }}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.stopPropagation()
+              }
+            }}
           />
         </div>
         <div className="px-3 py-2 text-xs text-muted-foreground">
