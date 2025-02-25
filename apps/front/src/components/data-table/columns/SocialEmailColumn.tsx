@@ -16,7 +16,14 @@ import { cn } from '@/lib/utils'
 import { SOCIAL_MEDIA_CONFIG, type SocialMediaPlatform } from '@ritchy/types'
 import type { EnrichmentWithStatus, SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Check, Copy, ExternalLink, type LucideIcon, Mail } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Loader2,
+  type LucideIcon,
+  Mail,
+} from 'lucide-react'
 import { useState } from 'react'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -129,6 +136,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
   accessorKey: 'enrichment',
   size: 200,
   enableColumnFilter: false,
+  enableSorting: false,
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Socials & Emails" />
   ),
@@ -153,7 +161,9 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
           ]}
           className="text-muted-foreground"
         >
-          Enrichment not available
+          <Button variant="outline" size="sm" disabled className="w-full">
+            Unavailable
+          </Button>
         </TextWrapper>
       )
     }
@@ -172,14 +182,34 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             },
           ]}
         >
-          <Button variant="outline" size="sm" disabled className="w-32">
-            Loading...
+          <Button variant="outline" size="sm" disabled className="w-full">
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Enriching...
           </Button>
         </TextWrapper>
       )
     }
 
-    if (!enrichment || enrichment.error) {
+    if (!enrichment) {
+      return (
+        <TextWrapper
+          id={row.original.id}
+          actions={[
+            {
+              icon: 'MapPinned',
+              onClick: () => {
+                table.options.meta?.setSelectedPlaceId?.(row.original.id)
+              },
+              label: 'Pin to map',
+            },
+          ]}
+        >
+          <div />
+        </TextWrapper>
+      )
+    }
+
+    if (enrichment.error) {
       return (
         <TextWrapper
           id={row.original.id}
@@ -194,7 +224,9 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
           ]}
           className="text-muted-foreground"
         >
-          {enrichment?.error}
+          <Button variant="outline" size="sm" disabled className="w-full">
+            No contacts
+          </Button>
         </TextWrapper>
       )
     }
@@ -228,7 +260,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
               size="sm"
               disabled={!hasContent}
               className={cn(
-                'w-32',
+                'w-full',
                 hasContent && 'text-green-600 hover:text-green-700',
               )}
             >
