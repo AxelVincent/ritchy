@@ -1,6 +1,6 @@
 import https from 'node:https'
 import { logger } from '@ritchy/logger'
-import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
+import { type EnrichResponse, SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 import { XMLParser } from 'fast-xml-parser'
@@ -397,12 +397,10 @@ const mapSocialLinks = (
 }
 
 async function scrapeFromOptimizedUrls(
+  id: string,
   baseUrl: string,
   concurrencyLimit = 5,
-): Promise<{
-  emails: string[]
-  socialLinks: Record<SocialMediaPlatform, string[]>
-}> {
+): Promise<EnrichResponse> {
   const sitemapUrl = `${baseUrl}/sitemap.xml`
   if (IS_DEBUG) {
     logger.info({
@@ -474,6 +472,7 @@ async function scrapeFromOptimizedUrls(
   }
 
   return {
+    id,
     emails: Array.from(allEmails),
     socialLinks: mapSocialLinks(aggregatedSocialLinks),
   }

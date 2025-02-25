@@ -3,9 +3,9 @@ import { useToast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
 import {
   type EnrichmentWithStatus,
+  PlaceSchema,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
-  searchResultSchema,
 } from '@ritchy/types'
 import { Download } from 'lucide-react'
 import { useState } from 'react'
@@ -31,7 +31,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
-    searchResultSchema.shape,
+    PlaceSchema.shape,
   ) as (keyof Required<SearchResult>)[]
   const missingFields: string[] = []
 
@@ -42,7 +42,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
     if (key === 'address') {
       // Get all address fields from the schema
       const addressKeys = Object.keys(
-        searchResultSchema.shape.address.shape,
+        PlaceSchema.shape.address.shape,
       ) as (keyof Required<SearchResult['address']>)[]
 
       for (const addressKey of addressKeys) {
@@ -374,7 +374,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
       validateAndExportToCsv<SearchResult>({
         data,
         filename: 'places.csv',
-        schema: searchResultSchema,
+        schema: PlaceSchema,
         columns,
       })
 

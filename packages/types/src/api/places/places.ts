@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { EnrichResponseSchema } from '../enrich'
 import { NoteSchema } from './notes'
 
 // Basic/Common Schemas
@@ -169,6 +170,7 @@ export const PlaceSchema = z.object({
   }),
   associatedLists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional(),
+  enrichment: EnrichResponseSchema.optional(),
 })
 
 // Type inference from schemas
