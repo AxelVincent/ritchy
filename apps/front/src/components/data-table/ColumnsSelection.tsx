@@ -133,7 +133,12 @@ export const ColumnsSelection = <TData,>({
       const mouseY = e.clientY
       const threshold = rect.top + rect.height / 2
 
-      setDragOverDirection(mouseY < threshold ? 'before' : 'after')
+      const newDirection = mouseY < threshold ? 'before' : 'after'
+
+      // Only update if direction changed to avoid unnecessary re-renders
+      if (newDirection !== dragOverDirection) {
+        setDragOverDirection(newDirection)
+      }
     }
   }
 
@@ -144,7 +149,7 @@ export const ColumnsSelection = <TData,>({
     setDragOverDirection(null)
   }
 
-  // Update handleDrop to use the direction
+  // Update handleDrop to handle neighboring columns correctly
   const handleDrop = (targetColumn: Column<TData, unknown>) => {
     if (!draggedColumn || draggedColumn.id === targetColumn.id) {
       setDraggedColumn(null)
@@ -167,13 +172,18 @@ export const ColumnsSelection = <TData,>({
       const newOrder = [...currentOrder]
       newOrder.splice(sourceIndex, 1)
 
-      // Insert at the correct position based on direction
-      const insertIndex =
-        dragOverDirection === 'after'
-          ? targetIndex
-          : sourceIndex < targetIndex
-            ? targetIndex - 1
-            : targetIndex
+      // Calculate the correct insert index based on direction and relative position
+      let insertIndex = targetIndex
+
+      // If source was before target, the target index is now one less after removing source
+      if (sourceIndex < targetIndex) {
+        insertIndex -= 1
+      }
+
+      // Adjust based on drop direction
+      if (dragOverDirection === 'after') {
+        insertIndex += 1
+      }
 
       newOrder.splice(insertIndex, 0, draggedColumn.id)
 
