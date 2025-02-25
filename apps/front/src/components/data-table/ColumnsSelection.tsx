@@ -7,8 +7,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toTitleCase } from '@/lib/toTitleCase'
-import type { Table } from '@tanstack/react-table'
-import { ChevronDown, Search } from 'lucide-react'
+import type { Column, Table } from '@tanstack/react-table'
+import { ChevronDown, GripVertical, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
@@ -17,19 +17,26 @@ interface ColumnsSelectionProps<TData> {
 }
 
 const columnVisibilitySchema = z.record(z.boolean())
+const columnOrderSchema = z.array(z.string())
 
-const STORAGE_KEY = 'table-column-visibility'
+const VISIBILITY_STORAGE_KEY = 'table-column-visibility'
+const ORDER_STORAGE_KEY = 'table-column-order'
 
 export const ColumnsSelection = <TData,>({
   table,
 }: ColumnsSelectionProps<TData>) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [draggedColumn, setDraggedColumn] = useState<Column<
+    TData,
+    unknown
+  > | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
 
-  // Load initial state
+  // Load initial visibility state
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      const stored = localStorage.getItem(VISIBILITY_STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
         const validated = columnVisibilitySchema.parse(parsed)
@@ -37,36 +44,178 @@ export const ColumnsSelection = <TData,>({
       }
     } catch (error) {
       console.error('Failed to load column visibility state:', error)
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(VISIBILITY_STORAGE_KEY)
     }
   }, [table])
 
-  // Save state on changes
+  // Load initial column order
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(ORDER_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        const validated = columnOrderSchema.parse(parsed)
+        table.setColumnOrder(validated)
+      }
+    } catch (error) {
+      console.error('Failed to load column order state:', error)
+      localStorage.removeItem(ORDER_STORAGE_KEY)
+    }
+  }, [table])
+
+  // Save visibility state on changes
   const handleVisibilityChange = (columnId: string, value: boolean) => {
+    // Don't allow hiding the selection column
+    if (columnId === 'select' && !value) {
+      return
+    }
+
+    // If trying to hide the last visible column, prevent it
+    if (!value) {
+      const currentVisibility = table.getState().columnVisibility
+      const visibleColumns = Object.entries(currentVisibility)
+        .filter(([_, isVisible]) => isVisible)
+        .map(([id]) => id)
+
+      if (visibleColumns.length === 1 && visibleColumns[0] === columnId) {
+        // This is the last visible column, don't allow hiding it
+        return
+      }
+    }
+
     const newState = {
       ...table.getState().columnVisibility,
       [columnId]: value,
     }
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newState))
+      localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(newState))
       table.setColumnVisibility(newState)
     } catch (error) {
       console.error('Failed to save column visibility state:', error)
     }
   }
 
+  // Handle drag start
+  const handleDragStart = (column: Column<TData, unknown>) => {
+    setDraggedColumn(column)
+  }
+
+  // Update handleDragOver to show where the column will be placed
+  const handleDragOver = (
+    e: React.DragEvent<HTMLDivElement>,
+    columnId: string,
+  ) => {
+    e.preventDefault()
+    if (draggedColumn && draggedColumn.id !== columnId) {
+      setDropTargetId(columnId)
+    }
+  }
+
+  // Clear the indicator when drag ends
+  const handleDragEnd = () => {
+    setDraggedColumn(null)
+    setDropTargetId(null)
+  }
+
+  // Handle drop
+  const handleDrop = (targetColumn: Column<TData, unknown>) => {
+    if (!draggedColumn || draggedColumn.id === targetColumn.id) {
+      setDraggedColumn(null)
+      return
+    }
+
+    // Get current column order
+    const currentOrder =
+      table.getState().columnOrder.length > 0
+        ? table.getState().columnOrder
+        : table.getAllLeafColumns().map((column) => column.id)
+
+    // Create new order by moving dragged column before target column
+    const sourceIndex = currentOrder.indexOf(draggedColumn.id)
+    const targetIndex = currentOrder.indexOf(targetColumn.id)
+
+    if (sourceIndex !== -1 && targetIndex !== -1) {
+      const newOrder = [...currentOrder]
+      newOrder.splice(sourceIndex, 1)
+      newOrder.splice(targetIndex, 0, draggedColumn.id)
+
+      // Save and apply new order
+      try {
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(newOrder))
+        table.setColumnOrder(newOrder)
+      } catch (error) {
+        console.error('Failed to save column order state:', error)
+      }
+    }
+
+    setDraggedColumn(null)
+  }
+
+  // Reset column order
+  const resetColumnOrder = () => {
+    localStorage.removeItem(ORDER_STORAGE_KEY)
+    table.resetColumnOrder()
+  }
+
+  // Get columns in current order for display
+  const orderedColumns = () => {
+    const allColumns = table
+      .getAllColumns()
+      .filter((column) => column.getCanHide())
+
+    if (table.getState().columnOrder.length > 0) {
+      // Sort by the current column order
+      return [...allColumns].sort((a, b) => {
+        const orderIds = table.getState().columnOrder
+        const aIndex = orderIds.indexOf(a.id)
+        const bIndex = orderIds.indexOf(b.id)
+
+        // If column is not in order array, place it at the end
+        if (aIndex === -1) return 1
+        if (bIndex === -1) return -1
+
+        return aIndex - bIndex
+      })
+    }
+
+    return allColumns
+  }
+
+  // Add functions to select/deselect all columns
+  const showAllColumns = () => {
+    const allVisible = Object.fromEntries(
+      table.getAllLeafColumns().map((column) => [column.id, true]),
+    )
+    localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(allVisible))
+    table.setColumnVisibility(allVisible)
+  }
+
+  const hideAllColumns = () => {
+    // Define essential columns that should always remain visible
+    const essentialColumns = ['select'] // The selection column
+
+    const allHidden = Object.fromEntries(
+      table
+        .getAllLeafColumns()
+        .map((column) => [column.id, essentialColumns.includes(column.id)]),
+    )
+
+    localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(allHidden))
+    table.setColumnVisibility(allHidden)
+  }
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="ml-auto">
-          Columns
-          <ChevronDown className="h-4 w-4" />
+          Customize Columns
+          <ChevronDown className="h-4 w-4 ml-1" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-[220px]"
+        className="w-[280px]"
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex items-center border-b px-3 py-2">
@@ -78,25 +227,67 @@ export const ColumnsSelection = <TData,>({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        <div className="px-3 py-2 text-xs text-muted-foreground">
+          Drag columns to reorder. Check/uncheck to show/hide.
+        </div>
+        <div className="flex justify-between px-3 py-1 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={showAllColumns}
+            className="text-xs h-7"
+          >
+            Show All
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={hideAllColumns}
+            className="text-xs h-7"
+          >
+            Hide All
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetColumnOrder}
+            className="text-xs h-7"
+          >
+            Reset Order
+          </Button>
+        </div>
         <ScrollArea className="h-[300px]">
-          {table
-            .getAllColumns()
-            .filter((column) => column.getCanHide())
-            .filter((column) =>
-              column.id.toLowerCase().includes(searchQuery.toLowerCase()),
+          {orderedColumns()
+            .filter(
+              (column) =>
+                column.id !== 'select' && // Filter out the selection column
+                column.id.toLowerCase().includes(searchQuery.toLowerCase()),
             )
             .map((column) => (
-              <DropdownMenuCheckboxItem
+              <div
                 key={column.id}
-                className="capitalize cursor-pointer"
-                checked={column.getIsVisible()}
-                onSelect={(e) => e.preventDefault()}
-                onCheckedChange={(value) =>
-                  handleVisibilityChange(column.id, !!value)
-                }
+                draggable
+                onDragStart={() => handleDragStart(column)}
+                onDragOver={(e) => handleDragOver(e, column.id)}
+                onDragEnd={handleDragEnd}
+                onDragLeave={() => setDropTargetId(null)}
+                onDrop={() => handleDrop(column)}
+                className={`flex items-center px-2 py-1 hover:bg-accent ${
+                  draggedColumn?.id === column.id ? 'opacity-50' : ''
+                } ${dropTargetId === column.id ? 'border-t-2 border-primary' : ''}`}
               >
-                {toTitleCase(column.id)}
-              </DropdownMenuCheckboxItem>
+                <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
+                <DropdownMenuCheckboxItem
+                  className="capitalize cursor-pointer flex-1"
+                  checked={column.getIsVisible()}
+                  onSelect={(e) => e.preventDefault()}
+                  onCheckedChange={(value) =>
+                    handleVisibilityChange(column.id, !!value)
+                  }
+                >
+                  {toTitleCase(column.id)}
+                </DropdownMenuCheckboxItem>
+              </div>
             ))}
         </ScrollArea>
       </DropdownMenuContent>

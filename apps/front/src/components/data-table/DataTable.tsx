@@ -74,6 +74,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnOrder, setColumnOrder] = useState<string[]>([])
   const [showAddListDialog, setShowAddListDialog] = useState(false)
   const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
   const [pendingFetches, setPendingFetches] = useState(new Set<string>())
@@ -102,6 +103,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
+    onColumnOrderChange: setColumnOrder,
     onRowSelectionChange: setDataTableRowSelection,
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
@@ -151,6 +153,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       sorting,
       columnFilters,
       columnVisibility,
+      columnOrder,
       rowSelection: dataTableRowSelection,
     },
     meta: {
@@ -315,6 +318,18 @@ export const DataTable = <TData extends SearchResult, TValue>({
     }
   }
 
+  // If there are no visible columns, show a message
+  if (visibleColumns.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center p-8">
+        <p className="text-muted-foreground mb-4">
+          No columns are currently visible
+          <ColumnsSelection table={table} />
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
@@ -397,12 +412,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
                 )}
               </Button>
             )}
-          <div className="flex items-center gap-2">
-            <DataExport
-              data={table.getFilteredRowModel().rows.map((row) => row.original)}
-            />
-            <ColumnsSelection table={table} />
-          </div>
+          <DataExport
+            data={table.getFilteredRowModel().rows.map((row) => row.original)}
+          />
+          <ColumnsSelection table={table} />
         </div>
       </div>
       <div
@@ -422,7 +435,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
               top: 0,
               zIndex: 1,
             }}
-            className="bg-background"
+            className="bg-background border-b"
           >
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
@@ -438,7 +451,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     left: 0,
                     zIndex: 2,
                   }}
-                  className="border-r border-b border-border bg-background"
+                  className="border-r border-border bg-background"
                 >
                   {flexRender(
                     headerGroup.headers[0].column.columnDef.header,
@@ -458,12 +471,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         display: 'flex',
                         width: header.getSize(),
                       }}
-                      className={cn(
-                        'border-r border-b border-border bg-background',
-                        {
-                          'bg-background': vc.index === 0,
-                        },
-                      )}
+                      className={cn('border-r border-border bg-background', {
+                        'bg-background': vc.index === 0,
+                      })}
                     >
                       <div
                         {...{
