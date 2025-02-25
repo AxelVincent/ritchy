@@ -103,29 +103,31 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         data
           .filter((row) => row.websiteUri)
           .map((row) => {
-            const enrichData = row.enrichment as EnrichmentState | undefined
-            if (!enrichData || enrichData.error) {
-              return [
-                // biome-ignore lint/style/noNonNullAssertion: <explanation>
-                row.websiteUri!,
-                {
-                  id: row.id,
-                  emails: [],
-                  socialLinks: {} as Record<string, string[]>,
-                  isLoading: false,
-                },
-              ] as [string, EnrichmentState]
+            // Ensure we always create a valid EnrichmentState object
+            const baseEnrichmentState: EnrichmentState = {
+              id: row.id,
+              emails: [],
+              socialLinks: {},
+              isLoading: false,
+              error: undefined,
             }
-            return [
-              // biome-ignore lint/style/noNonNullAssertion: <explanation>
-              row.websiteUri!,
-              {
-                id: row.id,
-                emails: enrichData.emails,
-                socialLinks: enrichData.socialLinks,
-                isLoading: false,
-              },
-            ] as [string, EnrichmentState]
+
+            const enrichData = row.enrichment as EnrichmentState | undefined
+
+            if (!enrichData || enrichData.error) {
+              const state = {
+                ...baseEnrichmentState,
+                error: enrichData?.error,
+              }
+              return [row.websiteUri, state] as [string, EnrichmentState]
+            }
+
+            const state = {
+              ...baseEnrichmentState,
+              emails: enrichData.emails,
+              socialLinks: enrichData.socialLinks,
+            }
+            return [row.websiteUri, state] as [string, EnrichmentState]
           }),
       )
 
@@ -380,6 +382,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         description: 'Your data has been exported to CSV',
       })
     } catch (error) {
+      console.error('Export error:', error)
       toast({
         title: 'Export failed',
         description:
