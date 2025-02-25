@@ -160,8 +160,14 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             },
           ]}
           className="text-muted-foreground"
+          disableContentTooltip
         >
-          <Button variant="outline" size="sm" disabled className="w-full">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="w-full pointer-events-none hover:bg-background hover:text-muted-foreground"
+          >
             Unavailable
           </Button>
         </TextWrapper>
@@ -181,6 +187,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
               label: 'Pin to map',
             },
           ]}
+          disableContentTooltip
         >
           <Button variant="outline" size="sm" disabled className="w-full">
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -203,6 +210,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
               label: 'Pin to map',
             },
           ]}
+          disableContentTooltip
         >
           <div />
         </TextWrapper>
@@ -223,6 +231,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             },
           ]}
           className="text-muted-foreground"
+          disableContentTooltip
         >
           <Button variant="outline" size="sm" disabled className="w-full">
             No contacts
@@ -252,6 +261,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             label: 'Pin to map',
           },
         ]}
+        disableContentTooltip
       >
         <Dialog>
           <DialogTrigger asChild>

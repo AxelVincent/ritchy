@@ -29,6 +29,7 @@ interface TextWrapperProps {
   className?: string
   actions?: Action[]
   id: string
+  disableContentTooltip?: boolean
 }
 
 // Memoized action button component
@@ -61,7 +62,13 @@ const ActionButton = React.memo(
 )
 
 export const TextWrapper = React.memo(
-  ({ children, className, actions = [], id }: TextWrapperProps) => {
+  ({
+    children,
+    className,
+    actions = [],
+    id,
+    disableContentTooltip = false,
+  }: TextWrapperProps) => {
     // Cache the text content check
     const { isTextContent, textContent } = React.useMemo(() => {
       const isText =
@@ -81,7 +88,7 @@ export const TextWrapper = React.memo(
     return (
       <TooltipProvider delayDuration={200}>
         <div className="group relative w-full h-full flex items-center p-2">
-          {isTextContent ? (
+          {isTextContent && !disableContentTooltip ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Label className={cn('flex-1 min-w-0', 'truncate', className)}>
