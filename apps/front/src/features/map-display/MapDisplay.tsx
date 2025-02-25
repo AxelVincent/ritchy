@@ -14,10 +14,11 @@ import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
   listId?: string
+  searchId?: string
   places: Place[]
 }
 
-export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
+export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   // Core location state
   const defaultLocation =
     places && places.length > 0
@@ -94,6 +95,7 @@ export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
             dataTableRowSelection={dataTableRowSelection}
             onFilteredDataChange={setFilteredPlaceIds}
             listId={listId}
+            searchId={searchId}
           />
         </ResizablePanel>
         <ResizableHandle withHandle />

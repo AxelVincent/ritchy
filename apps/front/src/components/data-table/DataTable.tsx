@@ -6,6 +6,7 @@ import { createApiClient } from '@/lib/api/createApiClient'
 import { cn } from '@/lib/utils'
 import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -38,6 +39,7 @@ interface DataTableProps<TData, TValue> {
   dataTableRowSelection: RowSelectionState
   selectedPlaceId: string | null
   listId?: string
+  searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
   setData: React.Dispatch<React.SetStateAction<TData[]>>
 }
@@ -66,6 +68,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   setDataTableRowSelection,
   dataTableRowSelection,
   listId,
+  searchId,
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
@@ -77,6 +80,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
   // Remove scoresRef, keep only enrichmentRef
   const enrichmentRef = useRef<Record<string, EnrichmentState>>({})
+
+  const queryClient = useQueryClient()
 
   // Update batchUpdate to handle only enrichment
   const batchUpdate = useCallback(() => {
@@ -299,6 +304,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
     await Promise.allSettled(fetchPromises)
     batchUpdate()
     enrichmentRef.current = {}
+
+    // Invalidate the listContent query if we're in a list view
+    if (listId) {
+      queryClient.invalidateQueries({ queryKey: ['listContent', listId] })
+    }
+    // Invalidate the searchContent query if we're in a search view
+    if (searchId) {
+      queryClient.invalidateQueries({ queryKey: ['searchContent', searchId] })
+    }
   }
 
   return (
