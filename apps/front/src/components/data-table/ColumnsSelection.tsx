@@ -8,7 +8,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toTitleCase } from '@/lib/toTitleCase'
 import type { Column, Table } from '@tanstack/react-table'
-import { ChevronDown, GripVertical, Search } from 'lucide-react'
+import { ChevronDown, GripVertical, Search, Settings2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 
@@ -224,6 +224,7 @@ export const ColumnsSelection = <TData,>({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="ml-auto">
+          <Settings2 className="h-4 w-4" />
           Customize Columns
           <ChevronDown className="h-4 w-4 ml-1" />
         </Button>
