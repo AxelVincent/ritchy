@@ -45,8 +45,14 @@ const createRedisClient = (options?: { usePublicUrl?: boolean }) => {
   let URL: string
 
   // Use public URL if specified, otherwise use config
-  if (options?.usePublicUrl && REDIS_CONFIG.PUBLIC_URL) {
-    URL = REDIS_CONFIG.PUBLIC_URL
+  if (options?.usePublicUrl && process.env.REDIS_PUBLIC_URL) {
+    URL = process.env.REDIS_PUBLIC_URL
+
+    // Ensure the URL has the family=0 parameter for IPv4
+    if (!URL.includes('?family=0')) {
+      URL += URL.includes('?') ? '&family=0' : '?family=0'
+    }
+
     logger.info({
       msg: 'Using REDIS_PUBLIC_URL for connection',
       event: 'redis_init',
