@@ -1,6 +1,12 @@
 import type { z } from 'zod'
-import { PlaceSchema } from '../api/places/places'
+import type { EnrichResponseSchema } from '../api/enrich'
+import type { PlaceSchema } from '../api/places/places'
 
-export const searchResultSchema = PlaceSchema
+export type SearchResult = z.infer<typeof PlaceSchema>
+export type EnrichmentState = z.infer<typeof EnrichResponseSchema>
 
-export type SearchResult = z.infer<typeof searchResultSchema>
+// UI-specific type that extends EnrichmentState with loading states
+export type EnrichmentWithStatus = EnrichmentState & {
+  isLoading?: boolean
+  error?: string
+}

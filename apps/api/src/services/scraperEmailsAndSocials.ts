@@ -1,6 +1,6 @@
 import https from 'node:https'
 import { logger } from '@ritchy/logger'
-import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
+import { type EnrichResponse, SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 import { XMLParser } from 'fast-xml-parser'
@@ -23,6 +23,9 @@ const POTENTIAL_SUBPAGES = [
   // '/get-in-touch',
   // '/reach-us'
 ]
+
+// Add timeout constant
+const SCRAPING_TIMEOUT_MS = 15000 // 15 seconds timeout
 
 type SocialMediaPlatform = keyof typeof SOCIAL_MEDIA_CONFIG
 
@@ -397,12 +400,11 @@ const mapSocialLinks = (
 }
 
 async function scrapeFromOptimizedUrls(
+  id: string,
   baseUrl: string,
   concurrencyLimit = 5,
-): Promise<{
-  emails: string[]
-  socialLinks: Record<SocialMediaPlatform, string[]>
-}> {
+  timeoutMs = SCRAPING_TIMEOUT_MS,
+): Promise<EnrichResponse> {
   const sitemapUrl = `${baseUrl}/sitemap.xml`
   if (IS_DEBUG) {
     logger.info({
@@ -426,6 +428,13 @@ async function scrapeFromOptimizedUrls(
   const allSocialLinks: Record<string, Set<string>> = {}
 
   const limit = pLimit(concurrencyLimit)
+
+  // Create a promise that resolves after the timeout
+  const timeoutPromise = new Promise<void>((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Scraping timed out after ${timeoutMs}ms`))
+    }, timeoutMs)
+  })
 
   // Scrape relevant URLs
   const tasks = relevantUrls.map((url) =>
@@ -466,7 +475,17 @@ async function scrapeFromOptimizedUrls(
     }),
   )
 
-  await Promise.all(tasks)
+  try {
+    // Race between the scraping tasks and the timeout
+    await Promise.race([Promise.all(tasks), timeoutPromise])
+  } catch (error) {
+    logger.warn({
+      msg: (error as Error).message,
+      event: 'scraping_timeout',
+      metadata: { id, baseUrl, timeoutMs },
+    })
+    // Continue with whatever data we've collected so far
+  }
 
   const aggregatedSocialLinks: Record<string, string[]> = {}
   for (const domain in allSocialLinks) {
@@ -474,6 +493,7 @@ async function scrapeFromOptimizedUrls(
   }
 
   return {
+    id,
     emails: Array.from(allEmails),
     socialLinks: mapSocialLinks(aggregatedSocialLinks),
   }

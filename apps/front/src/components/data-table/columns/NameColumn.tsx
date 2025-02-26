@@ -5,8 +5,8 @@ import { HeaderWrapper } from './utils/HeaderWrapper'
 import { ColumnPinCopyCell } from './utils/ColumnCells'
 
 export const nameColumn: ColumnDef<SearchResult> = {
-  id: 'displayName',
-  accessorKey: 'displayName',
+  id: 'name',
+  accessorKey: 'name',
   size: 200,
   meta: {
     filterVariant: 'text',
@@ -16,11 +16,7 @@ export const nameColumn: ColumnDef<SearchResult> = {
   },
   cell: ({ row, table }) => {
     return (
-      <ColumnPinCopyCell
-        row={row}
-        table={table}
-        content={row.original.displayName}
-      />
+      <ColumnPinCopyCell row={row} table={table} content={row.original.name} />
     )
   },
 }

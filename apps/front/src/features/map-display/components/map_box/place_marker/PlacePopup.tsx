@@ -9,7 +9,6 @@ import { Notes } from '@/features/places/Notes'
 import type { Place } from '@ritchy/types'
 import {
   ExternalLink,
-  Info,
   MapPin,
   MapPinPlusInside,
   Phone,
@@ -56,7 +55,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
         </div>
 
         {/* Website */}
-        {place.websiteUri && (
+        {place.website && (
           <div className="flex items-center gap-3">
             <ExternalLink className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
@@ -65,19 +64,19 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
                 {
                   icon: 'Copy',
                   onClick: () => {
-                    navigator.clipboard.writeText(place.websiteUri)
+                    navigator.clipboard.writeText(place.website)
                   },
                   label: 'Copy',
                 },
               ]}
             >
-              {new URL(place.websiteUri).hostname}
+              {new URL(place.website).hostname}
             </TextWrapper>
           </div>
         )}
 
         {/* Phone */}
-        {place.internationalPhoneNumber && (
+        {place.phone && (
           <div className="flex items-center gap-3">
             <Phone className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper
@@ -94,18 +93,18 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
                 },
               ]}
             >
-              {place.internationalPhoneNumber}
+              {place.phone}
             </TextWrapper>
           </div>
         )}
 
         {/* Associated Lists */}
-        {place.associatedLists && place.associatedLists.length > 0 && (
+        {place.lists && place.lists.length > 0 && (
           <div className="flex items-center gap-3">
             <MapPinPlusInside className="h-5 w-5 text-muted-foreground shrink-0" />
             <TextWrapper id={place.id}>
               <div className="flex flex-wrap gap-2 max-w-[250px]">
-                {place.associatedLists.map((list) => (
+                {place.lists.map((list) => (
                   <Badge key={list.id} variant="secondary">
                     {list.emoji} {list.name}
                   </Badge>
@@ -124,29 +123,6 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
                 {PRICE_LEVELS[place.priceLevel]}
                 <span className="text-muted-foreground"> · Price level</span>
               </span>
-            </TextWrapper>
-          </div>
-        )}
-
-        {/* Description */}
-        {place.editorialSummary && (
-          <div className="flex gap-3">
-            <Info className="h-5 w-5 text-muted-foreground shrink-0" />
-            <TextWrapper
-              id={place.id}
-              actions={[
-                {
-                  icon: 'Copy',
-                  onClick: () => {
-                    navigator.clipboard.writeText(
-                      place.editorialSummary?.text || '',
-                    )
-                  },
-                  label: 'Copy',
-                },
-              ]}
-            >
-              {place.editorialSummary.text}
             </TextWrapper>
           </div>
         )}
@@ -195,10 +171,10 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
             </a>
           </Button>
         )}
-        {place.websiteUri && (
+        {place.website && (
           <Button className="flex-1" variant="outline" asChild>
             <a
-              href={place.websiteUri}
+              href={place.website}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2"
@@ -216,11 +192,9 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
 const PlaceHoursTab = ({ place }: { place: Place }) => {
   return (
     <div className="h-full overflow-auto">
-      {place.regularOpeningHours ? (
+      {place.openingHours ? (
         <div className="flex flex-col">
-          <OpeningHoursContent
-            regularOpeningHours={place.regularOpeningHours}
-          />
+          <OpeningHoursContent openingHours={place.openingHours} />
         </div>
       ) : (
         <div className="flex flex-col">
@@ -251,14 +225,14 @@ export const PlacePopup = ({ place }: PlacePopupProps) => {
       <CardHeader className="pb-2">
         {/* Main Title */}
         <CardTitle className="flex flex-col gap-2">
-          <div className="text-lg font-semibold">{place.displayName}</div>
+          <div className="text-lg font-semibold">{place.name}</div>
           <div className="flex items-center gap-2 text-sm">
             {place.rating ? (
               <div className="flex items-center gap-1">
                 <span className="font-medium">{place.rating.toFixed(1)}</span>
                 <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
                 <span className="text-muted-foreground">
-                  ({place.userRatingCount?.toLocaleString() ?? 0})
+                  ({place.ratingCount?.toLocaleString() ?? 0})
                 </span>
               </div>
             ) : (
@@ -266,8 +240,8 @@ export const PlacePopup = ({ place }: PlacePopupProps) => {
                 No reviews
               </div>
             )}
-            {place.regularOpeningHours && (
-              <StatusIndicator isOpen={place.regularOpeningHours.openNow} />
+            {place.openingHours && (
+              <StatusIndicator isOpen={place.openingHours.openNow} />
             )}
           </div>
         </CardTitle>

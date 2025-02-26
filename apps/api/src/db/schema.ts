@@ -16,7 +16,6 @@ export const user = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     clerkId: text('clerk_id').notNull().unique(),
     email: text('email').notNull().unique(),
-    userIdNew: uuid('user_id_new'),
     firstName: text('first_name'),
     lastName: text('last_name'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -157,5 +156,25 @@ export const subscription = pgTable(
       table.stripeCustomerId,
     ),
     uniqUserId: uniqueIndex('uniq_user_id').on(table.userId),
+  }),
+)
+
+export const enrichment = pgTable(
+  'enrichment',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id),
+    placeId: text('place_id').notNull(),
+    website: text('website').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqUserPlace: uniqueIndex('uniq_user_place').on(
+      table.userId,
+      table.placeId,
+    ),
   }),
 )

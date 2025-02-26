@@ -4,19 +4,21 @@ import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const ratingCountColumn: ColumnDef<SearchResult> = {
-  id: 'userRatingCount',
-  accessorKey: 'userRatingCount',
+  id: 'ratingCount',
+  accessorKey: 'ratingCount',
   size: 200,
   meta: {
     filterVariant: 'range',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Reviews" />,
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Rating Count" />
+  ),
   enableSorting: true,
   sortingFn: 'alphanumeric',
   sortUndefined: -1,
   sortDescFirst: true,
   cell: ({ row, table }) => {
-    const count = row.original.userRatingCount
+    const count = row.original.ratingCount
 
     return (
       <ColumnPinCell

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { EnrichResponseSchema } from '../enrich'
 import { NoteSchema } from './notes'
 
 // Basic/Common Schemas
@@ -137,20 +138,19 @@ export const PlaceListAssociationSchema = z.object({
 
 export const PlaceSchema = z.object({
   id: z.string(),
-  displayName: z.string(),
-  websiteUri: z.string(),
+  name: z.string(),
+  website: z.string(),
   location: LocationSchema,
   types: z.array(z.string()),
   primaryType: z.string().optional(),
   priceLevel: PriceLevelEnum.optional(),
   priceRange: PriceRangeSchema.optional(),
   rating: z.number().optional(),
-  userRatingCount: z.number().optional(),
+  ratingCount: z.number().optional(),
   utcOffsetMinutes: z.number(),
-  regularOpeningHours: OpeningHoursSchema.optional(),
+  openingHours: OpeningHoursSchema.optional(),
   googleMapsUri: z.string(),
-  internationalPhoneNumber: z.string().optional(),
-  editorialSummary: LocalizedTextSchema.optional(),
+  phone: z.string().optional(),
   addressComponents: z.array(AddressComponentSchema).optional(),
   address: z.object({
     formattedAddress: z.string().optional(),
@@ -167,8 +167,9 @@ export const PlaceSchema = z.object({
     administrativeAreaLevel2: z.string().optional(),
     administrativeAreaLevel3: z.string().optional(),
   }),
-  associatedLists: z.array(PlaceListAssociationSchema).optional(),
+  lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional(),
+  enrichment: EnrichResponseSchema.optional(),
 })
 
 // Type inference from schemas
