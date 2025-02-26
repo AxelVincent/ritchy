@@ -4,17 +4,16 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
-const formatList = (
-  list: NonNullable<SearchResult['associatedLists']>[number],
-) => `${list.emoji} ${list.name}`
+const formatList = (list: NonNullable<SearchResult['lists']>[number]) =>
+  `${list.emoji} ${list.name}`
 
 const NO_LISTS_LABEL = 'No lists'
 
 export const associatedListsColumn: ColumnDef<SearchResult> = {
-  id: 'associatedLists',
+  id: 'lists',
   size: 200,
   accessorFn: (row) => {
-    const lists = row.associatedLists ?? []
+    const lists = row.lists ?? []
     return lists.length ? lists.map(formatList) : [NO_LISTS_LABEL]
   },
   enableColumnFilter: true,
@@ -34,7 +33,7 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
     getFacetedUniqueValues: (rows) => {
       const uniqueLists = new Set<string>([NO_LISTS_LABEL])
       for (const row of rows) {
-        for (const list of row.original.associatedLists ?? []) {
+        for (const list of row.original.lists ?? []) {
           uniqueLists.add(formatList(list))
         }
       }
@@ -43,7 +42,7 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Lists" />,
   cell: ({ row, table }) => {
-    const lists = row.original.associatedLists
+    const lists = row.original.lists
 
     return (
       <ColumnPinCell

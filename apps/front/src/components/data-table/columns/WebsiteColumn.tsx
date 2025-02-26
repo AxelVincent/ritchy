@@ -13,20 +13,21 @@ const getDomainFromUrl = (url: string): string => {
 }
 
 export const websiteColumn: ColumnDef<SearchResult> = {
-  id: 'websiteUri',
-  accessorKey: 'websiteUri',
+  id: 'website',
+  accessorKey: 'website',
   size: 200,
   meta: {
     filterVariant: 'text',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
   cell: ({ row, table }) => {
-    const website = row.getValue('websiteUri') as string
+    const website = row.getValue('website') as string
     return (
       <ColumnPinCopyCell
         row={row}
         table={table}
         content={website ? getDomainFromUrl(website) : ''}
+        href={website}
       />
     )
   },
