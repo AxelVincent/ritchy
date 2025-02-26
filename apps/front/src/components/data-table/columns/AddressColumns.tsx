@@ -47,7 +47,7 @@ export const countryColumn: ColumnDef<SearchResult> = {
 }
 
 export const localityColumn: ColumnDef<SearchResult> = {
-  id: 'locality',
+  id: 'City',
   accessorKey: 'address.locality',
   size: 200,
   meta: {

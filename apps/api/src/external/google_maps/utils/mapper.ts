@@ -7,8 +7,8 @@ import type {
 
 const objectMapper = (place: PreferredPlace) => ({
   id: place.id,
-  websiteUri: place.websiteUri || '',
-  displayName: place.displayName?.text || '',
+  website: place.websiteUri || '',
+  name: place.displayName?.text || '',
   location: {
     latitude: place.location?.latitude || 0,
     longitude: place.location?.longitude || 0,
@@ -18,11 +18,11 @@ const objectMapper = (place: PreferredPlace) => ({
   priceLevel: place.priceLevel,
   priceRange: place.priceRange,
   rating: place.rating,
-  userRatingCount: place.userRatingCount,
+  ratingCount: place.userRatingCount,
   googleMapsUri: place.googleMapsUri || '',
-  internationalPhoneNumber: place.internationalPhoneNumber,
+  phone: place.internationalPhoneNumber,
   utcOffsetMinutes: place.utcOffsetMinutes || 0,
-  regularOpeningHours: place.regularOpeningHours,
+  openingHours: place.regularOpeningHours,
   editorialSummary: place.editorialSummary,
   addressComponents: place.addressComponents || [],
   address: {

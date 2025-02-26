@@ -9,20 +9,21 @@ const apiClient = createApiClient({
 
 export const enrichKeys = {
   all: ['enrich'] as const,
-  website: (url: string) => [...enrichKeys.all, 'website', url] as const,
+  website: (id: string) => [...enrichKeys.all, 'website', id] as const,
 }
 
 export const useEnrichWebsite = (
+  id: string,
   website: string,
 ): UseQueryResult<EnrichApiResponse> => {
   const { getToken } = useAuth()
 
   return useQuery({
-    queryKey: enrichKeys.website(website),
+    queryKey: enrichKeys.website(id),
     queryFn: async () => {
       const token = await getToken()
       return apiClient.fetchWithAuth(
-        `/enrich?website=${encodeURIComponent(website)}`,
+        `/enrich?id=${id}&website=${encodeURIComponent(website)}`,
         undefined,
         token,
       )
