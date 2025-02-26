@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
-import { redisClient } from '../lib/redis/redis'
+import { createRedisClient } from '../lib/redis/redis'
 
 /**
  * Script to clear Redis cache for place and search keys
@@ -11,7 +11,8 @@ import { redisClient } from '../lib/redis/redis'
  * - Clear specific search: pnpm tsx scripts/clear-cache.ts search searchId123
  */
 async function clearCache() {
-  const { redis } = redisClient
+  // Create a Redis client using the public URL
+  const { redis } = createRedisClient({ usePublicUrl: true })
 
   const args = process.argv.slice(2)
   const [keyType, id] = args
@@ -86,6 +87,10 @@ async function clearCache() {
       event: 'cache_clear_error',
       metadata: { error },
     })
+  } finally {
+    // Close the Redis connection when done
+    await redis.quit()
+    logger.info({ msg: 'Redis connection closed', event: 'redis_disconnect' })
   }
 }
 

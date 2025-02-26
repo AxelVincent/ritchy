@@ -38,11 +38,24 @@ const DEFAULT_TTL = 90 * 24 * 60 * 60 // 90 days in seconds
  * await client.flush()
  * ```
  *
+ * @param options - Optional configuration options
  * @returns Object containing Redis client and utility methods
  */
-const createRedisClient = () => {
-  // https://docs.railway.com/guides/private-networking#ioredis
-  const URL = `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
+const createRedisClient = (options?: { usePublicUrl?: boolean }) => {
+  let URL: string
+
+  // Use public URL if specified, otherwise use config
+  if (options?.usePublicUrl && REDIS_CONFIG.PUBLIC_URL) {
+    URL = REDIS_CONFIG.PUBLIC_URL
+    logger.info({
+      msg: 'Using REDIS_PUBLIC_URL for connection',
+      event: 'redis_init',
+    })
+  } else {
+    // Use the existing configuration
+    URL = `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
+  }
+
   const redis = new Redis(URL, {
     retryStrategy(times) {
       const delay = Math.min(times * 50, 2000)
@@ -140,5 +153,8 @@ const createRedisClient = () => {
   }
 }
 
-// Create singleton instance
+// Create singleton instance with default configuration
 export const redisClient = createRedisClient()
+
+// Export the factory function for scripts that need a public URL connection
+export { createRedisClient }
