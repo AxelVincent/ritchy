@@ -21,8 +21,7 @@
     "build:clean": "rm -rf dist && pnpm build",
     "start": "NODE_ENV=production node dist/index.js",
     "clean": "rm -rf dist",
-    "test": "vitest run",
-    "cache:clear": "tsx src/scripts/clear-cache.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@clerk/backend": "1.24.0",

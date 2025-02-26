@@ -38,90 +38,16 @@ const DEFAULT_TTL = 90 * 24 * 60 * 60 // 90 days in seconds
  * await client.flush()
  * ```
  *
- * @param options - Optional configuration options
  * @returns Object containing Redis client and utility methods
  */
-const createRedisClient = (options?: { usePublicUrl?: boolean }) => {
-  let redisUrl: string
-
-  // Use public URL if specified, otherwise use config
-  if (options?.usePublicUrl && process.env.REDIS_PUBLIC_URL) {
-    redisUrl = process.env.REDIS_PUBLIC_URL
-
-    // Ensure the URL has the family=0 parameter for IPv4
-    if (!redisUrl.includes('?family=0')) {
-      redisUrl += redisUrl.includes('?') ? '&family=0' : '?family=0'
-    }
-
-    // Check if URL contains 'railway.internal' which might not resolve in some environments
-    if (redisUrl.includes('railway.internal')) {
-      logger.warn({
-        msg: 'Redis URL contains railway.internal domain which may not resolve correctly',
-        event: 'redis_url_warning',
-        metadata: {
-          url: redisUrl.replace(/\/\/.*:.*@/, '//***:***@'),
-        },
-      })
-
-      // If REDIS_HOST is available, try to use that instead
-      if (process.env.REDIS_HOST) {
-        const originalUrl = new URL(redisUrl.toString())
-        const newUrl = new URL(redisUrl.toString())
-        newUrl.hostname = process.env.REDIS_HOST
-
-        logger.info({
-          msg: 'Replacing railway.internal with REDIS_HOST',
-          event: 'redis_url_replace',
-          metadata: {
-            originalHostname: originalUrl.hostname,
-            newHostname: newUrl.hostname,
-          },
-        })
-
-        redisUrl = newUrl.toString()
-      }
-    }
-
-    logger.info({
-      msg: 'Using REDIS_PUBLIC_URL for connection',
-      event: 'redis_init',
-      metadata: {
-        url: redisUrl.replace(/\/\/.*:.*@/, '//***:***@'),
-        host: new URL(redisUrl).hostname,
-      },
-    })
-  } else {
-    // Use the existing configuration
-    redisUrl = `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
-  }
-
-  // Add DNS resolution logging to help debug connection issues
-  try {
-    const parsedUrl = new URL(redisUrl)
-    logger.info({
-      msg: 'Attempting to connect to Redis',
-      event: 'redis_connect_attempt',
-      metadata: {
-        host: parsedUrl.hostname,
-        port: parsedUrl.port,
-      },
-    })
-  } catch (error) {
-    logger.error({
-      msg: 'Invalid Redis URL format',
-      event: 'redis_url_error',
-      metadata: { error },
-    })
-  }
-
-  const redis = new Redis(redisUrl, {
+const createRedisClient = () => {
+  // https://docs.railway.com/guides/private-networking#ioredis
+  const URL = `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
+  const redis = new Redis(URL, {
     retryStrategy(times) {
       const delay = Math.min(times * 50, 2000)
       return delay
     },
-    connectTimeout: 10000,
-    maxRetriesPerRequest: 3,
-    enableReadyCheck: true,
   })
 
   redis.on('error', (error) => {
@@ -214,8 +140,5 @@ const createRedisClient = (options?: { usePublicUrl?: boolean }) => {
   }
 }
 
-// Create singleton instance with default configuration
+// Create singleton instance
 export const redisClient = createRedisClient()
-
-// Export the factory function for scripts that need a public URL connection
-export { createRedisClient }
