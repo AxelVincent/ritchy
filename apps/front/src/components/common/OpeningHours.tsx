@@ -4,17 +4,19 @@ import { useMemo } from 'react'
 import type { OpeningHours } from '@ritchy/types'
 
 interface OpeningHoursProps {
-  openingHours: OpeningHours
+  regularOpeningHours: OpeningHours
 }
 
-export const OpeningHoursContent = ({ openingHours }: OpeningHoursProps) => {
+export const OpeningHoursContent = ({
+  regularOpeningHours,
+}: OpeningHoursProps) => {
   const today = useMemo(
     () => new Date().toLocaleDateString('en-US', { weekday: 'long' }),
     [],
   )
   return (
     <div className="">
-      {openingHours.weekdayDescriptions?.map((description) => {
+      {regularOpeningHours.weekdayDescriptions?.map((description) => {
         const [day, timeRange = 'Closed'] = description.split(': ') as [
           string,
           string?,

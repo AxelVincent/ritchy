@@ -1,4 +1,3 @@
-import type { SearchResult } from '@ritchy/types'
 import type { z } from 'zod'
 
 interface ExportOptions<T> {
@@ -16,19 +15,9 @@ export function validateAndExportToCsv<T>({
   filename = 'export.csv',
   columns,
   schema,
-}: ExportOptions<SearchResult>) {
+}: ExportOptions<T>) {
   // Validate all data
-  const validatedData = data.map((item) =>
-    schema.parse({
-      ...item,
-      enrichment: {
-        ...item.enrichment,
-        id: item.id,
-        emails: item.enrichment?.emails ?? [],
-        socialLinks: item.enrichment?.socialLinks ?? {},
-      },
-    }),
-  )
+  const validatedData = data.map((item) => schema.parse(item))
 
   // If no columns provided, use default object keys
   const effectiveColumns =

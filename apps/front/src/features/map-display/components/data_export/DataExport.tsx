@@ -1,15 +1,34 @@
+import { enrichKeys } from '@/api/queries/enrich/useEnrichWebsite'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
 import {
-  type EnrichmentWithStatus,
-  PlaceSchema,
+  type EnrichApiResponse,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
+  searchResultSchema,
 } from '@ritchy/types'
+import { type QueryClient, useQueryClient } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
 import { useState } from 'react'
-import React from 'react'
+
+/**
+ * Helper function to safely retrieve enrichment data from the query cache
+ * @param queryClient - TanStack Query client instance
+ * @param websiteUri - Website URI to lookup enrichment data for
+ * @returns EnrichApiResponse if found, null otherwise
+ */
+const getEnrichmentData = (
+  queryClient: QueryClient,
+  websiteUri: string | null,
+): EnrichApiResponse | null => {
+  if (!websiteUri) return null
+  return (
+    queryClient.getQueryData<EnrichApiResponse>(
+      enrichKeys.website(websiteUri),
+    ) ?? null
+  )
+}
 
 interface DataExportProps {
   /** Array of search results to export */
@@ -23,15 +42,10 @@ export const validateAllSearchResultFieldsHaveColumns = (
     accessor: (row: SearchResult) => unknown
   }[],
 ) => {
-  const excludedFields = [
-    'utcOffsetMinutes',
-    'addressComponents',
-    'notes',
-    'enrichment',
-  ]
+  const excludedFields = ['utcOffsetMinutes', 'addressComponents', 'notes']
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
-    PlaceSchema.shape,
+    searchResultSchema.shape,
   ) as (keyof Required<SearchResult>)[]
   const missingFields: string[] = []
 
@@ -42,7 +56,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
     if (key === 'address') {
       // Get all address fields from the schema
       const addressKeys = Object.keys(
-        PlaceSchema.shape.address.shape,
+        searchResultSchema.shape.address.shape,
       ) as (keyof Required<SearchResult['address']>)[]
 
       for (const addressKey of addressKeys) {
@@ -87,9 +101,10 @@ export const validateAllSearchResultFieldsHaveColumns = (
  * Component that handles exporting search results to CSV format.
  * Includes enrichment data from website scraping if available.
  */
-export const DataExport = React.memo(({ data }: DataExportProps) => {
+export const DataExport = ({ data }: DataExportProps) => {
   if (data.length === 0) return null
 
+  const queryClient = useQueryClient()
   const [isExporting, setIsExporting] = useState(false)
   const { toast } = useToast()
 
@@ -98,40 +113,17 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
       setIsExporting(true)
 
       // Create a Map of website URIs to enrichment data
-      const enrichmentMap = new Map<string, EnrichmentWithStatus>(
+      const enrichmentMap = new Map(
         data
-          .filter((row) => row.website)
-          .map((row) => {
-            // Ensure we always create a valid EnrichmentState object
-            const baseEnrichmentState: EnrichmentWithStatus = {
-              id: row.id,
-              emails: [],
-              socialLinks: {},
-              isLoading: false,
-              error: undefined,
-            }
-
-            const enrichData = row.enrichment as
-              | EnrichmentWithStatus
-              | undefined
-
-            if (!enrichData || enrichData.error) {
-              const state = {
-                ...baseEnrichmentState,
-                error: enrichData?.error,
-              }
-              return [row.website, state] as [string, EnrichmentWithStatus]
-            }
-
-            const state = {
-              ...baseEnrichmentState,
-              emails: enrichData.emails,
-              socialLinks: enrichData.socialLinks,
-            }
-            return [row.website, state] as [string, EnrichmentWithStatus]
-          }),
+          .filter((row) => row.websiteUri)
+          .map((row) => [
+            row.websiteUri,
+            getEnrichmentData(queryClient, row.websiteUri),
+          ]),
       )
+      queryClient.clear()
 
+      // In the DataExport component, add this const with type assertion
       const columns = [
         {
           header: 'ID',
@@ -140,30 +132,33 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         },
         {
           header: 'Name',
-          field: 'name',
-          accessor: (row: SearchResult): string => row.name,
+          field: 'displayName',
+          accessor: (row: SearchResult): string => row.displayName,
         },
         {
           header: 'Website',
-          field: 'website',
-          accessor: (row: SearchResult): string => row.website || '',
+          field: 'websiteUri',
+          accessor: (row: SearchResult): string => row.websiteUri || '',
         },
         {
           header: 'Emails',
           accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
+            const enrichData = row.websiteUri
+              ? enrichmentMap.get(row.websiteUri)
               : null
-            return enrichData?.emails?.join(', ') || ''
+            return enrichData && !('error' in enrichData)
+              ? enrichData.emails.join(', ')
+              : ''
           },
         },
         ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
           header: `${platform.charAt(0).toUpperCase()}${platform.slice(1)}`,
           accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
+            const enrichData = row.websiteUri
+              ? enrichmentMap.get(row.websiteUri)
               : null
-            return enrichData?.socialLinks[platform]?.join(', ') || ''
+            if (!enrichData || 'error' in enrichData) return ''
+            return enrichData.socialLinks[platform]?.join(', ') || ''
           },
         })),
         {
@@ -178,8 +173,9 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         },
         {
           header: 'Phone',
-          field: 'phone',
-          accessor: (row: SearchResult): string => row.phone || '',
+          field: 'internationalPhoneNumber',
+          accessor: (row: SearchResult): string =>
+            row.internationalPhoneNumber || '',
         },
         {
           header: 'Rating',
@@ -188,9 +184,9 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         },
         {
           header: 'Number of Reviews',
-          field: 'ratingCount',
+          field: 'userRatingCount',
           accessor: (row: SearchResult): string =>
-            row.ratingCount?.toString() || '',
+            row.userRatingCount?.toString() || '',
         },
         {
           header: 'Full Address',
@@ -266,10 +262,10 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
             row.address.administrativeAreaLevel3 || '',
         },
         {
-          header: 'Opening Hours',
-          field: 'openingHours',
+          header: 'Regular Opening Hours',
+          field: 'regularOpeningHours',
           accessor: (row: SearchResult): string => {
-            const hours = row.openingHours
+            const hours = row.regularOpeningHours
 
             // Handle cases where no opening hours data exists
             if (!hours) return ''
@@ -353,11 +349,18 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
           },
         },
         {
-          header: 'Lists',
-          field: 'lists',
+          header: 'Editorial Summary',
+          field: 'editorialSummary',
           accessor: (row: SearchResult): string =>
-            row.lists?.map((list) => `${list.emoji} ${list.name}`).join('| ') ||
-            '',
+            row.editorialSummary?.text || '',
+        },
+        {
+          header: 'Associated Lists',
+          field: 'associatedLists',
+          accessor: (row: SearchResult): string =>
+            row.associatedLists
+              ?.map((list) => `${list.emoji} ${list.name}`)
+              .join('| ') || '',
         },
       ]
 
@@ -366,7 +369,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
       validateAndExportToCsv<SearchResult>({
         data,
         filename: 'places.csv',
-        schema: PlaceSchema,
+        schema: searchResultSchema,
         columns,
       })
 
@@ -375,7 +378,6 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         description: 'Your data has been exported to CSV',
       })
     } catch (error) {
-      console.error('Export error:', error)
       toast({
         title: 'Export failed',
         description:
@@ -393,4 +395,4 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
       {isExporting ? 'Exporting...' : `Export to CSV (${data.length})`}
     </Button>
   )
-})
+}

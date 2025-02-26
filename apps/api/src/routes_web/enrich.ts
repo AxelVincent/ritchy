@@ -1,17 +1,15 @@
 import { logger } from '@ritchy/logger'
-import {
-  type EnrichApiResponse,
-  type EnrichRequestQuery,
-  EnrichRequestSchema,
-  type EnrichResponse,
-  EnrichResponseSchema,
-} from '@ritchy/types'
+import { type EnrichApiResponse, EnrichResponseSchema } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
+import { scrapeFromOptimizedUrls } from '../services/scraperEmailsAndSocials'
 
-import { db } from '../db/db'
-import { enrichment } from '../db/schema'
-import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
+// Request validation schema
+const EnrichRequestSchema = z.object({
+  website: z.string().url(),
+})
+
+type EnrichRequestQuery = z.infer<typeof EnrichRequestSchema>
 
 /**
  * Enriches website data with emails and social media links
@@ -29,34 +27,10 @@ export const enrichWebsite = async (
 ): Promise<void> => {
   try {
     // Validate query parameters
-    const { id, website } = EnrichRequestSchema.parse(req.query)
-    const userId = req.auth.userId
+    const { website } = EnrichRequestSchema.parse(req.query)
 
-    // Get or fetch enrichment data
-    const enrichedData = await getOrFetchEnrichmentData(id, website)
-
-    if (!enrichedData) {
-      res.status(500).json({
-        error: 'Failed to enrich website',
-      })
-      return
-    }
-
-    // Record that this user has enriched this place
-    await db
-      .insert(enrichment)
-      .values({
-        userId,
-        placeId: id,
-        website,
-      })
-      .onConflictDoUpdate({
-        target: [enrichment.userId, enrichment.placeId],
-        set: {
-          website,
-          updatedAt: new Date(),
-        },
-      })
+    // Call the scraper service
+    const enrichedData = await scrapeFromOptimizedUrls(website, 5)
 
     // Validate response
     const validatedData = EnrichResponseSchema.parse(enrichedData)
