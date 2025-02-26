@@ -47,7 +47,7 @@ export const createActiveMarkerSvg = (
     svg.appendChild(path)
 
     // Create text element for emoji instead of foreignObject
-    if (place.lists?.[0]) {
+    if (place.associatedLists?.[0]) {
       const text = document.createElementNS(
         'http://www.w3.org/2000/svg',
         'text',
@@ -57,12 +57,12 @@ export const createActiveMarkerSvg = (
       text.setAttribute('text-anchor', 'middle')
       text.setAttribute('dominant-baseline', 'middle')
       text.setAttribute('font-size', '14')
-      text.textContent = place.lists[0].emoji
+      text.textContent = place.associatedLists[0].emoji
       svg.appendChild(text)
     }
 
     // Only add badge if there are more than one associated lists
-    if (place.lists && place.lists.length > 1) {
+    if (place.associatedLists && place.associatedLists.length > 1) {
       // Badge circle
       const badge = document.createElementNS(
         'http://www.w3.org/2000/svg',

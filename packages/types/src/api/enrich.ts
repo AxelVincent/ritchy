@@ -38,12 +38,10 @@ const SocialMediaPlatformEnum = z.enum(
 
 // API Request/Response Schemas
 export const EnrichRequestSchema = z.object({
-  id: z.string(),
   website: z.string().url(),
 })
 
 export const EnrichResponseSchema = z.object({
-  id: z.string(),
   emails: z.array(z.string().email()),
   socialLinks: z.record(SocialMediaPlatformEnum, z.array(z.string().url())),
 })

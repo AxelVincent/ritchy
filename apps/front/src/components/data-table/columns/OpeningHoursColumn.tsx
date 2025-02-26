@@ -18,15 +18,15 @@ import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const openingHoursColumn: ColumnDef<SearchResult> = {
-  id: 'openingHours',
-  accessorKey: 'openingHours',
+  id: 'regularOpeningHours',
+  accessorKey: 'regularOpeningHours',
   size: 200,
   enableColumnFilter: false,
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Opening Hours" />
   ),
   cell: ({ row, table }) => {
-    const openingHours = row.original.openingHours
+    const regularOpeningHours = row.original.regularOpeningHours
     const utcOffsetMinutes = row.original.utcOffsetMinutes
 
     return (
@@ -34,7 +34,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
         row={row}
         table={table}
         content={
-          openingHours ? (
+          regularOpeningHours ? (
             <Dialog>
               <DialogTrigger asChild>
                 <Button
@@ -46,7 +46,9 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
                   <div
                     className={cn(
                       'absolute left-2 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full',
-                      openingHours.openNow ? 'bg-green-500' : 'bg-red-500',
+                      regularOpeningHours.openNow
+                        ? 'bg-green-500'
+                        : 'bg-red-500',
                     )}
                   />
                   <span className="truncate">View opening hours</span>
@@ -55,16 +57,18 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
               <DialogContent className="min-w-[350px]">
                 <DialogHeader>
                   <DialogTitle className="flex items-center space-x-2 max-w-[88%]">
-                    <span>{row.original.name}</span>
+                    <span>{row.original.displayName}</span>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <StatusIndicator isOpen={openingHours.openNow} />
+                      <StatusIndicator isOpen={regularOpeningHours.openNow} />
                       <span className="text-xs text-muted-foreground">
                         {formatUtcOffset(utcOffsetMinutes ?? 0)}
                       </span>
                     </div>
                   </DialogTitle>
                 </DialogHeader>
-                <OpeningHoursContent openingHours={openingHours} />
+                <OpeningHoursContent
+                  regularOpeningHours={regularOpeningHours}
+                />
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button variant="secondary">Close</Button>

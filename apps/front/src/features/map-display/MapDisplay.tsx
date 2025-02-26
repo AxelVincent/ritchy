@@ -14,11 +14,10 @@ import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
   listId?: string
-  searchId?: string
   places: Place[]
 }
 
-export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
+export const MapDisplay = ({ listId, places }: MapDisplayProps) => {
   // Core location state
   const defaultLocation =
     places && places.length > 0
@@ -70,13 +69,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     }
   }, [currentLocation])
 
-  const [tableData, setTableData] = useState<Place[]>(places)
-
-  // Update effect to handle places changes
-  useEffect(() => {
-    setTableData(places)
-  }, [places])
-
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
   }
@@ -87,15 +79,13 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
         <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
           <DataTable
             columns={columns}
-            data={tableData}
-            setData={setTableData}
+            data={searchResults}
             setSelectedPlaceId={setSelectedPlaceId}
             selectedPlaceId={selectedPlaceId}
             setDataTableRowSelection={setDataTableRowSelection}
             dataTableRowSelection={dataTableRowSelection}
             onFilteredDataChange={setFilteredPlaceIds}
             listId={listId}
-            searchId={searchId}
           />
         </ResizablePanel>
         <ResizableHandle withHandle />

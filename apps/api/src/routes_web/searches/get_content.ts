@@ -12,7 +12,8 @@ import { search } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
-import { aggregatePlaceData } from '../../services/places/aggregatePlaceData'
+import { getListAssociationsByPlaceIds } from '../../services/lists/getListAssociationsByPlaceIds'
+import { getNotesByPlaceIds } from '../../services/notes/getNotesByPlaceIds'
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
@@ -59,15 +60,20 @@ export const getSearchContent = async (
       await redisClient.set(key, results)
     }
 
-    // Aggregate data for the search results
-    const aggregatedResults = await aggregatePlaceData(results, {
-      userId,
-      includeEnrichment: true,
-    })
+    // Get associations and notes for each place
+    const placeIds = results.map((result) => result.id)
+    const associations = await getListAssociationsByPlaceIds(placeIds, userId)
+    const notes = await getNotesByPlaceIds(placeIds, userId)
+
+    // Map results with associations and notes
+    const mappedResults = results.map((result) => ({
+      ...result,
+      associatedLists: associations.get(result.id),
+      notes: notes.get(result.id),
+    }))
 
     // Validate response
-    const validatedResults =
-      GetSearchContentResponseSchema.parse(aggregatedResults)
+    const validatedResults = GetSearchContentResponseSchema.parse(mappedResults)
 
     logger.info({
       msg: 'Get search content',

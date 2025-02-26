@@ -16,6 +16,7 @@ import {
   sublocalityColumn,
 } from './columns/AddressColumns'
 import { associatedListsColumn } from './columns/AssociatedListsColumn'
+import { descriptionColumn } from './columns/DescriptionColumn'
 import { nameColumn } from './columns/NameColumn'
 import { notesColumn } from './columns/NotesColumns'
 import { openingHoursColumn } from './columns/OpeningHoursColumn'
@@ -58,6 +59,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   administrativeAreaLevel1Column,
   administrativeAreaLevel2Column,
   administrativeAreaLevel3Column,
+  descriptionColumn,
   addressComponentsColumn,
   // actionsColumn,
 ]

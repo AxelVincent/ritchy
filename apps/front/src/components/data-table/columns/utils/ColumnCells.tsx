@@ -20,7 +20,6 @@ interface BaseColumnCellProps {
 
 interface ColumnPinCopyCellProps extends BaseColumnCellProps {
   content: string | null
-  href?: string
 }
 
 export interface NotesColumnCellProps {
@@ -35,7 +34,6 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
   row,
   table,
   content,
-  href,
 }: ColumnPinCopyCellProps) {
   const actions = React.useMemo(
     () =>
@@ -47,23 +45,9 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
     [row.original.id, content, table.options.meta?.setSelectedPlaceId],
   )
 
-  const displayContent = href ? (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-blue-600 hover:text-blue-800 hover:underline"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {content}
-    </a>
-  ) : (
-    content
-  )
-
   return (
     <TextWrapper id={row.original.id} actions={actions}>
-      {displayContent}
+      {content}
     </TextWrapper>
   )
 })
