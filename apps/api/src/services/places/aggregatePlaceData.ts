@@ -58,58 +58,95 @@ export const aggregatePlaceData = async (
         notes: notes.get(place.id),
       }
 
-      // If enrichment is requested and the user has enriched this place, add the enrichment data
-      if (includeEnrichment && enrichedPlaces.has(place.id)) {
-        const website = enrichedPlaces.get(place.id)
-        if (website) {
-          try {
-            const enrichmentData = await getOrFetchEnrichmentData(
-              place.id,
-              website,
-            )
-
-            if (enrichmentData) {
-              // Sanitize the enrichment data before validation
-              const sanitizedData = sanitizeEnrichmentData(
-                enrichmentData,
-                place.id,
-              )
-
-              // Validate the sanitized enrichment data against the schema
-              try {
-                const validatedEnrichment =
-                  EnrichResponseSchema.parse(sanitizedData)
-                return {
-                  ...aggregatedPlace,
-                  enrichment: validatedEnrichment,
-                }
-              } catch (validationError) {
-                logger.warn({
-                  msg: 'Enrichment data validation failed',
-                  event: 'enrichment_validation_failed',
-                  metadata: {
-                    placeId: place.id,
-                    error: validationError,
-                    enrichmentData: sanitizedData,
-                  },
-                })
-                // Continue without enrichment data if validation fails
-              }
-            }
-          } catch (error) {
-            logger.warn({
-              msg: 'Failed to fetch or process enrichment data',
-              event: 'enrichment_processing_failed',
-              metadata: { placeId: place.id, error },
-            })
-            // Continue without enrichment data if there's an error
-          }
-        }
-      }
-
       return aggregatedPlace
     }),
-  )
+  ).then(async (aggregatedPlaces) => {
+    // Process enrichment data in parallel if needed
+    if (includeEnrichment) {
+      // Collect all places that need enrichment
+      const placesToEnrich = aggregatedPlaces.filter(
+        (place) => enrichedPlaces.has(place.id) && enrichedPlaces.get(place.id),
+      )
+
+      if (placesToEnrich.length > 0) {
+        // Create a map of place IDs to their websites
+        const enrichmentRequests = placesToEnrich.map((place) => ({
+          placeId: place.id,
+          website: enrichedPlaces.get(place.id) as string,
+        }))
+
+        logger.info({
+          msg: 'Processing enrichment data in parallel',
+          event: 'enrichment_parallel_processing',
+          metadata: { count: enrichmentRequests.length },
+        })
+
+        // Process all enrichment requests in parallel
+        const enrichmentResults = await Promise.all(
+          enrichmentRequests.map(async ({ placeId, website }) => {
+            try {
+              const enrichmentData = await getOrFetchEnrichmentData(
+                placeId,
+                website,
+              )
+
+              if (enrichmentData) {
+                // Sanitize and validate the enrichment data
+                const sanitizedData = sanitizeEnrichmentData(
+                  enrichmentData,
+                  placeId,
+                )
+
+                try {
+                  const validatedEnrichment =
+                    EnrichResponseSchema.parse(sanitizedData)
+                  return { placeId, enrichment: validatedEnrichment }
+                } catch (validationError) {
+                  logger.warn({
+                    msg: 'Enrichment data validation failed',
+                    event: 'enrichment_validation_failed',
+                    metadata: {
+                      placeId,
+                      error: validationError,
+                      enrichmentData: sanitizedData,
+                    },
+                  })
+                }
+              }
+            } catch (error) {
+              logger.warn({
+                msg: 'Failed to fetch or process enrichment data',
+                event: 'enrichment_processing_failed',
+                metadata: { placeId, error },
+              })
+            }
+
+            return { placeId, enrichment: null }
+          }),
+        )
+
+        // Create a map of place IDs to their enrichment data
+        const enrichmentMap = new Map(
+          enrichmentResults
+            .filter((result) => result.enrichment !== null)
+            .map((result) => [result.placeId, result.enrichment]),
+        )
+
+        // Merge enrichment data back into the aggregated places
+        return aggregatedPlaces.map((place) => {
+          if (enrichmentMap.has(place.id)) {
+            return {
+              ...place,
+              enrichment: enrichmentMap.get(place.id),
+            }
+          }
+          return place
+        })
+      }
+    }
+
+    return aggregatedPlaces
+  })
 }
 
 /**
