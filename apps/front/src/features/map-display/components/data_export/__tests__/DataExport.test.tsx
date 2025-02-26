@@ -37,8 +37,8 @@ describe('DataExport', () => {
     const mockData: SearchResult[] = [
       {
         id: '1',
-        displayName: 'Test Place',
-        websiteUri: 'https://test.com',
+        name: 'Test Place',
+        website: 'https://test.com',
         types: ['restaurant'],
         address: {
           formattedAddress: '123 Test St',
@@ -55,15 +55,14 @@ describe('DataExport', () => {
           administrativeAreaLevel2: '',
         },
         googleMapsUri: '',
-        internationalPhoneNumber: '',
+        phone: '',
         rating: undefined,
-        userRatingCount: undefined,
+        ratingCount: undefined,
         location: { latitude: 0, longitude: 0 },
         primaryType: 'restaurant',
         priceLevel: undefined,
         priceRange: undefined,
-        editorialSummary: undefined,
-        regularOpeningHours: undefined,
+        openingHours: undefined,
         utcOffsetMinutes: 0,
       },
     ]

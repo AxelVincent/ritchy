@@ -54,7 +54,7 @@ export const aggregatePlaceData = async (
     places.map(async (place) => {
       const aggregatedPlace = {
         ...place,
-        associatedLists: associations.get(place.id),
+        lists: associations.get(place.id),
         notes: notes.get(place.id),
       }
 

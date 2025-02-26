@@ -241,7 +241,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const handleFetchEnrichment = async () => {
     const selectedRows = table.getSelectedRowModel().rows
     const selectedIds = selectedRows
-      .filter((row) => row.original.websiteUri)
+      .filter((row) => row.original.website)
       .map((row) => row.original.id)
     if (selectedIds.length === 0) return
 
@@ -265,7 +265,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     }
 
     const fetchPromises = selectedIds.map(async (id) => {
-      const website = data.find((item) => item.id === id)?.websiteUri
+      const website = data.find((item) => item.id === id)?.website
       if (!website) {
         enrichmentRef.current[id] = {
           emails: [],
@@ -388,7 +388,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
             </>
           )}
           {selectedRows.length > 0 &&
-            selectedRows.some((row) => row.original.websiteUri) && (
+            selectedRows.some((row) => row.original.website) && (
               <Button
                 variant="outline"
                 onClick={handleFetchEnrichment}
@@ -403,11 +403,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   <>
                     <MagicWandIcon className="mr-2 h-4 w-4" />
                     Enrich (
-                    {
-                      selectedRows.filter((row) => row.original.websiteUri)
-                        .length
-                    }
-                    )
+                    {selectedRows.filter((row) => row.original.website).length})
                   </>
                 )}
               </Button>

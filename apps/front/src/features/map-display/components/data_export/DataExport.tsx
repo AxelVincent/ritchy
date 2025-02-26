@@ -100,7 +100,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
       // Create a Map of website URIs to enrichment data
       const enrichmentMap = new Map<string, EnrichmentWithStatus>(
         data
-          .filter((row) => row.websiteUri)
+          .filter((row) => row.website)
           .map((row) => {
             // Ensure we always create a valid EnrichmentState object
             const baseEnrichmentState: EnrichmentWithStatus = {
@@ -120,7 +120,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
                 ...baseEnrichmentState,
                 error: enrichData?.error,
               }
-              return [row.websiteUri, state] as [string, EnrichmentWithStatus]
+              return [row.website, state] as [string, EnrichmentWithStatus]
             }
 
             const state = {
@@ -128,7 +128,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
               emails: enrichData.emails,
               socialLinks: enrichData.socialLinks,
             }
-            return [row.websiteUri, state] as [string, EnrichmentWithStatus]
+            return [row.website, state] as [string, EnrichmentWithStatus]
           }),
       )
 
@@ -140,19 +140,19 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         },
         {
           header: 'Name',
-          field: 'displayName',
-          accessor: (row: SearchResult): string => row.displayName,
+          field: 'name',
+          accessor: (row: SearchResult): string => row.name,
         },
         {
           header: 'Website',
-          field: 'websiteUri',
-          accessor: (row: SearchResult): string => row.websiteUri || '',
+          field: 'website',
+          accessor: (row: SearchResult): string => row.website || '',
         },
         {
           header: 'Emails',
           accessor: (row: SearchResult): string => {
-            const enrichData = row.websiteUri
-              ? enrichmentMap.get(row.websiteUri)
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
               : null
             return enrichData?.emails?.join(', ') || ''
           },
@@ -160,8 +160,8 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
           header: `${platform.charAt(0).toUpperCase()}${platform.slice(1)}`,
           accessor: (row: SearchResult): string => {
-            const enrichData = row.websiteUri
-              ? enrichmentMap.get(row.websiteUri)
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
               : null
             return enrichData?.socialLinks[platform]?.join(', ') || ''
           },
@@ -178,9 +178,8 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         },
         {
           header: 'Phone',
-          field: 'internationalPhoneNumber',
-          accessor: (row: SearchResult): string =>
-            row.internationalPhoneNumber || '',
+          field: 'phone',
+          accessor: (row: SearchResult): string => row.phone || '',
         },
         {
           header: 'Rating',
@@ -189,9 +188,9 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         },
         {
           header: 'Number of Reviews',
-          field: 'userRatingCount',
+          field: 'ratingCount',
           accessor: (row: SearchResult): string =>
-            row.userRatingCount?.toString() || '',
+            row.ratingCount?.toString() || '',
         },
         {
           header: 'Full Address',
@@ -267,10 +266,10 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
             row.address.administrativeAreaLevel3 || '',
         },
         {
-          header: 'Regular Opening Hours',
-          field: 'regularOpeningHours',
+          header: 'Opening Hours',
+          field: 'openingHours',
           accessor: (row: SearchResult): string => {
-            const hours = row.regularOpeningHours
+            const hours = row.openingHours
 
             // Handle cases where no opening hours data exists
             if (!hours) return ''
@@ -354,18 +353,11 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
           },
         },
         {
-          header: 'Editorial Summary',
-          field: 'editorialSummary',
+          header: 'Lists',
+          field: 'lists',
           accessor: (row: SearchResult): string =>
-            row.editorialSummary?.text || '',
-        },
-        {
-          header: 'Associated Lists',
-          field: 'associatedLists',
-          accessor: (row: SearchResult): string =>
-            row.associatedLists
-              ?.map((list) => `${list.emoji} ${list.name}`)
-              .join('| ') || '',
+            row.lists?.map((list) => `${list.emoji} ${list.name}`).join('| ') ||
+            '',
         },
       ]
 

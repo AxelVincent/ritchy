@@ -144,7 +144,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
     const enrichment = row.original.enrichment as
       | EnrichmentWithStatus
       | undefined
-    const website = row.original.websiteUri
+    const website = row.original.website
 
     if (!website) {
       return (
@@ -280,7 +280,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>
-                Contact Information - {row.original.displayName}
+                Contact Information - {row.original.name}
               </DialogTitle>
             </DialogHeader>
             <ScrollArea className="max-h-[80vh]">
