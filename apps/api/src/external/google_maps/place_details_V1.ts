@@ -10,6 +10,7 @@ import {
   type AdvancedPlace,
   AdvancedPlaceSchema,
 } from './types'
+import { calculateOpenNow } from './utils/calculateOpenNow'
 import { mapToPlaceDetails } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
 
@@ -46,6 +47,14 @@ export async function getPlaceDetailsV1(
   // Check cache first
   const cachedPlace = await redisClient.get<Place>(key)
   if (cachedPlace) {
+    // Recalculate openNow property for cached places
+    if (cachedPlace.openingHours) {
+      cachedPlace.openingHours.openNow = calculateOpenNow(
+        cachedPlace.openingHours,
+        cachedPlace.utcOffsetMinutes,
+      )
+    }
+
     return { ...cachedPlace, fromCache: true }
   }
 
