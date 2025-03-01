@@ -118,7 +118,7 @@ app.use(
     },
     // Only include essential custom props
     customProps: (req) => ({
-      context: {
+      user: {
         userId: req.auth?.userId,
         sessionId: req.auth?.sessionId,
         firstName: req.auth?.firstName,
