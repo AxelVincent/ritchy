@@ -77,6 +77,5 @@ export const calculateOpenNow = (
     }
   }
 
-  console.log('Place is closed')
   return false
 }
