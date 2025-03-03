@@ -48,6 +48,10 @@ export function NavUser() {
 
   const createPortalSession = useCreatePortalSession()
 
+  const { data: subscription } = useUserSubscription()
+  const hasActiveSubscription =
+    subscription?.plan && subscription.plan !== 'FREE'
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -128,16 +132,18 @@ export function NavUser() {
                 <Rocket />
                 Pricing
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={async () => {
-                  const url = await createPortalSession.mutateAsync()
-                  window.location.href = url
-                }}
-              >
-                <CreditCard />
-                Manage subscription
-              </DropdownMenuItem>
+              {hasActiveSubscription && (
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={async () => {
+                    const url = await createPortalSession.mutateAsync()
+                    window.location.href = url
+                  }}
+                >
+                  <CreditCard />
+                  Manage subscription
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
