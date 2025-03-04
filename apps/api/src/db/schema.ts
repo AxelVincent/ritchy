@@ -178,3 +178,34 @@ export const enrichment = pgTable(
     ),
   }),
 )
+
+export const leadStatusEnum = pgEnum('lead_status', [
+  'NEW',
+  'NO_ANSWER',
+  'CONTACTED',
+  'FOLLOW_UP',
+  'MEETING',
+  'IN_PROGRESS',
+  'WON',
+  'LOST',
+])
+
+export const status = pgTable(
+  'status',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    placeId: text('place_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id),
+    status: leadStatusEnum('status').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqUserPlace: uniqueIndex('uniq_user_place_status').on(
+      table.userId,
+      table.placeId,
+    ),
+  }),
+)
