@@ -10,6 +10,7 @@ import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
+import { useMapStore } from './store/useMapStore'
 import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
@@ -19,6 +20,8 @@ interface MapDisplayProps {
 }
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
+  const setPlaces = useMapStore((state) => state.setPlaces)
+
   // Core location state
   const defaultLocation =
     places && places.length > 0
@@ -40,17 +43,9 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     return process.env.NODE_ENV === 'development' ? [] : []
   })
 
-  // Add effect to update searchResults when listData changes
-  useEffect(() => {
-    if (places && places.length > 0) {
-      setSearchResults(places)
-    }
-  }, [places])
-
   // Search and selection state
   const [dataTableRowSelection, setDataTableRowSelection] =
     useState<RowSelectionState>({})
-  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null)
   const [filteredPlaceIds, setFilteredPlaceIds] = useState<Set<string>>(
     () =>
       new Set(
@@ -72,10 +67,14 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
 
   const [tableData, setTableData] = useState<Place[]>(places)
 
-  // Update effect to handle places changes
+  // Update effect to store places in Zustand
   useEffect(() => {
-    setTableData(places)
-  }, [places])
+    if (places && places.length > 0) {
+      setPlaces(places)
+      setSearchResults(places)
+      setTableData(places)
+    }
+  }, [places, setPlaces])
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
@@ -89,8 +88,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
             columns={columns}
             data={tableData}
             setData={setTableData}
-            setSelectedPlaceId={setSelectedPlaceId}
-            selectedPlaceId={selectedPlaceId}
             setDataTableRowSelection={setDataTableRowSelection}
             dataTableRowSelection={dataTableRowSelection}
             onFilteredDataChange={setFilteredPlaceIds}
@@ -107,8 +104,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
               })
             }}
             searchResults={searchResults}
-            selectedPlaceId={selectedPlaceId}
-            setSelectedPlaceId={setSelectedPlaceId}
             userLocation={currentLocation}
             dataTableRowSelection={dataTableRowSelection}
             radiusInMeters={currentLocation.radiusInMeters}

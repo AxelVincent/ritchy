@@ -2,11 +2,10 @@ import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialo
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/map-display/components/data_export/DataExport'
-import { createApiClient } from '@/lib/api/createApiClient'
+import { useMapStore } from '@/features/map-display/store/useMapStore'
 import { cn } from '@/lib/utils'
 import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
-import { useQueryClient } from '@tanstack/react-query'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -24,20 +23,19 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Loader2, Plus, Trash } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { DeleteItemsFromListDialog } from '../lists/delete-items-from-list-dialog'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
+import { useEnrichment } from './hooks/useEnrichment'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  setSelectedPlaceId: React.Dispatch<React.SetStateAction<string | null>>
   setDataTableRowSelection: React.Dispatch<
     React.SetStateAction<RowSelectionState>
   >
   dataTableRowSelection: RowSelectionState
-  selectedPlaceId: string | null
   listId?: string
   searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
@@ -55,44 +53,37 @@ export interface EnrichmentState {
   error?: string
 }
 
-const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
-})
+export interface DataTableMeta<TData> {
+  setData: React.Dispatch<React.SetStateAction<TData[]>>
+}
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
   setData,
-  selectedPlaceId,
-  setSelectedPlaceId,
   setDataTableRowSelection,
   dataTableRowSelection,
   listId,
   searchId,
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
+  // Get selectedPlaceId and setSelectedPlaceId from the store
+  const { selectedPlaceId, setSelectedPlaceId } = useMapStore()
+
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnOrder, setColumnOrder] = useState<string[]>([])
   const [showAddListDialog, setShowAddListDialog] = useState(false)
   const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
-  const [pendingFetches, setPendingFetches] = useState(new Set<string>())
 
-  // Remove scoresRef, keep only enrichmentRef
-  const enrichmentRef = useRef<Record<string, EnrichmentState>>({})
-
-  const queryClient = useQueryClient()
-
-  // Update batchUpdate to handle only enrichment
-  const batchUpdate = useCallback(() => {
-    setData((currentData) =>
-      currentData.map((item) => ({
-        ...item,
-        enrichment: enrichmentRef.current[item.id] || item.enrichment,
-      })),
-    )
-  }, [setData])
+  // Use the enrichment hook
+  const { pendingFetches, handleFetchEnrichment } = useEnrichment({
+    data,
+    setData,
+    listId,
+    searchId,
+  })
 
   const table = useReactTable({
     data,
@@ -158,6 +149,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     },
     meta: {
       setSelectedPlaceId,
+      setData,
     },
   })
 
@@ -237,85 +229,14 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onFilteredDataChange(filteredIds)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
 
-  // Keep handleFetchEnrichment function
-  const handleFetchEnrichment = async () => {
+  // Replace the handleFetchEnrichment function with this wrapper
+  const handleEnrichSelectedRows = () => {
     const selectedRows = table.getSelectedRowModel().rows
     const selectedIds = selectedRows
       .filter((row) => row.original.website)
       .map((row) => row.original.id)
-    if (selectedIds.length === 0) return
 
-    setPendingFetches(new Set(selectedIds))
-
-    // Set all selected rows to loading state
-    setData((currentData) =>
-      currentData.map((item) => ({
-        ...item,
-        enrichment: selectedIds.includes(item.id)
-          ? { emails: [], socialLinks: {}, isLoading: true }
-          : item.enrichment,
-      })),
-    )
-
-    let batchTimeout: NodeJS.Timeout
-
-    const scheduleBatchUpdate = () => {
-      clearTimeout(batchTimeout)
-      batchTimeout = setTimeout(batchUpdate, 1000)
-    }
-
-    const fetchPromises = selectedIds.map(async (id) => {
-      const website = data.find((item) => item.id === id)?.website
-      if (!website) {
-        enrichmentRef.current[id] = {
-          emails: [],
-          socialLinks: {},
-          error: 'No website available',
-          isLoading: false,
-        }
-        scheduleBatchUpdate()
-        return
-      }
-
-      try {
-        const response = await apiClient.fetchWithAuth(
-          `/enrich?id=${id}&website=${encodeURIComponent(website)}`,
-        )
-
-        enrichmentRef.current[id] = {
-          ...response,
-          isLoading: false,
-        }
-        scheduleBatchUpdate()
-      } catch (error) {
-        enrichmentRef.current[id] = {
-          emails: [],
-          socialLinks: {},
-          error: error instanceof Error ? error.message : 'Failed to fetch',
-          isLoading: false,
-        }
-        scheduleBatchUpdate()
-      } finally {
-        setPendingFetches((current) => {
-          const updated = new Set(current)
-          updated.delete(id)
-          return updated
-        })
-      }
-    })
-
-    await Promise.allSettled(fetchPromises)
-    batchUpdate()
-    enrichmentRef.current = {}
-
-    // Invalidate the listContent query if we're in a list view
-    if (listId) {
-      queryClient.invalidateQueries({ queryKey: ['listContent', listId] })
-    }
-    // Invalidate the searchContent query if we're in a search view
-    if (searchId) {
-      queryClient.invalidateQueries({ queryKey: ['searchContent', searchId] })
-    }
+    handleFetchEnrichment(selectedIds)
   }
 
   // If there are no visible columns, show a message
@@ -391,7 +312,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
             selectedRows.some((row) => row.original.website) && (
               <Button
                 variant="outline"
-                onClick={handleFetchEnrichment}
+                onClick={handleEnrichSelectedRows}
                 disabled={pendingFetches.size > 0}
               >
                 {pendingFetches.size > 0 ? (

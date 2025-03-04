@@ -1,0 +1,36 @@
+export type StatusType =
+  | 'NEW'
+  | 'NO_ANSWER'
+  | 'CONTACTED'
+  | 'FOLLOW_UP'
+  | 'MEETING'
+  | 'IN_PROGRESS'
+  | 'WON'
+  | 'LOST'
+  | string
+
+/**
+ * Converts a status code to a human-readable label
+ */
+export const getStatusLabel = (status: StatusType): string => {
+  switch (status) {
+    case 'NEW':
+      return 'New'
+    case 'NO_ANSWER':
+      return 'No Answer'
+    case 'CONTACTED':
+      return 'Contacted'
+    case 'FOLLOW_UP':
+      return 'Follow Up'
+    case 'MEETING':
+      return 'Meeting'
+    case 'IN_PROGRESS':
+      return 'In Progress'
+    case 'WON':
+      return 'Won'
+    case 'LOST':
+      return 'Lost'
+    default:
+      return status
+  }
+}
