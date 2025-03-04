@@ -359,6 +359,11 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
             row.lists?.map((list) => `${list.emoji} ${list.name}`).join('| ') ||
             '',
         },
+        {
+          header: 'Status',
+          field: 'status',
+          accessor: (row: SearchResult): string => row.status?.status || '',
+        },
       ]
 
       validateAllSearchResultFieldsHaveColumns(columns)
