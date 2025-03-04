@@ -61,7 +61,27 @@ export const ColumnsSelection = <TData,>({
       if (stored) {
         const parsed = JSON.parse(stored)
         const validated = columnOrderSchema.parse(parsed)
-        table.setColumnOrder(validated)
+
+        // Get all current column IDs
+        const allColumnIds = table.getAllLeafColumns().map((col) => col.id)
+
+        // Filter out any stored columns that no longer exist
+        const validColumnIds = validated.filter((id) =>
+          allColumnIds.includes(id),
+        )
+
+        // Add any new columns that aren't in the stored order
+        const missingColumnIds = allColumnIds.filter(
+          (id) => !validColumnIds.includes(id),
+        )
+
+        // Create the complete column order with new columns at the end
+        const completeColumnOrder = [...validColumnIds, ...missingColumnIds]
+
+        // Only set if we have all columns
+        if (completeColumnOrder.length === allColumnIds.length) {
+          table.setColumnOrder(completeColumnOrder)
+        }
       }
     } catch (error) {
       console.error('Failed to load column order state:', error)
@@ -187,10 +207,17 @@ export const ColumnsSelection = <TData,>({
 
       newOrder.splice(insertIndex, 0, draggedColumn.id)
 
+      // Ensure all columns are included in the order
+      const allColumnIds = table.getAllLeafColumns().map((col) => col.id)
+      const missingColumnIds = allColumnIds.filter(
+        (id) => !newOrder.includes(id),
+      )
+      const completeOrder = [...newOrder, ...missingColumnIds]
+
       // Save and apply new order
       try {
-        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(newOrder))
-        table.setColumnOrder(newOrder)
+        localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(completeOrder))
+        table.setColumnOrder(completeOrder)
       } catch (error) {
         console.error('Failed to save column order state:', error)
       }
