@@ -49,6 +49,10 @@ export const GetSearchesResponseSchema = z.object({
 
 export const GetSearchContentResponseSchema = z.array(PlaceSchema)
 
+export type GetSearchContentResponse = z.infer<
+  typeof GetSearchContentResponseSchema
+>
+
 export const GetSearchContentRequestParamsSchema = z.object({
   searchId: z.string().uuid(),
 })
@@ -60,14 +64,6 @@ export const GetSearchContentApiResponseSchema = z.union([
 
 export type GetSearchContentRequestParams = z.infer<
   typeof GetSearchContentRequestParamsSchema
->
-
-export type GetSearchContentResponse = z.infer<
-  typeof GetSearchContentResponseSchema
->
-
-export type GetSearchContentApiResponse = z.infer<
-  typeof GetSearchContentApiResponseSchema
 >
 
 export type GetSearchesResponse = z.infer<typeof GetSearchesResponseSchema>
@@ -85,4 +81,8 @@ export type CreateSearchRequestBody = z.infer<
 >
 export type CreateSearchApiResponse = z.infer<
   typeof CreateSearchApiResponseSchema
+>
+
+export type GetSearchContentApiResponse = z.infer<
+  typeof GetSearchContentApiResponseSchema
 >

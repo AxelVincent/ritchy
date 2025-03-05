@@ -33,7 +33,7 @@ const pricingTiers: PricingTier[] = [
     name: 'Essentials',
     plan: 'ESSENTIALS',
     monthlyPrice: 69,
-    yearlyPrice: 42,
+    yearlyPrice: 59,
     description: 'Perfect for solo entrepreneurs just getting started',
     amplifyResults: [
       '60 Gmap results/search',
@@ -42,7 +42,7 @@ const pricingTiers: PricingTier[] = [
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
-      'Advanced sorting and filters*',
+      'Advanced sorting and filters',
       'CRM features: Lists, Notes, Status',
       'CSV Export',
     ],
@@ -61,7 +61,7 @@ const pricingTiers: PricingTier[] = [
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
-      'Advanced sorting and filters*',
+      'Advanced sorting and filters',
       'CRM features: Lists, Notes, Status',
       'CSV Export',
     ],
@@ -81,7 +81,7 @@ const pricingTiers: PricingTier[] = [
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
-      'Advanced sorting and filters*',
+      'Advanced sorting and filters',
       'CRM features: Lists, Notes, Status',
       'CSV Export',
       'Priority Support',
@@ -101,7 +101,7 @@ const pricingTiers: PricingTier[] = [
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
-      'Advanced sorting and filters*',
+      'Advanced sorting and filters',
       'CRM features: Lists, Notes, Status',
       'CSV Export',
       'Priority Support',
@@ -172,13 +172,28 @@ export const PricingCards = ({
 
         // Find applicable promo for this tier
         const applicablePromo = activePromos.find(
-          (promo) => promo.planId === tier.plan && billingPeriod === 'monthly',
+          (promo) => promo.planId === tier.plan,
         )
 
         const hasPromo = !!applicablePromo
-        const discountedPrice = hasPromo
-          ? Math.round(tier.monthlyPrice * (1 - applicablePromo.discount / 100))
-          : null
+
+        // Calculate yearly price with promo if applicable
+        const yearlyWithPromo = hasPromo
+          ? Math.round(tier.yearlyPrice * (1 - applicablePromo.discount / 100))
+          : tier.yearlyPrice
+
+        // Calculate annual savings (difference between original monthly price and yearly price with promo)
+        const annualSavings = (tier.monthlyPrice - yearlyWithPromo) * 12
+
+        // Final price based on billing period
+        const finalPrice =
+          billingPeriod === 'yearly'
+            ? yearlyWithPromo
+            : hasPromo
+              ? Math.round(
+                  tier.monthlyPrice * (1 - applicablePromo.discount / 100),
+                )
+              : tier.monthlyPrice
 
         return (
           <div key={tier.name} className="flex flex-col">
@@ -238,29 +253,32 @@ export const PricingCards = ({
                   <div className="mt-6 flex flex-col">
                     {/* Fixed height pricing container to maintain consistency */}
                     <div className="min-h-[120px] flex flex-col justify-end">
-                      {/* Show original price as strikethrough with badge */}
-                      {(hasPromo || billingPeriod === 'yearly') && (
+                      {/* For yearly plans, always show monthly price as reference */}
+                      {billingPeriod === 'yearly' && (
                         <div className="flex items-center gap-4">
                           <span className="text-2xl line-through text-muted-foreground">
-                            $
-                            {billingPeriod === 'yearly'
-                              ? tier.monthlyPrice
-                              : tier.monthlyPrice}
+                            ${tier.monthlyPrice}
                           </span>
-                          {billingPeriod === 'yearly' && isAnnualOfferValid && (
+                          {isAnnualOfferValid && (
                             <Badge className="bg-green-600 hover:bg-green-700 px-3 py-1 text-white text-xs">
-                              Save $
-                              {(tier.monthlyPrice - tier.yearlyPrice) * 12}/year
+                              Save ${annualSavings}/year
                             </Badge>
                           )}
                         </div>
                       )}
+
+                      {/* For monthly plans with promo, show original price */}
+                      {billingPeriod === 'monthly' && hasPromo && (
+                        <div className="flex items-center gap-4">
+                          <span className="text-2xl line-through text-muted-foreground">
+                            ${tier.monthlyPrice}
+                          </span>
+                        </div>
+                      )}
+
                       <div className="flex flex-col gap-2">
                         <span className="text-5xl font-bold tracking-tight">
-                          $
-                          {billingPeriod === 'monthly'
-                            ? discountedPrice || tier.monthlyPrice
-                            : tier.yearlyPrice}
+                          ${finalPrice}
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-muted-foreground mt-1">
