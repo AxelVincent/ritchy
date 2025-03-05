@@ -177,11 +177,15 @@ export const useMarkerManager = ({
             })
               .setDOMContent(popupContainer)
               .on('open', () => {
-                setSelectedPlaceId(place.id)
+                requestAnimationFrame(() => {
+                  setSelectedPlaceId(place.id)
+                })
                 setOpenPopups((prev) => new Set(prev).add(place.id))
               })
               .on('close', () => {
-                setSelectedPlaceId(null)
+                requestAnimationFrame(() => {
+                  setSelectedPlaceId(null)
+                })
                 setOpenPopups((prev) => {
                   const next = new Set(prev)
                   next.delete(place.id)
@@ -200,7 +204,7 @@ export const useMarkerManager = ({
             const added = await addMarkerWithRetry(marker, map)
             if (added) {
               markerElement.addEventListener('click', () =>
-                setSelectedPlaceId(place.id),
+                requestAnimationFrame(() => setSelectedPlaceId(place.id)),
               )
               markersRef.current.set(place.id, { marker, popupContainer })
             }

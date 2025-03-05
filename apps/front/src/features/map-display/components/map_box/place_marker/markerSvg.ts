@@ -1,5 +1,24 @@
 import type { Place } from '@ritchy/types'
 
+// Utility function to lighten a hex color
+const lightenColor = (hex: string, amount: number): string => {
+  // Remove the # if present
+  const cleanHex = hex.replace('#', '')
+
+  // Parse the hex values to RGB
+  let r = Number.parseInt(cleanHex.substring(0, 2), 16)
+  let g = Number.parseInt(cleanHex.substring(2, 4), 16)
+  let b = Number.parseInt(cleanHex.substring(4, 6), 16)
+
+  // Lighten each component
+  r = Math.min(255, Math.round(r + (255 - r) * amount))
+  g = Math.min(255, Math.round(g + (255 - g) * amount))
+  b = Math.min(255, Math.round(b + (255 - b) * amount))
+
+  // Convert back to hex
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+}
+
 // Pure function to create filtered marker SVG
 export const createFilteredMarkerSvg = (): SVGElement => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -92,7 +111,7 @@ export const createActiveMarkerSvg = (
       svg.appendChild(text)
     }
 
-    // Add inner white ring
+    // Add inner ring with a lighter version of the status color
     const innerRing = document.createElementNS(
       'http://www.w3.org/2000/svg',
       'path',
@@ -102,9 +121,11 @@ export const createActiveMarkerSvg = (
       'M12 1.5C6.21 1.5 1.5 6.21 1.5 12c0 8.15 10.5 18.5 10.5 18.5S22.5 20.15 22.5 12c0-5.79-4.71-10.5-10.5-10.5z',
     )
     innerRing.setAttribute('fill', 'none')
-    innerRing.setAttribute('stroke', '#ffffff')
-    innerRing.setAttribute('stroke-width', '0.5')
-    innerRing.setAttribute('stroke-opacity', '0.9')
+
+    // Create a lighter version of the status color
+    const lighterColor = lightenColor(color, 0.8) // Lighten by 30%
+    innerRing.setAttribute('stroke', lighterColor)
+    innerRing.setAttribute('stroke-width', '0.75')
     svg.appendChild(innerRing)
 
     return svg
