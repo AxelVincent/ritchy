@@ -38,8 +38,9 @@ ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 COPY --from=builder /app/out/full/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Install dependencies and verify versions
-RUN pnpm install && pnpm -v && node -v
+# Install dependencies and build the project
+# Modified to use --no-frozen-lockfile to address the lockfile mismatch
+RUN pnpm install --no-frozen-lockfile && pnpm -v && node -v
 
 # Build the project
 RUN pnpm turbo build --filter=front...

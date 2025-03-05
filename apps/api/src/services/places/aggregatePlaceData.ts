@@ -6,6 +6,7 @@ import { getOrFetchEnrichmentData } from '../enrichment/getOrFetchEnrichmentData
 import { getUserEnrichedPlaces } from '../enrichment/getUserEnrichedPlaces'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getNotesByPlaceIds } from '../notes/getNotesByPlaceIds'
+import { getStatusByPlaceIds } from '../status/getStatusByPlaceIds'
 
 interface AggregatePlaceDataOptions {
   userId: string
@@ -17,6 +18,7 @@ interface AggregatePlaceDataOptions {
  * Aggregates place data by joining information from different sources:
  * - List associations
  * - User notes
+ * - Lead statuses
  * - Enrichment data (optional)
  *
  * @param places - Array of places to aggregate data for
@@ -30,13 +32,14 @@ export const aggregatePlaceData = async (
   const { userId, excludeListId, includeEnrichment = false } = options
   const placeIds = places.map((place) => place.id)
 
-  // Get associations and notes for each place
+  // Get associations, notes, and lead statuses for each place
   const associations = await getListAssociationsByPlaceIds(
     placeIds,
     userId,
     excludeListId,
   )
   const notes = await getNotesByPlaceIds(placeIds, userId)
+  const statuses = await getStatusByPlaceIds(placeIds, userId)
 
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
@@ -56,6 +59,7 @@ export const aggregatePlaceData = async (
         ...place,
         lists: associations.get(place.id),
         notes: notes.get(place.id),
+        status: statuses.get(place.id),
       }
 
       return aggregatedPlace

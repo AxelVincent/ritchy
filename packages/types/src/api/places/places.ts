@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { EnrichResponseSchema } from '../enrich'
+import { SearchModelEnum } from '../search'
 import { NoteSchema } from './notes'
+import { StatusSchema } from './status'
 
 // Basic/Common Schemas
 export const LocationSchema = z.object({
@@ -127,7 +129,7 @@ export const PlacesSearchRequestBodySchema = z.object({
       radiusInMeters: z.number().positive(),
     }),
   }),
-  model: z.enum(['DEFAULT', 'NAVIGATOR', 'EXPLORER', 'PRO']).default('DEFAULT'),
+  model: SearchModelEnum.default('ESSENTIALS'),
 })
 
 export const PlaceListAssociationSchema = z.object({
@@ -169,6 +171,7 @@ export const PlaceSchema = z.object({
   }),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional(),
+  status: StatusSchema.optional(),
   enrichment: EnrichResponseSchema.optional(),
 })
 

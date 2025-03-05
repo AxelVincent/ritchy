@@ -1,3 +1,5 @@
+import { getStatusColor } from '@/components/status/status-colors'
+import { useMapStore } from '@/features/map-display/store/useMapStore'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import mapboxgl from 'mapbox-gl'
@@ -18,7 +20,6 @@ type UseMarkerManagerProps = {
   places: Place[] | null
   displayedPlaceIds: Set<string>
   dataTableRowSelection: RowSelectionState
-  onMarkerClick?: (placeId: string) => void
 }
 
 // Move this outside the component to avoid recreating on each render
@@ -52,11 +53,15 @@ const addMarkerWithRetry = async (
 
 export const useMarkerManager = ({
   map,
-  places,
+  places: propPlaces,
   displayedPlaceIds,
   dataTableRowSelection,
-  onMarkerClick,
 }: UseMarkerManagerProps) => {
+  const {
+    setSelectedPlaceId,
+    places: storePlaces,
+    updatedPlaceStatuses,
+  } = useMapStore()
   const [openPopups, setOpenPopups] = useState<Set<string>>(emptySet)
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
@@ -65,6 +70,9 @@ export const useMarkerManager = ({
   const prevPlacesRef = useRef<Place[] | null>(null)
   const prevDisplayedPlaceIdsRef = useRef<Set<string>>(new Set())
   const prevSelectionRef = useRef<RowSelectionState>({})
+
+  // Use places from the store if available, otherwise fall back to props
+  const places = storePlaces.length > 0 ? storePlaces : propPlaces
 
   // Main effect for marker management
   useEffect(() => {
@@ -81,7 +89,12 @@ export const useMarkerManager = ({
       dataTableRowSelection,
     )
 
-    if (!placesChanged && !displayedIdsChanged && !selectionChanged) {
+    if (
+      !placesChanged &&
+      !displayedIdsChanged &&
+      !selectionChanged &&
+      updatedPlaceStatuses.size === 0
+    ) {
       return
     }
 
@@ -119,11 +132,20 @@ export const useMarkerManager = ({
         const isSelected = dataTableRowSelection[place.id] ?? false
         const existing = markersRef.current.get(place.id)
 
+        // Check if this place has an updated status
+        const updatedStatus = updatedPlaceStatuses.get(place.id)
+
         let color = MARKER_COLORS.DEFAULT
         if (!isDisplayed) {
           color = MARKER_COLORS.FILTERED
         } else if (isSelected) {
           color = MARKER_COLORS.SELECTED
+        } else if (updatedStatus) {
+          // Use the updated status color when available
+          color = getStatusColor(updatedStatus, 'hex')
+        } else if (place.status) {
+          // Use original status color
+          color = getStatusColor(place.status.status, 'hex')
         }
 
         if (!existing) {
@@ -155,9 +177,15 @@ export const useMarkerManager = ({
             })
               .setDOMContent(popupContainer)
               .on('open', () => {
+                requestAnimationFrame(() => {
+                  setSelectedPlaceId(place.id)
+                })
                 setOpenPopups((prev) => new Set(prev).add(place.id))
               })
               .on('close', () => {
+                requestAnimationFrame(() => {
+                  setSelectedPlaceId(null)
+                })
                 setOpenPopups((prev) => {
                   const next = new Set(prev)
                   next.delete(place.id)
@@ -175,11 +203,9 @@ export const useMarkerManager = ({
             // Use retry logic when adding marker to map
             const added = await addMarkerWithRetry(marker, map)
             if (added) {
-              if (onMarkerClick) {
-                markerElement.addEventListener('click', () =>
-                  onMarkerClick(place.id),
-                )
-              }
+              markerElement.addEventListener('click', () =>
+                requestAnimationFrame(() => setSelectedPlaceId(place.id)),
+              )
               markersRef.current.set(place.id, { marker, popupContainer })
             }
           } catch (error) {
@@ -220,7 +246,20 @@ export const useMarkerManager = ({
     setupMarkers().catch((error) => {
       console.error('Error in setupMarkers:', error)
     })
-  }, [map, places, displayedPlaceIds, dataTableRowSelection, onMarkerClick])
+
+    // Clear the updated statuses after applying them
+    if (updatedPlaceStatuses.size > 0) {
+      // We need to access this from the store directly to avoid circular dependencies
+      useMapStore.setState({ updatedPlaceStatuses: new Map() })
+    }
+  }, [
+    map,
+    places,
+    displayedPlaceIds,
+    dataTableRowSelection,
+    setSelectedPlaceId,
+    updatedPlaceStatuses,
+  ])
 
   // Cleanup effect - only run on unmount
   useEffect(() => {

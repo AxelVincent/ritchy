@@ -68,7 +68,7 @@ export const note = pgTable('note', {
 })
 
 export const searchModelEnum = pgEnum('search_model', [
-  'DEFAULT',
+  'ESSENTIALS',
   'NAVIGATOR',
   'EXPLORER',
   'PRO',
@@ -127,6 +127,7 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', [
 
 export const subscriptionPlanEnum = pgEnum('subscription_plan', [
   'FREE',
+  'ESSENTIALS',
   'EXPLORER',
   'NAVIGATOR',
   'PRO',
@@ -173,6 +174,37 @@ export const enrichment = pgTable(
   },
   (table) => ({
     uniqUserPlace: uniqueIndex('uniq_user_place').on(
+      table.userId,
+      table.placeId,
+    ),
+  }),
+)
+
+export const leadStatusEnum = pgEnum('lead_status', [
+  'NEW',
+  'NO_ANSWER',
+  'CONTACTED',
+  'FOLLOW_UP',
+  'MEETING',
+  'INTERESTED',
+  'WON',
+  'LOST',
+])
+
+export const status = pgTable(
+  'status',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    placeId: text('place_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id),
+    status: leadStatusEnum('status').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqUserPlace: uniqueIndex('uniq_user_place_status').on(
       table.userId,
       table.placeId,
     ),

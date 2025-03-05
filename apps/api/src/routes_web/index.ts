@@ -4,7 +4,9 @@ import listsRouter from './lists'
 import notesRouter from './notes'
 import paymentsRouter from './payments'
 import searchesRouter from './searches'
+import statusRouter from './status'
 import usersRouter from './users'
+
 const router: Router = express.Router()
 
 // Places routes
@@ -24,5 +26,8 @@ router.use('/payments', paymentsRouter)
 
 // Users routes
 router.use('/users', usersRouter)
+
+// Register the status routes
+router.use('/status', statusRouter)
 
 export default router

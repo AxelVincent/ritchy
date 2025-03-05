@@ -65,7 +65,7 @@ export const createSearch = async (
 
     if (
       !hasModelAccess(plan as PlanType, parsedBody.model) &&
-      !(plan === 'FREE' && parsedBody.model === 'DEFAULT')
+      !(plan === 'FREE' && parsedBody.model === 'ESSENTIALS')
     ) {
       logger.warn({
         msg: 'Model access denied',
@@ -82,7 +82,7 @@ export const createSearch = async (
       return
     }
 
-    if (plan === 'FREE' && parsedBody.model === 'DEFAULT') {
+    if (plan === 'FREE' && parsedBody.model === 'ESSENTIALS') {
       const searchCount = await db
         .select({ count: sql<number>`count(*)` })
         .from(search)
@@ -110,7 +110,7 @@ export const createSearch = async (
         res.status(403).json({
           error: 'Search limit reached',
           message:
-            'Free plan users are limited to 3 DEFAULT searches. Please upgrade your plan for unlimited searches.',
+            'Free plan users are limited to 3 ESSENTIALS searches. Please upgrade your plan for unlimited searches.',
         })
         return
       }

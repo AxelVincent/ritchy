@@ -66,27 +66,26 @@ const NoteEditor = ({
   )
 }
 
-export const Notes = ({
-  placeId,
-  onNoteAdded,
-}: {
+interface NotesProps {
   placeId: string
   onNoteAdded?: (note: Note) => void
-}) => {
+}
+
+export const Notes = ({ placeId, onNoteAdded }: NotesProps) => {
   const { data, isLoading, error } = usePlaceNotesQuery(placeId)
-  const addNoteMutation = useAddPlaceNote()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { mutateAsync, isPending } = useAddPlaceNote()
 
   const handleAddNote = async (content: string) => {
-    setIsSubmitting(true)
     try {
-      const result = await addNoteMutation.mutateAsync({
+      const result = await mutateAsync({
         placeId,
         note: content,
       })
-      onNoteAdded?.(result as Note)
-    } finally {
-      setIsSubmitting(false)
+      if (onNoteAdded) {
+        onNoteAdded(result as Note)
+      }
+    } catch (error) {
+      console.error('Failed to add note:', error)
     }
   }
 
@@ -110,7 +109,7 @@ export const Notes = ({
     <div className="flex flex-col h-full p-[-12px]">
       {/* Fixed top section */}
       <div className="flex-none bg-background">
-        <NoteEditor onSubmit={handleAddNote} isSubmitting={isSubmitting} />
+        <NoteEditor onSubmit={handleAddNote} isSubmitting={isPending} />
       </div>
       <Separator />
 
@@ -129,7 +128,7 @@ export const Notes = ({
             {/* Continuous thread line */}
             <div className="absolute left-1 top-2 bottom-5 w-[1px] bg-border" />
             <div className="space-y-3">
-              {data?.map((note) => (
+              {data.map((note) => (
                 <div key={note.id} className="relative flex gap-3 pl-4">
                   {/* Dot with white center */}
                   <div className="absolute -left-[3px] top-1">

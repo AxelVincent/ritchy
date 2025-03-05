@@ -27,6 +27,8 @@ import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
 import { selectColumn } from './columns/SelectColumn'
 import { socialEmailColumn } from './columns/SocialEmailColumn'
+
+import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
 
@@ -34,6 +36,7 @@ import { websiteColumn } from './columns/WebsiteColumn'
 export const columns: ColumnDef<SearchResult>[] = [
   selectColumn,
   nameColumn,
+  statusColumn,
   websiteColumn,
   phoneColumn,
   socialEmailColumn,

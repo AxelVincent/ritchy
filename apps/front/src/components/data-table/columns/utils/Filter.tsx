@@ -99,7 +99,7 @@ export function Filter({
                           e.stopPropagation()
                           column.setFilterValue(undefined)
                         }}
-                        className="h-6 w-6 flex items-center justify-center bg-white"
+                        className="h-6 w-6 flex items-center justify-center "
                         size="icon"
                       >
                         <X className="opacity-50 hover:opacity-100" />
@@ -219,7 +219,7 @@ export function Filter({
                           e.stopPropagation()
                           column.setFilterValue(undefined)
                         }}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center bg-white"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center"
                         size="icon"
                       >
                         <X className="opacity-50 hover:opacity-100" />
@@ -289,7 +289,7 @@ export function Filter({
               e.stopPropagation()
               column.setFilterValue(undefined)
             }}
-            className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center bg-white"
+            className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center"
             size="icon"
           >
             <X className="opacity-50 hover:opacity-100" />
@@ -317,7 +317,7 @@ export function Filter({
               e.stopPropagation()
               column.setFilterValue(undefined)
             }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center bg-white"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center"
             size="icon"
           >
             <X className="opacity-50 hover:opacity-100" />

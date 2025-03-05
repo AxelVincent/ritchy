@@ -1,8 +1,10 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
+import { SearchModelEnum } from '../search'
 
 export const CreateCheckoutSessionRequestBodySchema = z.object({
-  plan: z.enum(['FREE', 'EXPLORER', 'NAVIGATOR', 'PRO']),
+  plan: SearchModelEnum,
+  billingInterval: z.enum(['monthly', 'yearly']),
 })
 
 export const CreateCheckoutSessionResponseSchema = z.object({

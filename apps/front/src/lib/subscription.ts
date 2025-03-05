@@ -1,23 +1,21 @@
-import type { SubscriptionPlan } from '@ritchy/types'
-
-type ModelType = 'DEFAULT' | 'NAVIGATOR' | 'EXPLORER' | 'PRO'
+import type { SearchModel, SubscriptionPlan } from '@ritchy/types'
 
 export const isModelAvailable = (
   userPlan: SubscriptionPlan | undefined,
-  modelType: ModelType,
+  modelType: SearchModel,
 ): boolean => {
   const plan = userPlan ?? 'FREE'
 
   switch (plan) {
     case 'FREE':
-      return modelType === 'DEFAULT'
+      return modelType === 'ESSENTIALS'
     case 'NAVIGATOR':
-      return ['DEFAULT', 'NAVIGATOR'].includes(modelType)
+      return ['ESSENTIALS', 'NAVIGATOR'].includes(modelType)
     case 'EXPLORER':
-      return ['DEFAULT', 'NAVIGATOR', 'EXPLORER'].includes(modelType)
+      return ['ESSENTIALS', 'NAVIGATOR', 'EXPLORER'].includes(modelType)
     case 'PRO':
       return true
     default:
-      return modelType === 'DEFAULT'
+      return modelType === 'ESSENTIALS'
   }
 }

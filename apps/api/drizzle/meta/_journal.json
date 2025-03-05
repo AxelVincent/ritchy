@@ -148,6 +148,34 @@
       "when": 1740495807234,
       "tag": "0020_unusual_kronos",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1741016589856,
+      "tag": "0021_remarkable_prism",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1741112267203,
+      "tag": "0022_old_mysterio",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1741174388397,
+      "tag": "0023_ancient_captain_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1741183503654,
+      "tag": "0024_condemned_tempest",
+      "breakpoints": true
     }
   ]
 }

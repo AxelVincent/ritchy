@@ -1,5 +1,6 @@
 import './styles.css'
 import { useMapInitialization } from '@/features/map-display/hooks/useMapInitialization'
+import { useMapStore } from '@/features/map-display/store/useMapStore'
 import { MAP_SETTINGS } from '@/features/map-display/types'
 import type { MapboxLocationParameters } from '@/features/map-display/types'
 import { debounce } from '@/lib/debounce'
@@ -30,8 +31,6 @@ type LocationChangeEvent = {
 interface MapBoxProps {
   onLocationChange: (location: LocationChangeEvent) => void
   searchResults: Place[] | null
-  selectedPlaceId: string | null
-  setSelectedPlaceId: (placeId: string | null) => void
   userLocation: MapboxLocationParameters
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
@@ -41,13 +40,14 @@ interface MapBoxProps {
 export const MapBox: FC<MapBoxProps> = ({
   onLocationChange,
   searchResults,
-  selectedPlaceId,
-  setSelectedPlaceId,
   userLocation,
   dataTableRowSelection,
   radiusInMeters,
   filteredPlaceIds,
 }) => {
+  // Get selectedPlaceId and setSelectedPlaceId from the store
+  const { selectedPlaceId } = useMapStore()
+
   debugLog('MapBox render:', { userLocation, radiusInMeters })
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -145,7 +145,6 @@ export const MapBox: FC<MapBoxProps> = ({
     places: searchResults,
     displayedPlaceIds: filteredPlaceIds,
     dataTableRowSelection,
-    onMarkerClick: setSelectedPlaceId,
   })
 
   // Add this memoized map outside of the component or at the top of the component

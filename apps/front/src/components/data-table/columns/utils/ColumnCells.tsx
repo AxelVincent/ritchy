@@ -95,7 +95,6 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
   row,
   table,
   place,
-  content,
 }: NotesColumnCellProps) {
   const actions = createColumnPinNoteActions(
     row.original.id,
@@ -114,13 +113,24 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
     setNotes(place.notes || [])
   }, [place.notes])
 
+  // Function to handle adding a new note
+  const handleNoteAdded = (note: Note) => {
+    // Update local state immediately
+    const updatedNotes = [note, ...notes]
+    setNotes(updatedNotes)
+
+    // Update the original data object to maintain consistency
+    // This ensures that if the component re-renders, it will have the updated notes
+    place.notes = updatedNotes
+  }
+
   return (
     <TextWrapper id={row.original.id} actions={actions}>
       <Dialog modal={false}>
         <div className="group flex items-center w-full">
           <span className="text-muted-foreground text-sm truncate">
-            {content
-              ? formatDistanceToNow(new Date(content.createdAt), {
+            {notes[0]
+              ? formatDistanceToNow(new Date(notes[0].createdAt), {
                   addSuffix: true,
                 })
               : ''}
@@ -135,13 +145,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
         </div>
         <DialogContent className="max-w-md h-[60vh] flex flex-col overflow-hidden">
           <div className="flex-1 overflow-hidden">
-            <Notes
-              placeId={place.id}
-              onNoteAdded={(note) => {
-                setNotes([note, ...notes])
-                place.notes = [note, ...notes]
-              }}
-            />
+            <Notes placeId={place.id} onNoteAdded={handleNoteAdded} />
           </div>
         </DialogContent>
       </Dialog>

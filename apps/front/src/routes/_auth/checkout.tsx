@@ -1,5 +1,5 @@
 import { useCreateCheckoutSession } from '@/api/mutations/payments/useCreateCheckoutSession'
-import type { SubscriptionPlan } from '@ritchy/types'
+import type { SearchModel } from '@ritchy/types'
 import {
   EmbeddedCheckout,
   EmbeddedCheckoutProvider,
@@ -11,7 +11,8 @@ import { useEffect } from 'react'
 export const Route = createFileRoute('/_auth/checkout')({
   component: CheckoutComponent,
   validateSearch: (search) => ({
-    plan: String(search.plan),
+    plan: search.plan,
+    billingInterval: search.billingInterval,
   }),
 })
 
@@ -23,7 +24,7 @@ const stripePromise = loadStripe(
 )
 
 function CheckoutComponent() {
-  const { plan } = Route.useSearch()
+  const { plan, billingInterval } = Route.useSearch()
   const {
     mutate: createSession,
     data: checkoutSession,
@@ -32,9 +33,12 @@ function CheckoutComponent() {
 
   useEffect(() => {
     if (plan) {
-      createSession({ plan: plan as SubscriptionPlan })
+      createSession({
+        plan: plan as SearchModel,
+        billingInterval: billingInterval as 'monthly' | 'yearly',
+      })
     }
-  }, [plan, createSession])
+  }, [plan, billingInterval, createSession])
 
   if (isPending) {
     return (
@@ -66,7 +70,10 @@ function CheckoutComponent() {
     return null
   }
 
-  const options = { clientSecret: checkoutSession.clientSecret }
+  // Configure options with appearance for dark mode
+  const options = {
+    clientSecret: checkoutSession.clientSecret,
+  }
 
   return (
     <div className="flex flex-col justify-center min-h-screen">
