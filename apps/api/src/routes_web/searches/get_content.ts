@@ -65,15 +65,44 @@ export const getSearchContent = async (
       includeEnrichment: true,
     })
 
-    // Validate response
-    const validatedResults =
-      GetSearchContentResponseSchema.parse(aggregatedResults)
+    let validatedResults: GetSearchContentResponse
+    try {
+      validatedResults = GetSearchContentResponseSchema.parse(aggregatedResults)
+    } catch (validationError) {
+      // Enhanced error logging
+      const errorDetails = {
+        message:
+          validationError instanceof Error
+            ? validationError.message
+            : String(validationError),
+        stack:
+          validationError instanceof Error ? validationError.stack : undefined,
+        type: Object.prototype.toString.call(validationError),
+        zodErrors:
+          validationError instanceof z.ZodError
+            ? validationError.errors.map((e) => ({
+                path: e.path.join('.'),
+                message: e.message,
+                code: e.code,
+              }))
+            : undefined,
+      }
+
+      logger.warn({
+        msg: 'Validation error in search content, using unvalidated results',
+        event: 'validation_error_in_search_content',
+        metadata: { error: errorDetails },
+      })
+
+      // Continue with unvalidated results
+      validatedResults = aggregatedResults
+    }
 
     logger.info({
       msg: 'Get search content',
       event: 'get_search_content',
       metadata: {
-        results: validatedResults.length,
+        results: aggregatedResults.length,
       },
     })
     res.json(validatedResults)

@@ -170,9 +170,9 @@ export const PlaceSchema = z.object({
     administrativeAreaLevel3: z.string().optional(),
   }),
   lists: z.array(PlaceListAssociationSchema).optional(),
-  notes: z.array(NoteSchema).optional(),
+  notes: z.array(NoteSchema).optional().nullable(),
   status: StatusSchema.optional(),
-  enrichment: EnrichResponseSchema.optional(),
+  enrichment: EnrichResponseSchema.optional().nullable(),
 })
 
 // Type inference from schemas

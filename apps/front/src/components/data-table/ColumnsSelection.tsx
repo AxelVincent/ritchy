@@ -46,7 +46,21 @@ export const ColumnsSelection = <TData,>({
       if (stored) {
         const parsed = JSON.parse(stored)
         const validated = columnVisibilitySchema.parse(parsed)
-        table.setColumnVisibility(validated)
+
+        // Get all current column IDs
+        const allColumnIds = table.getAllLeafColumns().map((col) => col.id)
+
+        // Create a complete visibility state that includes new columns
+        const completeVisibility = { ...validated }
+
+        // Add any new columns with default visibility (true)
+        for (const columnId of allColumnIds) {
+          if (completeVisibility[columnId] === undefined) {
+            completeVisibility[columnId] = true
+          }
+        }
+
+        table.setColumnVisibility(completeVisibility)
       }
     } catch (error) {
       console.error('Failed to load column visibility state:', error)
