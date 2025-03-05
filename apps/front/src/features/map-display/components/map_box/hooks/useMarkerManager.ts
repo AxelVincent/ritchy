@@ -177,9 +177,11 @@ export const useMarkerManager = ({
             })
               .setDOMContent(popupContainer)
               .on('open', () => {
+                setSelectedPlaceId(place.id)
                 setOpenPopups((prev) => new Set(prev).add(place.id))
               })
               .on('close', () => {
+                setSelectedPlaceId(null)
                 setOpenPopups((prev) => {
                   const next = new Set(prev)
                   next.delete(place.id)
