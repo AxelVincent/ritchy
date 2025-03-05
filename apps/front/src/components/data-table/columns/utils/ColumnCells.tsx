@@ -33,18 +33,12 @@ export interface NotesColumnCellProps {
 // For columns that need both pin and copy actions
 export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
   row,
-  table,
   content,
   href,
 }: ColumnPinCopyCellProps) {
   const actions = React.useMemo(
-    () =>
-      createColumnPinCopyActions(
-        row.original.id,
-        content,
-        table.options.meta?.setSelectedPlaceId,
-      ),
-    [row.original.id, content, table.options.meta?.setSelectedPlaceId],
+    () => createColumnPinCopyActions(row.original.id, content),
+    [row.original.id, content],
   )
 
   const displayContent = href ? (
@@ -71,16 +65,11 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
 // For columns that only need pin action
 export const ColumnPinCell = React.memo(function ColumnPinCell({
   row,
-  table,
   content,
 }: BaseColumnCellProps) {
   const actions = React.useMemo(
-    () =>
-      createColumnPinActions(
-        row.original.id,
-        table.options.meta?.setSelectedPlaceId,
-      ),
-    [row.original.id, table.options.meta?.setSelectedPlaceId],
+    () => createColumnPinActions(row.original.id),
+    [row.original.id],
   )
 
   return (
@@ -93,19 +82,14 @@ export const ColumnPinCell = React.memo(function ColumnPinCell({
 // Specialized cell component for notes
 export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
   row,
-  table,
   place,
 }: NotesColumnCellProps) {
-  const actions = createColumnPinNoteActions(
-    row.original.id,
-    () => {
-      const dialogTrigger = document.querySelector(
-        `[data-notes-dialog-trigger="${row.original.id}"]`,
-      ) as HTMLButtonElement
-      dialogTrigger?.click()
-    },
-    table.options.meta?.setSelectedPlaceId,
-  )
+  const actions = createColumnPinNoteActions(row.original.id, () => {
+    const dialogTrigger = document.querySelector(
+      `[data-notes-dialog-trigger="${row.original.id}"]`,
+    ) as HTMLButtonElement
+    dialogTrigger?.click()
+  })
 
   const [notes, setNotes] = React.useState(place.notes || [])
 

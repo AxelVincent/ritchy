@@ -1,4 +1,5 @@
 import type { Action } from '@/components/common/TextWrapper'
+import { useMapStore } from '@/features/map-display/store/useMapStore'
 import { toast } from '@/hooks/use-toast'
 
 // Create the toast function once, outside of the action creation
@@ -12,53 +13,60 @@ const showCopiedToast = (displayName: string) => {
 export const createColumnPinCopyActions = (
   id: string,
   text: string | null,
-  setSelectedPlaceId?: (id: string) => void,
-): Action[] => [
-  {
-    icon: 'MapPinned' as const,
-    onClick: () => setSelectedPlaceId?.(id),
-    label: 'Pin to map',
-  },
-  ...(text
-    ? [
-        {
-          icon: 'Copy' as const,
-          onClick: () => {
-            navigator.clipboard.writeText(text)
-            showCopiedToast(text)
-          },
-          label: 'Copy',
-        },
-      ]
-    : []),
-]
+): Action[] => {
+  const setSelectedPlaceId = useMapStore.getState().setSelectedPlaceId
 
-export const createColumnPinActions = (
-  id: string,
-  setSelectedPlaceId?: (id: string) => void,
-): Action[] => [
-  {
-    icon: 'MapPinned',
-    onClick: () => setSelectedPlaceId?.(id),
-    label: 'Pin to map',
-  },
-]
+  return [
+    {
+      icon: 'MapPinned' as const,
+      onClick: () => setSelectedPlaceId(id),
+      label: 'Pin to map',
+    },
+    ...(text
+      ? [
+          {
+            icon: 'Copy' as const,
+            onClick: () => {
+              navigator.clipboard.writeText(text)
+              showCopiedToast(text)
+            },
+            label: 'Copy',
+          },
+        ]
+      : []),
+  ]
+}
+
+export const createColumnPinActions = (id: string): Action[] => {
+  const setSelectedPlaceId = useMapStore.getState().setSelectedPlaceId
+
+  return [
+    {
+      icon: 'MapPinned',
+      onClick: () => setSelectedPlaceId(id),
+      label: 'Pin to map',
+    },
+  ]
+}
 
 export const createColumnPinNoteActions = (
   id: string,
   openNotesDialog: () => void,
-  setSelectedPlaceId?: (id: string) => void,
-): Action[] => [
-  {
-    icon: 'MapPinned' as const,
-    onClick: () => setSelectedPlaceId?.(id),
-    label: 'Pin to map',
-  },
-  {
-    icon: 'MessageSquareText',
-    onClick: () => {
-      openNotesDialog()
+): Action[] => {
+  const setSelectedPlaceId = useMapStore.getState().setSelectedPlaceId
+
+  return [
+    {
+      icon: 'MapPinned' as const,
+      onClick: () => setSelectedPlaceId(id),
+      label: 'Pin to map',
     },
-    label: 'Add note',
-  },
-]
+    {
+      icon: 'MessageSquareText',
+      onClick: () => {
+        openNotesDialog()
+      },
+      label: 'Add note',
+    },
+  ]
+}
