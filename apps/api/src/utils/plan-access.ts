@@ -1,7 +1,7 @@
-export type PlanType = 'DEFAULT' | 'NAVIGATOR' | 'EXPLORER' | 'PRO'
+export type PlanType = 'ESSENTIALS' | 'NAVIGATOR' | 'EXPLORER' | 'PRO'
 
 const modelHierarchy: Record<PlanType, number> = {
-  DEFAULT: 0,
+  ESSENTIALS: 0,
   NAVIGATOR: 1,
   EXPLORER: 2,
   PRO: 3,

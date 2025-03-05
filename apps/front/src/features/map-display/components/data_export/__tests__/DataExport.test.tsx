@@ -1,4 +1,4 @@
-import type { SearchResult, SubscriptionPlan } from '@ritchy/types'
+import type { SearchModel, SearchResult, SubscriptionPlan } from '@ritchy/types'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -34,13 +34,13 @@ vi.mock('@/api/queries/users/useUserSubscription', () => ({
 
 // Mock for isModelAvailable
 vi.mock('@/lib/subscription', () => ({
-  isModelAvailable: (plan: SubscriptionPlan, model: ModelType) => {
-    if (plan === 'FREE') return model === 'DEFAULT'
-    if (plan === 'NAVIGATOR') return ['DEFAULT', 'NAVIGATOR'].includes(model)
+  isModelAvailable: (plan: SubscriptionPlan, model: SearchModel) => {
+    if (plan === 'FREE') return model === 'ESSENTIALS'
+    if (plan === 'NAVIGATOR') return ['ESSENTIALS', 'NAVIGATOR'].includes(model)
     if (plan === 'EXPLORER')
-      return ['DEFAULT', 'NAVIGATOR', 'EXPLORER'].includes(model)
+      return ['ESSENTIALS', 'NAVIGATOR', 'EXPLORER'].includes(model)
     if (plan === 'PRO') return true
-    return model === 'DEFAULT'
+    return model === 'ESSENTIALS'
   },
 }))
 
@@ -54,7 +54,6 @@ vi.mock('@/lib/exportToCsv', () => ({
 }))
 
 import { toast } from '@/hooks/use-toast'
-import type { ModelType } from '@/lib/subscription'
 // Import the actual component and function
 import * as DataExportModule from '../DataExport'
 import { DataExport } from '../DataExport'

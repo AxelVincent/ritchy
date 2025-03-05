@@ -98,7 +98,7 @@ export async function postTextSearchV1(
         return squares960
       case 'NAVIGATOR':
         return squares240
-      case 'DEFAULT':
+      case 'ESSENTIALS':
         return squares60
       default:
         return squares60

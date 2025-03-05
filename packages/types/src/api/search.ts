@@ -15,6 +15,14 @@ export const SearchSchema = z.array(SearchItemSchema)
 export type SearchItem = z.infer<typeof SearchItemSchema>
 export type Search = z.infer<typeof SearchSchema>
 
+export const SearchModelEnum = z.enum([
+  'ESSENTIALS',
+  'NAVIGATOR',
+  'EXPLORER',
+  'PRO',
+])
+export type SearchModel = z.infer<typeof SearchModelEnum>
+
 export const CreateSearchRequestBodySchema = z.object({
   location: z.object({
     latitude: z.number(),
@@ -23,7 +31,7 @@ export const CreateSearchRequestBodySchema = z.object({
   radiusInMeters: z.number(),
   placeName: z.string(),
   keyword: z.string(),
-  model: z.enum(['DEFAULT', 'NAVIGATOR', 'EXPLORER', 'PRO']),
+  model: SearchModelEnum,
 })
 
 export const CreateSearchResponseSchema = z.object({

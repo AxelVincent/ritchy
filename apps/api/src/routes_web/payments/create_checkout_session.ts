@@ -106,19 +106,30 @@ export const createCheckoutSession = async (
     }
 
     // Continue with checkout session creation for new subscribers
-    const plan = req.body.plan as StripePlan
-    const priceId = STRIPE_PLANS[plan].priceId
+    const plan = req.body.plan
+    const billingInterval = req.body.billingInterval || 'monthly'
+
+    // Select the correct price ID based on plan and billing interval
+    const priceId =
+      billingInterval === 'yearly'
+        ? STRIPE_PLANS[plan].price?.yearly
+        : STRIPE_PLANS[plan].price?.monthly
+
+    console.log('priceId', billingInterval, priceId)
 
     if (!priceId) {
       logger.error({
-        msg: 'Invalid plan requested',
+        msg: 'Invalid plan or billing interval requested',
         event: 'invalid_plan_error',
         metadata: {
           requestedPlan: plan,
+          requestedBillingInterval: billingInterval,
           availablePlans: Object.keys(STRIPE_PLANS),
         },
       })
-      throw new Error(`Invalid plan: ${plan}`)
+      throw new Error(
+        `Invalid plan: ${plan} or billing interval: ${billingInterval}`,
+      )
     }
 
     logger.info({
@@ -127,6 +138,7 @@ export const createCheckoutSession = async (
 
       metadata: {
         plan,
+        billingInterval,
         priceId,
       },
     })
@@ -160,6 +172,7 @@ export const createCheckoutSession = async (
       metadata: {
         checkoutSessionId: session.id,
         plan,
+        billingInterval,
         priceId,
       },
     })

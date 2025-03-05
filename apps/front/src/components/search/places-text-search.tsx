@@ -20,6 +20,7 @@ import {
   type CreateSearchRequestBody,
   type GeocodingResult,
   PLAN_RADIUS_LIMITS,
+  type SearchModel,
 } from '@ritchy/types'
 import { useEffect, useState } from 'react'
 
@@ -49,9 +50,7 @@ export const PlacesTextSearch = ({
   const { data: subscription } = useUserSubscription()
   const [searchText, setSearchText] = useState('')
   const [placeName, setPlaceName] = useState('')
-  const [model, setModel] = useState<
-    'DEFAULT' | 'NAVIGATOR' | 'EXPLORER' | 'PRO'
-  >('DEFAULT')
+  const [model, setModel] = useState<SearchModel>('ESSENTIALS')
   const [currentLocation, setCurrentLocation] =
     useState<LocationParams>(location)
 
@@ -219,20 +218,20 @@ export const PlacesTextSearch = ({
             </div>
           </div>
           <div className="space-y-1.5 mb-1 sm:space-y-2 w-[100px]">
-            <Label htmlFor="model-select">Pricing model</Label>
+            <Label htmlFor="model-select">Search power</Label>
             <Select value={model} onValueChange={handleModelChange}>
               <SelectTrigger id="model-select" className="w-[100px]">
                 <SelectValue placeholder="Select a model">
-                  {model === 'DEFAULT' && 'Default'}
+                  {model === 'ESSENTIALS' && 'Essentials'}
                   {model === 'NAVIGATOR' && 'Navigator'}
                   {model === 'EXPLORER' && 'Explorer'}
                   {model === 'PRO' && 'Pro'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="DEFAULT" className="cursor-pointer">
+                <SelectItem value="ESSENTIALS" className="cursor-pointer">
                   <div className="space-y-1 w-full">
-                    <div>Default</div>
+                    <div>Essentials</div>
                     <div className="text-xs text-muted-foreground">
                       Basic search with up to 60 results
                     </div>
