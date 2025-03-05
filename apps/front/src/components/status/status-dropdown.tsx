@@ -35,7 +35,7 @@ export const StatusDropdown = ({
     'CONTACTED',
     'FOLLOW_UP',
     'MEETING',
-    'IN_PROGRESS',
+    'INTERESTED',
     'WON',
     'LOST',
   ]

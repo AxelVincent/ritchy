@@ -7,7 +7,7 @@ export const StatusEnum = z.enum([
   'CONTACTED',
   'FOLLOW_UP',
   'MEETING',
-  'IN_PROGRESS',
+  'INTERESTED',
   'WON',
   'LOST',
 ])

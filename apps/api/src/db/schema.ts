@@ -185,7 +185,7 @@ export const leadStatusEnum = pgEnum('lead_status', [
   'CONTACTED',
   'FOLLOW_UP',
   'MEETING',
-  'IN_PROGRESS',
+  'INTERESTED',
   'WON',
   'LOST',
 ])

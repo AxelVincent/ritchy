@@ -1,13 +1,4 @@
-export type StatusType =
-  | 'NEW'
-  | 'NO_ANSWER'
-  | 'CONTACTED'
-  | 'FOLLOW_UP'
-  | 'MEETING'
-  | 'IN_PROGRESS'
-  | 'WON'
-  | 'LOST'
-  | string
+import type { StatusType } from '@ritchy/types'
 
 /**
  * Converts a status code to a human-readable label
@@ -24,8 +15,8 @@ export const getStatusLabel = (status: StatusType): string => {
       return 'Follow Up'
     case 'MEETING':
       return 'Meeting'
-    case 'IN_PROGRESS':
-      return 'In Progress'
+    case 'INTERESTED':
+      return 'Interested'
     case 'WON':
       return 'Won'
     case 'LOST':

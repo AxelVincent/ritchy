@@ -7,45 +7,45 @@ export const getStatusColor = (
   if (format === 'hex') {
     switch (status) {
       case 'NEW':
-        return '#60a5fa' // blue-400
+        return '#ffffff' // white - Clean white for new prospects
       case 'NO_ANSWER':
-        return '#9ca3af' // gray-400
+        return '#9ca3af' // gray-400 - Neutral gray for no response
       case 'CONTACTED':
-        return '#c084fc' // purple-400
+        return '#fcd34d' // yellow-300 - Softer yellow for initial contact
       case 'FOLLOW_UP':
-        return '#fb923c' // orange-400
+        return '#fb923c' // orange-400 - Brighter orange for follow-up needed
       case 'MEETING':
-        return '#4ade80' // green-400
-      case 'IN_PROGRESS':
-        return '#facc15' // yellow-400
+        return '#a78bfa' // violet-400 - Brighter purple for scheduled meetings
+      case 'INTERESTED':
+        return '#60a5fa' // blue-400 - Brighter blue for interested prospects
       case 'WON':
-        return '#34d399' // emerald-400
+        return '#34d399' // emerald-400 - Brighter green for won deals
       case 'LOST':
-        return '#f87171' // red-400
+        return '#f87171' // red-400 - Brighter red for lost opportunities
       default:
         return '#9ca3af' // gray-400
     }
   }
 
-  // Original tailwind classes
+  // Tailwind classes with improved contrast and professional appearance
   switch (status) {
     case 'NEW':
-      return 'bg-blue-100 text-blue-800 border-blue-200'
+      return 'bg-white text-gray-800 border-gray-300 dark:bg-gray-100 dark:text-black dark:border-gray-700'
     case 'NO_ANSWER':
-      return 'bg-gray-100 text-gray-800 border-gray-200'
+      return 'bg-gray-300 text-gray-800 border-gray-400 dark:bg-gray-400 dark:text-black dark:border-gray-500'
     case 'CONTACTED':
-      return 'bg-purple-100 text-purple-800 border-purple-200'
+      return 'bg-amber-200 text-amber-800 border-amber-300 dark:bg-amber-500 dark:text-black dark:border-amber-400'
     case 'FOLLOW_UP':
-      return 'bg-orange-100 text-orange-800 border-orange-200'
+      return 'bg-orange-200 text-orange-800 border-orange-300 dark:bg-orange-500 dark:text-black dark:border-orange-400'
     case 'MEETING':
-      return 'bg-green-100 text-green-800 border-green-200'
-    case 'IN_PROGRESS':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      return 'bg-violet-200 text-violet-800 border-violet-300 dark:bg-violet-500 dark:text-black dark:border-violet-400'
+    case 'INTERESTED':
+      return 'bg-blue-200 text-blue-800 border-blue-300 dark:bg-blue-500 dark:text-black dark:border-blue-400'
     case 'WON':
-      return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+      return 'bg-emerald-200 text-emerald-800 border-emerald-300 dark:bg-emerald-500 dark:text-black dark:border-emerald-400'
     case 'LOST':
-      return 'bg-red-100 text-red-800 border-red-200'
+      return 'bg-red-200 text-red-800 border-red-300 dark:bg-red-500 dark:text-black dark:border-red-400'
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200'
+      return 'bg-gray-200 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600'
   }
 }
