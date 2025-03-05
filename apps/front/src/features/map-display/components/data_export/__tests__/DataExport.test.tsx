@@ -1,6 +1,6 @@
-import type { SearchResult } from '@ritchy/types'
+import type { SearchResult, SubscriptionPlan } from '@ritchy/types'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // First, declare all mocks
 vi.mock('@tanstack/react-query', () => ({
@@ -14,6 +14,34 @@ vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
     toast: vi.fn(),
   }),
+  toast: vi.fn(),
+}))
+
+// Mock for useNavigate
+const navigateMock = vi.fn()
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => navigateMock,
+}))
+
+// Mock for useUserSubscription with default NAVIGATOR plan
+const userSubscriptionMock = vi.fn().mockReturnValue({
+  data: { plan: 'NAVIGATOR' },
+})
+
+vi.mock('@/api/queries/users/useUserSubscription', () => ({
+  useUserSubscription: () => userSubscriptionMock(),
+}))
+
+// Mock for isModelAvailable
+vi.mock('@/lib/subscription', () => ({
+  isModelAvailable: (plan: SubscriptionPlan, model: ModelType) => {
+    if (plan === 'FREE') return model === 'DEFAULT'
+    if (plan === 'NAVIGATOR') return ['DEFAULT', 'NAVIGATOR'].includes(model)
+    if (plan === 'EXPLORER')
+      return ['DEFAULT', 'NAVIGATOR', 'EXPLORER'].includes(model)
+    if (plan === 'PRO') return true
+    return model === 'DEFAULT'
+  },
 }))
 
 // Import the validateAndExportToCsv mock to access it in tests
@@ -25,6 +53,8 @@ vi.mock('@/lib/exportToCsv', () => ({
     validateAndExportToCsvMock(...args),
 }))
 
+import { toast } from '@/hooks/use-toast'
+import type { ModelType } from '@/lib/subscription'
 // Import the actual component and function
 import * as DataExportModule from '../DataExport'
 import { DataExport } from '../DataExport'
@@ -33,7 +63,14 @@ import { DataExport } from '../DataExport'
 vi.spyOn(DataExportModule, 'validateAllSearchResultFieldsHaveColumns')
 
 describe('DataExport', () => {
-  it('renders export button with correct count and handles export', async () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    userSubscriptionMock.mockReturnValue({
+      data: { plan: 'NAVIGATOR' },
+    })
+  })
+
+  it('renders export button with correct count and handles export for subscribed users', async () => {
     const mockData: SearchResult[] = [
       {
         id: '1',
@@ -88,5 +125,61 @@ describe('DataExport', () => {
       ]),
     })
     expect(validateAndExportToCsvMock).not.toThrow()
+  })
+
+  it('shows toast notification for free users when trying to export', async () => {
+    // Override the subscription mock for this test
+    userSubscriptionMock.mockReturnValue({
+      data: { plan: 'FREE' },
+    })
+
+    const mockData: SearchResult[] = [
+      {
+        id: '1',
+        name: 'Test Place',
+        website: 'https://test.com',
+        types: ['restaurant'],
+        address: {
+          formattedAddress: '123 Test St',
+          shortFormattedAddress: '',
+          country: 'US',
+          locality: 'Test City',
+          sublocality: '',
+          postalCode: '12345',
+          postalCodeSuffix: '',
+          plusCode: '',
+          street: 'Test St',
+          neighborhood: '',
+          administrativeAreaLevel1: 'Test State',
+          administrativeAreaLevel2: '',
+        },
+        googleMapsUri: '',
+        phone: '',
+        rating: undefined,
+        ratingCount: undefined,
+        location: { latitude: 0, longitude: 0 },
+        primaryType: 'restaurant',
+        priceLevel: undefined,
+        priceRange: undefined,
+        openingHours: undefined,
+        utcOffsetMinutes: 0,
+      },
+    ]
+
+    render(<DataExport data={mockData} />)
+
+    const button = screen.getByRole('button')
+    expect(button).toHaveTextContent('Export to CSV (1)')
+
+    // Click the button
+    fireEvent.click(button)
+
+    // Verify toast was called and export function was not
+    expect(toast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Export requires a Navigator plan or higher',
+      }),
+    )
+    expect(validateAndExportToCsvMock).not.toHaveBeenCalled()
   })
 })

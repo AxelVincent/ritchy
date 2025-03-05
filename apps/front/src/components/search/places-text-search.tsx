@@ -15,6 +15,7 @@ import { Search } from 'lucide-react'
 import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
 import { RADIUS_SETTINGS } from '@/features/map-display/types'
+import { isModelAvailable } from '@/lib/subscription'
 import {
   type CreateSearchRequestBody,
   type GeocodingResult,
@@ -60,23 +61,6 @@ export const PlacesTextSearch = ({
       radiusInMeters,
     })
   }, [location, radiusInMeters])
-
-  const isModelAvailable = (modelType: typeof model): boolean => {
-    const userPlan = subscription?.plan ?? 'FREE'
-
-    switch (userPlan) {
-      case 'FREE':
-        return modelType === 'DEFAULT'
-      case 'NAVIGATOR':
-        return ['DEFAULT', 'NAVIGATOR'].includes(modelType)
-      case 'EXPLORER':
-        return ['DEFAULT', 'NAVIGATOR', 'EXPLORER'].includes(modelType)
-      case 'PRO':
-        return true
-      default:
-        return modelType === 'DEFAULT'
-    }
-  }
 
   const getMaxRadius = () => {
     const userPlan = subscription?.plan ?? 'FREE'
@@ -154,7 +138,7 @@ export const PlacesTextSearch = ({
   }
 
   const handleModelChange = (value: typeof model) => {
-    if (!isModelAvailable(value)) {
+    if (!isModelAvailable(subscription?.plan, value)) {
       navigate({ to: '/pricing' })
       return
     }
@@ -259,14 +243,14 @@ export const PlacesTextSearch = ({
                     <div className="flex items-center w-full">
                       <span
                         className={
-                          !isModelAvailable('NAVIGATOR')
+                          !isModelAvailable(subscription?.plan, 'NAVIGATOR')
                             ? 'text-muted-foreground'
                             : ''
                         }
                       >
                         Navigator
                       </span>
-                      {!isModelAvailable('NAVIGATOR') && (
+                      {!isModelAvailable(subscription?.plan, 'NAVIGATOR') && (
                         <span className="text-xs font-medium text-primary ml-auto">
                           Upgrade
                         </span>
@@ -282,14 +266,14 @@ export const PlacesTextSearch = ({
                     <div className="flex items-center w-full">
                       <span
                         className={
-                          !isModelAvailable('EXPLORER')
+                          !isModelAvailable(subscription?.plan, 'EXPLORER')
                             ? 'text-muted-foreground'
                             : ''
                         }
                       >
                         Explorer
                       </span>
-                      {!isModelAvailable('EXPLORER') && (
+                      {!isModelAvailable(subscription?.plan, 'EXPLORER') && (
                         <span className="text-xs font-medium text-primary ml-auto">
                           Upgrade
                         </span>
@@ -305,14 +289,14 @@ export const PlacesTextSearch = ({
                     <div className="flex items-center w-full">
                       <span
                         className={
-                          !isModelAvailable('PRO')
+                          !isModelAvailable(subscription?.plan, 'PRO')
                             ? 'text-muted-foreground'
                             : ''
                         }
                       >
                         Pro
                       </span>
-                      {!isModelAvailable('PRO') && (
+                      {!isModelAvailable(subscription?.plan, 'PRO') && (
                         <span className="text-xs font-medium text-primary ml-auto">
                           Upgrade
                         </span>

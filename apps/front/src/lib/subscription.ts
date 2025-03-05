@@ -1,6 +1,6 @@
 import type { SubscriptionPlan } from '@ritchy/types'
 
-type ModelType = 'DEFAULT' | 'NAVIGATOR' | 'EXPLORER' | 'PRO'
+export type ModelType = 'DEFAULT' | 'NAVIGATOR' | 'EXPLORER' | 'PRO'
 
 export const isModelAvailable = (
   userPlan: SubscriptionPlan | undefined,

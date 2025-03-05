@@ -1,12 +1,15 @@
+import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { Button } from '@/components/ui/button'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
+import { isModelAvailable } from '@/lib/subscription'
 import {
   type EnrichmentWithStatus,
   PlaceSchema,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
 } from '@ritchy/types'
+import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
 import { useState } from 'react'
 import React from 'react'
@@ -91,9 +94,24 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
   if (data.length === 0) return null
 
   const [isExporting, setIsExporting] = useState(false)
-  const { toast } = useToast()
+  const { data: subscription } = useUserSubscription()
+  const navigate = useNavigate()
 
   const handleExport = async () => {
+    // Check if user has required subscription
+    if (!isModelAvailable(subscription?.plan, 'NAVIGATOR')) {
+      toast({
+        title: 'Export requires a Navigator plan or higher',
+        variant: 'default',
+        action: (
+          <Button onClick={() => navigate({ to: '/pricing' })}>
+            View Plans
+          </Button>
+        ),
+      })
+      return
+    }
+
     try {
       setIsExporting(true)
 
@@ -394,7 +412,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
 
   return (
     <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-      <Download className="w-4 h-4" />
+      <Download className="w-4 h-4 mr-2" />
       {isExporting ? 'Exporting...' : `Export to CSV (${data.length})`}
     </Button>
   )
