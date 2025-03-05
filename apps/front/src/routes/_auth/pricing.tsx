@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_auth/pricing')({
 
 function PricingComponent() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>(
-    'monthly',
+    'yearly',
   )
 
   // Define active promotions
@@ -85,17 +85,17 @@ function PricingComponent() {
             </div>
           </div>
 
-          {isAnnualOfferValid && (
+          {isAnnualOfferValid && billingPeriod === 'monthly' && (
             <div className="mt-3 sm:mt-4">
               <div className="inline-flex rounded-full bg-green-500/20 dark:bg-green-500/10 px-3 sm:px-6 py-2 sm:py-3">
                 <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-400">
-                  Save up to {annualOffer.discount}% with annual plan
+                  Save up to {annualOffer.discount}% with yearly plan
                 </p>
               </div>
             </div>
           )}
 
-          {validPromos.length > 0 && billingPeriod === 'monthly' && (
+          {validPromos.length > 0 && (
             <div className="mt-3 sm:mt-4">
               <div className="inline-flex rounded-full bg-orange-500/20 dark:bg-orange-500/10 px-3 sm:px-6 py-2 sm:py-3">
                 <p className="text-xs sm:text-sm font-medium text-orange-700 dark:text-orange-400">

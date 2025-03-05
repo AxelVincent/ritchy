@@ -1,5 +1,9 @@
 import { logger } from '@ritchy/logger'
-import type { ListContentApiResponse, Place } from '@ritchy/types'
+import {
+  type ListContentApiResponse,
+  type Place,
+  PlaceSchema,
+} from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -85,6 +89,40 @@ export const getListContent = async (
       excludeListId: listId,
       includeEnrichment: true,
     })
+
+    // Validate individual places and collect validation errors
+    const validationErrors: Array<{ place: unknown; error: z.ZodError }> = []
+    for (const result of aggregatedPlaceDetails) {
+      try {
+        PlaceSchema.parse(result)
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          validationErrors.push({ place: result, error })
+        }
+      }
+    }
+
+    // Log validation errors if any were found
+    if (validationErrors.length > 0) {
+      logger.warn({
+        msg: 'Some places failed schema validation',
+        event: 'place_validation_errors',
+        metadata: {
+          errorCount: validationErrors.length,
+          errors: validationErrors.map(({ error, place }) => ({
+            placeId:
+              typeof place === 'object' && place !== null
+                ? (place as { id: string }).id
+                : 'unknown',
+            errors: error.errors.map((e) => ({
+              path: e.path.join('.'),
+              message: e.message,
+              code: e.code,
+            })),
+          })),
+        },
+      })
+    }
 
     res.json({
       id: String(result[0].id),

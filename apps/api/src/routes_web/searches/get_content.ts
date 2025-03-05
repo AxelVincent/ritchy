@@ -3,6 +3,7 @@ import {
   type GetSearchContentApiResponse,
   type GetSearchContentResponse,
   GetSearchContentResponseSchema,
+  PlaceSchema,
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -65,37 +66,38 @@ export const getSearchContent = async (
       includeEnrichment: true,
     })
 
-    let validatedResults: GetSearchContentResponse
-    try {
-      validatedResults = GetSearchContentResponseSchema.parse(aggregatedResults)
-    } catch (validationError) {
-      // Enhanced error logging
-      const errorDetails = {
-        message:
-          validationError instanceof Error
-            ? validationError.message
-            : String(validationError),
-        stack:
-          validationError instanceof Error ? validationError.stack : undefined,
-        type: Object.prototype.toString.call(validationError),
-        zodErrors:
-          validationError instanceof z.ZodError
-            ? validationError.errors.map((e) => ({
-                path: e.path.join('.'),
-                message: e.message,
-                code: e.code,
-              }))
-            : undefined,
+    // Validate individual places and collect validation errors
+    const validationErrors: Array<{ place: unknown; error: z.ZodError }> = []
+    for (const result of aggregatedResults) {
+      try {
+        PlaceSchema.parse(result)
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          validationErrors.push({ place: result, error })
+        }
       }
+    }
 
+    // Log validation errors if any were found
+    if (validationErrors.length > 0) {
       logger.warn({
-        msg: 'Validation error in search content, using unvalidated results',
-        event: 'validation_error_in_search_content',
-        metadata: { error: errorDetails },
+        msg: 'Some places failed schema validation',
+        event: 'place_validation_errors',
+        metadata: {
+          errorCount: validationErrors.length,
+          errors: validationErrors.map(({ error, place }) => ({
+            placeId:
+              typeof place === 'object' && place !== null
+                ? (place as { id: string }).id
+                : 'unknown',
+            errors: error.errors.map((e) => ({
+              path: e.path.join('.'),
+              message: e.message,
+              code: e.code,
+            })),
+          })),
+        },
       })
-
-      // Continue with unvalidated results
-      validatedResults = aggregatedResults
     }
 
     logger.info({
@@ -105,7 +107,7 @@ export const getSearchContent = async (
         results: aggregatedResults.length,
       },
     })
-    res.json(validatedResults)
+    res.json(aggregatedResults)
     return
   } catch (error) {
     if (error instanceof z.ZodError) {
