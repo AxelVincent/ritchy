@@ -141,7 +141,7 @@ export const PlaceListAssociationSchema = z.object({
 export const PlaceSchema = z.object({
   id: z.string(),
   name: z.string(),
-  website: z.string(),
+  website: z.string().optional(),
   location: LocationSchema,
   types: z.array(z.string()),
   primaryType: z.string().optional(),
@@ -171,7 +171,7 @@ export const PlaceSchema = z.object({
   }),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional().nullable(),
-  status: StatusSchema.optional(),
+  status: StatusSchema.optional().nullable(),
   enrichment: EnrichResponseSchema.optional().nullable(),
 })
 

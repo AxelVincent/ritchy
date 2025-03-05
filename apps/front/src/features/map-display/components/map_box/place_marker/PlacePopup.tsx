@@ -64,7 +64,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
                 {
                   icon: 'Copy',
                   onClick: () => {
-                    navigator.clipboard.writeText(place.website)
+                    navigator.clipboard.writeText(String(place.website))
                   },
                   label: 'Copy',
                 },
@@ -85,9 +85,7 @@ const PlaceInfoTab = ({ place }: { place: Place }) => (
                 {
                   icon: 'Copy',
                   onClick: () => {
-                    navigator.clipboard.writeText(
-                      place.address?.formattedAddress ?? '',
-                    )
+                    navigator.clipboard.writeText(place.phone ?? '')
                   },
                   label: 'Copy',
                 },
