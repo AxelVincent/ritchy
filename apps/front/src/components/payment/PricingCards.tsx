@@ -291,7 +291,7 @@ export const PricingCards = ({
                 <div className="mt-6 space-y-6 flex-1">
                   <div>
                     <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-3">
-                      Amplify results
+                      Maximise lead discovery
                     </h4>
                     <div className="space-y-4">
                       {tier.amplifyResults.map((feature) => (
@@ -305,7 +305,7 @@ export const PricingCards = ({
 
                   <div>
                     <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-3">
-                      Maximize conversion rate
+                      Accelerate conversions
                     </h4>
                     <div className="space-y-4">
                       {tier.maximizeConversion.map((feature) => (
