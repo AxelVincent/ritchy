@@ -173,6 +173,7 @@ export const MapBox: FC<MapBoxProps> = ({
   )
 
   // Selection state effect
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     debugLog('Selection state effect', {
       selectedPlaceId,
@@ -242,7 +243,7 @@ export const MapBox: FC<MapBoxProps> = ({
       mapRef.current?.off('moveend', onMoveEnd)
     }
     mapRef.current.on('moveend', onMoveEnd)
-  }, [selectedPlaceId, mapRef, markersRef])
+  }, [selectedPlaceId])
 
   return (
     <>

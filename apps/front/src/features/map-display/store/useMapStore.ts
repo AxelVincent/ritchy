@@ -3,10 +3,12 @@ import { create } from 'zustand'
 
 interface MapStore {
   selectedPlaceId: string | null
+  centerPlaceSpreadsheetId: string | null
   places: Place[]
   updatedPlaceStatuses: Map<string, StatusType>
 
   setSelectedPlaceId: (id: string | null) => void
+  setCenterPlaceSpreadsheetId: (id: string | null) => void
   setPlaces: (places: Place[]) => void
   updatePlaceStatus: (placeId: string, status: StatusType) => void
   updatePlace: (placeId: string, updates: Partial<Place>) => void
@@ -14,10 +16,12 @@ interface MapStore {
 
 export const useMapStore = create<MapStore>((set) => ({
   selectedPlaceId: null,
+  centerPlaceSpreadsheetId: null,
   places: [],
   updatedPlaceStatuses: new Map<string, StatusType>(),
 
   setSelectedPlaceId: (id) => set({ selectedPlaceId: id }),
+  setCenterPlaceSpreadsheetId: (id) => set({ centerPlaceSpreadsheetId: id }),
   setPlaces: (places) => set({ places }),
   updatePlaceStatus: (placeId, status) =>
     set((state) => {

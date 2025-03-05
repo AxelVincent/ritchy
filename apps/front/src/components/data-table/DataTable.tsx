@@ -68,7 +68,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId and setSelectedPlaceId from the store
-  const { selectedPlaceId, setSelectedPlaceId } = useMapStore()
+  const { centerPlaceSpreadsheetId } = useMapStore()
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -148,7 +148,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
       rowSelection: dataTableRowSelection,
     },
     meta: {
-      setSelectedPlaceId,
       setData,
     },
   })
@@ -198,27 +197,26 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const selectedRows = table.getSelectedRowModel().rows
 
   // Add this effect to handle scrolling
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    if (selectedPlaceId) {
-      // Find the index of the selected row in the full data set
-      const rowIndex = rows.findIndex(
-        (row) => row.original.id === selectedPlaceId,
-      )
-      if (rowIndex !== -1) {
-        // First scroll without smooth behavior to ensure correct positioning
-        rowVirtualizer.scrollToIndex(rowIndex, { align: 'center' })
+    // Find the index of the selected row in the full data set
+    const rowIndex = rows.findIndex(
+      (row) => row.original.id === centerPlaceSpreadsheetId,
+    )
+    if (rowIndex !== -1) {
+      // First scroll without smooth behavior to ensure correct positioning
+      rowVirtualizer.scrollToIndex(rowIndex, { align: 'center' })
 
-        // Use requestAnimationFrame to ensure the initial scroll is complete
-        requestAnimationFrame(() => {
-          // Then apply smooth scrolling for visual polish
-          rowVirtualizer.scrollToIndex(rowIndex, {
-            align: 'center',
-            behavior: 'smooth',
-          })
+      // Use requestAnimationFrame to ensure the initial scroll is complete
+      requestAnimationFrame(() => {
+        // Then apply smooth scrolling for visual polish
+        rowVirtualizer.scrollToIndex(rowIndex, {
+          align: 'center',
+          behavior: 'smooth',
         })
-      }
+      })
     }
-  }, [selectedPlaceId, rows, rowVirtualizer])
+  }, [centerPlaceSpreadsheetId])
 
   // Add effect to track filtered results
   // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
@@ -451,7 +449,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     }}
                     className={cn('border-r border-border bg-background', {
                       'bg-primary-foreground':
-                        selectedPlaceId === row.original.id,
+                        centerPlaceSpreadsheetId === row.original.id,
                     })}
                   >
                     {flexRender(
@@ -478,7 +476,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         className={cn('border-r border-border', {
                           'bg-background': vc.index === 0,
                           'bg-primary-foreground':
-                            selectedPlaceId === row.original.id,
+                            centerPlaceSpreadsheetId === row.original.id,
                         })}
                       >
                         {flexRender(

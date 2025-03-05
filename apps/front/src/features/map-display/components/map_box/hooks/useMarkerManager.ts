@@ -58,7 +58,7 @@ export const useMarkerManager = ({
   dataTableRowSelection,
 }: UseMarkerManagerProps) => {
   const {
-    setSelectedPlaceId,
+    setCenterPlaceSpreadsheetId,
     places: storePlaces,
     updatedPlaceStatuses,
   } = useMapStore()
@@ -178,13 +178,13 @@ export const useMarkerManager = ({
               .setDOMContent(popupContainer)
               .on('open', () => {
                 requestAnimationFrame(() => {
-                  setSelectedPlaceId(place.id)
+                  setCenterPlaceSpreadsheetId(place.id)
                 })
                 setOpenPopups((prev) => new Set(prev).add(place.id))
               })
               .on('close', () => {
                 requestAnimationFrame(() => {
-                  setSelectedPlaceId(null)
+                  setCenterPlaceSpreadsheetId(null)
                 })
                 setOpenPopups((prev) => {
                   const next = new Set(prev)
@@ -204,7 +204,9 @@ export const useMarkerManager = ({
             const added = await addMarkerWithRetry(marker, map)
             if (added) {
               markerElement.addEventListener('click', () =>
-                requestAnimationFrame(() => setSelectedPlaceId(place.id)),
+                requestAnimationFrame(() =>
+                  setCenterPlaceSpreadsheetId(place.id),
+                ),
               )
               markersRef.current.set(place.id, { marker, popupContainer })
             }
@@ -257,7 +259,7 @@ export const useMarkerManager = ({
     places,
     displayedPlaceIds,
     dataTableRowSelection,
-    setSelectedPlaceId,
+    setCenterPlaceSpreadsheetId,
     updatedPlaceStatuses,
   ])
 
