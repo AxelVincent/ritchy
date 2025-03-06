@@ -1,7 +1,9 @@
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { SignedIn, SignedOut } from '@clerk/clerk-react'
+import { useUser } from '@clerk/clerk-react'
 import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router'
+import posthog from 'posthog-js'
 import { useEffect } from 'react'
 
 export const Route = createFileRoute('/_auth')({
@@ -58,6 +60,7 @@ function AuthedLayout() {
   return (
     <>
       <SignedIn>
+        <PostHogIdentify />
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset className="h-full w-full overflow-hidden">
@@ -71,4 +74,24 @@ function AuthedLayout() {
       </SignedOut>
     </>
   )
+}
+
+// Add this new component to handle PostHog identification
+function PostHogIdentify() {
+  const { user } = useUser()
+
+  useEffect(() => {
+    if (user) {
+      posthog.identify(
+        user.id, // Use Clerk's user ID as the distinct_id
+        {
+          email: user.primaryEmailAddress?.emailAddress,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+          // Add any other user properties you want to track
+        },
+      )
+    }
+  }, [user])
+
+  return null
 }
