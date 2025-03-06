@@ -1,6 +1,7 @@
 import type { Action } from '@/components/common/TextWrapper'
 import { useMapStore } from '@/features/map-display/store/useMapStore'
 import { toast } from '@/hooks/use-toast'
+import posthog from 'posthog-js'
 
 // Create the toast function once, outside of the action creation
 const showCopiedToast = (displayName: string) => {
@@ -19,7 +20,10 @@ export const createColumnPinCopyActions = (
   return [
     {
       icon: 'MapPinned' as const,
-      onClick: () => setSelectedPlaceId(id),
+      onClick: () => {
+        posthog.capture('pin_cell_place', { property: 'value' })
+        setSelectedPlaceId(id)
+      },
       label: 'Pin to map',
     },
     ...(text
@@ -27,6 +31,7 @@ export const createColumnPinCopyActions = (
           {
             icon: 'Copy' as const,
             onClick: () => {
+              posthog.capture('copy_cell_content', { property: 'value' })
               navigator.clipboard.writeText(text)
               showCopiedToast(text)
             },
@@ -43,7 +48,10 @@ export const createColumnPinActions = (id: string): Action[] => {
   return [
     {
       icon: 'MapPinned',
-      onClick: () => setSelectedPlaceId(id),
+      onClick: () => {
+        posthog.capture('pin_cell_place', { property: 'value' })
+        setSelectedPlaceId(id)
+      },
       label: 'Pin to map',
     },
   ]
@@ -58,12 +66,16 @@ export const createColumnPinNoteActions = (
   return [
     {
       icon: 'MapPinned' as const,
-      onClick: () => setSelectedPlaceId(id),
+      onClick: () => {
+        posthog.capture('pin_cell_place', { property: 'value' })
+        setSelectedPlaceId(id)
+      },
       label: 'Pin to map',
     },
     {
       icon: 'MessageSquareText',
       onClick: () => {
+        posthog.capture('open_cell_note_dialog', { property: 'value' })
         openNotesDialog()
       },
       label: 'Add note',

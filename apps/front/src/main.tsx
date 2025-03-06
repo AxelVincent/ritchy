@@ -4,6 +4,11 @@ import App from './App.tsx'
 import './index.css'
 
 import * as Sentry from '@sentry/react'
+import { PostHogProvider } from 'posthog-js/react'
+
+const options = {
+  api_host: import.meta.env.VITE_POSTHOG_HOST,
+}
 
 Sentry.init({
   dsn: 'https://fd39b544dd1b72e882f864498d914893@o4508886624174080.ingest.de.sentry.io/4508886628237392',
@@ -24,7 +29,12 @@ const rootElement = document.getElementById('root')
 if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>
-      <App />
+      <PostHogProvider
+        apiKey={import.meta.env.VITE_POSTHOG_KEY}
+        options={options}
+      >
+        <App />
+      </PostHogProvider>
     </StrictMode>,
   )
 } else {
