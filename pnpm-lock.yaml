@@ -27,8 +27,8 @@ importers:
         specifier: 1.24.0
         version: 1.24.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@clerk/express':
-        specifier: 1.3.18
-        version: 1.3.18(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 1.3.52
+        version: 1.3.52(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@ritchy/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -200,7 +200,7 @@ importers:
         version: 7.1.0
       '@vitest/coverage-v8':
         specifier: 3.0.4
-        version: 3.0.4(vitest@2.1.8(@types/node@22.10.2)(@vitest/ui@2.1.8)(jsdom@26.0.0))
+        version: 3.0.4(vitest@2.1.8)
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -642,6 +642,10 @@ packages:
     resolution: {integrity: sha512-DlOZ9pnCY77ngHKFZzC7ZImHBVjMf2whPLvnnBt4YXjkvuQ3m1v1tQHUXb8qqlwilptHU4/WzkOlXytez+iJ+A==}
     engines: {node: '>=18.17.0'}
 
+  '@clerk/backend@1.25.1':
+    resolution: {integrity: sha512-VTOg+LGqxY+ydPHxi+hrC+Uc9EIbieiku/+ZxJMhFSzYNhtkwC/UBws4JnFNoz2aLa28Pazf0WIBxwrqZgg69Q==}
+    engines: {node: '>=18.17.0'}
+
   '@clerk/clerk-react@5.19.1':
     resolution: {integrity: sha512-BCjqvUoKl36eOn5Y1v+liULXz3pBXuu8Is7a+pksIqpO2QnYTTYTyFCcb4/Lq8uW+Pnq2/xg7+SzCWqrk7xdBg==}
     engines: {node: '>=18.17.0'}
@@ -649,23 +653,11 @@ packages:
       react: ^18 || ^19.0.0-0
       react-dom: ^18 || ^19.0.0-0
 
-  '@clerk/express@1.3.18':
-    resolution: {integrity: sha512-c6k02Z+enMcF4bgoRgh6s5ElTd0ep7exiVHRAzuNQm7turJK/dGjlQViUO3NLzTLVpx0DdgXFfG6MLW6t41Y+A==}
+  '@clerk/express@1.3.52':
+    resolution: {integrity: sha512-KXJKrxle3S64d4KdINMjJQx22QAOH9SchSGnkDoZNTKeMpcxwVS+3BLirhqwVk+792f5EKYImKZhHcfYKsOdoQ==}
     engines: {node: '>=18.17.0'}
     peerDependencies:
       express: ^4.17.0 || ^5.0.0
-
-  '@clerk/shared@2.17.0':
-    resolution: {integrity: sha512-Jn/oBGjGfQQJIiMMf6Y0puC62R0rL1l/gLoPWnO6vNlCBzuFHGcsSTCWWDpmAXfyVwY7wJ7Dcq/B1UEsKeJ8zQ==}
-    engines: {node: '>=18.17.0'}
-    peerDependencies:
-      react: ^18 || ^19.0.0-0
-      react-dom: ^18 || ^19.0.0-0
-    peerDependenciesMeta:
-      react:
-        optional: true
-      react-dom:
-        optional: true
 
   '@clerk/shared@2.19.2':
     resolution: {integrity: sha512-xxItdH5Rbo3zAn1h5X+pGzqNk+A0vAlPg0vivft72RqSK9Y/IIUqx1Vd4MixFSVZgWrkg/f0IKzcEeEoJtm2kA==}
@@ -691,20 +683,28 @@ packages:
       react-dom:
         optional: true
 
-  '@clerk/types@4.35.0':
-    resolution: {integrity: sha512-sBSYCCIXcwI+JHQRqBtskw10+rQ1NcA9w1G6ndnS48F5C+if6xI9OpYaaDjhhvzLjBeZFydKAOhe35mgC7bmoA==}
+  '@clerk/shared@3.0.0':
+    resolution: {integrity: sha512-c5TUTMrir4yrxdQh2xiILowFvHZydBIuX1tFOKKWQZsNqlFYXbbeUHDxEIcxvb4uarGSiuEzVsx6S2hT2ZBCQQ==}
     engines: {node: '>=18.17.0'}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0 || ^19.0.0-0
+      react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   '@clerk/types@4.39.0':
     resolution: {integrity: sha512-WWEoXmcob6X80cZZZGobN8aKjHAjAoL0cgVyLX8UeQ+JW4kl1IfUmZQgDBFOafGEm2yUoKlKAP22bWPDqmbTJw==}
     engines: {node: '>=18.17.0'}
 
-  '@clerk/types@4.40.0':
-    resolution: {integrity: sha512-9QdllXYujsjYLbvPg9Kq1rWOemX5FB0r6Ijy8HOxwjKN+TPlxUnGcs+t7IwU+M5gdmZ2KV6aA6d1a2q2FlSoiA==}
-    engines: {node: '>=18.17.0'}
-
   '@clerk/types@4.45.1':
     resolution: {integrity: sha512-lS3Q8Ih4CasMY3ed7u+bXdO/s0OF1DIbSUhzQSKpfluzUxxkkFlPiRKsefctL4cnGt4fOzyD+T9ebF0up6sUkA==}
+    engines: {node: '>=18.17.0'}
+
+  '@clerk/types@4.47.0':
+    resolution: {integrity: sha512-xB/gqMq6cq6/47ymKs0WaaxKEFPzlvbSgJTLFIfnPMnFSNwYE4WVgVh6geFx6qWr3z588JDDZkJskBHZlgPmQQ==}
     engines: {node: '>=18.17.0'}
 
   '@cspotcode/source-map-support@0.8.1':
@@ -6265,6 +6265,17 @@ snapshots:
       - react
       - react-dom
 
+  '@clerk/backend@1.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@clerk/shared': 3.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/types': 4.47.0
+      cookie: 1.0.2
+      snakecase-keys: 8.0.1
+      tslib: 2.4.1
+    transitivePeerDependencies:
+      - react
+      - react-dom
+
   '@clerk/clerk-react@5.19.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@clerk/shared': 2.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -6273,28 +6284,16 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       tslib: 2.4.1
 
-  '@clerk/express@1.3.18(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@clerk/express@1.3.52(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@clerk/backend': 1.24.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@clerk/shared': 2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@clerk/types': 4.40.0
+      '@clerk/backend': 1.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/shared': 3.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/types': 4.47.0
       express: 4.21.1
       tslib: 2.4.1
     transitivePeerDependencies:
       - react
       - react-dom
-
-  '@clerk/shared@2.17.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@clerk/types': 4.35.0
-      dequal: 2.0.3
-      glob-to-regexp: 0.4.1
-      js-cookie: 3.0.5
-      std-env: 3.8.0
-      swr: 2.2.5(react@18.3.1)
-    optionalDependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
 
   '@clerk/shared@2.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -6320,19 +6319,27 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@clerk/types@4.35.0':
+  '@clerk/shared@3.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      csstype: 3.1.1
+      '@clerk/types': 4.47.0
+      dequal: 2.0.3
+      glob-to-regexp: 0.4.1
+      js-cookie: 3.0.5
+      std-env: 3.8.0
+      swr: 2.2.5(react@18.3.1)
+    optionalDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@clerk/types@4.39.0':
     dependencies:
       csstype: 3.1.1
 
-  '@clerk/types@4.40.0':
-    dependencies:
-      csstype: 3.1.1
-
   '@clerk/types@4.45.1':
+    dependencies:
+      csstype: 3.1.3
+
+  '@clerk/types@4.47.0':
     dependencies:
       csstype: 3.1.3
 
@@ -9186,7 +9193,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@3.0.4(vitest@2.1.8(@types/node@22.10.2)(@vitest/ui@2.1.8)(jsdom@26.0.0))':
+  '@vitest/coverage-v8@3.0.4(vitest@2.1.8)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
