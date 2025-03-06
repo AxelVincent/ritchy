@@ -34,7 +34,8 @@ const pricingTiers: PricingTier[] = [
     plan: 'ESSENTIALS',
     monthlyPrice: 69,
     yearlyPrice: 59,
-    description: 'Perfect for solo entrepreneurs just getting started',
+    description:
+      'Perfect for solo entrepreneurs and small agencies just getting started',
     amplifyResults: [
       '60 Gmap results/search',
       'Search radius: 50km²',
