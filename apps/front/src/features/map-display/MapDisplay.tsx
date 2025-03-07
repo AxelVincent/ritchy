@@ -6,6 +6,7 @@ import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
@@ -21,6 +22,7 @@ interface MapDisplayProps {
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const setPlaces = useMapStore((state) => state.setPlaces)
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   // Core location state
   const defaultLocation =
@@ -80,6 +82,25 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     return <EmptyListState listId={listId} />
   }
 
+  // On mobile, show only the DataTable
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        <DataTable
+          columns={columns}
+          data={tableData}
+          setData={setTableData}
+          setDataTableRowSelection={setDataTableRowSelection}
+          dataTableRowSelection={dataTableRowSelection}
+          onFilteredDataChange={setFilteredPlaceIds}
+          listId={listId}
+          searchId={searchId}
+        />
+      </div>
+    )
+  }
+
+  // Desktop view with resizable panels
   return (
     <div className="flex flex-col h-full">
       <ResizablePanelGroup direction="horizontal">

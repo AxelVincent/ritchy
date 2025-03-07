@@ -108,10 +108,26 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
     place.notes = updatedNotes
   }
 
+  const handleClick = () => {
+    const dialogTrigger = document.querySelector(
+      `[data-notes-dialog-trigger="${row.original.id}"]`,
+    ) as HTMLButtonElement
+    dialogTrigger?.click()
+  }
+
   return (
     <TextWrapper id={row.original.id} actions={actions}>
       <Dialog modal={false}>
-        <div className="group flex items-center w-full">
+        <div
+          className="group flex items-center w-full cursor-pointer min-h-[24px]"
+          onClick={handleClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              handleClick()
+            }
+          }}
+          aria-label="Open notes"
+        >
           <span className="text-muted-foreground text-sm truncate">
             {notes[0]
               ? formatDistanceToNow(new Date(notes[0].createdAt), {

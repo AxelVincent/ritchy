@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { DataExport } from '@/features/map-display/components/data_export/DataExport'
 import { useMapStore } from '@/features/map-display/store/useMapStore'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { cn } from '@/lib/utils'
 import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
@@ -69,6 +70,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId and setSelectedPlaceId from the store
   const { centerPlaceSpreadsheetId } = useMapStore()
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -327,9 +329,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
                 )}
               </Button>
             )}
-          <DataExport
-            data={table.getFilteredRowModel().rows.map((row) => row.original)}
-          />
+          {!isMobile && (
+            <DataExport
+              data={table.getFilteredRowModel().rows.map((row) => row.original)}
+            />
+          )}
           <ColumnsSelection table={table} />
         </div>
       </div>
