@@ -89,9 +89,8 @@ function ClerkRedirect() {
   useEffect(() => {
     if (!isLoaded || !user || isLoadingSubscription) return
 
-    // Check if user is on a mobile device
-    // Get user creation time
-    const userCreatedAt = new Date(user.createdAt ?? '')
+    // Get user creation time - fix the date parsing issue
+    const userCreatedAt = user.createdAt ? new Date(user.createdAt) : new Date()
     const now = new Date()
 
     // Calculate time difference in milliseconds
