@@ -12,6 +12,11 @@ export const getSubscription = async (
   try {
     const userId = req.auth.userId
     const plan = await getUserPlan(userId)
+    logger.info({
+      msg: 'Get subscription',
+      event: 'get_subscription',
+      metadata: { userId, plan },
+    })
     res.json({ plan })
     return
   } catch (error) {
