@@ -9,6 +9,8 @@ export const isModelAvailable = (
   switch (plan) {
     case 'FREE':
       return modelType === 'ESSENTIALS'
+    case 'ESSENTIALS':
+      return ['ESSENTIALS'].includes(modelType)
     case 'NAVIGATOR':
       return ['ESSENTIALS', 'NAVIGATOR'].includes(modelType)
     case 'EXPLORER':

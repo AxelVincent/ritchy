@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
 import { isModelAvailable } from '@/lib/subscription'
+import { useUser } from '@clerk/clerk-react'
 import {
   type EnrichmentWithStatus,
   PlaceSchema,
@@ -11,6 +12,7 @@ import {
 } from '@ritchy/types'
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
+import posthog from 'posthog-js'
 import { useState } from 'react'
 import React from 'react'
 
@@ -95,11 +97,17 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
 
   const [isExporting, setIsExporting] = useState(false)
   const { data: subscription } = useUserSubscription()
+  const { user } = useUser()
   const navigate = useNavigate()
 
   const handleExport = async () => {
     // Check if user has required subscription
-    if (!isModelAvailable(subscription?.plan, 'NAVIGATOR')) {
+    if (!isModelAvailable(subscription?.plan, 'ESSENTIALS')) {
+      posthog.capture('data_export_blocked_free_user', {
+        user_id: user?.id,
+        email: user?.primaryEmailAddress?.emailAddress,
+        name: `${user?.firstName} ${user?.lastName}`.trim(),
+      })
       toast({
         title: 'Export requires a Navigator plan or higher',
         variant: 'default',
@@ -391,6 +399,12 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
         filename: 'places.csv',
         schema: PlaceSchema,
         columns,
+      })
+
+      posthog.capture('data_export_success', {
+        user_id: user?.id,
+        email: user?.primaryEmailAddress?.emailAddress,
+        name: `${user?.firstName} ${user?.lastName}`.trim(),
       })
 
       toast({
