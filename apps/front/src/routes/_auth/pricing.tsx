@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_auth/pricing')({
 
 function PricingComponent() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>(
-    'yearly',
+    'monthly',
   )
 
   // Define active promotions
