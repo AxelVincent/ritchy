@@ -1,7 +1,7 @@
 import { enrichKeys } from '@/api/queries/enrich/useEnrichWebsite'
 import { createApiClient } from '@/lib/api/createApiClient'
 import { useAuth } from '@clerk/clerk-react'
-import type { SearchResult } from '@ritchy/types'
+import type { EnrichApiResponse, SearchResult } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
@@ -79,7 +79,7 @@ export function useEnrichment<TData extends SearchResult>({
         const response = await queryClient.fetchQuery({
           queryKey: enrichKeys.website(id),
           queryFn: async () => {
-            return apiClient.fetchWithAuth(
+            return apiClient.fetchWithAuth<EnrichApiResponse>(
               `/enrich?id=${id}&website=${encodeURIComponent(website)}`,
               undefined,
               token,

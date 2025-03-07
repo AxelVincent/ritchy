@@ -1,6 +1,6 @@
 import { createApiClient } from '@/lib/api/createApiClient'
 import { useAuth } from '@clerk/clerk-react'
-import type { CreateListRequest } from '@ritchy/types'
+import type { CreateListRequest, CreateListResponse } from '@ritchy/types'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 const apiClient = createApiClient({
@@ -14,7 +14,7 @@ export const useCreateList = () => {
   return useMutation({
     mutationFn: async ({ name, emoji }: CreateListRequest) => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
+      const response = await apiClient.fetchWithAuth<CreateListResponse>(
         '/lists',
         {
           method: 'POST',

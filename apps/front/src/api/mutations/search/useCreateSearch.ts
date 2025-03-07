@@ -19,7 +19,7 @@ export const useCreateSearch = () => {
       searchParams: CreateSearchRequestBody,
     ): Promise<CreateSearchApiResponse> => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
+      const response = await apiClient.fetchWithAuth<CreateSearchApiResponse>(
         '/searches',
         {
           method: 'POST',

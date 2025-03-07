@@ -20,14 +20,15 @@ export const useDeleteItemsFromList = () => {
       items,
     }: DeleteItemsFromListRequest): Promise<DeleteItemsFromListApiResponse> => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
-        `/lists/${id}/items`,
-        {
-          method: 'DELETE',
-          body: JSON.stringify({ items }),
-        },
-        token,
-      )
+      const response =
+        await apiClient.fetchWithAuth<DeleteItemsFromListApiResponse>(
+          `/lists/${id}/items`,
+          {
+            method: 'DELETE',
+            body: JSON.stringify({ items }),
+          },
+          token,
+        )
       return response
     },
     onSuccess: (_, { id }) => {

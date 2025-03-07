@@ -4,11 +4,11 @@ interface ApiClientConfig {
 }
 
 export const createApiClient = ({ baseUrl, headers = {} }: ApiClientConfig) => {
-  const fetchWithAuth = async (
+  const fetchWithAuth = async <T>(
     endpoint: string,
     options: RequestInit = {},
     token: string | null = null,
-  ) => {
+  ): Promise<T> => {
     const response = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       credentials: 'include',

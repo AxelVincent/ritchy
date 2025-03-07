@@ -20,14 +20,15 @@ export const useCreateCheckoutSession = (): UseMutationResult<
   return useMutation({
     mutationFn: async (body: CreateCheckoutSessionRequestBody) => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
-        '/payments/create-checkout-session',
-        {
-          method: 'POST',
-          body: JSON.stringify(body),
-        },
-        token,
-      )
+      const response =
+        await apiClient.fetchWithAuth<CreateCheckoutSessionApiResponse>(
+          '/payments/create-checkout-session',
+          {
+            method: 'POST',
+            body: JSON.stringify(body),
+          },
+          token,
+        )
       return response
     },
   })
