@@ -3,6 +3,7 @@ import { getStatusLabel } from '@/components/status/status-label'
 import { useMapStore } from '@/features/map-display/store/useMapStore'
 import type { SearchResult, StatusType } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import posthog from 'posthog-js'
 import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -22,6 +23,11 @@ export const statusColumn: ColumnDef<SearchResult> = {
     const updatePlaceStatus = useMapStore((state) => state.updatePlaceStatus)
 
     const handleStatusChange = (newStatus: StatusType) => {
+      posthog.capture('change_place_status', {
+        property: 'value',
+        place_id: row.original.id,
+        new_status: newStatus,
+      })
       // Access the setData function from table meta
       const setData = table.options.meta?.setData
 

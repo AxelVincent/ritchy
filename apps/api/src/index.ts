@@ -110,9 +110,9 @@ app.use(
         return {
           method: req.method,
           url: req.url,
-          body: req.method === 'POST' ? req.raw.body : undefined,
-          query: req.query,
-          params: req.params,
+          body: req.raw.body,
+          query: req.raw.query,
+          params: req.raw.params,
         }
       },
     },
