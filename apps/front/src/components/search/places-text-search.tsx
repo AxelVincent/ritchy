@@ -70,6 +70,8 @@ export const PlacesTextSearch = ({
     const userPlan = subscription?.plan ?? 'FREE'
     switch (userPlan) {
       case 'FREE':
+      case 'ESSENTIALS':
+        return PLAN_RADIUS_LIMITS.EXPLORER
       case 'NAVIGATOR':
         return PLAN_RADIUS_LIMITS.EXPLORER
       case 'EXPLORER':

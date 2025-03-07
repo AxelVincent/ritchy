@@ -20,7 +20,7 @@ export const useUpdatePlaceStatus = () => {
       status,
     }: UpdateStatusRequest): Promise<UpdateStatusApiResponse> => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
+      const response = await apiClient.fetchWithAuth<UpdateStatusApiResponse>(
         `/status/${placeId}`,
         {
           method: 'PUT',

@@ -22,7 +22,7 @@ export const useEnrichWebsite = (
     queryKey: enrichKeys.website(id),
     queryFn: async () => {
       const token = await getToken()
-      return apiClient.fetchWithAuth(
+      return apiClient.fetchWithAuth<EnrichApiResponse>(
         `/enrich?id=${id}&website=${encodeURIComponent(website)}`,
         undefined,
         token,

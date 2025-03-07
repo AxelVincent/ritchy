@@ -16,19 +16,20 @@ export const useUserSubscription = (): UseQueryResult<
     queryKey: ['userSubscription'],
     queryFn: async () => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
-        '/users/subscription',
-        {
-          method: 'GET',
-        },
-        token,
-      )
+      const response =
+        await apiClient.fetchWithAuth<UserSubscriptionApiResponse>(
+          '/users/subscription',
+          {
+            method: 'GET',
+          },
+          token,
+        )
 
       if ('error' in response) {
         throw new Error(response.message ?? response.error)
       }
 
-      return response
+      return { plan: 'FREE' }
     },
   })
 }

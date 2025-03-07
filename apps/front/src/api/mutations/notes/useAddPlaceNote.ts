@@ -17,7 +17,7 @@ export const useAddPlaceNote = () => {
       note,
     }: AddNoteRequest): Promise<AddNoteApiResponse> => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
+      const response = await apiClient.fetchWithAuth<AddNoteApiResponse>(
         `/notes/${placeId}`,
         {
           method: 'POST',

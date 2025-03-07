@@ -19,13 +19,14 @@ export const useDeleteList = () => {
       id,
     }: DeleteListRequestParams): Promise<DeleteListApiResponse> => {
       const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
+      const response = await apiClient.fetchWithAuth<DeleteListApiResponse>(
         `/lists/${id}`,
         {
           method: 'DELETE',
         },
         token,
       )
+
       return response
     },
     onSuccess: () => {
