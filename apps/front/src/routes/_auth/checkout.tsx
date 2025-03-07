@@ -1,4 +1,5 @@
 import { useCreateCheckoutSession } from '@/api/mutations/payments/useCreateCheckoutSession'
+import { getValidPromos } from '@/components/payment/promos'
 import type { SearchModel } from '@ritchy/types'
 import {
   EmbeddedCheckout,
@@ -6,7 +7,8 @@ import {
 } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { CheckIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/_auth/checkout')({
   component: CheckoutComponent,
@@ -25,11 +27,21 @@ const stripePromise = loadStripe(
 
 function CheckoutComponent() {
   const { plan, billingInterval } = Route.useSearch()
+  const [copied, setCopied] = useState(false)
   const {
     mutate: createSession,
     data: checkoutSession,
     isPending,
   } = useCreateCheckoutSession()
+
+  // Get valid promos for the current plan
+  const validPromos = getValidPromos(plan as string)
+
+  const handleCopyPromo = (code: string) => {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   useEffect(() => {
     if (plan) {
@@ -77,6 +89,34 @@ function CheckoutComponent() {
 
   return (
     <div className="flex flex-col justify-center min-h-screen">
+      {validPromos.length > 0 && (
+        <div className="flex justify-center mb-4">
+          <div
+            className="flex items-center gap-2 bg-orange-500/20 dark:bg-orange-500/10 px-4 py-2 rounded-full cursor-pointer"
+            onClick={() => handleCopyPromo(validPromos[0].code)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleCopyPromo(validPromos[0].code)
+              }
+            }}
+          >
+            <span className="text-sm font-medium text-orange-700 dark:text-orange-400">
+              {copied ? (
+                <span className="flex items-center">
+                  <CheckIcon className="w-4 h-4 mr-1" /> Copied!
+                </span>
+              ) : (
+                <>
+                  Use code{' '}
+                  <span className="font-bold">{validPromos[0].code}</span> for{' '}
+                  {validPromos[0].discount}% off
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+      )}
       <div className="max-h-[100dvh] overflow-y-auto px-4 py-2 w-full">
         <EmbeddedCheckoutProvider
           key={checkoutSession.clientSecret}

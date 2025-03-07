@@ -1,20 +1,11 @@
 import { PricingCards } from '@/components/payment/PricingCards'
+import {
+  annualOffer,
+  getValidPromos,
+  isAnnualOfferValid,
+} from '@/components/payment/promos'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-
-// Define the promo type
-interface PromoOffer {
-  code: string
-  discount: number
-  planId: string
-  validUntil: string // ISO date string
-}
-
-// Define the annual offer type
-interface AnnualOffer {
-  discount: number
-  validUntil: string // ISO date string
-}
 
 export const Route = createFileRoute('/_auth/pricing')({
   component: PricingComponent,
@@ -22,33 +13,14 @@ export const Route = createFileRoute('/_auth/pricing')({
 
 function PricingComponent() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>(
-    'yearly',
+    'monthly',
   )
 
-  // Define active promotions
-  const activePromos: PromoOffer[] = [
-    {
-      code: 'MARCH29',
-      discount: 29,
-      planId: 'ESSENTIALS',
-      validUntil: '2025-03-31T23:59:59Z', // March 31, 2025
-    },
-    // Add more promos as needed
-  ]
-
-  // Define annual offer
-  const annualOffer: AnnualOffer = {
-    discount: 40,
-    validUntil: '2025-03-30T23:59:59Z', // February 28, 2025
-  }
-
-  // Filter out expired promos
-  const validPromos = activePromos.filter(
-    (promo) => new Date(promo.validUntil) > new Date(),
-  )
+  // Get valid promos (without filtering by plan)
+  const validPromos = getValidPromos()
 
   // Check if annual offer is valid
-  const isAnnualOfferValid = new Date(annualOffer.validUntil) > new Date()
+  const annualOfferValid = isAnnualOfferValid()
 
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto max-h-screen">
@@ -85,7 +57,7 @@ function PricingComponent() {
             </div>
           </div>
 
-          {isAnnualOfferValid && billingPeriod === 'monthly' && (
+          {annualOfferValid && billingPeriod === 'monthly' && (
             <div className="mt-3 sm:mt-4">
               <div className="inline-flex rounded-full bg-green-500/20 dark:bg-green-500/10 px-3 sm:px-6 py-2 sm:py-3">
                 <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-400">
@@ -111,7 +83,7 @@ function PricingComponent() {
           <PricingCards
             billingPeriod={billingPeriod}
             activePromos={validPromos}
-            annualOffer={isAnnualOfferValid ? annualOffer : undefined}
+            annualOffer={annualOfferValid ? annualOffer : undefined}
           />
         </div>
       </div>
