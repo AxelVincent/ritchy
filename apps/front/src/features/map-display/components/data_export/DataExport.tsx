@@ -2,7 +2,6 @@ import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
-import { isModelAvailable } from '@/lib/subscription'
 import { useUser } from '@clerk/clerk-react'
 import {
   type EnrichmentWithStatus,
@@ -102,14 +101,14 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
 
   const handleExport = async () => {
     // Check if user has required subscription
-    if (!isModelAvailable(subscription?.plan, 'ESSENTIALS')) {
+    if (subscription?.plan === 'FREE' || !subscription?.plan) {
       posthog.capture('data_export_blocked_free_user', {
         user_id: user?.id,
         email: user?.primaryEmailAddress?.emailAddress,
         name: `${user?.firstName} ${user?.lastName}`.trim(),
       })
       toast({
-        title: 'Export requires a Navigator plan or higher',
+        title: 'Export requires an ESSENTIALS plan or higher',
         variant: 'default',
         action: (
           <Button onClick={() => navigate({ to: '/pricing' })}>

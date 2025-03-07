@@ -29,7 +29,7 @@ export const useUserSubscription = (): UseQueryResult<
         throw new Error(response.message ?? response.error)
       }
 
-      return { response }
+      return { plan: 'FREE' }
     },
   })
 }

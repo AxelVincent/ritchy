@@ -61,11 +61,22 @@ import { DataExport } from '../DataExport'
 // Add spy for validateAllSearchResultFieldsHaveColumns
 vi.spyOn(DataExportModule, 'validateAllSearchResultFieldsHaveColumns')
 
+// Mock for useUser from Clerk
+vi.mock('@clerk/clerk-react', () => ({
+  useUser: () => ({
+    user: {
+      id: 'test-user-id',
+      fullName: 'Test User',
+      emailAddresses: [{ emailAddress: 'test@example.com' }],
+    },
+  }),
+}))
+
 describe('DataExport', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     userSubscriptionMock.mockReturnValue({
-      data: { plan: 'NAVIGATOR' },
+      data: { plan: 'ESSENTIALS' },
     })
   })
 
@@ -176,7 +187,7 @@ describe('DataExport', () => {
     // Verify toast was called and export function was not
     expect(toast).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Export requires a Navigator plan or higher',
+        title: 'Export requires an ESSENTIALS plan or higher',
       }),
     )
     expect(validateAndExportToCsvMock).not.toHaveBeenCalled()
