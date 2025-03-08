@@ -1,4 +1,55 @@
 {
-	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
-	"extends": ["config:recommended"]
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base", ":semanticCommits", ":enablePreCommit"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch",
+      "automerge": true,
+      "automergeType": "branch",
+      "stabilityDays": 3,
+      "vulnerabilityAlerts": {
+        "enabled": true,
+        "automerge": true,
+        "stabilityDays": 0
+      }
+    },
+    {
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "all major dependencies",
+      "groupSlug": "all-major",
+      "automerge": false
+    },
+    {
+      "matchPackageNames": ["@types/node"],
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "type definitions",
+      "groupSlug": "types"
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "stabilityDays": 0
+    }
+  ],
+  "ignoreDependencies": ["node"],
+  "rangeStrategy": "pin",
+  "schedule": ["after 10pm and before 5am every weekday", "every weekend"],
+  "timezone": "UTC",
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "updateInternalDeps": true,
+  "ignorePaths": ["**/node_modules/**"],
+  "postUpdateOptions": ["yarnDedupeHighest"],
+  "baseBranches": ["staging"],
+  "ignoreBranches": ["master", "main"],
+  "automergeStrategy": "squash",
+  "platformCommit": "auto",
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "semanticCommitScope": "deps",
+  "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
 }
