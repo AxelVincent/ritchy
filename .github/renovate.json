@@ -35,7 +35,6 @@
       "stabilityDays": 0
     }
   ],
-  "ignoreDependencies": ["node"],
   "rangeStrategy": "pin",
   "schedule": ["after 10pm and before 5am every weekday", "every weekend"],
   "timezone": "UTC",
@@ -45,7 +44,6 @@
   "ignorePaths": ["**/node_modules/**"],
   "postUpdateOptions": ["yarnDedupeHighest"],
   "baseBranches": ["staging"],
-  "ignoreBranches": ["master", "main"],
   "automergeStrategy": "squash",
   "platformCommit": "auto",
   "dependencyDashboard": true,
