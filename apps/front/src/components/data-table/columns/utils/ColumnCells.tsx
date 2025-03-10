@@ -9,7 +9,7 @@ import {
   createColumnPinNoteActions,
 } from './createColumnActions'
 
-import { Notes } from '@/features/places/Notes'
+import { Notes } from '@/components/notes/Notes'
 import { formatDistanceToNow } from 'date-fns'
 
 interface BaseColumnCellProps {

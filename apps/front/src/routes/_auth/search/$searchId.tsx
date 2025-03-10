@@ -1,6 +1,6 @@
 import { useSearchContentQuery } from '@/api/queries/search/useSearchContent'
 import { LoadingMessages } from '@/components/common/LoadingMessages'
-import { MapDisplay } from '@/features/map-display/MapDisplay'
+import { MapDisplay } from '@/components/map-display/MapDisplay'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_auth/search/$searchId')({

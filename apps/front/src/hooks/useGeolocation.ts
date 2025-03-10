@@ -1,4 +1,4 @@
-import type { MapboxLocationParameters } from '@/features/map-display/types'
+import type { MapboxLocationParameters } from '@/components/map-display/types'
 import { useEffect, useRef, useState } from 'react'
 
 interface GeolocationState {

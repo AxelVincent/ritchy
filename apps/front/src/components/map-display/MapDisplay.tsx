@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/data-table/DataTable'
-import { MapBox } from '@/features/map-display/components/map_box/MapBox'
-import { DEFAULT_LOCATION } from '@/features/map-display/constants'
+import { MapBox } from '@/components/map-display/components/map_box/MapBox'
+import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 
 import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'

@@ -1,11 +1,11 @@
 import { OpeningHoursContent } from '@/components/common/OpeningHours'
 import { StatusIndicator } from '@/components/common/StatusIndicator'
 import { TextWrapper } from '@/components/common/TextWrapper'
+import { Notes } from '@/components/notes/Notes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Notes } from '@/features/places/Notes'
 import type { Place } from '@ritchy/types'
 import {
   ExternalLink,

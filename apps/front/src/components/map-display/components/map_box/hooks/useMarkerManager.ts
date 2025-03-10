@@ -1,5 +1,5 @@
+import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { getStatusColor } from '@/components/status/status-colors'
-import { useMapStore } from '@/features/map-display/store/useMapStore'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import mapboxgl from 'mapbox-gl'
