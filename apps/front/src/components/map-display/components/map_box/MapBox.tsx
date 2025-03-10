@@ -8,9 +8,8 @@ import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import type { LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { useMarkerManager } from './hooks/useMarkerManager'
-import { PlacePopup } from './place_marker/PlacePopup'
+import { PlaceCard } from './place-details/PlaceCard'
 
 const DEBUG = false
 
@@ -139,38 +138,13 @@ export const MapBox: FC<MapBoxProps> = ({
     })
   }, [searchResults])
 
-  // Replace the manual marker management with the hook
-  const { openPopups, popupContainers, markersRef } = useMarkerManager({
+  // Replace the useMarkerManager call to remove popup-related functionality
+  const { markersRef } = useMarkerManager({
     map: mapRef.current,
     places: searchResults,
     displayedPlaceIds: filteredPlaceIds,
     dataTableRowSelection,
   })
-
-  // Add this memoized map outside of the component or at the top of the component
-  const searchResultsMap = useMemo(() => {
-    if (!searchResults) return new Map<string, Place>()
-    return new Map(searchResults.map((place) => [place.id, place]))
-  }, [searchResults])
-
-  // Optimize popup elements creation to only render open popups
-  const popupElements = useMemo(
-    () =>
-      Array.from(popupContainers.entries())
-        .filter(([id]) => openPopups.has(id))
-        .map(([id, container]) => {
-          const place = searchResultsMap.get(id)
-          if (!place) return null
-
-          return createPortal(
-            <PlacePopup key={`popup-${id}`} place={place} />,
-            container,
-            `portal-${id}`,
-          )
-        })
-        .filter(Boolean),
-    [popupContainers, searchResultsMap, openPopups], // Add openPopups dependency
-  )
 
   // Selection state effect
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -246,9 +220,9 @@ export const MapBox: FC<MapBoxProps> = ({
   }, [selectedPlaceId])
 
   return (
-    <>
+    <div className="relative h-full w-full">
       <div ref={mapContainerRef} className="h-full w-full" />
-      {popupElements}
-    </>
+      <PlaceCard places={searchResults} displayedPlaceIds={filteredPlaceIds} />
+    </div>
   )
 }

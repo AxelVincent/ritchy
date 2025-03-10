@@ -3,8 +3,8 @@ import { getStatusColor } from '@/components/status/status-colors'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import mapboxgl from 'mapbox-gl'
-import { useEffect, useRef, useState } from 'react'
-import { MARKER_COLORS, MARKER_SETTINGS } from '../constants/markers'
+import { useEffect, useRef } from 'react'
+import { MARKER_COLORS } from '../constants/markers'
 import {
   createActiveMarkerSvg,
   createFilteredMarkerSvg,
@@ -12,7 +12,6 @@ import {
 
 type MarkerRef = {
   marker: mapboxgl.Marker
-  popupContainer: HTMLElement
 }
 
 type UseMarkerManagerProps = {
@@ -23,7 +22,6 @@ type UseMarkerManagerProps = {
 }
 
 // Move this outside the component to avoid recreating on each render
-const emptySet = new Set<string>()
 
 const addMarkerWithRetry = async (
   marker: mapboxgl.Marker,
@@ -61,8 +59,8 @@ export const useMarkerManager = ({
     setCenterPlaceSpreadsheetId,
     places: storePlaces,
     updatedPlaceStatuses,
+    setSelectedPlaceId,
   } = useMapStore()
-  const [openPopups, setOpenPopups] = useState<Set<string>>(emptySet)
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
 
@@ -167,48 +165,22 @@ export const useMarkerManager = ({
               markerElement.appendChild(svg)
             }
 
-            const popupContainer = document.createElement('div')
-            const popup = new mapboxgl.Popup({
-              closeButton: true,
-              maxWidth: MARKER_SETTINGS.popupMaxWidth,
-              offset: isDisplayed
-                ? MARKER_SETTINGS.popupOffsetActive
-                : MARKER_SETTINGS.popupOffsetFiltered,
-            })
-              .setDOMContent(popupContainer)
-              .on('open', () => {
-                requestAnimationFrame(() => {
-                  setCenterPlaceSpreadsheetId(place.id)
-                })
-                setOpenPopups((prev) => new Set(prev).add(place.id))
-              })
-              .on('close', () => {
-                requestAnimationFrame(() => {
-                  setCenterPlaceSpreadsheetId(null)
-                })
-                setOpenPopups((prev) => {
-                  const next = new Set(prev)
-                  next.delete(place.id)
-                  return next
-                })
-              })
-
+            // Create marker without popup
             const marker = new mapboxgl.Marker({
               element: markerElement,
               scale: 1,
-            })
-              .setLngLat([place.location.longitude, place.location.latitude])
-              .setPopup(popup)
+            }).setLngLat([place.location.longitude, place.location.latitude])
 
             // Use retry logic when adding marker to map
             const added = await addMarkerWithRetry(marker, map)
             if (added) {
-              markerElement.addEventListener('click', () =>
-                requestAnimationFrame(() =>
-                  setCenterPlaceSpreadsheetId(place.id),
-                ),
-              )
-              markersRef.current.set(place.id, { marker, popupContainer })
+              markerElement.addEventListener('click', () => {
+                requestAnimationFrame(() => {
+                  setCenterPlaceSpreadsheetId(place.id)
+                  setSelectedPlaceId(place.id) // Set the selected place ID when marker is clicked
+                })
+              })
+              markersRef.current.set(place.id, { marker })
             }
           } catch (error) {
             console.error('Error creating marker for place:', place.id, error)
@@ -234,13 +206,6 @@ export const useMarkerManager = ({
             place.location.longitude,
             place.location.latitude,
           ])
-
-          const popup = existing.marker.getPopup()
-          if (popup) {
-            popup.options.offset = isDisplayed
-              ? MARKER_SETTINGS.popupOffsetActive
-              : MARKER_SETTINGS.popupOffsetFiltered
-          }
         }
       }
     }
@@ -251,7 +216,6 @@ export const useMarkerManager = ({
 
     // Clear the updated statuses after applying them
     if (updatedPlaceStatuses.size > 0) {
-      // We need to access this from the store directly to avoid circular dependencies
       useMapStore.setState({ updatedPlaceStatuses: new Map() })
     }
   }, [
@@ -261,6 +225,7 @@ export const useMarkerManager = ({
     dataTableRowSelection,
     setCenterPlaceSpreadsheetId,
     updatedPlaceStatuses,
+    setSelectedPlaceId,
   ])
 
   // Cleanup effect - only run on unmount
@@ -275,13 +240,7 @@ export const useMarkerManager = ({
   }, [])
 
   return {
-    openPopups,
     markersRef,
-    popupContainers: new Map(
-      Array.from(markersRef.current.entries()).map(
-        ([id, { popupContainer }]) => [id, popupContainer],
-      ),
-    ),
   }
 }
 

@@ -46,18 +46,6 @@ interface DataTableProps<TData, TValue> {
 // Add a fixed height for table rows
 const ROW_HEIGHT = '34px'
 
-// Define the EnrichmentState type
-export interface EnrichmentState {
-  emails: string[]
-  socialLinks: Record<string, string>
-  isLoading: boolean
-  error?: string
-}
-
-export interface DataTableMeta<TData> {
-  setData: React.Dispatch<React.SetStateAction<TData[]>>
-}
-
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
@@ -69,7 +57,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   onFilteredDataChange,
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId and setSelectedPlaceId from the store
-  const { centerPlaceSpreadsheetId } = useMapStore()
+  const { selectedPlaceId, centerPlaceSpreadsheetId } = useMapStore()
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   const [sorting, setSorting] = useState<SortingState>([])
@@ -453,7 +441,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     }}
                     className={cn('border-r border-border bg-background', {
                       'bg-primary-foreground':
-                        centerPlaceSpreadsheetId === row.original.id,
+                        selectedPlaceId === row.original.id,
                     })}
                   >
                     {flexRender(
@@ -480,7 +468,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         className={cn('border-r border-border', {
                           'bg-background': vc.index === 0,
                           'bg-primary-foreground':
-                            centerPlaceSpreadsheetId === row.original.id,
+                            selectedPlaceId === row.original.id,
                         })}
                       >
                         {flexRender(
