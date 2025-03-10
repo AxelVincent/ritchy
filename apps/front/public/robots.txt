@@ -1,0 +1,3 @@
+# For app.ritchy.io - Disallow all crawling
+User-agent: *
+Disallow: /
