@@ -14,7 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { Place } from '@ritchy/types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ExternalLink, Star, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PlaceHoursTab } from './tabs/PlaceHoursTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
@@ -30,6 +30,12 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
   const displayedIds = Array.from(displayedPlaceIds)
   const [currentIndex, setCurrentIndex] = useState(0)
   const currentPlace = places?.find((place) => place.id === selectedPlaceId)
+  const [cardHeight, setCardHeight] = useState(() => {
+    const savedHeight = localStorage.getItem('placeCardHeight')
+    return savedHeight ? Number.parseInt(savedHeight, 10) : 350
+  })
+  const [isResizing, setIsResizing] = useState(false)
+  const resizeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (selectedPlaceId) {
@@ -39,6 +45,36 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
       }
     }
   }, [selectedPlaceId, displayedIds])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isResizing && resizeRef.current) {
+        const containerRect = resizeRef.current.getBoundingClientRect()
+        const newHeight = Math.max(250, containerRect.bottom - e.clientY)
+        setCardHeight(newHeight)
+        localStorage.setItem('placeCardHeight', newHeight.toString())
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }
 
   const onClose = () => {
     setCenterPlaceSpreadsheetId(null)
@@ -74,8 +110,18 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        ref={resizeRef}
       >
-        <Card className="shadow-lg h-[350px] flex flex-col">
+        <div
+          className="w-full h-1 bg-transparent cursor-ns-resize mb-1 flex items-center justify-center"
+          onMouseDown={handleResizeStart}
+        >
+          <div className="w-10 h-1 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors" />
+        </div>
+        <Card
+          className="shadow-lg flex flex-col"
+          style={{ height: `${cardHeight}px` }}
+        >
           <CardHeader className="pb-2 pt-3 px-4 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

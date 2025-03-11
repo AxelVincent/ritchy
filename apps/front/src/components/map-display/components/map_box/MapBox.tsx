@@ -6,7 +6,6 @@ import type { MapboxLocationParameters } from '@/components/map-display/types'
 import { debounce } from '@/lib/debounce'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
-import type { LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
 import { PlaceCard } from './place-details/PlaceCard'
@@ -19,16 +18,8 @@ const debugLog = (...args: unknown[]) => {
   }
 }
 
-// Create a dedicated type for the location change event
-type LocationChangeEvent = {
-  latitude: number
-  longitude: number
-  radiusInMeters: number
-}
-
 // Improve props interface with more specific types
 interface MapBoxProps {
-  onLocationChange: (location: LocationChangeEvent) => void
   searchResults: Place[] | null
   userLocation: MapboxLocationParameters
   dataTableRowSelection: RowSelectionState
@@ -37,7 +28,6 @@ interface MapBoxProps {
 }
 
 export const MapBox: FC<MapBoxProps> = ({
-  onLocationChange,
   searchResults,
   userLocation,
   dataTableRowSelection,
@@ -51,7 +41,6 @@ export const MapBox: FC<MapBoxProps> = ({
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const currentSelectedPlaceIdRef = useRef<string | null>(null)
-  const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const isSelectionMovement = useRef(false)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -93,51 +82,6 @@ export const MapBox: FC<MapBoxProps> = ({
     }
   }, [mapRef])
 
-  // Create a memoized debounced handler
-  const debouncedLocationChange = useMemo(
-    () =>
-      debounce((center: LngLat) => {
-        onLocationChange({
-          latitude: center.lat,
-          longitude: center.lng,
-          radiusInMeters,
-        })
-      }, 1000),
-    [onLocationChange, radiusInMeters],
-  )
-
-  // Map movement effect
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    debugLog('Setting up map movement handlers')
-    if (!mapRef.current) {
-      debugLog('Map movement setup skipped')
-      return
-    }
-
-    mapRef.current.on('move', () => {
-      if (isSelectionMovement.current) return
-
-      if (mapRef.current) {
-        const center = mapRef.current.getCenter()
-        centerMarkerRef.current?.setLngLat(center)
-        debouncedLocationChange(center)
-      }
-    })
-
-    return () => {
-      debouncedLocationChange.cancel()
-    }
-  }, [radiusInMeters, mapRef, debouncedLocationChange])
-
-  // Add this before the useMarkerManager call
-  useEffect(() => {
-    console.debug('[MapBox] searchResults changed:', {
-      count: searchResults?.length,
-      results: searchResults,
-    })
-  }, [searchResults])
-
   // Replace the useMarkerManager call to remove popup-related functionality
   const { markersRef } = useMarkerManager({
     map: mapRef.current,
@@ -161,16 +105,6 @@ export const MapBox: FC<MapBoxProps> = ({
 
     isSelectionMovement.current = true
 
-    // Clear previous popup
-    if (currentSelectedPlaceIdRef.current) {
-      const previousMarkerData = markersRef.current.get(
-        currentSelectedPlaceIdRef.current,
-      )
-      if (previousMarkerData?.marker.getPopup()?.isOpen()) {
-        previousMarkerData.marker.togglePopup()
-      }
-    }
-
     if (!selectedPlaceId) {
       currentSelectedPlaceIdRef.current = null
       return
@@ -191,24 +125,46 @@ export const MapBox: FC<MapBoxProps> = ({
         (currentCenter.lat - markerLocation.lat) ** 2,
     )
 
+    // Get the place card height from localStorage or use a default value
+    const placeCardHeight = Number.parseInt(
+      localStorage.getItem('placeCardHeight') || '200',
+      10,
+    )
+
+    // Get the map container height
+    const mapHeight = mapContainerRef.current?.clientHeight || 0
+
+    // Calculate the vertical padding needed to position the marker above the card
+    // This positions the marker in the upper portion of the visible map area
+    const bottomPadding = placeCardHeight + 20 // Add some extra padding (20px)
+    const topPadding = 50 // Some padding from the top
+
+    debugLog('Padding calculation:', {
+      placeCardHeight,
+      bottomPadding,
+      mapHeight,
+    })
+
+    const zoomLevel = 15
+
     // If distance is too large, jump to location instead of animating
     if (distanceInDegrees > 1) {
-      // Adjust threshold as needed
-      mapRef.current.setCenter(markerLocation)
-      mapRef.current.setZoom(12)
+      mapRef.current.jumpTo({
+        center: markerLocation,
+        zoom: zoomLevel,
+        padding: { bottom: bottomPadding, top: topPadding, left: 0, right: 0 },
+      })
     } else {
-      // Use flyTo for shorter distances
+      // Use flyTo for shorter distances with padding
       mapRef.current.flyTo({
         center: markerLocation,
-        zoom: 15,
-        speed: 0.8, // Reduce animation speed
-        curve: 1, // Linear animation
+        speed: 0.8,
+        curve: 1,
+        zoom: zoomLevel,
+        padding: { bottom: bottomPadding, top: topPadding, left: 0, right: 0 },
       })
     }
 
-    if (!markerData.marker.getPopup()?.isOpen()) {
-      markerData.marker.togglePopup()
-    }
     currentSelectedPlaceIdRef.current = selectedPlaceId
 
     // Reset flag after movement completes
