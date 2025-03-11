@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/data-table/DataTable'
-import { MapBox } from '@/features/map-display/components/map_box/MapBox'
-import { DEFAULT_LOCATION } from '@/features/map-display/constants'
+import { MapBox } from '@/components/map-display/components/map_box/MapBox'
+import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 
 import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
@@ -36,6 +36,19 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
 
   const [currentLocation, setLocation] =
     useState<MapboxLocationParameters>(defaultLocation)
+
+  // Add state for panel sizes with localStorage persistence
+  const [panelSizes, setPanelSizes] = useState<number[]>(() => {
+    // Try to get saved panel sizes from localStorage
+    const savedSizes = localStorage.getItem('mapDisplayPanelSizes')
+    return savedSizes ? JSON.parse(savedSizes) : [50, 50] // Default to 50/50 split
+  })
+
+  // Save panel sizes to localStorage when they change
+  const handlePanelResize = (sizes: number[]) => {
+    setPanelSizes(sizes)
+    localStorage.setItem('mapDisplayPanelSizes', JSON.stringify(sizes))
+  }
 
   // Update searchResults to use listData when available, fallback to mockData in development
   const [searchResults, setSearchResults] = useState<Place[]>(() => {
@@ -103,8 +116,15 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   // Desktop view with resizable panels
   return (
     <div className="flex flex-col h-full">
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel className="flex-1 flex flex-col overflow-hidden">
+      <ResizablePanelGroup
+        direction="horizontal"
+        onLayout={handlePanelResize}
+        className="min-h-[200px]"
+      >
+        <ResizablePanel
+          defaultSize={panelSizes[0]}
+          className="flex-1 flex flex-col overflow-hidden"
+        >
           <DataTable
             columns={columns}
             data={tableData}
@@ -117,13 +137,8 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel className="flex-1">
+        <ResizablePanel defaultSize={panelSizes[1]} className="flex-1">
           <MapBox
-            onLocationChange={(location) => {
-              setLocation({
-                ...location,
-              })
-            }}
             searchResults={searchResults}
             userLocation={currentLocation}
             dataTableRowSelection={dataTableRowSelection}

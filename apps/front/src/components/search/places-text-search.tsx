@@ -13,8 +13,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
 
 import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
+import { RADIUS_SETTINGS } from '@/components/map-display/types'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
-import { RADIUS_SETTINGS } from '@/features/map-display/types'
 import { isModelAvailable } from '@/lib/subscription'
 import {
   type CreateSearchRequestBody,

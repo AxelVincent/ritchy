@@ -5,14 +5,6 @@ import type { EnrichApiResponse, SearchResult } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
-// Define the EnrichmentState type
-export interface EnrichmentState {
-  emails: string[]
-  socialLinks: Record<string, string>
-  isLoading: boolean
-  error?: string
-}
-
 const apiClient = createApiClient({
   baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
 })

@@ -5,7 +5,7 @@ import {
   isAnnualOfferValid,
 } from '@/components/payment/promos'
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/_auth/pricing')({
   component: PricingComponent,
@@ -15,6 +15,37 @@ function PricingComponent() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>(
     'monthly',
   )
+  const [currency, setCurrency] = useState<'usd' | 'eur'>('usd')
+
+  // Detect user's location and set currency on component mount
+  useEffect(() => {
+    const detectUserLocation = async () => {
+      try {
+        // Use the browser's Intl API to get user's region
+        const userRegion = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+        // European timezones typically contain Europe/ or have specific country codes
+        const europeanRegions = [
+          /^Europe\//,
+          /^GMT\+[0-2]/,
+          /^CET/,
+          /^WET/,
+          /^EET/,
+        ]
+
+        const isEuropean = europeanRegions.some((regex) =>
+          regex.test(userRegion),
+        )
+        setCurrency(isEuropean ? 'eur' : 'usd')
+      } catch (error) {
+        // Default to USD if detection fails
+        console.error('Error detecting user location:', error)
+        setCurrency('usd')
+      }
+    }
+
+    detectUserLocation()
+  }, [])
 
   // Get valid promos (without filtering by plan)
   const validPromos = getValidPromos()
@@ -23,7 +54,35 @@ function PricingComponent() {
   const annualOfferValid = isAnnualOfferValid()
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto max-h-screen">
+    <div className="py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto max-h-screen relative">
+      {/* Currency toggle in top right corner */}
+      <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-10">
+        <div className="inline-flex rounded-full bg-secondary p-1">
+          <button
+            type="button"
+            onClick={() => setCurrency('usd')}
+            className={`rounded-full px-3 py-1 text-xs sm:text-sm transition-colors ${
+              currency === 'usd'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'hover:bg-secondary-hover text-muted-foreground'
+            }`}
+          >
+            $ USD
+          </button>
+          <button
+            type="button"
+            onClick={() => setCurrency('eur')}
+            className={`rounded-full px-3 py-1 text-xs sm:text-sm transition-colors ${
+              currency === 'eur'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'hover:bg-secondary-hover text-muted-foreground'
+            }`}
+          >
+            € EUR
+          </button>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto">
         <div className="text-center">
           <h1 className="text-3xl sm:text-4xl font-bold">
@@ -84,6 +143,7 @@ function PricingComponent() {
             billingPeriod={billingPeriod}
             activePromos={validPromos}
             annualOffer={annualOfferValid ? annualOffer : undefined}
+            currency={currency}
           />
         </div>
       </div>

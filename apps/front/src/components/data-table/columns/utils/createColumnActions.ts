@@ -1,5 +1,5 @@
 import type { Action } from '@/components/common/TextWrapper'
-import { useMapStore } from '@/features/map-display/store/useMapStore'
+import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { toast } from '@/hooks/use-toast'
 import posthog from 'posthog-js'
 

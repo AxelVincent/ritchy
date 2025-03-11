@@ -5,6 +5,7 @@ import { SearchModelEnum } from '../search'
 export const CreateCheckoutSessionRequestBodySchema = z.object({
   plan: SearchModelEnum,
   billingInterval: z.enum(['monthly', 'yearly']),
+  currency: z.enum(['usd', 'eur']),
 })
 
 export const CreateCheckoutSessionResponseSchema = z.object({

@@ -1,4 +1,5 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
+import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -141,6 +142,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
     <HeaderWrapper column={column} title="Socials & Emails" />
   ),
   cell: ({ row, table }) => {
+    const { setSelectedPlaceId } = useMapStore()
     const enrichment = row.original.enrichment as
       | EnrichmentWithStatus
       | undefined
@@ -182,7 +184,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             {
               icon: 'MapPinned',
               onClick: () => {
-                table.options.meta?.setSelectedPlaceId?.(row.original.id)
+                setSelectedPlaceId(row.original.id)
               },
               label: 'Pin to map',
             },
@@ -205,7 +207,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             {
               icon: 'MapPinned',
               onClick: () => {
-                table.options.meta?.setSelectedPlaceId?.(row.original.id)
+                setSelectedPlaceId(row.original.id)
               },
               label: 'Pin to map',
             },
@@ -225,7 +227,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             {
               icon: 'MapPinned',
               onClick: () => {
-                table.options.meta?.setSelectedPlaceId?.(row.original.id)
+                setSelectedPlaceId(row.original.id)
               },
               label: 'Pin to map',
             },
@@ -256,7 +258,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
           {
             icon: 'MapPinned',
             onClick: () => {
-              table.options.meta?.setSelectedPlaceId?.(row.original.id)
+              setSelectedPlaceId(row.original.id)
             },
             label: 'Pin to map',
           },

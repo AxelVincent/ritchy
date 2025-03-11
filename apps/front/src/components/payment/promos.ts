@@ -13,7 +13,7 @@ export interface AnnualOffer {
 }
 
 // Centralized active promotions
-export const activePromos: PromoOffer[] = [
+const activePromos: PromoOffer[] = [
   {
     code: 'MARCH29',
     discount: 29,

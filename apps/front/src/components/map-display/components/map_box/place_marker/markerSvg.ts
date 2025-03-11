@@ -46,12 +46,19 @@ export const createFilteredMarkerSvg = (): SVGElement => {
 export const createActiveMarkerSvg = (
   color: string,
   place: Place,
+  isSelected = false,
 ): SVGElement => {
   try {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+
+    // Make selected markers 25% larger
+    const scale = isSelected ? 1.25 : 1
+    const baseWidth = 28
+    const baseHeight = 32
+
     svg.setAttribute('viewBox', '0 0 24 32')
-    svg.setAttribute('width', '28')
-    svg.setAttribute('height', '32')
+    svg.setAttribute('width', `${baseWidth * scale}`)
+    svg.setAttribute('height', `${baseHeight * scale}`)
 
     // Main marker path
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
@@ -60,8 +67,10 @@ export const createActiveMarkerSvg = (
       'M12 0C5.383 0 0 5.383 0 12c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
     )
     path.setAttribute('fill', color)
+
+    // Make selected marker stroke thicker
     path.setAttribute('stroke', '#000000')
-    path.setAttribute('stroke-width', '0.5')
+    path.setAttribute('stroke-width', isSelected ? '1' : '0.5')
     path.setAttribute('stroke-opacity', '0.3')
     svg.appendChild(path)
 

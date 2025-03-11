@@ -49,6 +49,8 @@ export const createCheckoutSession = async (
 
       metadata: {
         plan: req.body.plan,
+        billingInterval: req.body.billingInterval,
+        currency: req.body.currency,
       },
     })
 
@@ -145,6 +147,7 @@ export const createCheckoutSession = async (
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      currency: req.body.currency,
       line_items: [
         {
           price: priceId,

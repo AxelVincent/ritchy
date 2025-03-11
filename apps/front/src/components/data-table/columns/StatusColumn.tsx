@@ -1,6 +1,6 @@
+import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { StatusDropdown } from '@/components/status/status-dropdown'
 import { getStatusLabel } from '@/components/status/status-label'
-import { useMapStore } from '@/features/map-display/store/useMapStore'
 import type { SearchResult, StatusType } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import posthog from 'posthog-js'

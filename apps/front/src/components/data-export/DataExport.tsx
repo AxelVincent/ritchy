@@ -174,27 +174,14 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.website || '',
         },
         {
-          header: 'Emails',
-          accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
-              : null
-            return enrichData?.emails?.join(', ') || ''
-          },
-        },
-        ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
-          header: `${platform.charAt(0).toUpperCase()}${platform.slice(1)}`,
-          accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
-              : null
-            return enrichData?.socialLinks[platform]?.join(', ') || ''
-          },
-        })),
-        {
           header: 'Google Maps URL',
           field: 'googleMapsUri',
           accessor: (row: SearchResult): string => row.googleMapsUri || '',
+        },
+        {
+          header: 'Primary Category',
+          field: 'primaryType',
+          accessor: (row: SearchResult): string => row.primaryType || '',
         },
         {
           header: 'Categories',
@@ -216,6 +203,39 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
           field: 'ratingCount',
           accessor: (row: SearchResult): string =>
             row.ratingCount?.toString() || '',
+        },
+        {
+          header: 'Price Level',
+          field: 'priceLevel',
+          accessor: (row: SearchResult): string =>
+            row.priceLevel?.toString() || '',
+        },
+        {
+          header: 'Price Range',
+          field: 'priceRange',
+          accessor: (row: SearchResult): string => {
+            if (!row.priceRange) return ''
+
+            const formatPrice = (price: {
+              currencyCode: string
+              units: string
+              nanos?: number
+            }) => {
+              const amount =
+                Number(price.units) +
+                (price.nanos ? price.nanos / 1_000_000_000 : 0)
+              return `${price.currencyCode} ${amount.toFixed(2)}`
+            }
+
+            const start = row.priceRange.startPrice
+              ? formatPrice(row.priceRange.startPrice)
+              : ''
+            const end = row.priceRange.endPrice
+              ? formatPrice(row.priceRange.endPrice)
+              : ''
+
+            return `${start} - ${end}`
+          },
         },
         {
           header: 'Full Address',
@@ -340,44 +360,6 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
             row.location?.longitude?.toString() || '',
         },
         {
-          header: 'Primary Type',
-          field: 'primaryType',
-          accessor: (row: SearchResult): string => row.primaryType || '',
-        },
-        {
-          header: 'Price Level',
-          field: 'priceLevel',
-          accessor: (row: SearchResult): string =>
-            row.priceLevel?.toString() || '',
-        },
-        {
-          header: 'Price Range',
-          field: 'priceRange',
-          accessor: (row: SearchResult): string => {
-            if (!row.priceRange) return ''
-
-            const formatPrice = (price: {
-              currencyCode: string
-              units: string
-              nanos?: number
-            }) => {
-              const amount =
-                Number(price.units) +
-                (price.nanos ? price.nanos / 1_000_000_000 : 0)
-              return `${price.currencyCode} ${amount.toFixed(2)}`
-            }
-
-            const start = row.priceRange.startPrice
-              ? formatPrice(row.priceRange.startPrice)
-              : ''
-            const end = row.priceRange.endPrice
-              ? formatPrice(row.priceRange.endPrice)
-              : ''
-
-            return `${start} - ${end}`
-          },
-        },
-        {
           header: 'Lists',
           field: 'lists',
           accessor: (row: SearchResult): string =>
@@ -389,6 +371,24 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
           field: 'status',
           accessor: (row: SearchResult): string => row.status?.status || '',
         },
+        {
+          header: 'Emails',
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.emails?.join(', ') || ''
+          },
+        },
+        ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
+          header: `${platform.charAt(0).toUpperCase()}${platform.slice(1)}`,
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.socialLinks[platform]?.join(', ') || ''
+          },
+        })),
       ]
 
       validateAllSearchResultFieldsHaveColumns(columns)
