@@ -128,15 +128,22 @@ interface PricingCardsProps {
   billingPeriod: 'monthly' | 'yearly'
   activePromos?: PromoOffer[]
   annualOffer?: AnnualOffer
+  currency?: 'usd' | 'eur'
+  onCurrencyChange?: (currency: 'usd' | 'eur') => void
 }
 
 export const PricingCards = ({
   billingPeriod,
   activePromos = [],
   annualOffer,
+  currency = 'usd',
+  onCurrencyChange,
 }: PricingCardsProps) => {
   const { data: subscription } = useUserSubscription()
   const [copiedPromo, setCopiedPromo] = useState<string | null>(null)
+
+  // Get currency symbol based on currency prop
+  const currencySymbol = currency === 'eur' ? '€' : '$'
 
   // Function to copy promo code to clipboard
   const copyPromoCode = (code: string) => {
@@ -165,195 +172,233 @@ export const PricingCards = ({
     annualOffer && new Date(annualOffer.validUntil) > new Date()
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-8">
-      {pricingTiers.map((tier) => {
-        const isCurrentPlan =
-          subscription?.plan?.toLowerCase() ===
-          tier.name.toLowerCase().replace(' ', '')
-
-        // Find applicable promo for this tier
-        const applicablePromo = activePromos.find(
-          (promo) => promo.planId === tier.plan,
-        )
-
-        const hasPromo = !!applicablePromo
-
-        // Calculate yearly price with promo if applicable
-        const yearlyWithPromo = hasPromo
-          ? Math.round(tier.yearlyPrice * (1 - applicablePromo.discount / 100))
-          : tier.yearlyPrice
-
-        // Calculate annual savings (difference between original monthly price and yearly price with promo)
-        const annualSavings = (tier.monthlyPrice - yearlyWithPromo) * 12
-
-        // Final price based on billing period
-        const finalPrice =
-          billingPeriod === 'yearly'
-            ? yearlyWithPromo
-            : hasPromo
-              ? Math.round(
-                  tier.monthlyPrice * (1 - applicablePromo.discount / 100),
-                )
-              : tier.monthlyPrice
-
-        return (
-          <div key={tier.name} className="flex flex-col">
-            {/* Promo badge container - maintains consistent height whether visible or not */}
-            <div className="h-12 flex items-center justify-center mb-1">
-              {hasPromo && (
-                <button
-                  type="button"
-                  onClick={() => copyPromoCode(applicablePromo.code)}
-                  className={`bg-orange-500 hover:bg-orange-600 text-white font-medium text-center py-2 px-4 rounded-md w-full transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-                    copiedPromo === applicablePromo.code ? 'bg-green-600' : ''
-                  }`}
-                  aria-label={`Copy promo code ${applicablePromo.code}`}
-                >
-                  {copiedPromo === applicablePromo.code ? (
-                    <>
-                      <CheckIcon className="h-4 w-4" /> Copied!
-                    </>
-                  ) : (
-                    <>
-                      {applicablePromo.discount}% OFF with code{' '}
-                      {applicablePromo.code}
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            <Card
-              className={`flex flex-col relative bg-background/50 ${
-                tier.isPopular ? 'shadow-lg' : ''
+    <>
+      {/* Currency toggle */}
+      {onCurrencyChange && (
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex rounded-full bg-secondary p-1">
+            <button
+              type="button"
+              onClick={() => onCurrencyChange('usd')}
+              className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+                currency === 'usd'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'hover:bg-secondary-hover text-muted-foreground'
               }`}
             >
-              {tier.isPopular && (
-                <Badge
-                  className="absolute right-6 top-6 px-3 py-1.5"
-                  variant="default"
-                >
-                  Most Popular
-                </Badge>
-              )}
-
-              <div className="flex flex-col h-full p-3">
-                <div className="flex flex-col gap-2 bg-muted/50 rounded-lg p-6">
-                  <h3 className="text-2xl font-bold flex items-center gap-2">
-                    {tier.icon}
-                    {tier.name}
-                    {isCurrentPlan && (
-                      <span className="text-primary text-base font-medium">
-                        (Current Plan)
-                      </span>
-                    )}
-                  </h3>
-
-                  <p className="text-muted-foreground">{tier.description}</p>
-
-                  <div className="mt-6 flex flex-col">
-                    {/* Fixed height pricing container to maintain consistency */}
-                    <div className="min-h-[120px] flex flex-col justify-end">
-                      {/* For yearly plans, always show monthly price as reference */}
-                      {billingPeriod === 'yearly' && (
-                        <div className="flex items-center gap-4">
-                          <span className="text-2xl line-through text-muted-foreground">
-                            ${tier.monthlyPrice}
-                          </span>
-                          {isAnnualOfferValid && (
-                            <Badge className="bg-green-600 hover:bg-green-700 px-3 py-1 text-white text-xs">
-                              Save ${annualSavings}/year
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-
-                      {/* For monthly plans with promo, show original price */}
-                      {billingPeriod === 'monthly' && hasPromo && (
-                        <div className="flex items-center gap-4">
-                          <span className="text-2xl line-through text-muted-foreground">
-                            ${tier.monthlyPrice}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex flex-col gap-2">
-                        <span className="text-5xl font-bold tracking-tight">
-                          ${finalPrice}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-muted-foreground mt-1">
-                        per month
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-6 flex-1">
-                  <div>
-                    <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-3">
-                      Maximise lead discovery
-                    </h4>
-                    <div className="space-y-4">
-                      {tier.amplifyResults.map((feature) => (
-                        <div key={feature} className="flex items-start gap-3">
-                          <CheckIcon className="h-5 w-5 flex-shrink-0 text-green-500" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-3">
-                      Accelerate conversions
-                    </h4>
-                    <div className="space-y-4">
-                      {tier.maximizeConversion.map((feature) => (
-                        <div key={feature} className="flex items-start gap-3">
-                          <CheckIcon className="h-5 w-5 flex-shrink-0 text-green-500" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <Button
-                    variant={tier.isPopular ? 'default' : 'outline'}
-                    className="w-full justify-center"
-                    asChild
-                  >
-                    <Link
-                      to={
-                        isCurrentPlan
-                          ? '/dashboard'
-                          : `/checkout?plan=${tier.plan}&billingInterval=${billingPeriod}`
-                      }
-                    >
-                      {isCurrentPlan ? 'Current Plan' : 'Get started'}
-                      {!isCurrentPlan && (
-                        <ArrowRightIcon className="ml-2 h-4 w-4" />
-                      )}
-                    </Link>
-                  </Button>
-
-                  {/* Only show consultation with experts for Navigator plan and above */}
-                  {(tier.plan === 'NAVIGATOR' ||
-                    tier.plan === 'EXPLORER' ||
-                    tier.plan === 'PRO') && (
-                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <Gift className="h-4 w-4 text-green-500" />
-                      <span>Consultation with our experts</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
+              $ USD
+            </button>
+            <button
+              type="button"
+              onClick={() => onCurrencyChange('eur')}
+              className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+                currency === 'eur'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'hover:bg-secondary-hover text-muted-foreground'
+              }`}
+            >
+              € EUR
+            </button>
           </div>
-        )
-      })}
-    </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-8">
+        {pricingTiers.map((tier) => {
+          const isCurrentPlan =
+            subscription?.plan?.toLowerCase() ===
+            tier.name.toLowerCase().replace(' ', '')
+
+          // Find applicable promo for this tier
+          const applicablePromo = activePromos.find(
+            (promo) => promo.planId === tier.plan,
+          )
+
+          const hasPromo = !!applicablePromo
+
+          // Calculate yearly price with promo if applicable
+          const yearlyWithPromo = hasPromo
+            ? Math.round(
+                tier.yearlyPrice * (1 - applicablePromo.discount / 100),
+              )
+            : tier.yearlyPrice
+
+          // Calculate annual savings (difference between original monthly price and yearly price with promo)
+          const annualSavings = (tier.monthlyPrice - yearlyWithPromo) * 12
+
+          // Final price based on billing period
+          const finalPrice =
+            billingPeriod === 'yearly'
+              ? yearlyWithPromo
+              : hasPromo
+                ? Math.round(
+                    tier.monthlyPrice * (1 - applicablePromo.discount / 100),
+                  )
+                : tier.monthlyPrice
+
+          return (
+            <div key={tier.name} className="flex flex-col">
+              {/* Promo badge container - maintains consistent height whether visible or not */}
+              <div className="h-12 flex items-center justify-center mb-1">
+                {hasPromo && (
+                  <button
+                    type="button"
+                    onClick={() => copyPromoCode(applicablePromo.code)}
+                    className={`bg-orange-500 hover:bg-orange-600 text-white font-medium text-center py-2 px-4 rounded-md w-full transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+                      copiedPromo === applicablePromo.code ? 'bg-green-600' : ''
+                    }`}
+                    aria-label={`Copy promo code ${applicablePromo.code}`}
+                  >
+                    {copiedPromo === applicablePromo.code ? (
+                      <>
+                        <CheckIcon className="h-4 w-4" /> Copied!
+                      </>
+                    ) : (
+                      <>
+                        {applicablePromo.discount}% OFF with code{' '}
+                        {applicablePromo.code}
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              <Card
+                className={`flex flex-col relative bg-background/50 ${
+                  tier.isPopular ? 'shadow-lg' : ''
+                }`}
+              >
+                {tier.isPopular && (
+                  <Badge
+                    className="absolute right-6 top-6 px-3 py-1.5"
+                    variant="default"
+                  >
+                    Most Popular
+                  </Badge>
+                )}
+
+                <div className="flex flex-col h-full p-3">
+                  <div className="flex flex-col gap-2 bg-muted/50 rounded-lg p-6">
+                    <h3 className="text-2xl font-bold flex items-center gap-2">
+                      {tier.icon}
+                      {tier.name}
+                      {isCurrentPlan && (
+                        <span className="text-primary text-base font-medium">
+                          (Current Plan)
+                        </span>
+                      )}
+                    </h3>
+
+                    <p className="text-muted-foreground">{tier.description}</p>
+
+                    <div className="mt-6 flex flex-col">
+                      {/* Fixed height pricing container to maintain consistency */}
+                      <div className="min-h-[120px] flex flex-col justify-end">
+                        {/* For yearly plans, always show monthly price as reference */}
+                        {billingPeriod === 'yearly' && (
+                          <div className="flex items-center gap-4">
+                            <span className="text-2xl line-through text-muted-foreground">
+                              {currencySymbol}
+                              {tier.monthlyPrice}
+                            </span>
+                            {isAnnualOfferValid && (
+                              <Badge className="bg-green-600 hover:bg-green-700 px-3 py-1 text-white text-xs">
+                                Save {currencySymbol}
+                                {annualSavings}/year
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
+                        {/* For monthly plans with promo, show original price */}
+                        {billingPeriod === 'monthly' && hasPromo && (
+                          <div className="flex items-center gap-4">
+                            <span className="text-2xl line-through text-muted-foreground">
+                              {currencySymbol}
+                              {tier.monthlyPrice}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex flex-col gap-2">
+                          <span className="text-5xl font-bold tracking-tight">
+                            {currencySymbol}
+                            {finalPrice}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-muted-foreground mt-1">
+                          per month
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-6 flex-1">
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-3">
+                        Maximise lead discovery
+                      </h4>
+                      <div className="space-y-4">
+                        {tier.amplifyResults.map((feature) => (
+                          <div key={feature} className="flex items-start gap-3">
+                            <CheckIcon className="h-5 w-5 flex-shrink-0 text-green-500" />
+                            <span>{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-sm uppercase text-muted-foreground mb-3">
+                        Accelerate conversions
+                      </h4>
+                      <div className="space-y-4">
+                        {tier.maximizeConversion.map((feature) => (
+                          <div key={feature} className="flex items-start gap-3">
+                            <CheckIcon className="h-5 w-5 flex-shrink-0 text-green-500" />
+                            <span>{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+                    <Button
+                      variant={tier.isPopular ? 'default' : 'outline'}
+                      className="w-full justify-center"
+                      asChild
+                    >
+                      <Link
+                        to={
+                          isCurrentPlan
+                            ? '/dashboard'
+                            : `/checkout?plan=${tier.plan}&billingInterval=${billingPeriod}&currency=${currency}`
+                        }
+                      >
+                        {isCurrentPlan ? 'Current Plan' : 'Get started'}
+                        {!isCurrentPlan && (
+                          <ArrowRightIcon className="ml-2 h-4 w-4" />
+                        )}
+                      </Link>
+                    </Button>
+
+                    {/* Only show consultation with experts for Navigator plan and above */}
+                    {(tier.plan === 'NAVIGATOR' ||
+                      tier.plan === 'EXPLORER' ||
+                      tier.plan === 'PRO') && (
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <Gift className="h-4 w-4 text-green-500" />
+                        <span>Consultation with our experts</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }

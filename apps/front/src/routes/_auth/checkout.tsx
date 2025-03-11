@@ -15,6 +15,7 @@ export const Route = createFileRoute('/_auth/checkout')({
   validateSearch: (search) => ({
     plan: search.plan,
     billingInterval: search.billingInterval,
+    currency: search.currency || 'usd',
   }),
 })
 
@@ -26,7 +27,7 @@ const stripePromise = loadStripe(
 )
 
 function CheckoutComponent() {
-  const { plan, billingInterval } = Route.useSearch()
+  const { plan, billingInterval, currency } = Route.useSearch()
   const [copied, setCopied] = useState(false)
   const {
     mutate: createSession,
@@ -48,9 +49,10 @@ function CheckoutComponent() {
       createSession({
         plan: plan as SearchModel,
         billingInterval: billingInterval as 'monthly' | 'yearly',
+        currency: currency as 'usd' | 'eur',
       })
     }
-  }, [plan, billingInterval, createSession])
+  }, [plan, billingInterval, currency, createSession])
 
   if (isPending) {
     return (
