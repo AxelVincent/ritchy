@@ -39,32 +39,66 @@ export function validateAndExportToCsv<T>({
     }))
 
   // Generate CSV content
-  const csvContent = [
+  const csvRows = [
     // Create header row
     effectiveColumns
-      .map((col) => col.header)
-      .join(','),
+      .map((col) => `"${col.header.replace(/"/g, '""')}"`)
+      .join(';'),
 
     // Create data rows
     ...validatedData.map((row) =>
       effectiveColumns
         .map((col) => {
-          // Get the value and convert to string
+          // Get the value
           const rawValue = col.accessor(row)
 
           // Handle different value types
-          const value =
-            rawValue instanceof Date ? rawValue.toISOString() : rawValue
+          let value: string
 
-          // Escape special characters
-          return `"${String(value).replace(/"/g, '""')}"`
+          if (rawValue === null || rawValue === undefined) {
+            value = ''
+          } else if (rawValue instanceof Date) {
+            value = rawValue.toISOString()
+          } else if (typeof rawValue === 'object') {
+            // For objects (like arrays or nested objects), stringify them
+            // but in a more Excel-friendly format
+            try {
+              if (Array.isArray(rawValue)) {
+                // Join arrays with semicolons instead of commas for Excel compatibility
+                value = rawValue.join('; ')
+              } else {
+                // For objects, create a simplified string representation
+                value = JSON.stringify(rawValue)
+                  .replace(/[{}"[\]]/g, '')
+                  .replace(/,/g, '; ')
+                  .replace(/:/g, ': ')
+              }
+            } catch {
+              value = String(rawValue)
+            }
+          } else {
+            // Convert to string and handle special cases
+            value = String(rawValue)
+          }
+
+          // Excel requires double quotes around fields, and any double quotes
+          // within the field must be escaped by doubling them
+          return `"${value.replace(/"/g, '""')}"`
         })
-        .join(','),
+        .join(';'),
     ),
-  ].join('\n')
+  ]
 
-  // Create and trigger file download
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  // Join rows with Windows-style line endings for better Excel compatibility
+  const csvContent = csvRows.join('\r\n')
+
+  // Add UTF-8 BOM for Excel compatibility
+  // This is crucial for special characters like accented letters
+  const BOM = '\uFEFF'
+  const csvWithBOM = BOM + csvContent
+
+  // Create and trigger file download with explicit UTF-8 encoding
+  const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
 
