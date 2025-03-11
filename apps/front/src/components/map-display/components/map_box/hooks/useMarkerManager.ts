@@ -60,6 +60,7 @@ export const useMarkerManager = ({
     places: storePlaces,
     updatedPlaceStatuses,
     setSelectedPlaceId,
+    selectedPlaceId,
   } = useMapStore()
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
@@ -91,7 +92,8 @@ export const useMarkerManager = ({
       !placesChanged &&
       !displayedIdsChanged &&
       !selectionChanged &&
-      updatedPlaceStatuses.size === 0
+      updatedPlaceStatuses.size === 0 &&
+      !selectedPlaceId
     ) {
       return
     }
@@ -128,6 +130,7 @@ export const useMarkerManager = ({
       for (const place of places) {
         const isDisplayed = displayedPlaceIds.has(place.id)
         const isSelected = dataTableRowSelection[place.id] ?? false
+        const isSelectedPlace = place.id === selectedPlaceId
         const existing = markersRef.current.get(place.id)
 
         // Check if this place has an updated status
@@ -157,8 +160,13 @@ export const useMarkerManager = ({
               isDisplayed ? 'active-marker' : 'filtered-marker',
             )
 
+            // Add a class for the selected place
+            if (isSelectedPlace) {
+              markerElement.classList.add('selected-place-marker')
+            }
+
             const svg = isDisplayed
-              ? createActiveMarkerSvg(color, place)
+              ? createActiveMarkerSvg(color, place, isSelectedPlace)
               : createFilteredMarkerSvg()
 
             if (svg) {
@@ -190,9 +198,10 @@ export const useMarkerManager = ({
           const element = existing.marker.getElement()
           element.classList.toggle('filtered-marker', !isDisplayed)
           element.classList.toggle('active-marker', isDisplayed)
+          element.classList.toggle('selected-place-marker', isSelectedPlace)
 
           const svg = isDisplayed
-            ? createActiveMarkerSvg(color, place)
+            ? createActiveMarkerSvg(color, place, isSelectedPlace)
             : createFilteredMarkerSvg()
 
           if (svg && element) {
@@ -226,6 +235,7 @@ export const useMarkerManager = ({
     setCenterPlaceSpreadsheetId,
     updatedPlaceStatuses,
     setSelectedPlaceId,
+    selectedPlaceId,
   ])
 
   // Cleanup effect - only run on unmount
