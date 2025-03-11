@@ -11,6 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { DragHandleDots2Icon } from '@radix-ui/react-icons'
 import type { Place } from '@ritchy/types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ExternalLink, Star, X } from 'lucide-react'
@@ -112,164 +113,171 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         ref={resizeRef}
       >
-        <div
-          className="w-full h-1 bg-transparent cursor-ns-resize mb-1 flex items-center justify-center"
-          onMouseDown={handleResizeStart}
-        >
-          <div className="w-10 h-1 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors" />
-        </div>
-        <Card
-          className="shadow-lg flex flex-col"
-          style={{ height: `${cardHeight}px` }}
-        >
-          <CardHeader className="pb-2 pt-3 px-4 shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">{currentPlace.name}</CardTitle>|
-                <div className="flex items-center gap-2 text-sm">
-                  {currentPlace.rating ? (
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium">
-                        {currentPlace.rating.toFixed(1)}
-                      </span>
-                      <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                      <span className="text-muted-foreground">
-                        ({currentPlace.ratingCount?.toLocaleString() ?? 0})
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      No reviews
-                    </div>
-                  )}
-                  {currentPlace.openingHours && (
-                    <StatusIndicator
-                      isOpen={currentPlace.openingHours.openNow}
-                    />
-                  )}
+        <div className="relative">
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-ns-resize"
+            onMouseDown={handleResizeStart}
+          >
+            <div className="flex h-4 w-6 items-center justify-center rounded-sm border bg-border  hover:bg-gray-300 transition-colors">
+              <DragHandleDots2Icon className="h-4 w-3.5 rotate-90" />
+            </div>
+          </div>
+          <Card
+            className="shadow-lg flex flex-col"
+            style={{ height: `${cardHeight}px` }}
+          >
+            <CardHeader className="pb-2 pt-3 px-4 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">{currentPlace.name}</CardTitle>
+                  |
+                  <div className="flex items-center gap-2 text-sm">
+                    {currentPlace.rating ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">
+                          {currentPlace.rating.toFixed(1)}
+                        </span>
+                        <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                        <span className="text-muted-foreground">
+                          ({currentPlace.ratingCount?.toLocaleString() ?? 0})
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        No reviews
+                      </div>
+                    )}
+                    {currentPlace.openingHours && (
+                      <StatusIndicator
+                        isOpen={currentPlace.openingHours.openNow}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {currentPlace.website && (
+                <div className="flex items-center gap-2">
+                  {currentPlace.website && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() =>
+                        window.open(currentPlace.website, '_blank')
+                      }
+                      title="Visit website"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => window.open(currentPlace.website, '_blank')}
-                    title="Visit website"
+                    onClick={() => {
+                      const mapsUrl =
+                        currentPlace.googleMapsUri ||
+                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          `${currentPlace.name} ${currentPlace.address.formattedAddress || ''}`,
+                        )}`
+                      window.open(mapsUrl, '_blank')
+                    }}
+                    title="Open in Google Maps"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <FontAwesomeIcon icon={faGoogle} className="h-4 w-4" />
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => {
-                    const mapsUrl =
-                      currentPlace.googleMapsUri ||
-                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        `${currentPlace.name} ${currentPlace.address.formattedAddress || ''}`,
-                      )}`
-                    window.open(mapsUrl, '_blank')
-                  }}
-                  title="Open in Google Maps"
-                >
-                  <FontAwesomeIcon icon={faGoogle} className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={onClose}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={onClose}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardHeader>
+            </CardHeader>
 
-          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-            <Tabs defaultValue="info" className="flex flex-col h-full">
-              <TabsList
-                className="p-0 grid grid-cols-3 h-[45px] shrink-0 items-center bg-transparent"
-                aria-label="Place details"
+            <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+              <Tabs defaultValue="info" className="flex flex-col h-full">
+                <TabsList
+                  className="p-0 grid grid-cols-3 h-[45px] shrink-0 items-center bg-transparent"
+                  aria-label="Place details"
+                >
+                  <TabsTrigger
+                    value="info"
+                    aria-label="Information"
+                    className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                  >
+                    Information
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="hours"
+                    aria-label="Opening hours"
+                    className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                  >
+                    Opening hours
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="notes"
+                    aria-label="Notes"
+                    className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                  >
+                    Notes
+                  </TabsTrigger>
+                </TabsList>
+
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <TabsContent
+                    value="info"
+                    className="mt-0 p-4 h-full flex-1 overflow-auto"
+                  >
+                    <PlaceInfoTab place={currentPlace} />
+                  </TabsContent>
+
+                  <TabsContent
+                    value="hours"
+                    className="mt-0 px-4 h-full flex-1 overflow-auto"
+                  >
+                    <PlaceHoursTab place={currentPlace} />
+                  </TabsContent>
+
+                  <TabsContent
+                    value="notes"
+                    className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
+                  >
+                    <PlaceNotesTab place={currentPlace} />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </CardContent>
+
+            <CardFooter className="flex justify-between shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handlePrevious}
+                disabled={displayedIds.length <= 1}
               >
-                <TabsTrigger
-                  value="info"
-                  aria-label="Information"
-                  className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
-                >
-                  Information
-                </TabsTrigger>
-                <TabsTrigger
-                  value="hours"
-                  aria-label="Opening hours"
-                  className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
-                >
-                  Opening hours
-                </TabsTrigger>
-                <TabsTrigger
-                  value="notes"
-                  aria-label="Notes"
-                  className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
-                >
-                  Notes
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="flex-1 overflow-hidden flex flex-col">
-                <TabsContent
-                  value="info"
-                  className="mt-0 p-4 h-full flex-1 overflow-auto"
-                >
-                  <PlaceInfoTab place={currentPlace} />
-                </TabsContent>
-
-                <TabsContent
-                  value="hours"
-                  className="mt-0 px-4 h-full flex-1 overflow-auto"
-                >
-                  <PlaceHoursTab place={currentPlace} />
-                </TabsContent>
-
-                <TabsContent
-                  value="notes"
-                  className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
-                >
-                  <PlaceNotesTab place={currentPlace} />
-                </TabsContent>
-              </div>
-            </Tabs>
-          </CardContent>
-
-          <CardFooter className="flex justify-between shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={handlePrevious}
-              disabled={displayedIds.length <= 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            {/* Navigation indicator */}
-            {displayedIds.length > 1 && (
-              <div className="text-sm text-muted-foreground text-center py-2 shrink-0">
-                {currentIndex + 1} of {displayedIds.length} displayed places
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={handleNext}
-              disabled={displayedIds.length <= 1}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </CardFooter>
-        </Card>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {/* Navigation indicator */}
+              {displayedIds.length > 1 && (
+                <div className="text-sm text-muted-foreground text-center py-2 shrink-0">
+                  {currentIndex + 1} of {displayedIds.length} displayed places
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleNext}
+                disabled={displayedIds.length <= 1}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       </motion.div>
     </AnimatePresence>
   )
