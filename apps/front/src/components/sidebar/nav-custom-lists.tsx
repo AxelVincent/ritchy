@@ -101,7 +101,12 @@ export function NavCustomLists() {
               <Link to={`/lists/${list.id}`}>
                 <div className="flex items-center gap-2">
                   <p className="text-sm">{list.emoji}</p>
-                  <p className="pl-2 font-medium">{list.name}</p>
+                  <p
+                    className="pl-2 font-medium truncate max-w-[120px]"
+                    title={list.name}
+                  >
+                    {list.name}
+                  </p>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {list.itemCount}
