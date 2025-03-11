@@ -1,5 +1,5 @@
+import { DataExport } from '@/components/data-export/DataExport'
 import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialog'
-import { DataExport } from '@/components/map-display/components/data_export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
