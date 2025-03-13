@@ -30,7 +30,12 @@ export const CreateListRequestSchema = z.object({
 })
 
 export const AddItemsToListRequestBodySchema = z.object({
-  items: z.array(z.string()),
+  items: z.array(
+    z.object({
+      placeId: z.string(),
+      searchId: z.string().uuid().nullable(),
+    }),
+  ),
 })
 
 export const AddItemsToListRequestParamsSchema = z.object({

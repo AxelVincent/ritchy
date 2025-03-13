@@ -14,7 +14,10 @@ import { useState } from 'react'
 interface AddItemsToListDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedItems: string[]
+  selectedItems: {
+    placeId: string
+    searchId: string | null
+  }[]
 }
 
 export function AddItemsToListDialog({
@@ -29,7 +32,10 @@ export function AddItemsToListDialog({
   const handleAddToList = async (listId: string) => {
     const res = await addItemsToList({
       id: listId,
-      items: selectedItems,
+      items: selectedItems.map((item) => ({
+        placeId: item.placeId,
+        searchId: item.searchId,
+      })),
     })
 
     if ('error' in res) {

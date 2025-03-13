@@ -254,7 +254,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
               <AddItemsToListDialog
                 open={showAddListDialog}
                 onOpenChange={setShowAddListDialog}
-                selectedItems={selectedRows.map((row) => row.original.id)}
+                selectedItems={selectedRows.map((row) => ({
+                  placeId: row.original.id,
+                  searchId: row.original.searchId,
+                }))}
               />
               {selectedRows.length > 0 && (
                 <div className="flex gap-2">
@@ -282,7 +285,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
               <AddItemsToListDialog
                 open={showAddListDialog}
                 onOpenChange={setShowAddListDialog}
-                selectedItems={selectedRows.map((row) => row.original.id)}
+                selectedItems={selectedRows.map((row) => ({
+                  placeId: row.original.id,
+                  searchId: row.original.searchId,
+                }))}
               />
               {selectedRows.length > 0 && (
                 <Button

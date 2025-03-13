@@ -111,6 +111,9 @@ describe('DataExport', () => {
         priceRange: undefined,
         openingHours: undefined,
         utcOffsetMinutes: 0,
+        status: null,
+        searchId: null,
+        enrichment: null,
       },
     ]
 
@@ -173,6 +176,9 @@ describe('DataExport', () => {
         priceRange: undefined,
         openingHours: undefined,
         utcOffsetMinutes: 0,
+        status: null,
+        searchId: null,
+        enrichment: null,
       },
     ]
 

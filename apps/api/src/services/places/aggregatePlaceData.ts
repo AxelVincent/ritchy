@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import type { EnrichResponse, Place } from '@ritchy/types'
+import type { EnrichResponse, Place, PlaceBase } from '@ritchy/types'
 import { EnrichResponseSchema } from '@ritchy/types'
 import { z } from 'zod'
 import { getOrFetchEnrichmentData } from '../enrichment/getOrFetchEnrichmentData'
@@ -13,24 +13,25 @@ interface AggregatePlaceDataOptions {
   excludeListId?: string
   includeEnrichment?: boolean
 }
+type PlaceWithSearchId = PlaceBase & { searchId?: string | null }
 
 /**
- * Aggregates place data by joining information from different sources:
- * - List associations
- * - User notes
- * - Lead statuses
- * - Enrichment data (optional)
- *
- * @param places - Array of places to aggregate data for
- * @param options - Configuration options
- * @returns Promise with array of places with aggregated data
+ * Aggregates place data by joining information from different sources
  */
 export const aggregatePlaceData = async (
-  places: Place[],
+  places: PlaceWithSearchId[],
   options: AggregatePlaceDataOptions,
 ): Promise<Place[]> => {
   const { userId, excludeListId, includeEnrichment = false } = options
   const placeIds = places.map((place) => place.id)
+
+  // Create a map to store searchIds for each place
+  const searchIdMap = new Map<string, string | null>()
+  for (const place of places) {
+    if (place.searchId) {
+      searchIdMap.set(place.id, place.searchId)
+    }
+  }
 
   // Get associations, notes, and lead statuses for each place
   const associations = await getListAssociationsByPlaceIds(
@@ -52,105 +53,110 @@ export const aggregatePlaceData = async (
     })
   }
 
+  // Create a function to build a Place object from a PlaceBase
+  const buildPlaceObject = (basePlace: PlaceBase): Place => {
+    // Create a new object with all the required properties of Place
+    const placeObject: Place = {
+      ...basePlace,
+      lists: associations.get(basePlace.id) || [],
+      notes: notes.get(basePlace.id) || [],
+      status: statuses.get(basePlace.id) || null,
+      enrichment: null,
+      searchId: searchIdMap.get(basePlace.id) || null,
+    }
+    return placeObject
+  }
+
   // Aggregate data from different sources for each place
-  return Promise.all(
-    places.map(async (place) => {
-      const aggregatedPlace = {
-        ...place,
-        lists: associations.get(place.id),
-        notes: notes.get(place.id),
-        status: statuses.get(place.id),
-      }
+  const initialAggregatedPlaces = places.map(buildPlaceObject)
 
-      return aggregatedPlace
-    }),
-  ).then(async (aggregatedPlaces) => {
-    // Process enrichment data in parallel if needed
-    if (includeEnrichment) {
-      // Collect all places that need enrichment
-      const placesToEnrich = aggregatedPlaces.filter(
-        (place) => enrichedPlaces.has(place.id) && enrichedPlaces.get(place.id),
-      )
+  // Process enrichment data in parallel if needed
+  if (includeEnrichment) {
+    // Collect all places that need enrichment
+    const placesToEnrich = initialAggregatedPlaces.filter(
+      (place) => enrichedPlaces.has(place.id) && enrichedPlaces.get(place.id),
+    )
 
-      if (placesToEnrich.length > 0) {
-        // Create a map of place IDs to their websites
-        const enrichmentRequests = placesToEnrich.map((place) => ({
-          placeId: place.id,
-          website: enrichedPlaces.get(place.id) as string,
-        }))
+    if (placesToEnrich.length > 0) {
+      // Create a map of place IDs to their websites
+      const enrichmentRequests = placesToEnrich.map((place) => ({
+        placeId: place.id,
+        website: enrichedPlaces.get(place.id) as string,
+      }))
 
-        logger.info({
-          msg: 'Processing enrichment data in parallel',
-          event: 'enrichment_parallel_processing',
-          metadata: { count: enrichmentRequests.length },
-        })
+      logger.info({
+        msg: 'Processing enrichment data in parallel',
+        event: 'enrichment_parallel_processing',
+        metadata: { count: enrichmentRequests.length },
+      })
 
-        // Process all enrichment requests in parallel
-        const enrichmentResults = await Promise.all(
-          enrichmentRequests.map(async ({ placeId, website }) => {
-            try {
-              const enrichmentData = await getOrFetchEnrichmentData(
+      // Process all enrichment requests in parallel
+      const enrichmentResults = await Promise.all(
+        enrichmentRequests.map(async ({ placeId, website }) => {
+          try {
+            const enrichmentData = await getOrFetchEnrichmentData(
+              placeId,
+              website,
+            )
+
+            if (enrichmentData) {
+              // Sanitize and validate the enrichment data
+              const sanitizedData = sanitizeEnrichmentData(
+                enrichmentData,
                 placeId,
-                website,
               )
 
-              if (enrichmentData) {
-                // Sanitize and validate the enrichment data
-                const sanitizedData = sanitizeEnrichmentData(
-                  enrichmentData,
-                  placeId,
-                )
-
-                try {
-                  const validatedEnrichment =
-                    EnrichResponseSchema.parse(sanitizedData)
-                  return { placeId, enrichment: validatedEnrichment }
-                } catch (validationError) {
-                  logger.warn({
-                    msg: 'Enrichment data validation failed',
-                    event: 'enrichment_validation_failed',
-                    metadata: {
-                      placeId,
-                      error: validationError,
-                      enrichmentData: sanitizedData,
-                    },
-                  })
-                }
+              try {
+                const validatedEnrichment =
+                  EnrichResponseSchema.parse(sanitizedData)
+                return { placeId, enrichment: validatedEnrichment }
+              } catch (validationError) {
+                logger.warn({
+                  msg: 'Enrichment data validation failed',
+                  event: 'enrichment_validation_failed',
+                  metadata: {
+                    placeId,
+                    error: validationError,
+                    enrichmentData: sanitizedData,
+                  },
+                })
               }
-            } catch (error) {
-              logger.warn({
-                msg: 'Failed to fetch or process enrichment data',
-                event: 'enrichment_processing_failed',
-                metadata: { placeId, error },
-              })
             }
-
-            return { placeId, enrichment: null }
-          }),
-        )
-
-        // Create a map of place IDs to their enrichment data
-        const enrichmentMap = new Map(
-          enrichmentResults
-            .filter((result) => result.enrichment !== null)
-            .map((result) => [result.placeId, result.enrichment]),
-        )
-
-        // Merge enrichment data back into the aggregated places
-        return aggregatedPlaces.map((place) => {
-          if (enrichmentMap.has(place.id)) {
-            return {
-              ...place,
-              enrichment: enrichmentMap.get(place.id),
-            }
+          } catch (error) {
+            logger.warn({
+              msg: 'Failed to fetch or process enrichment data',
+              event: 'enrichment_processing_failed',
+              metadata: { placeId, error },
+            })
           }
-          return place
-        })
-      }
-    }
 
-    return aggregatedPlaces
-  })
+          return { placeId, enrichment: null }
+        }),
+      )
+
+      // Create a map of place IDs to their enrichment data
+      const enrichmentMap = new Map(
+        enrichmentResults
+          .filter((result) => result.enrichment !== null)
+          .map((result) => [result.placeId, result.enrichment]),
+      )
+
+      // Merge enrichment data back into the aggregated places
+      return initialAggregatedPlaces.map((place) => {
+        if (enrichmentMap.has(place.id)) {
+          // Create a new Place object with enrichment data
+          const enrichedPlace: Place = {
+            ...place,
+            enrichment: enrichmentMap.get(place.id) || null,
+          }
+          return enrichedPlace
+        }
+        return place
+      })
+    }
+  }
+
+  return initialAggregatedPlaces
 }
 
 /**

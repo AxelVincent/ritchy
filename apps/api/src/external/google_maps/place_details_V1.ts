@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
-import type { Place } from '@ritchy/types'
+import type { Place, PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 
 import { REDIS_KEYS } from '../../lib/redis/keys'
@@ -42,10 +42,10 @@ async function fetchPlaceDetails(placeId: string): Promise<AdvancedPlace> {
 
 export async function getPlaceDetailsV1(
   placeId: string,
-): Promise<Place & { fromCache: boolean }> {
+): Promise<PlaceBase & { fromCache: boolean }> {
   const key = REDIS_KEYS.place(placeId)
   // Check cache first
-  const cachedPlace = await redisClient.get<Place>(key)
+  const cachedPlace = await redisClient.get<PlaceBase>(key)
   if (cachedPlace) {
     // Recalculate openNow property for cached places
     if (cachedPlace.openingHours) {

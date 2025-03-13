@@ -176,6 +176,20 @@
       "when": 1741183503654,
       "tag": "0024_condemned_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1741874191181,
+      "tag": "0025_burly_slapstick",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1741874499860,
+      "tag": "0026_goofy_brood",
+      "breakpoints": true
     }
   ]
 }

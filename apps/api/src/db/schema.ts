@@ -32,7 +32,7 @@ export const list = pgTable('list', {
   emoji: text('emoji').notNull(),
   userId: uuid('user_id')
     .notNull()
-    .references(() => user.id),
+    .references(() => user.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -43,8 +43,11 @@ export const listPlace = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     listId: uuid('list_id')
       .notNull()
-      .references(() => list.id),
+      .references(() => list.id, { onDelete: 'cascade' }),
     placeId: text('place_id').notNull(),
+    searchId: uuid('search_id').references(() => search.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -61,7 +64,7 @@ export const note = pgTable('note', {
   placeId: text('place_id').notNull(),
   userId: uuid('user_id')
     .notNull()
-    .references(() => user.id),
+    .references(() => user.id, { onDelete: 'cascade' }),
   note: text('note').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -78,7 +81,7 @@ export const search = pgTable('search', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id')
     .notNull()
-    .references(() => user.id),
+    .references(() => user.id, { onDelete: 'cascade' }),
   latitude: numeric('latitude').notNull(),
   longitude: numeric('longitude').notNull(),
   radiusInMeters: integer('radius_in_meters').notNull(),
@@ -139,7 +142,7 @@ export const subscription = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => user.id)
+      .references(() => user.id, { onDelete: 'cascade' })
       .unique(),
     stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
     stripePriceId: text('stripe_price_id').notNull(),
@@ -166,7 +169,7 @@ export const enrichment = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => user.id),
+      .references(() => user.id, { onDelete: 'cascade' }),
     placeId: text('place_id').notNull(),
     website: text('website').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -198,7 +201,7 @@ export const status = pgTable(
     placeId: text('place_id').notNull(),
     userId: uuid('user_id')
       .notNull()
-      .references(() => user.id),
+      .references(() => user.id, { onDelete: 'cascade' }),
     status: leadStatusEnum('status').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),

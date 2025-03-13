@@ -7,7 +7,6 @@ import {
   type AddItemsToListResponse,
 } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
-import { sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
@@ -34,6 +33,7 @@ export const addItemsToList = async (
 
     const userId = req.auth.userId
     const parsedBody = AddItemsToListRequestBodySchema.parse(req.body)
+    const { items } = parsedBody
 
     // Verify list ownership
     const result = await db
@@ -50,33 +50,33 @@ export const addItemsToList = async (
       return
     }
 
+    // Extract placeIds for checking duplicates
+    const placeIds = items.map((item) => item.placeId)
+
     // First, get existing entries
     const existingEntries = await db
       .select()
       .from(listPlace)
       .where(
-        and(
-          eq(listPlace.listId, listId),
-          inArray(listPlace.placeId, parsedBody.items),
-        ),
+        and(eq(listPlace.listId, listId), inArray(listPlace.placeId, placeIds)),
       )
 
     const duplicatePlaceIds = existingEntries.map((entry) => entry.placeId)
-    // Deduplicate newPlaceIds using Set
-    const newPlaceIds = [
-      ...new Set(
-        parsedBody.items.filter((id) => !duplicatePlaceIds.includes(id)),
-      ),
-    ]
+
+    // Filter out duplicates
+    const newItems = items.filter(
+      (item) => !duplicatePlaceIds.includes(item.placeId),
+    )
 
     // Only insert new items
-    if (newPlaceIds.length > 0) {
+    if (newItems.length > 0) {
       await db
         .insert(listPlace)
         .values(
-          newPlaceIds.map((item) => ({
+          newItems.map((item) => ({
             listId: listId,
-            placeId: item,
+            placeId: item.placeId,
+            searchId: item.searchId,
           })),
         )
         .onConflictDoUpdate({
@@ -87,10 +87,25 @@ export const addItemsToList = async (
         })
     }
 
+    // Update existing items with searchId if provided
+    for (const item of items) {
+      if (duplicatePlaceIds.includes(item.placeId) && item.searchId) {
+        await db
+          .update(listPlace)
+          .set({ searchId: item.searchId })
+          .where(
+            and(
+              eq(listPlace.listId, listId),
+              eq(listPlace.placeId, item.placeId),
+            ),
+          )
+      }
+    }
+
     res.json({
       success: true,
       duplicates: duplicatePlaceIds.map(Number),
-      added: newPlaceIds.map(Number),
+      added: newItems.map((item) => Number(item.placeId)),
     })
     return
   } catch (error) {
