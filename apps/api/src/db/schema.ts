@@ -8,6 +8,7 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  index,
 } from 'drizzle-orm/pg-core'
 
 export const user = pgTable(
@@ -56,6 +57,7 @@ export const listPlace = pgTable(
       table.listId,
       table.placeId,
     ),
+    listIdIdx: index('idx_list_place_list_id').on(table.listId),
   }),
 )
 

@@ -6,7 +6,7 @@ import {
   type AddItemsToListRequestParams,
   type AddItemsToListResponse,
 } from '@ritchy/types'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
@@ -49,63 +49,44 @@ export const addItemsToList = async (
       })
       return
     }
-
-    // Extract placeIds for checking duplicates
-    const placeIds = items.map((item) => item.placeId)
-
-    // First, get existing entries
-    const existingEntries = await db
-      .select()
-      .from(listPlace)
-      .where(
-        and(eq(listPlace.listId, listId), inArray(listPlace.placeId, placeIds)),
+    
+    // Use a single upsert operation with returning clause
+    const upsertResult = await db
+      .insert(listPlace)
+      .values(
+        items.map((item) => ({
+          listId: listId,
+          placeId: item.placeId,
+          searchId: item.searchId,
+        })),
       )
-
-    const duplicatePlaceIds = existingEntries.map((entry) => entry.placeId)
-
-    // Filter out duplicates
-    const newItems = items.filter(
-      (item) => !duplicatePlaceIds.includes(item.placeId),
-    )
-
-    // Only insert new items
-    if (newItems.length > 0) {
-      await db
-        .insert(listPlace)
-        .values(
-          newItems.map((item) => ({
-            listId: listId,
-            placeId: item.placeId,
-            searchId: item.searchId,
-          })),
-        )
-        .onConflictDoUpdate({
-          target: [listPlace.listId, listPlace.placeId],
-          set: {
-            updatedAt: new Date(),
-          },
-        })
-    }
-
-    // Update existing items with searchId if provided
-    for (const item of items) {
-      if (duplicatePlaceIds.includes(item.placeId) && item.searchId) {
-        await db
-          .update(listPlace)
-          .set({ searchId: item.searchId })
-          .where(
-            and(
-              eq(listPlace.listId, listId),
-              eq(listPlace.placeId, item.placeId),
-            ),
-          )
-      }
-    }
-
+      .onConflictDoUpdate({
+        target: [listPlace.listId, listPlace.placeId],
+        set: {
+          searchId: sql`EXCLUDED.search_id`,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({
+        placeId: listPlace.placeId,
+        // Add a column to indicate if this was an insert or update
+        // This is PostgreSQL-specific syntax
+        operation: sql`CASE WHEN xmax = 0 THEN 'insert' ELSE 'update' END`,
+      })
+    
+    // Separate the results into new and duplicate items
+    const newPlaceIds = upsertResult
+      .filter(row => row.operation === 'insert')
+      .map(row => row.placeId)
+    
+    const duplicatePlaceIds = upsertResult
+      .filter(row => row.operation === 'update')
+      .map(row => row.placeId)
+    
     res.json({
       success: true,
       duplicates: duplicatePlaceIds.map(Number),
-      added: newItems.map((item) => Number(item.placeId)),
+      added: newPlaceIds.map(Number),
     })
     return
   } catch (error) {
