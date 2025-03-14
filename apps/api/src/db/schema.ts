@@ -213,5 +213,9 @@ export const status = pgTable(
       table.userId,
       table.placeId,
     ),
+    placeUserIdx: index('idx_place_user_status').on(
+      table.placeId,
+      table.userId,
+    ),
   }),
 )

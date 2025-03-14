@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "idx_place_user_status" ON "status" USING btree ("place_id","user_id");
