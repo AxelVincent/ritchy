@@ -51,5 +51,8 @@
   "dependencyDashboard": true,
   "labels": ["dependencies"],
   "semanticCommitScope": "deps",
-  "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
+  "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
+  "nvmrc": {
+    "enabled": true
+  }
 }
