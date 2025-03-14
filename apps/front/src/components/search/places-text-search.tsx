@@ -12,7 +12,10 @@ import { Slider } from '@/components/ui/slider'
 import { useNavigate } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
 
-import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
+import {
+  isSubscriptionSuccess,
+  useUserSubscription,
+} from '@/api/queries/users/useUserSubscription'
 import { RADIUS_SETTINGS } from '@/components/map-display/types'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
 import { isModelAvailable } from '@/lib/subscription'
@@ -53,6 +56,10 @@ export const PlacesTextSearch = ({
   const [model, setModel] = useState<SearchModel>('ESSENTIALS')
   const [currentLocation, setCurrentLocation] =
     useState<LocationParams>(location)
+  const userPlan =
+    subscription && isSubscriptionSuccess(subscription)
+      ? subscription.plan
+      : 'FREE'
 
   useEffect(() => {
     setCurrentLocation({
@@ -62,12 +69,18 @@ export const PlacesTextSearch = ({
   }, [location, radiusInMeters])
 
   const getMaxRadius = () => {
-    const userPlan = subscription?.plan ?? 'FREE'
-    return PLAN_RADIUS_LIMITS[userPlan]
+    if (subscription && isSubscriptionSuccess(subscription)) {
+      return PLAN_RADIUS_LIMITS[subscription.plan]
+    }
+    return PLAN_RADIUS_LIMITS.FREE
   }
 
   const getNextTierRadius = () => {
-    const userPlan = subscription?.plan ?? 'FREE'
+    const userPlan =
+      subscription && isSubscriptionSuccess(subscription)
+        ? subscription.plan
+        : 'FREE'
+
     switch (userPlan) {
       case 'FREE':
       case 'ESSENTIALS':
@@ -139,7 +152,12 @@ export const PlacesTextSearch = ({
   }
 
   const handleModelChange = (value: typeof model) => {
-    if (!isModelAvailable(subscription?.plan, value)) {
+    const plan =
+      subscription && isSubscriptionSuccess(subscription)
+        ? subscription.plan
+        : undefined
+
+    if (!isModelAvailable(plan, value)) {
       navigate({ to: '/pricing' })
       return
     }
@@ -244,14 +262,14 @@ export const PlacesTextSearch = ({
                     <div className="flex items-center w-full">
                       <span
                         className={
-                          !isModelAvailable(subscription?.plan, 'NAVIGATOR')
+                          !isModelAvailable(userPlan, 'NAVIGATOR')
                             ? 'text-muted-foreground'
                             : ''
                         }
                       >
                         Navigator
                       </span>
-                      {!isModelAvailable(subscription?.plan, 'NAVIGATOR') && (
+                      {!isModelAvailable(userPlan, 'NAVIGATOR') && (
                         <span className="text-xs font-medium text-primary ml-auto">
                           Upgrade
                         </span>
@@ -267,14 +285,14 @@ export const PlacesTextSearch = ({
                     <div className="flex items-center w-full">
                       <span
                         className={
-                          !isModelAvailable(subscription?.plan, 'EXPLORER')
+                          !isModelAvailable(userPlan, 'EXPLORER')
                             ? 'text-muted-foreground'
                             : ''
                         }
                       >
                         Explorer
                       </span>
-                      {!isModelAvailable(subscription?.plan, 'EXPLORER') && (
+                      {!isModelAvailable(userPlan, 'EXPLORER') && (
                         <span className="text-xs font-medium text-primary ml-auto">
                           Upgrade
                         </span>
@@ -290,14 +308,14 @@ export const PlacesTextSearch = ({
                     <div className="flex items-center w-full">
                       <span
                         className={
-                          !isModelAvailable(subscription?.plan, 'PRO')
+                          !isModelAvailable(userPlan, 'PRO')
                             ? 'text-muted-foreground'
                             : ''
                         }
                       >
                         Pro
                       </span>
-                      {!isModelAvailable(subscription?.plan, 'PRO') && (
+                      {!isModelAvailable(userPlan, 'PRO') && (
                         <span className="text-xs font-medium text-primary ml-auto">
                           Upgrade
                         </span>

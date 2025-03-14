@@ -1,26 +1,10 @@
-import { createApiClient } from '@/lib/api/createApiClient'
-import { useAuth } from '@clerk/clerk-react'
+import { useApiQuery } from '@/hooks/useApi'
 import type { GetSearchesResponse } from '@ritchy/types'
-import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
-const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
-})
+const searchesKeys = {
+  all: ['searches'] as const,
+}
 
-export const useSearchesQuery = (): UseQueryResult<GetSearchesResponse> => {
-  const { getToken } = useAuth()
-  return useQuery({
-    queryKey: ['searches'],
-    queryFn: async () => {
-      const token = await getToken()
-      const response = await apiClient.fetchWithAuth(
-        '/searches',
-        {
-          method: 'GET',
-        },
-        token,
-      )
-      return response
-    },
-  })
+export const useSearchesQuery = () => {
+  return useApiQuery<GetSearchesResponse>('/searches', searchesKeys.all)
 }

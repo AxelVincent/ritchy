@@ -1,30 +1,14 @@
-import { createApiClient } from '@/lib/api/createApiClient'
-import { useAuth } from '@clerk/clerk-react'
+import { useApiQuery } from '@/hooks/useApi'
 import type { NotesApiResponse } from '@ritchy/types'
-import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
-const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
-})
+const notesKeys = {
+  all: ['notes'] as const,
+  place: (placeId: string) => [...notesKeys.all, 'place', placeId] as const,
+}
 
-export const usePlaceNotesQuery = (
-  placeId: string,
-): UseQueryResult<NotesApiResponse> => {
-  const { getToken } = useAuth()
-
-  return useQuery({
-    queryKey: ['placeNotes', placeId],
-    queryFn: async () => {
-      const token = await getToken()
-
-      const response = await apiClient.fetchWithAuth(
-        `/notes/${placeId}`,
-        {
-          method: 'GET',
-        },
-        token,
-      )
-      return response
-    },
-  })
+export const usePlaceNotesQuery = (placeId: string) => {
+  return useApiQuery<NotesApiResponse>(
+    `/notes/${placeId}`,
+    notesKeys.place(placeId),
+  )
 }

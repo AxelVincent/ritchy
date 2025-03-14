@@ -1,35 +1,30 @@
-import { createApiClient } from '@/lib/api/createApiClient'
-import { useAuth } from '@clerk/clerk-react'
+import { useApiQuery } from '@/hooks/useApi'
 import type { UserSubscriptionApiResponse } from '@ritchy/types'
-import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 
-const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
-})
+const userKeys = {
+  all: ['users'] as const,
+  subscription: () => [...userKeys.all, 'subscription'] as const,
+}
 
-export const useUserSubscription = (): UseQueryResult<
-  Extract<UserSubscriptionApiResponse, { plan: string }>,
-  Error
-> => {
-  const { getToken } = useAuth()
-  return useQuery({
-    queryKey: ['userSubscription'],
-    queryFn: async () => {
-      const token = await getToken()
-      const response =
-        await apiClient.fetchWithAuth<UserSubscriptionApiResponse>(
-          '/users/subscription',
-          {
-            method: 'GET',
-          },
-          token,
-        )
+// Define a success-only type
+type SubscriptionSuccess = Extract<
+  UserSubscriptionApiResponse,
+  { plan: string }
+>
 
-      if ('error' in response) {
-        throw new Error(response.message ?? response.error)
-      }
-
-      return { plan: response.plan }
+export const useUserSubscription = () => {
+  return useApiQuery<UserSubscriptionApiResponse, SubscriptionSuccess>(
+    '/users/subscription',
+    userKeys.subscription(),
+    {
+      // Don't retry on error
+      retry: false,
     },
-  })
+  )
+}
+
+export function isSubscriptionSuccess(
+  response: UserSubscriptionApiResponse,
+): response is Extract<UserSubscriptionApiResponse, { plan: string }> {
+  return 'plan' in response
 }

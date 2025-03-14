@@ -12,7 +12,10 @@ import {
 import { useState } from 'react'
 
 import { useCreatePortalSession } from '@/api/mutations/payments/useCreatePortalSession'
-import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
+import {
+  isSubscriptionSuccess,
+  useUserSubscription,
+} from '@/api/queries/users/useUserSubscription'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
@@ -39,8 +42,6 @@ import { Label } from '../ui/label'
 export function NavUser() {
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
-  const { data } = useUserSubscription()
-
   const { user } = useUser()
   const { signOut } = useAuth()
   const { theme, setTheme } = useTheme()
@@ -49,8 +50,11 @@ export function NavUser() {
   const createPortalSession = useCreatePortalSession()
 
   const { data: subscription } = useUserSubscription()
-  const hasActiveSubscription =
-    subscription?.plan && subscription.plan !== 'FREE'
+  const userPlan =
+    subscription && isSubscriptionSuccess(subscription)
+      ? subscription.plan
+      : 'FREE'
+  const hasActiveSubscription = userPlan !== 'FREE'
 
   return (
     <SidebarMenu>
@@ -75,7 +79,7 @@ export function NavUser() {
                   variant="secondary"
                   className="w-fit text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 flex-shrink-0"
                 >
-                  {data?.plan ?? 'FREE'}
+                  {userPlan}
                 </Badge>
               </div>
               <ChevronsUpDown className="ml-auto size-4 flex-shrink-0" />
@@ -98,7 +102,7 @@ export function NavUser() {
                     variant="secondary"
                     className="w-fit text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15"
                   >
-                    {data?.plan ?? 'FREE'}
+                    {userPlan}
                   </Badge>
                 </div>
               </div>
@@ -136,8 +140,12 @@ export function NavUser() {
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={async () => {
-                    const url = await createPortalSession.mutateAsync()
-                    window.location.href = url
+                    const url = await createPortalSession.mutateAsync({})
+                    if (typeof url === 'string') {
+                      window.location.href = url
+                    } else {
+                      console.error('Failed to create portal session:', url)
+                    }
                   }}
                 >
                   <CreditCard />

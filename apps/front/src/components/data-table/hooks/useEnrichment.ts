@@ -1,13 +1,9 @@
 import { enrichKeys } from '@/api/queries/enrich/useEnrichWebsite'
-import { createApiClient } from '@/lib/api/createApiClient'
+import { webApiClient } from '@/hooks/useApi'
 import { useAuth } from '@clerk/clerk-react'
 import type { EnrichApiResponse, SearchResult } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-
-const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
-})
 
 export function useEnrichment<TData extends SearchResult>({
   data,
@@ -67,13 +63,14 @@ export function useEnrichment<TData extends SearchResult>({
       }
 
       try {
-        // This uses the same query function as useEnrichWebsite
+        // Use the query client to fetch using the same key as useEnrichWebsite
         const response = await queryClient.fetchQuery({
           queryKey: enrichKeys.website(id),
           queryFn: async () => {
-            return apiClient.fetchWithAuth<EnrichApiResponse>(
+            // Use the shared webApiClient from useApi.ts
+            return webApiClient.fetchWithAuth<EnrichApiResponse>(
               `/enrich?id=${id}&website=${encodeURIComponent(website)}`,
-              undefined,
+              { method: 'GET' },
               token,
             )
           },

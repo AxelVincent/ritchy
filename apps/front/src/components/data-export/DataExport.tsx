@@ -1,4 +1,7 @@
-import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
+import {
+  isSubscriptionSuccess,
+  useUserSubscription,
+} from '@/api/queries/users/useUserSubscription'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
@@ -97,12 +100,16 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
 
   const [isExporting, setIsExporting] = useState(false)
   const { data: subscription } = useUserSubscription()
+  const userPlan =
+    subscription && isSubscriptionSuccess(subscription)
+      ? subscription.plan
+      : 'FREE'
   const { user } = useUser()
   const navigate = useNavigate()
 
   const handleExport = async () => {
     // Check if user has required subscription
-    if (subscription?.plan === 'FREE' || !subscription?.plan) {
+    if (userPlan === 'FREE') {
       posthog.capture('data_export_blocked_free_user', {
         user_id: user?.id,
         email: user?.primaryEmailAddress?.emailAddress,

@@ -9,15 +9,17 @@ export const createApiClient = ({ baseUrl, headers = {} }: ApiClientConfig) => {
     options: RequestInit = {},
     token: string | null = null,
   ): Promise<T> => {
+    const requestHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...headers,
+      ...(options.headers as Record<string, string>),
+    }
+
     const response = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...headers,
-        ...options.headers,
-      },
+      headers: requestHeaders,
     })
 
     const data = await response.json()
