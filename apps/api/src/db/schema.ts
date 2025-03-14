@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   jsonb,
   numeric,
@@ -8,7 +9,6 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-  index,
 } from 'drizzle-orm/pg-core'
 
 export const user = pgTable(

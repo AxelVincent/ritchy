@@ -49,7 +49,7 @@ export const addItemsToList = async (
       })
       return
     }
-    
+
     // Use a single upsert operation with returning clause
     const upsertResult = await db
       .insert(listPlace)
@@ -73,16 +73,16 @@ export const addItemsToList = async (
         // This is PostgreSQL-specific syntax
         operation: sql`CASE WHEN xmax = 0 THEN 'insert' ELSE 'update' END`,
       })
-    
+
     // Separate the results into new and duplicate items
     const newPlaceIds = upsertResult
-      .filter(row => row.operation === 'insert')
-      .map(row => row.placeId)
-    
+      .filter((row) => row.operation === 'insert')
+      .map((row) => row.placeId)
+
     const duplicatePlaceIds = upsertResult
-      .filter(row => row.operation === 'update')
-      .map(row => row.placeId)
-    
+      .filter((row) => row.operation === 'update')
+      .map((row) => row.placeId)
+
     res.json({
       success: true,
       duplicates: duplicatePlaceIds.map(Number),
