@@ -204,6 +204,13 @@
       "when": 1741974610073,
       "tag": "0028_mute_rictor",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1741975767694,
+      "tag": "0029_tearful_chronomancer",
+      "breakpoints": true
     }
   ]
 }

@@ -61,16 +61,24 @@ export const listPlace = pgTable(
   }),
 )
 
-export const note = pgTable('note', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  placeId: text('place_id').notNull(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  note: text('note').notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+export const note = pgTable(
+  'note',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    placeId: text('place_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    note: text('note').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    placeIdIdx: index('idx_note_place_id').on(table.placeId),
+    userIdIdx: index('idx_note_user_id').on(table.userId),
+    placeUserIdx: index('idx_note_place_user').on(table.placeId, table.userId),
+  }),
+)
 
 export const searchModelEnum = pgEnum('search_model', [
   'ESSENTIALS',
