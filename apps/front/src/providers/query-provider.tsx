@@ -4,10 +4,9 @@ import type { PropsWithChildren } from 'react'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: Number.POSITIVE_INFINITY, // Data never becomes stale
+      staleTime: 5 * 60 * 1000, // Data becomes stale after 5 minutes (or adjust as needed)
       gcTime: 2 * 60 * 60 * 1000, // Keep unused data in cache for 2 hours
       retry: 1,
-      placeholderData: (previousData: unknown) => previousData,
     },
   },
 })
