@@ -41,7 +41,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const [panelSizes, setPanelSizes] = useState<number[]>(() => {
     // Try to get saved panel sizes from localStorage
     const savedSizes = localStorage.getItem('mapDisplayPanelSizes')
-    return savedSizes ? JSON.parse(savedSizes) : [50, 50] // Default to 50/50 split
+    return savedSizes ? JSON.parse(savedSizes) : [60, 40] // Default to 60/40 split
   })
 
   // Save panel sizes to localStorage when they change
