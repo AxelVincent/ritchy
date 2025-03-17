@@ -215,7 +215,7 @@ setInterval(() => {
   }
 
   lastHeapUsed = heapUsedMB
-}, 3000000) // Check every 15 minutes
+}, 900000) // Check every 15 minutes
 
 // Start server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
