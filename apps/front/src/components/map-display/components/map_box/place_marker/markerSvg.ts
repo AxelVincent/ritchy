@@ -19,6 +19,28 @@ const lightenColor = (hex: string, amount: number): string => {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
+// Cache common SVG namespace
+const SVG_NS = 'http://www.w3.org/2000/svg'
+
+// Create a template for the marker structure
+const createMarkerTemplate = () => {
+  const template = document.createElement('template')
+  template.innerHTML = `
+    <svg viewBox="0 0 64 64" role="img">
+      <foreignObject x="2" y="2" width="60" height="60">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+          <div class="white-layer" style="position:absolute;font-size:28px;color:transparent"></div>
+          <div class="color-layer" style="position:absolute;font-size:28px;color:white"></div>
+        </div>
+      </foreignObject>
+    </svg>
+  `
+  return template
+}
+
+// Cache the template
+const markerTemplate = createMarkerTemplate()
+
 // Pure function to create filtered marker SVG
 export const createFilteredMarkerSvg = (): SVGElement => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -49,121 +71,169 @@ export const createActiveMarkerSvg = (
   isSelected = false,
 ): SVGElement => {
   try {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    if (place.lists?.[0]?.emoji) {
+      // Clone the template instead of creating elements
+      const svg = markerTemplate.content.firstElementChild?.cloneNode(
+        true,
+      ) as SVGElement
 
-    // Make selected markers 25% larger
-    const scale = isSelected ? 1.25 : 1
-    const baseWidth = 28
-    const baseHeight = 32
-
-    svg.setAttribute('viewBox', '0 0 24 32')
-    svg.setAttribute('width', `${baseWidth * scale}`)
-    svg.setAttribute('height', `${baseHeight * scale}`)
-
-    // Main marker path
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    path.setAttribute(
-      'd',
-      'M12 0C5.383 0 0 5.383 0 12c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
-    )
-    path.setAttribute('fill', color)
-
-    // Make selected marker stroke thicker
-    path.setAttribute('stroke', '#000000')
-    path.setAttribute('stroke-width', isSelected ? '1' : '0.5')
-    path.setAttribute('stroke-opacity', '0.3')
-    svg.appendChild(path)
-
-    // Create text element for emoji instead of foreignObject
-    if (place.lists?.[0]) {
-      const text = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'text',
+      // Apply dynamic attributes
+      const scale = isSelected ? 1.5 : 1
+      svg.setAttribute('width', `${64 * scale}`)
+      svg.setAttribute('height', `${64 * scale}`)
+      svg.setAttribute(
+        'aria-label',
+        `Location marker with ${place.lists[0].emoji}`,
       )
-      text.setAttribute('x', '12')
-      text.setAttribute('y', '14')
-      text.setAttribute('text-anchor', 'middle')
-      text.setAttribute('dominant-baseline', 'middle')
-      text.setAttribute('font-size', '14')
-      text.textContent = place.lists[0].emoji
-      svg.appendChild(text)
+
+      // Get references to layers
+      const colorLayer = svg.querySelector('.color-layer') as HTMLDivElement
+      const whiteLayer = svg.querySelector('.white-layer') as HTMLDivElement
+
+      // Set emoji content
+      colorLayer.textContent = place.lists[0].emoji
+      whiteLayer.textContent = place.lists[0].emoji
+
+      // Apply text shadows
+      whiteLayer.style.textShadow = `
+        -3px -3px 0 white,
+        3px -3px 0 white,
+        -3px 3px 0 white,
+        3px 3px 0 white,
+        -3px 0 0 white,
+        3px 0 0 white,
+        0 -3px 0 white,
+        0 3px 0 white
+      `
+
+      colorLayer.style.textShadow = `
+        -2px -2px 0 ${color},
+        2px -2px 0 ${color},
+        -2px 2px 0 ${color},
+        2px 2px 0 ${color},
+        -2px 0 0 ${color},
+        2px 0 0 ${color},
+        0 -2px 0 ${color},
+        0 2px 0 ${color},
+        0 0 8px ${color}
+      `
+
+      // Add badge if needed
+      if (place.lists.length > 1) {
+        addBadgeToMarker(svg, color)
+      }
+
+      return svg
     }
 
-    // Only add badge if there are more than one associated lists
-    if (place.lists && place.lists.length > 1) {
-      // Badge circle
-      const badge = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'circle',
-      )
-      badge.setAttribute('cx', '17')
-      badge.setAttribute('cy', '5')
-      badge.setAttribute('r', '4')
-      badge.setAttribute('fill', '#FFFFFF')
-      badge.setAttribute('stroke', '#000000')
-      badge.setAttribute('stroke-width', '0.5')
-      badge.setAttribute('stroke-opacity', '0.3')
-      badge.setAttribute('opacity', '0.7')
-      svg.appendChild(badge)
-
-      // Badge text
-      const text = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        'text',
-      )
-      text.setAttribute('x', '17')
-      text.setAttribute('y', '7')
-      text.setAttribute('text-anchor', 'middle')
-      text.setAttribute('fill', '#000000')
-      text.setAttribute('font-size', '6px')
-      text.textContent = '+'
-      svg.appendChild(text)
-    }
-
-    // Add inner ring with a lighter version of the status color
-    const innerRing = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'path',
-    )
-    innerRing.setAttribute(
-      'd',
-      'M12 1.5C6.21 1.5 1.5 6.21 1.5 12c0 8.15 10.5 18.5 10.5 18.5S22.5 20.15 22.5 12c0-5.79-4.71-10.5-10.5-10.5z',
-    )
-    innerRing.setAttribute('fill', 'none')
-
-    // Create a lighter version of the status color
-    const lighterColor = lightenColor(color, 0.8) // Lighten by 30%
-    innerRing.setAttribute('stroke', lighterColor)
-    innerRing.setAttribute('stroke-width', '0.75')
-    svg.appendChild(innerRing)
-
-    return svg
+    return createPinMarker(color, isSelected)
   } catch (error) {
     console.error('Error creating active marker SVG:', {
       error: error instanceof Error ? error.message : String(error),
       place,
       color,
     })
-    // Return a simple fallback SVG
-    const fallbackSvg = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'svg',
-    )
-    fallbackSvg.setAttribute('viewBox', '0 0 24 32')
-    fallbackSvg.setAttribute('width', '28')
-    fallbackSvg.setAttribute('height', '32')
-
-    const fallbackPath = document.createElementNS(
-      'http://www.w3.org/2000/svg',
-      'path',
-    )
-    fallbackPath.setAttribute(
-      'd',
-      'M12 0C5.383 0 0 5.383 0 12c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
-    )
-    fallbackPath.setAttribute('fill', color)
-    fallbackSvg.appendChild(fallbackPath)
-
-    return fallbackSvg
+    return createFallbackMarker(color)
   }
+}
+
+// Separate pin marker creation
+const createPinMarker = (color: string, isSelected: boolean): SVGElement => {
+  const svg = document.createElementNS(SVG_NS, 'svg')
+  svg.setAttribute('viewBox', '0 0 64 64')
+  svg.setAttribute('width', '64')
+  svg.setAttribute('height', '64')
+  svg.setAttribute('role', 'img')
+  svg.setAttribute('aria-label', 'Location marker')
+
+  const path = document.createElementNS(SVG_NS, 'path')
+  path.setAttribute(
+    'd',
+    'M24 8C17.383 8 12 13.383 12 20c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
+  )
+  path.setAttribute('fill', color)
+  path.setAttribute('stroke', '#000000')
+  path.setAttribute('stroke-width', isSelected ? '1' : '0.5')
+  path.setAttribute('stroke-opacity', '0.3')
+  svg.appendChild(path)
+
+  // Add inner ring with a lighter version of the color
+  const innerRing = document.createElementNS(SVG_NS, 'path')
+  innerRing.setAttribute(
+    'd',
+    'M24 9.5C18.21 9.5 13.5 14.21 13.5 20c0 8.15 10.5 18.5 10.5 18.5S34.5 28.15 34.5 20c0-5.79-4.71-10.5-10.5-10.5z',
+  )
+  innerRing.setAttribute('fill', 'none')
+  innerRing.setAttribute('stroke', lightenColor(color, 0.8))
+  innerRing.setAttribute('stroke-width', '0.75')
+  svg.appendChild(innerRing)
+
+  return svg
+}
+
+// Separate badge creation
+const addBadgeToMarker = (svg: SVGElement, color: string) => {
+  const badgeGroup = document.createElementNS(SVG_NS, 'g')
+
+  // Common coordinates for all badge elements
+  const cx = '48' // Keep this position
+  const cy = '18' // Changed to align with emoji (was 8)
+
+  // White border glow
+  const whiteBorderGlow = document.createElementNS(SVG_NS, 'circle')
+  whiteBorderGlow.setAttribute('cx', cx)
+  whiteBorderGlow.setAttribute('cy', cy)
+  whiteBorderGlow.setAttribute('r', '4.5')
+  whiteBorderGlow.setAttribute('stroke', 'white')
+  whiteBorderGlow.setAttribute('stroke-width', '2')
+  whiteBorderGlow.setAttribute('fill', 'none')
+  badgeGroup.appendChild(whiteBorderGlow)
+
+  // Colored glow
+  const badgeGlow = document.createElementNS(SVG_NS, 'circle')
+  badgeGlow.setAttribute('cx', cx)
+  badgeGlow.setAttribute('cy', cy)
+  badgeGlow.setAttribute('r', '4.5')
+  badgeGlow.setAttribute('stroke', color)
+  badgeGlow.setAttribute('stroke-width', '1.5')
+  badgeGlow.setAttribute('fill', 'none')
+  badgeGroup.appendChild(badgeGlow)
+
+  // Badge circle
+  const badge = document.createElementNS(SVG_NS, 'circle')
+  badge.setAttribute('cx', cx)
+  badge.setAttribute('cy', cy)
+  badge.setAttribute('r', '4')
+  badge.setAttribute('fill', '#FFFFFF')
+  badgeGroup.appendChild(badge)
+
+  // Badge text
+  const badgeText = document.createElementNS(SVG_NS, 'text')
+  badgeText.setAttribute('x', cx)
+  badgeText.setAttribute('y', '19.5') // Adjusted to match new cy position
+  badgeText.setAttribute('text-anchor', 'middle')
+  badgeText.setAttribute('fill', '#000000')
+  badgeText.setAttribute('font-size', '7px')
+  badgeText.textContent = '+'
+  badgeGroup.appendChild(badgeText)
+
+  svg.appendChild(badgeGroup)
+}
+
+// Separate fallback marker creation
+const createFallbackMarker = (color: string): SVGElement => {
+  const svg = document.createElementNS(SVG_NS, 'svg')
+  svg.setAttribute('viewBox', '0 0 24 32')
+  svg.setAttribute('width', '28')
+  svg.setAttribute('height', '32')
+
+  const fallbackPath = document.createElementNS(SVG_NS, 'path')
+  fallbackPath.setAttribute(
+    'd',
+    'M12 0C5.383 0 0 5.383 0 12c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
+  )
+  fallbackPath.setAttribute('fill', color)
+  svg.appendChild(fallbackPath)
+
+  return svg
 }
