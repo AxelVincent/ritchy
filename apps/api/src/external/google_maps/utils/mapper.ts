@@ -1,4 +1,4 @@
-import type { OpeningHours, Place } from '@ritchy/types'
+import type { OpeningHours, Place, PlaceBase } from '@ritchy/types'
 import type {
   AdvancedPlace,
   GooglePlacesTextSearchResponse,
@@ -79,12 +79,12 @@ const objectMapper = (place: PreferredPlace) => {
 
 export function mapToPlacesSearchResult(
   response: GooglePlacesTextSearchResponse,
-): Place[] {
+): PlaceBase[] {
   if (!response.places) return []
 
   return response.places.map(objectMapper)
 }
 
-export function mapToPlaceDetails(place: AdvancedPlace): Place {
+export function mapToPlaceDetails(place: AdvancedPlace): PlaceBase {
   return objectMapper(place)
 }

@@ -1,8 +1,7 @@
 import { logger } from '@ritchy/logger'
 import {
   type GetSearchContentApiResponse,
-  type GetSearchContentResponse,
-  GetSearchContentResponseSchema,
+  type PlaceBase,
   PlaceSchema,
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
@@ -36,7 +35,7 @@ export const getSearchContent = async (
     }
 
     const key = REDIS_KEYS.search(searchId)
-    let results = await redisClient.get<GetSearchContentResponse>(key)
+    let results = await redisClient.get<PlaceBase[]>(key)
 
     if (!results || results.length === 0) {
       logger.info({
@@ -60,8 +59,14 @@ export const getSearchContent = async (
       await redisClient.set(key, results)
     }
 
+    // Add searchId to each place in the results
+    const resultsWithSearchId = results.map((place) => ({
+      ...place,
+      searchId, // Add the searchId from the request parameters
+    }))
+
     // Aggregate data for the search results
-    const aggregatedResults = await aggregatePlaceData(results, {
+    const aggregatedResults = await aggregatePlaceData(resultsWithSearchId, {
       userId,
       includeEnrichment: true,
     })

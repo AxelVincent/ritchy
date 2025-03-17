@@ -138,7 +138,7 @@ export const PlaceListAssociationSchema = z.object({
   emoji: z.string(),
 })
 
-export const PlaceSchema = z.object({
+export const PlaceSchemaBase = z.object({
   id: z.string(),
   name: z.string(),
   website: z.string().optional(),
@@ -169,14 +169,19 @@ export const PlaceSchema = z.object({
     administrativeAreaLevel2: z.string().optional(),
     administrativeAreaLevel3: z.string().optional(),
   }),
+})
+
+export const PlaceSchema = PlaceSchemaBase.extend({
+  searchId: z.string().uuid().nullable(),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional().nullable(),
-  status: StatusSchema.optional().nullable(),
-  enrichment: EnrichResponseSchema.optional().nullable(),
+  status: StatusSchema.nullable(),
+  enrichment: EnrichResponseSchema.nullable(),
 })
 
 // Type inference from schemas
 export type Location = z.infer<typeof LocationSchema>
+export type PlaceBase = z.infer<typeof PlaceSchemaBase>
 export type Place = z.infer<typeof PlaceSchema>
 export type OpeningHours = z.infer<typeof OpeningHoursSchema>
 export type PlacesSearchRequestBody = z.infer<

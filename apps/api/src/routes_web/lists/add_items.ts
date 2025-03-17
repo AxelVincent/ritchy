@@ -6,8 +6,7 @@ import {
   type AddItemsToListRequestParams,
   type AddItemsToListResponse,
 } from '@ritchy/types'
-import { and, eq, inArray } from 'drizzle-orm'
-import { sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
@@ -34,6 +33,7 @@ export const addItemsToList = async (
 
     const userId = req.auth.userId
     const parsedBody = AddItemsToListRequestBodySchema.parse(req.body)
+    const { items } = parsedBody
 
     // Verify list ownership
     const result = await db
@@ -50,42 +50,38 @@ export const addItemsToList = async (
       return
     }
 
-    // First, get existing entries
-    const existingEntries = await db
-      .select()
-      .from(listPlace)
-      .where(
-        and(
-          eq(listPlace.listId, listId),
-          inArray(listPlace.placeId, parsedBody.items),
-        ),
+    // Use a single upsert operation with returning clause
+    const upsertResult = await db
+      .insert(listPlace)
+      .values(
+        items.map((item) => ({
+          listId: listId,
+          placeId: item.placeId,
+          searchId: item.searchId,
+        })),
       )
+      .onConflictDoUpdate({
+        target: [listPlace.listId, listPlace.placeId],
+        set: {
+          searchId: sql`EXCLUDED.search_id`,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({
+        placeId: listPlace.placeId,
+        // Add a column to indicate if this was an insert or update
+        // This is PostgreSQL-specific syntax
+        operation: sql`CASE WHEN xmax = 0 THEN 'insert' ELSE 'update' END`,
+      })
 
-    const duplicatePlaceIds = existingEntries.map((entry) => entry.placeId)
-    // Deduplicate newPlaceIds using Set
-    const newPlaceIds = [
-      ...new Set(
-        parsedBody.items.filter((id) => !duplicatePlaceIds.includes(id)),
-      ),
-    ]
+    // Separate the results into new and duplicate items
+    const newPlaceIds = upsertResult
+      .filter((row) => row.operation === 'insert')
+      .map((row) => row.placeId)
 
-    // Only insert new items
-    if (newPlaceIds.length > 0) {
-      await db
-        .insert(listPlace)
-        .values(
-          newPlaceIds.map((item) => ({
-            listId: listId,
-            placeId: item,
-          })),
-        )
-        .onConflictDoUpdate({
-          target: [listPlace.listId, listPlace.placeId],
-          set: {
-            updatedAt: new Date(),
-          },
-        })
-    }
+    const duplicatePlaceIds = upsertResult
+      .filter((row) => row.operation === 'update')
+      .map((row) => row.placeId)
 
     res.json({
       success: true,

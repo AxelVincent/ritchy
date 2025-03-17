@@ -10,47 +10,27 @@ export const upsertLeadStatus = async (
   status: StatusType,
 ): Promise<Status> => {
   try {
-    // Check if a lead status already exists for this place and user
-    const existingStatus = await db
-      .select()
-      .from(statusTable)
-      .where(
-        and(eq(statusTable.placeId, placeId), eq(statusTable.userId, userId)),
-      )
-      .limit(1)
-
-    if (existingStatus.length > 0) {
-      // Update existing lead status
-      const [updated] = await db
-        .update(statusTable)
-        .set({
-          status,
-          updatedAt: new Date(),
-        })
-        .where(eq(statusTable.id, existingStatus[0].id))
-        .returning()
-
-      return {
-        status: updated.status,
-        createdAt: updated.createdAt.toISOString(),
-        updatedAt: updated.updatedAt.toISOString(),
-      }
-    }
-
-    // Create new lead status
-    const [created] = await db
+    // Replace the separate SELECT + UPDATE/INSERT with a single upsert operation
+    const [result] = await db
       .insert(statusTable)
       .values({
         placeId,
         userId,
         status,
       })
+      .onConflictDoUpdate({
+        target: [statusTable.placeId, statusTable.userId],
+        set: {
+          status,
+          updatedAt: new Date(),
+        },
+      })
       .returning()
 
     return {
-      status: created.status,
-      createdAt: created.createdAt.toISOString(),
-      updatedAt: created.updatedAt.toISOString(),
+      status: result.status,
+      createdAt: result.createdAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString(),
     }
   } catch (error) {
     logger.error({

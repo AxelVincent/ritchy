@@ -41,6 +41,7 @@ interface DataTableProps<TData, TValue> {
   searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
   setData: React.Dispatch<React.SetStateAction<TData[]>>
+  storageKey?: string
 }
 
 // Add a fixed height for table rows
@@ -55,6 +56,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   listId,
   searchId,
   onFilteredDataChange,
+  storageKey,
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId and setSelectedPlaceId from the store
   const { selectedPlaceId, centerPlaceSpreadsheetId } = useMapStore()
@@ -74,6 +76,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
     listId,
     searchId,
   })
+
+  const localStorageKey = `tableColumnSizing_${storageKey || 'default'}`
+
+  const [columnSizing, setColumnSizing] = useState<Record<string, number>>(
+    () => {
+      const saved = localStorage.getItem(localStorageKey)
+      return saved ? JSON.parse(saved) : {}
+    },
+  )
 
   const table = useReactTable({
     data,
@@ -136,9 +147,16 @@ export const DataTable = <TData extends SearchResult, TValue>({
       columnVisibility,
       columnOrder,
       rowSelection: dataTableRowSelection,
+      columnSizing,
     },
     meta: {
       setData,
+    },
+    onColumnSizingChange: (updater) => {
+      const newSizing =
+        typeof updater === 'function' ? updater(columnSizing) : updater
+      setColumnSizing(newSizing)
+      localStorage.setItem(localStorageKey, JSON.stringify(newSizing))
     },
   })
 
@@ -254,7 +272,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
               <AddItemsToListDialog
                 open={showAddListDialog}
                 onOpenChange={setShowAddListDialog}
-                selectedItems={selectedRows.map((row) => row.original.id)}
+                selectedItems={selectedRows.map((row) => ({
+                  placeId: row.original.id,
+                  searchId: row.original.searchId,
+                }))}
               />
               {selectedRows.length > 0 && (
                 <div className="flex gap-2">
@@ -282,7 +303,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
               <AddItemsToListDialog
                 open={showAddListDialog}
                 onOpenChange={setShowAddListDialog}
-                selectedItems={selectedRows.map((row) => row.original.id)}
+                selectedItems={selectedRows.map((row) => ({
+                  placeId: row.original.id,
+                  searchId: row.original.searchId,
+                }))}
               />
               {selectedRows.length > 0 && (
                 <Button
@@ -377,6 +401,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       style={{
                         display: 'flex',
                         width: header.getSize(),
+                        position: 'relative',
                       }}
                       className={cn('border-r border-border bg-background', {
                         'bg-background': vc.index === 0,
@@ -395,6 +420,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           header.getContext(),
                         )}
                       </div>
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className={cn(
+                          'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none',
+                          'hover:bg-primary',
+                          header.column.getIsResizing() ? 'bg-primary' : '',
+                        )}
+                      />
                     </th>
                   )
                 })}

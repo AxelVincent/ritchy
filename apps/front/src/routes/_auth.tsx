@@ -1,4 +1,7 @@
-import { useUserSubscription } from '@/api/queries/users/useUserSubscription'
+import {
+  isSubscriptionSuccess,
+  useUserSubscription,
+} from '@/api/queries/users/useUserSubscription'
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useMediaQuery } from '@/hooks/use-media-query'
@@ -84,6 +87,10 @@ function ClerkRedirect() {
   const navigate = useNavigate()
   const { data: subscriptionData, isLoading: isLoadingSubscription } =
     useUserSubscription()
+  const userPlan =
+    subscriptionData && isSubscriptionSuccess(subscriptionData)
+      ? subscriptionData.plan
+      : 'FREE'
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   useEffect(() => {
@@ -100,7 +107,7 @@ function ClerkRedirect() {
     const isNewUser = timeDifference < 3600000
 
     // Check if user has an active subscription using the useUserSubscription hook
-    const hasActiveSubscription = subscriptionData?.plan !== 'FREE'
+    const hasActiveSubscription = userPlan !== 'FREE'
 
     // Only redirect mobile users without an active subscription who are new (created < 1 hour ago)
     if (isMobile && !hasActiveSubscription && isNewUser) {
@@ -111,14 +118,7 @@ function ClerkRedirect() {
       })
       navigate({ to: '/pricing' })
     }
-  }, [
-    user,
-    isLoaded,
-    navigate,
-    subscriptionData,
-    isLoadingSubscription,
-    isMobile,
-  ])
+  }, [user, isLoaded, navigate, userPlan, isLoadingSubscription, isMobile])
 
   return null
 }

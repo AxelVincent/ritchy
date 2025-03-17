@@ -7,12 +7,19 @@ export const getNotesByPlaceIds = async (
   placeIds: string[],
   userId: string,
 ) => {
+  // If there are no placeIds, return empty map immediately
+  if (placeIds.length === 0) {
+    return new Map<string, Array<Note>>()
+  }
+
+  // Use a more efficient query with proper indexes
   const notes = await db
     .select()
     .from(note)
     .where(and(inArray(note.placeId, placeIds), eq(note.userId, userId)))
     .orderBy(desc(note.createdAt))
 
+  // Process results more efficiently
   return notes.reduce((acc, dbNote) => {
     const formattedNote: Note = {
       id: String(dbNote.id),

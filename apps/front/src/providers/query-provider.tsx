@@ -4,7 +4,8 @@ import type { PropsWithChildren } from 'react'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
+      staleTime: 5 * 60 * 1000, // Data becomes stale after 5 minutes (or adjust as needed)
+      gcTime: 2 * 60 * 60 * 1000, // Keep unused data in cache for 2 hours
       retry: 1,
     },
   },

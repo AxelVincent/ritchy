@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "idx_list_place_list_id" ON "list_place" USING btree ("list_id");

@@ -1,29 +1,11 @@
-import { createApiClient } from '@/lib/api/createApiClient'
-import { useAuth } from '@clerk/clerk-react'
+import { useApiMutation } from '@/hooks/useApi'
 import type { CreateListRequest, CreateListResponse } from '@ritchy/types'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-
-const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
-})
+import { useQueryClient } from '@tanstack/react-query'
 
 export const useCreateList = () => {
-  const { getToken } = useAuth()
   const queryClient = useQueryClient()
 
-  return useMutation({
-    mutationFn: async ({ name, emoji }: CreateListRequest) => {
-      const token = await getToken()
-      const response = await apiClient.fetchWithAuth<CreateListResponse>(
-        '/lists',
-        {
-          method: 'POST',
-          body: JSON.stringify({ name, emoji }),
-        },
-        token,
-      )
-      return response
-    },
+  return useApiMutation<CreateListResponse, CreateListRequest>('/lists', {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lists'] })
     },

@@ -34,14 +34,20 @@ export const getListContent = async (
       return
     }
 
-    // Get all place IDs in the list
+    // Get all place IDs in the list with their searchId
     const places = await db
       .select({
         id: listPlace.id,
         placeId: listPlace.placeId,
+        searchId: listPlace.searchId,
       })
       .from(listPlace)
       .where(eq(listPlace.listId, listId))
+
+    // Create a map of placeId to searchId for easy lookup
+    const placeSearchMap = new Map(
+      places.map((place) => [place.placeId, place.searchId || null]),
+    )
 
     // Get place details with rate limiting
     const placeDetailsResults = await Promise.allSettled(
@@ -80,7 +86,11 @@ export const getListContent = async (
       )
       .map((result) => {
         const { fromCache, ...place } = result.value
-        return place
+        // Add searchId to the place data
+        return {
+          ...place,
+          searchId: placeSearchMap.get(place.id) || null,
+        }
       })
 
     // Aggregate data for the place details

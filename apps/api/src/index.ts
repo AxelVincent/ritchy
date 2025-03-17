@@ -110,9 +110,11 @@ app.use(
         return {
           method: req.method,
           url: req.url,
-          body: req.raw.body,
+          // Limit body size in logs
+          body: req.raw.body
+            ? JSON.stringify(req.raw.body).slice(0, 1000)
+            : undefined,
           query: req.raw.query,
-          params: req.raw.params,
         }
       },
     },
@@ -154,6 +156,66 @@ app.use('/web', isAuthenticated, webRoutes)
 
 // Webhook route
 app.use('/webhook', ensureIdempotency, webhookRoutes)
+
+// Monitor long running requests
+app.use((req, res, next) => {
+  const start = process.hrtime()
+
+  res.on('finish', () => {
+    const [seconds, nanoseconds] = process.hrtime(start)
+    const duration = seconds * 1000 + nanoseconds / 1000000
+
+    if (duration > 1000) {
+      // Log requests taking more than 1 second
+      logger.warn({
+        msg: 'Long running request detected',
+        event: 'long_request',
+        metadata: {
+          duration: `${duration}ms`,
+          path: req.path,
+          method: req.method,
+        },
+      })
+    }
+  })
+
+  next()
+})
+
+// Monitor memory usage
+const memoryThreshold = 512 // MB
+let lastHeapUsed = 0
+
+setInterval(() => {
+  const used = process.memoryUsage()
+  const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024)
+  const heapDelta = heapUsedMB - lastHeapUsed
+
+  logger.info({
+    msg: 'Memory usage',
+    event: 'memory_stats',
+    metadata: {
+      heapUsed: `${heapUsedMB}MB`,
+      heapTotal: `${Math.round(used.heapTotal / 1024 / 1024)}MB`,
+      rss: `${Math.round(used.rss / 1024 / 1024)}MB`,
+      external: `${Math.round(used.external / 1024 / 1024)}MB`,
+      arrayBuffers: `${Math.round(used.arrayBuffers / 1024 / 1024)}MB`,
+      delta: `${heapDelta}MB`,
+      timestamp: new Date().toISOString(),
+    },
+  })
+
+  // Alert on significant increases
+  if (heapDelta > memoryThreshold) {
+    logger.warn({
+      msg: 'Significant memory increase detected',
+      event: 'memory_spike',
+      metadata: { increase: `${heapDelta}MB` },
+    })
+  }
+
+  lastHeapUsed = heapUsedMB
+}, 900000) // Check every 15 minutes
 
 // Start server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)

@@ -1,36 +1,21 @@
-import { createApiClient } from '@/lib/api/createApiClient'
-import { useAuth } from '@clerk/clerk-react'
+import { useApiMutation } from '@/hooks/useApi'
 import type {
   DeleteListApiResponse,
   DeleteListRequestParams,
 } from '@ritchy/types'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-
-const apiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL,
-})
+import { useQueryClient } from '@tanstack/react-query'
 
 export const useDeleteList = () => {
-  const { getToken } = useAuth()
   const queryClient = useQueryClient()
 
-  return useMutation({
-    mutationFn: async ({
-      id,
-    }: DeleteListRequestParams): Promise<DeleteListApiResponse> => {
-      const token = await getToken()
-      const response = await apiClient.fetchWithAuth<DeleteListApiResponse>(
-        `/lists/${id}`,
-        {
-          method: 'DELETE',
-        },
-        token,
-      )
-
-      return response
+  return useApiMutation<DeleteListApiResponse, DeleteListRequestParams>(
+    '/lists/:id',
+    {
+      method: 'DELETE',
+      getEndpoint: ({ id }) => `/lists/${id}`,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['lists'] })
+      },
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lists'] })
-    },
-  })
+  )
 }
