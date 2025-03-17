@@ -148,7 +148,7 @@ export const MapBox: FC<MapBoxProps> = ({
     const zoomLevel = 15
 
     // If distance is too large, jump to location instead of animating
-    if (distanceInDegrees > 1) {
+    if (distanceInDegrees > 0.2) {
       mapRef.current.jumpTo({
         center: markerLocation,
         zoom: zoomLevel,
@@ -158,8 +158,7 @@ export const MapBox: FC<MapBoxProps> = ({
       // Use flyTo for shorter distances with padding
       mapRef.current.flyTo({
         center: markerLocation,
-        speed: 0.8,
-        curve: 1,
+        speed: 1,
         zoom: zoomLevel,
         padding: { bottom: bottomPadding, top: topPadding, left: 0, right: 0 },
       })
