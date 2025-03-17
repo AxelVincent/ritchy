@@ -6,9 +6,8 @@ import type { MapboxLocationParameters } from '@/components/map-display/types'
 import { debounce } from '@/lib/debounce'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
-import { type FC, useEffect, useMemo, useRef } from 'react'
+import { type FC, Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
-import { PlaceCard } from './place-details/PlaceCard'
 
 const DEBUG = false
 
@@ -26,6 +25,13 @@ interface MapBoxProps {
   radiusInMeters: number
   filteredPlaceIds: Set<string>
 }
+
+// Move PlaceCard to a separate lazy-loaded component
+const PlaceCard = lazy(() =>
+  import('./place-details/PlaceCard').then((module) => ({
+    default: module.PlaceCard,
+  })),
+)
 
 export const MapBox: FC<MapBoxProps> = ({
   searchResults,
@@ -67,7 +73,7 @@ export const MapBox: FC<MapBoxProps> = ({
     const debouncedResize = debounce(() => {
       debugLog('Resizing map')
       mapRef.current?.resize()
-    }, 100)
+    }, 250)
 
     const resizeObserver = new ResizeObserver(debouncedResize)
     resizeObserver.observe(mapContainerRef.current)
@@ -177,7 +183,12 @@ export const MapBox: FC<MapBoxProps> = ({
   return (
     <div className="relative h-full w-full">
       <div ref={mapContainerRef} className="h-full w-full" />
-      <PlaceCard places={searchResults} displayedPlaceIds={filteredPlaceIds} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <PlaceCard
+          places={searchResults}
+          displayedPlaceIds={filteredPlaceIds}
+        />
+      </Suspense>
     </div>
   )
 }

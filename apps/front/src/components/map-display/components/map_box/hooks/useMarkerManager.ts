@@ -2,8 +2,9 @@ import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { getStatusColor } from '@/components/status/status-colors'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
+import { throttle } from 'lodash'
 import mapboxgl from 'mapbox-gl'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { MARKER_COLORS } from '../constants/markers'
 import {
   createActiveMarkerSvg,
@@ -118,7 +119,7 @@ export const useMarkerManager = ({
       }
 
       // Initial update for all markers
-      updateMarkersAppearance()
+      throttledUpdateMarkers(places)
     }
 
     setupInitialMarkers().catch((error) => {
@@ -134,66 +135,82 @@ export const useMarkerManager = ({
     }
   }, [map, places])
 
-  // Effect for updating marker appearances
+  // Create a throttled version of updateMarkersAppearance
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const throttledUpdateMarkers = useMemo(
+    () =>
+      throttle(
+        (places: Place[] | null) => {
+          for (const place of places || []) {
+            const markerRef = markersRef.current.get(place.id)
+            if (!markerRef) continue
+
+            const element = markerRef.marker.getElement()
+            const isDisplayed = displayedPlaceIds.has(place.id)
+            const isSelected = dataTableRowSelection[place.id] ?? false
+            const isSelectedPlace = place.id === selectedPlaceId
+
+            // Update classes
+            element.classList.toggle('filtered-marker', !isDisplayed)
+            element.classList.toggle('active-marker', isDisplayed)
+            element.classList.toggle('selected-place-marker', isSelectedPlace)
+
+            // Determine color
+            let color = MARKER_COLORS.DEFAULT
+            if (!isDisplayed) {
+              color = MARKER_COLORS.FILTERED
+            } else if (isSelected) {
+              color = MARKER_COLORS.SELECTED
+            } else if (updatedPlaceStatuses.has(place.id)) {
+              const status = updatedPlaceStatuses.get(place.id)
+              if (status) {
+                color = getStatusColor(status, 'hex')
+              }
+            } else if (place.status) {
+              color = getStatusColor(place.status.status, 'hex')
+            }
+
+            // Update SVG
+            const svg = isDisplayed
+              ? createActiveMarkerSvg(color, place, isSelectedPlace)
+              : createFilteredMarkerSvg()
+
+            if (svg && element) {
+              while (element.firstChild) {
+                element.removeChild(element.firstChild)
+              }
+              element.appendChild(svg)
+            }
+          }
+        },
+        100,
+        { leading: true, trailing: true },
+      ), // Additional options available
+    [displayedPlaceIds, dataTableRowSelection, selectedPlaceId],
+  )
+
+  // Update the effect to use the throttled version
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!map || !places) return
-    updateMarkersAppearance()
+    throttledUpdateMarkers(places)
 
     // Clear the updated statuses after applying them
     if (updatedPlaceStatuses.size > 0) {
       useMapStore.setState({ updatedPlaceStatuses: new Map() })
+    }
+
+    // Cleanup
+    return () => {
+      throttledUpdateMarkers.cancel()
     }
   }, [
     displayedPlaceIds,
     dataTableRowSelection,
     selectedPlaceId,
     updatedPlaceStatuses,
+    throttledUpdateMarkers,
   ])
-
-  const updateMarkersAppearance = () => {
-    for (const place of places || []) {
-      const markerRef = markersRef.current.get(place.id)
-      if (!markerRef) continue
-
-      const element = markerRef.marker.getElement()
-      const isDisplayed = displayedPlaceIds.has(place.id)
-      const isSelected = dataTableRowSelection[place.id] ?? false
-      const isSelectedPlace = place.id === selectedPlaceId
-
-      // Update classes
-      element.classList.toggle('filtered-marker', !isDisplayed)
-      element.classList.toggle('active-marker', isDisplayed)
-      element.classList.toggle('selected-place-marker', isSelectedPlace)
-
-      // Determine color
-      let color = MARKER_COLORS.DEFAULT
-      if (!isDisplayed) {
-        color = MARKER_COLORS.FILTERED
-      } else if (isSelected) {
-        color = MARKER_COLORS.SELECTED
-      } else if (updatedPlaceStatuses.has(place.id)) {
-        const status = updatedPlaceStatuses.get(place.id)
-        if (status) {
-          color = getStatusColor(status, 'hex')
-        }
-      } else if (place.status) {
-        color = getStatusColor(place.status.status, 'hex')
-      }
-
-      // Update SVG
-      const svg = isDisplayed
-        ? createActiveMarkerSvg(color, place, isSelectedPlace)
-        : createFilteredMarkerSvg()
-
-      if (svg && element) {
-        while (element.firstChild) {
-          element.removeChild(element.firstChild)
-        }
-        element.appendChild(svg)
-      }
-    }
-  }
 
   return { markersRef }
 }
