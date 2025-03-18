@@ -1,13 +1,11 @@
 import { logger } from '@ritchy/logger'
 import type { Request, Response } from 'express'
-import Stripe from 'stripe'
 import { Webhook } from 'svix'
 import { CLERK_CONFIG } from '../config/clerk'
-import { STRIPE_CONFIG } from '../config/stripe'
 
 import { eq } from 'drizzle-orm'
 import { db } from '../db/db'
-import { subscription, user, webhookEvent } from '../db/schema'
+import { user, webhookEvent } from '../db/schema'
 import { deleteUser } from '../services/user/deleteUser'
 
 type WebhookResponse = {
