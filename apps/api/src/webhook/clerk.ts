@@ -90,7 +90,7 @@ export const clerkWebhook = async (
 
     try {
       if (!msg.data) {
-        throw new Error('Webhook data is missing');
+        throw new Error('Webhook data is missing')
       }
 
       const userData: ClerkUserData = {
