@@ -9,7 +9,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
-import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
+import { getPlaceDetailsOptimized } from '../../external/google_maps/place_details_optimized'
 import { aggregatePlaceData } from '../../services/places/aggregatePlaceData'
 
 export const getListContent = async (
@@ -49,9 +49,11 @@ export const getListContent = async (
       places.map((place) => [place.placeId, place.searchId || null]),
     )
 
-    // Get place details with rate limiting
+    // Get place details with rate limiting and optimization
     const placeDetailsResults = await Promise.allSettled(
-      places.map(async (place) => getPlaceDetailsV1(place.placeId)),
+      places.map(async (place) =>
+        getPlaceDetailsOptimized(place.placeId, place.searchId || null),
+      ),
     )
 
     // Analyze results

@@ -10,11 +10,11 @@ import type { Place, PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
 import {
-  ADVANCED_PLACE_KEYS_TEXT_SEARCH,
   type GooglePlacesTextSearchRequestBody,
   GooglePlacesTextSearchRequestBodySchema,
   type GooglePlacesTextSearchResponse,
   GooglePlacesTextSearchResponseSchema,
+  PREFERRED_PLACE_KEYS_TEXT_SEARCH,
 } from './types'
 import { mapToPlacesSearchResult } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
@@ -31,29 +31,64 @@ async function fetchSinglePage(
     pageSize: 20,
   }
 
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
-      'X-Goog-FieldMask': ADVANCED_PLACE_KEYS_TEXT_SEARCH,
-    },
-    body: JSON.stringify(body),
-  })
+  const startTime = Date.now()
 
-  if (!response.ok) {
-    const errorData = await response.json()
-    logger.error({
-      msg: 'Google API Error Details',
-      event: 'google_api_error',
-      metadata: { errorData },
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
+        'X-Goog-FieldMask': PREFERRED_PLACE_KEYS_TEXT_SEARCH,
+      },
+      body: JSON.stringify(body),
     })
-    throw new Error(
-      `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
-    )
-  }
 
-  return response.json()
+    if (!response.ok) {
+      const errorData = await response.json()
+      logger.error({
+        msg: 'Google API Error Details',
+        event: 'google_api_error',
+        metadata: {
+          errorData,
+          textQuery: formattedRequest.textQuery,
+          statusCode: response.status,
+          durationMs: Date.now() - startTime,
+        },
+      })
+      throw new Error(
+        `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
+      )
+    }
+
+    const endTime = Date.now()
+
+    logger.info({
+      msg: 'Google Text Search API call successful - BILLABLE REQUEST UNIT',
+      event: 'google_text_search_api_billable',
+      metadata: {
+        textQuery: formattedRequest.textQuery,
+        pageToken: formattedRequest.nextPageToken ? 'present' : 'none',
+        durationMs: endTime - startTime,
+      },
+    })
+
+    return response.json()
+  } catch (error) {
+    const endTime = Date.now()
+
+    logger.error({
+      msg: 'Google Text Search API call failed',
+      event: 'google_text_search_api_failure',
+      metadata: {
+        textQuery: formattedRequest.textQuery,
+        durationMs: endTime - startTime,
+        error,
+      },
+    })
+
+    throw error
+  }
 }
 
 export async function postTextSearchV1(
@@ -109,6 +144,7 @@ export async function postTextSearchV1(
     const allResults: GooglePlacesTextSearchResponse['places'] = []
     let apiRequestCount = 0
     const resultsQuantity = 60
+    const startTime = Date.now()
     for (const square of squares) {
       let nextPageToken = undefined
       let currentSquareQuantity = 0
@@ -173,21 +209,24 @@ export async function postTextSearchV1(
     await Promise.all(
       uniqueResults.map(async (place) => {
         const key = REDIS_KEYS.place(place.id)
-        const mappedPlace = mapToPlacesSearchResult({ places: [place] })[0]
-        await redisClient.set(key, mappedPlace)
+        // Cache the raw Google API response
+        await redisClient.set(key, place)
       }),
     )
 
     const results = mapToPlacesSearchResult({ places: uniqueResults })
 
+    const endTime = Date.now()
     logger.info({
-      msg: 'Google Places API request successful',
-      event: 'google_places_api_success',
+      msg: 'Google Places Text Search complete',
+      event: 'google_places_text_search_complete',
       metadata: {
         query: requestBody.textQuery,
+        model: requestBody.model,
         resultCount: results.length,
-        pagesRequested: apiRequestCount,
-        cachedPlaces: uniqueResults.length,
+        apiRequestCount,
+        squareCount: squares.length,
+        totalDurationMs: endTime - startTime,
       },
     })
 
