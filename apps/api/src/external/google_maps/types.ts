@@ -335,14 +335,6 @@ const generatePlaceKeys = (
     : placeKeys
 }
 
-// Stage 3 keys
-export const ADVANCED_PLACE_KEYS_PLACE_DETAILS = generatePlaceKeys(
-  AdvancedPlaceSchema,
-  false,
-)
-export const ADVANCED_PLACE_KEYS_TEXT_SEARCH =
-  generatePlaceKeys(AdvancedPlaceSchema)
-
 // Stage 4 keys
 export const PREFERRED_PLACE_KEYS = generatePlaceKeys(
   PreferredPlaceSchema,
