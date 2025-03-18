@@ -89,12 +89,25 @@ export const clerkWebhook = async (
     })
 
     try {
+      if (!msg.data) {
+        throw new Error('Webhook data is missing');
+      }
+
       const userData: ClerkUserData = {
         clerkId: msg.data.id,
-        email: msg.data.email_addresses[0]?.email_address,
-        firstName: msg.data.first_name,
-        lastName: msg.data.last_name,
+        email: msg.data.email_addresses?.[0]?.email_address || '',
+        firstName: msg.data.first_name || '',
+        lastName: msg.data.last_name || '',
       }
+
+      logger.info({
+        msg: 'Processing webhook data',
+        event: 'webhook_data_received',
+        metadata: {
+          dataReceived: JSON.stringify(msg.data),
+          eventType: msg.type,
+        },
+      })
 
       await logger.runWithContext(
         {
