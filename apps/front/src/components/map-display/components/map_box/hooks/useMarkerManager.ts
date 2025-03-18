@@ -48,6 +48,29 @@ const addMarkerWithRetry = async (
   return false
 }
 
+// Add color caching
+const colorCache = new Map<string, string>()
+const getColorWithCache = (status: string): string => {
+  if (!colorCache.has(status)) {
+    colorCache.set(
+      status,
+      getStatusColor(
+        status as
+          | 'NEW'
+          | 'NO_ANSWER'
+          | 'CONTACTED'
+          | 'FOLLOW_UP'
+          | 'MEETING'
+          | 'INTERESTED'
+          | 'WON'
+          | 'LOST',
+        'hex',
+      ),
+    )
+  }
+  return colorCache.get(status) || MARKER_COLORS.DEFAULT
+}
+
 export const useMarkerManager = ({
   map,
   places: propPlaces,
@@ -151,18 +174,7 @@ export const useMarkerManager = ({
             // Skip if marker is filtered or selected as these have different colors
             if (!isDisplayed || isSelectedPlace) continue
 
-            const color = getStatusColor(
-              status as
-                | 'NEW'
-                | 'NO_ANSWER'
-                | 'CONTACTED'
-                | 'FOLLOW_UP'
-                | 'MEETING'
-                | 'INTERESTED'
-                | 'WON'
-                | 'LOST',
-              'hex',
-            )
+            const color = getColorWithCache(status)
             const place = places?.find((p) => p.id === placeId)
             if (!place) continue
             const svg = createActiveMarkerSvg(color, place, isSelectedPlace)
@@ -197,16 +209,14 @@ export const useMarkerManager = ({
             const element = markerRef.marker.getElement()
 
             // Only update the marker if necessary
+            const color = isSelected
+              ? MARKER_COLORS.SELECTED
+              : place.status
+                ? getColorWithCache(place.status.status)
+                : MARKER_COLORS.DEFAULT
+
             const svg = isDisplayed
-              ? createActiveMarkerSvg(
-                  isSelected
-                    ? MARKER_COLORS.SELECTED
-                    : place.status
-                      ? getStatusColor(place.status.status, 'hex')
-                      : MARKER_COLORS.DEFAULT,
-                  place,
-                  isSelectedPlace,
-                )
+              ? createActiveMarkerSvg(color, place, isSelectedPlace)
               : createFilteredMarkerSvg()
 
             if (svg && element) {
