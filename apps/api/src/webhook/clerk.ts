@@ -1,11 +1,14 @@
 import { logger } from '@ritchy/logger'
 import type { Request, Response } from 'express'
+import Stripe from 'stripe'
 import { Webhook } from 'svix'
 import { CLERK_CONFIG } from '../config/clerk'
+import { STRIPE_CONFIG } from '../config/stripe'
 
 import { eq } from 'drizzle-orm'
 import { db } from '../db/db'
-import { user, webhookEvent } from '../db/schema'
+import { subscription, user, webhookEvent } from '../db/schema'
+import { deleteUser } from '../services/user/deleteUser'
 
 type WebhookResponse = {
   received?: boolean
@@ -23,6 +26,13 @@ type ClerkWebhookEvent = {
   type: string
   object: 'event'
   timestamp: number
+}
+
+export type ClerkUserData = {
+  clerkId: string
+  email: string
+  firstName: string
+  lastName: string
 }
 
 export const clerkWebhook = async (
@@ -81,7 +91,7 @@ export const clerkWebhook = async (
     })
 
     try {
-      const userData = {
+      const userData: ClerkUserData = {
         clerkId: msg.data.id,
         email: msg.data.email_addresses[0]?.email_address,
         firstName: msg.data.first_name,
@@ -153,18 +163,8 @@ export const clerkWebhook = async (
               break
             }
             case 'user.deleted': {
-              logger.info({
-                msg: 'Processing user deletion',
-                event: 'user_deletion_started',
-                metadata: { clerkId: userData.clerkId },
-              })
-
-              logger.warn({
-                msg: 'User deletion completed',
-                event: 'user_deleted',
-                metadata: { clerkId: userData.clerkId },
-              })
-              res.json({ received: true, message: 'User deleted successfully' })
+              const result = await deleteUser(userData)
+              res.json(result)
               break
             }
             default:
