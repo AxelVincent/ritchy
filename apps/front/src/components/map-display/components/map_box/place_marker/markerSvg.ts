@@ -41,23 +41,6 @@ const createMarkerTemplate = () => {
 // Cache the template
 const markerTemplate = createMarkerTemplate()
 
-// Create similar templates for fallback and pin markers
-const fallbackMarkerTemplate = (() => {
-  const svg = document.createElementNS(SVG_NS, 'svg')
-  svg.setAttribute('viewBox', '0 0 24 32')
-  svg.setAttribute('width', '28')
-  svg.setAttribute('height', '32')
-
-  const fallbackPath = document.createElementNS(SVG_NS, 'path')
-  fallbackPath.setAttribute(
-    'd',
-    'M12 0C5.383 0 0 5.383 0 12c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
-  )
-  svg.appendChild(fallbackPath)
-
-  return svg
-})()
-
 const pinMarkerTemplate = (() => {
   const svg = document.createElementNS(SVG_NS, 'svg')
   svg.setAttribute('viewBox', '0 0 64 64')
@@ -181,21 +164,18 @@ export const createActiveMarkerSvg = (
       place,
       color,
     })
-    return createFallbackMarker(color)
+    return createPinMarker(color, isSelected)
   }
-}
-
-// Optimize createFallbackMarker to use the template
-const createFallbackMarker = (color: string): SVGElement => {
-  const svg = fallbackMarkerTemplate.cloneNode(true) as SVGElement
-  const path = svg.firstChild as SVGPathElement
-  path.setAttribute('fill', color)
-  return svg
 }
 
 // Optimize createPinMarker to use the template
 const createPinMarker = (color: string, isSelected: boolean): SVGElement => {
   const svg = pinMarkerTemplate.cloneNode(true) as SVGElement
+  const scale = isSelected ? 1.5 : 1
+
+  // Apply scale to the SVG dimensions
+  svg.setAttribute('width', `${64 * scale}`)
+  svg.setAttribute('height', `${64 * scale}`)
 
   const path = svg.firstChild as SVGPathElement
   path.setAttribute('fill', color)
