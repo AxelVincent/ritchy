@@ -104,17 +104,17 @@ export const MapBox: FC<MapBoxProps> = ({
       currentSelectedPlaceIdRef,
       mapRef,
     })
-    if (!mapRef.current || !selectedPlaceId) {
-      debugLog('Selection state skipped: no map or no selection')
+    if (!mapRef.current) {
+      debugLog('Selection state skipped: no map')
       return
     }
-
-    isSelectionMovement.current = true
 
     if (!selectedPlaceId) {
       currentSelectedPlaceIdRef.current = null
       return
     }
+
+    isSelectionMovement.current = true
 
     const markerData = markersRef.current.get(selectedPlaceId)
     if (!markerData?.marker.getLngLat()) {
@@ -123,56 +123,50 @@ export const MapBox: FC<MapBoxProps> = ({
     }
 
     const markerLocation = markerData.marker.getLngLat()
-
-    // Calculate the distance between current center and marker
     const currentCenter = mapRef.current.getCenter()
     const distanceInDegrees = Math.sqrt(
       (currentCenter.lng - markerLocation.lng) ** 2 +
         (currentCenter.lat - markerLocation.lat) ** 2,
     )
 
-    // Get the place card height from localStorage or use a default value
+    // Fixed zoom level
+    const zoomLevel = 15
+
+    // Get the place card height
     const placeCardHeight = Number.parseInt(
       localStorage.getItem('placeCardHeight') || '200',
       10,
     )
 
-    // Get the map container height
-    const mapHeight = mapContainerRef.current?.clientHeight || 0
+    // Simple fixed offset based on zoom level 15
+    // At zoom level 15, approximately 0.001 degrees of latitude is a good small offset
+    // Adjust slightly based on card height (larger cards need slightly more offset)
+    const baseOffset = -0.0025
+    const cardSizeFactor = Math.min(1.5, Math.max(0.2, placeCardHeight / 200))
+    const latOffset = baseOffset * cardSizeFactor
 
-    // Calculate the vertical padding needed to position the marker above the card
-    // This positions the marker in the upper portion of the visible map area
-    const bottomPadding = placeCardHeight + 20 // Add some extra padding (20px)
-    const topPadding = 50 // Some padding from the top
+    // Adjust center point slightly upward
+    const adjustedCenter = {
+      lng: markerLocation.lng,
+      lat: markerLocation.lat + latOffset,
+    }
 
-    debugLog('Padding calculation:', {
-      placeCardHeight,
-      bottomPadding,
-      mapHeight,
-    })
-
-    const zoomLevel = 15
-
-    // If distance is too large, jump to location instead of animating
+    // Center on the marker with the simplified adjustment
     if (distanceInDegrees > 0.2) {
       mapRef.current.jumpTo({
-        center: markerLocation,
+        center: adjustedCenter,
         zoom: zoomLevel,
-        padding: { bottom: bottomPadding, top: topPadding, left: 0, right: 0 },
       })
     } else {
-      // Use flyTo for shorter distances with padding
       mapRef.current.flyTo({
-        center: markerLocation,
+        center: adjustedCenter,
         speed: 1,
         zoom: zoomLevel,
-        padding: { bottom: bottomPadding, top: topPadding, left: 0, right: 0 },
       })
     }
 
     currentSelectedPlaceIdRef.current = selectedPlaceId
 
-    // Reset flag after movement completes
     const onMoveEnd = () => {
       isSelectionMovement.current = false
       mapRef.current?.off('moveend', onMoveEnd)

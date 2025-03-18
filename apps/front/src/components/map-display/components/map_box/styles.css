@@ -1,22 +1,14 @@
-.place-popup .mapboxgl-popup-content {
+.place-popup.mapboxgl-popup .mapboxgl-popup-content {
   border-radius: 0.5rem;
   padding: 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.mapboxgl-popup-close-button {
+.place-popup.mapboxgl-popup .mapboxgl-popup-close-button {
   width: 30px;
   height: 30px;
   margin-top: 0px;
   margin-right: 0px;
-}
-
-.mapboxgl-popup-content {
-  border-radius: 0.75rem;
-  padding: 0 !important;
-  background-color: transparent;
-  box-shadow: none;
-  overflow: hidden;
 }
 
 .mapboxgl-popup {
@@ -29,4 +21,23 @@
 
 .marker.active-marker {
   z-index: 1;
+}
+
+/* Ensure map container and its parents don't have unwanted backgrounds */
+.mapboxgl-map,
+.mapboxgl-canvas-container,
+.mapboxgl-canvas {
+  background: none !important;
+}
+
+/* If there's a specific container for the map */
+.map-container {
+  background: none;
+  overflow: hidden;
+}
+
+/* Ensure no borders on map elements */
+.mapboxgl-control-container,
+.mapboxgl-canvas {
+  border: none !important;
 }

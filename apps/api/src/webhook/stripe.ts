@@ -24,6 +24,7 @@ export const stripeWebhook = async (
     msg: 'Stripe webhook received',
     event: 'webhook_received',
     metadata: {
+      body: req.body,
       eventType: req.body?.type,
       webhookKey: res.locals.webhookKey,
     },
@@ -82,11 +83,76 @@ export const stripeWebhook = async (
   }
 
   try {
-    const stripeEvent = event.data.object as Stripe.Subscription
-    const [user] = await db
+    // First, determine the type of event before casting
+    const eventType = event.type
+    const eventObject = event.data.object
+
+    // Log the raw event data for debugging
+    logger.info({
+      msg: 'Processing webhook event',
+      event: 'webhook_event_received',
+      metadata: {
+        eventType,
+        eventObject,
+      },
+    })
+
+    // Check if this is a subscription-related event
+    if (!eventObject || typeof eventObject !== 'object') {
+      logger.warn({
+        msg: 'Invalid webhook event structure',
+        event: 'webhook_invalid_structure',
+        metadata: { eventType },
+      })
+      res.status(400).json({
+        error: 'Invalid webhook data',
+        message: 'Invalid event structure',
+      })
+      return
+    }
+
+    const stripeEvent = eventObject as Stripe.Subscription
+
+    // Check if this event has user_id in metadata
+    if (!stripeEvent.metadata?.user_id) {
+      logger.warn({
+        msg: 'Webhook event missing user_id in metadata',
+        event: 'webhook_missing_user_id',
+        metadata: {
+          eventType,
+          webhookKey: res.locals.webhookKey,
+        },
+      })
+      res.status(400).json({
+        error: 'Invalid webhook data',
+        message: 'Missing user_id in metadata',
+      })
+      return
+    }
+
+    const userId = stripeEvent.metadata.user_id as string
+    const userResults = await db
       .select()
       .from(userTable)
-      .where(eq(userTable.id, stripeEvent.metadata.user_id as string))
+      .where(eq(userTable.id, userId))
+
+    if (!userResults || userResults.length === 0) {
+      logger.error({
+        msg: 'User not found for webhook',
+        event: 'webhook_user_not_found',
+        metadata: {
+          userId,
+          eventType,
+        },
+      })
+      res.status(404).json({
+        error: 'User not found',
+        message: 'No user found with the provided id',
+      })
+      return
+    }
+
+    const user = userResults[0]
 
     await logger.runWithContext(
       {
@@ -120,7 +186,7 @@ export const stripeWebhook = async (
         })
 
         try {
-          switch (event.type) {
+          switch (eventType) {
             case 'customer.subscription.trial_will_end': {
               logger.info({
                 msg: 'Trial ending for subscription',
@@ -166,46 +232,76 @@ export const stripeWebhook = async (
             }
 
             case 'customer.subscription.updated': {
+              // First log what we received
               logger.info({
                 msg: 'Processing subscription update',
                 event: 'subscription_update_started',
                 metadata: {
                   subscriptionId: stripeEvent.id,
-                  newPriceId: stripeEvent.items.data[0].price.id,
-                  newStatus: stripeEvent.status,
-                  newPlan: getPlanFromProductId(
-                    stripeEvent.items.data[0].plan.product as string,
-                  ),
+                  eventData: stripeEvent,
                 },
               })
 
+              // Safely extract the required data
+              const stripeCustomerId = stripeEvent.customer as string
+              const stripeSubscriptionId = stripeEvent.id
+              const items = stripeEvent.items?.data
+
+              if (
+                !items ||
+                items.length === 0 ||
+                !items[0]?.price?.id ||
+                !items[0]?.plan?.product
+              ) {
+                logger.warn({
+                  msg: 'Missing required subscription data',
+                  event: 'subscription_update_invalid_data',
+                  metadata: {
+                    subscriptionId: stripeSubscriptionId,
+                    items: stripeEvent.items,
+                  },
+                })
+                res.status(400).json({
+                  error: 'Invalid subscription data',
+                  message: 'Missing required subscription fields',
+                })
+                return
+              }
+
+              const stripePriceId = items[0].price.id
+              const productId = items[0].plan.product as string
+              const planType = getPlanFromProductId(productId)
+              const status = stripeEvent.status
+
+              // Now perform the database operation with validated data
               await db
                 .insert(subscription)
                 .values({
-                  userId: stripeEvent.metadata.user_id,
-                  stripeSubscriptionId: stripeEvent.id,
-                  stripePriceId: stripeEvent.items.data[0].price.id,
-                  stripeCustomerId: stripeEvent.customer as string,
-                  status: stripeEvent.status,
-                  plan: getPlanFromProductId(
-                    stripeEvent.items.data[0].plan.product as string,
-                  ),
+                  userId,
+                  stripeSubscriptionId,
+                  stripePriceId,
+                  stripeCustomerId,
+                  status,
+                  plan: planType,
                 })
                 .onConflictDoUpdate({
                   target: subscription.stripeSubscriptionId,
                   set: {
-                    stripePriceId: stripeEvent.items.data[0].price.id,
-                    status: stripeEvent.status,
-                    plan: getPlanFromProductId(
-                      stripeEvent.items.data[0].plan.product as string,
-                    ),
+                    stripePriceId,
+                    status,
+                    plan: planType,
                     updatedAt: new Date(),
                   },
                 })
+
               logger.info({
                 msg: 'Subscription created/updated',
                 event: 'subscription_created',
-                metadata: { subscriptionId: stripeEvent.id, stripeEvent },
+                metadata: {
+                  subscriptionId: stripeSubscriptionId,
+                  plan: planType,
+                  status,
+                },
               })
               break
             }
@@ -214,7 +310,7 @@ export const stripeWebhook = async (
               logger.warn({
                 msg: 'Unhandled webhook event',
                 event: 'webhook_unhandled_event',
-                metadata: { eventType: event.type },
+                metadata: { eventType },
               })
             }
           }
@@ -223,7 +319,7 @@ export const stripeWebhook = async (
             msg: 'Webhook processed successfully',
             event: 'webhook_processed',
             metadata: {
-              eventType: event.type,
+              eventType,
               webhookKey: res.locals.webhookKey,
             },
           })
