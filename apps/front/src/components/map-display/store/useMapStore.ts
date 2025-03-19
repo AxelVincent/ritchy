@@ -32,22 +32,15 @@ export const useMapStore = create<MapStore>((set) => ({
   setSelectedPlaceId: (id) => set({ selectedPlaceId: id }),
   setCenterPlaceSpreadsheetId: (id) => set({ centerPlaceSpreadsheetId: id }),
   setPlaces: (places) =>
-    set((state) => {
+    set(() => {
+      // Always initialize the displayed place IDs with all place IDs
+      // This ensures markers show up immediately when places are loaded
       const placeIds = new Set(places.map((place) => place.id))
-
-      const hasIntersection = Array.from(state.displayedPlaceIds).some((id) =>
-        placeIds.has(id),
-      )
-      const shouldReinitialize =
-        state.displayedPlaceIds.size === 0 ||
-        (state.places.length > 0 && places.length > 0 && !hasIntersection)
 
       return {
         places,
         tableData: places,
-        displayedPlaceIds: shouldReinitialize
-          ? placeIds
-          : state.displayedPlaceIds,
+        displayedPlaceIds: placeIds,
       }
     }),
   resetDisplayedPlaceIds: () =>
