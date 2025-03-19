@@ -17,8 +17,6 @@ type MarkerRef = {
 
 type UseMarkerManagerProps = {
   map: mapboxgl.Map | null
-  places: Place[] | null
-  displayedPlaceIds: Set<string>
   dataTableRowSelection: RowSelectionState
 }
 
@@ -73,21 +71,21 @@ const getColorWithCache = (status: string): string => {
 
 export const useMarkerManager = ({
   map,
-  places: propPlaces,
-  displayedPlaceIds,
   dataTableRowSelection,
 }: UseMarkerManagerProps) => {
   const {
     setCenterPlaceSpreadsheetId,
-    places: storePlaces,
+    places,
     updatedPlaceStatuses,
+    displayedPlaceIds,
     setSelectedPlaceId,
     selectedPlaceId,
   } = useMapStore()
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
 
-  const places = storePlaces.length > 0 ? storePlaces : propPlaces
+  // Add a ref to track if we have initialized markers
+  const initialMarkersCreatedRef = useRef(false)
 
   // Effect for initial marker creation and cleanup
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -123,6 +121,20 @@ export const useMarkerManager = ({
           markerElement.style.cursor = 'pointer'
           markerElement.style.transform = 'translate(-50%, -100%)'
 
+          // Initialize with visible style by default
+          const color = place.status
+            ? getColorWithCache(place.status.status)
+            : MARKER_COLORS.DEFAULT
+
+          const svg = createActiveMarkerSvg(
+            color,
+            place,
+            place.id === selectedPlaceId,
+          )
+          if (svg) {
+            markerElement.appendChild(svg)
+          }
+
           const marker = new mapboxgl.Marker({
             element: markerElement,
             scale: 1,
@@ -141,8 +153,13 @@ export const useMarkerManager = ({
         }
       }
 
-      // Initial update for all markers
-      throttledUpdateMarkers(places)
+      initialMarkersCreatedRef.current = true
+
+      // Initial update for all markers - this now just applies styles
+      // but markers are already visible
+      if (places.length > 0) {
+        throttledUpdateMarkers(places)
+      }
     }
 
     setupInitialMarkers().catch((error) => {
@@ -155,10 +172,12 @@ export const useMarkerManager = ({
       }
       markersRef.current.clear()
       mapLoadedRef.current = false
+      initialMarkersCreatedRef.current = false
     }
   }, [map, places])
 
   // Separate status update handler
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const updateMarkersStatus = useMemo(
     () =>
       throttle(
@@ -168,7 +187,11 @@ export const useMarkerManager = ({
             if (!markerRef) continue
 
             const element = markerRef.marker.getElement()
-            const isDisplayed = displayedPlaceIds.has(placeId)
+            // Consider all places displayed by default if no filtering is active
+            const isDisplayed =
+              displayedPlaceIds.size === 0
+                ? true
+                : displayedPlaceIds.has(placeId)
             const isSelectedPlace = placeId === selectedPlaceId
 
             // Skip if marker is filtered or selected as these have different colors
@@ -190,10 +213,10 @@ export const useMarkerManager = ({
         100,
         { leading: true, trailing: true },
       ),
-    [displayedPlaceIds, selectedPlaceId, places],
+    [displayedPlaceIds, selectedPlaceId],
   )
 
-  // Main marker update function (now without status updates)
+  // Main marker update function
   const throttledUpdateMarkers = useMemo(
     () =>
       throttle(
@@ -202,7 +225,11 @@ export const useMarkerManager = ({
             const markerRef = markersRef.current.get(place.id)
             if (!markerRef) continue
 
-            const isDisplayed = displayedPlaceIds.has(place.id)
+            // Consider a marker visible by default if no filtering is active
+            const isDisplayed =
+              displayedPlaceIds.size === 0
+                ? true
+                : displayedPlaceIds.has(place.id)
             const isSelected = dataTableRowSelection[place.id] ?? false
             const isSelectedPlace = place.id === selectedPlaceId
 
@@ -215,9 +242,10 @@ export const useMarkerManager = ({
                 ? getColorWithCache(place.status.status)
                 : MARKER_COLORS.DEFAULT
 
-            const svg = isDisplayed
-              ? createActiveMarkerSvg(color, place, isSelectedPlace)
-              : createFilteredMarkerSvg()
+            const svg =
+              isDisplayed || displayedPlaceIds.size === 0
+                ? createActiveMarkerSvg(color, place, isSelectedPlace)
+                : createFilteredMarkerSvg()
 
             if (svg && element) {
               // Remove only the existing SVG, not other elements
@@ -250,7 +278,11 @@ export const useMarkerManager = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!map || !places) return
-    throttledUpdateMarkers(places)
+
+    // Only run the update if we have markers created
+    if (initialMarkersCreatedRef.current) {
+      throttledUpdateMarkers(places)
+    }
 
     return () => {
       throttledUpdateMarkers.cancel()
@@ -261,6 +293,59 @@ export const useMarkerManager = ({
     selectedPlaceId,
     throttledUpdateMarkers,
   ])
+
+  // Add a dedicated effect for selection changes
+  useEffect(() => {
+    if (!map || !places) return
+
+    console.log('Selection changed to:', selectedPlaceId)
+
+    // If we have a selected place, update its size
+    if (selectedPlaceId) {
+      const markerRef = markersRef.current.get(selectedPlaceId)
+      if (markerRef) {
+        // Remove and recreate the marker with a larger scale
+        const marker = markerRef.marker
+        const element = marker.getElement()
+        const lngLat = marker.getLngLat()
+
+        // Apply scale to the whole marker using mapbox's scale option
+        const newMarker = new mapboxgl.Marker({
+          element: element,
+        }).setLngLat(lngLat)
+
+        // Replace old marker with new scaled marker
+        marker.remove()
+        newMarker.addTo(map)
+        markersRef.current.set(selectedPlaceId, { marker: newMarker })
+      }
+    }
+
+    // Reset any previously selected markers
+    for (const [placeId, markerRef] of markersRef.current.entries()) {
+      if (placeId !== selectedPlaceId) {
+        const element = markerRef.marker.getElement()
+        if (element.classList.contains('selected-place-marker')) {
+          // Need to recreate the marker with normal scale
+          const marker = markerRef.marker
+          const lngLat = marker.getLngLat()
+
+          // Create new marker with default scale
+          const newMarker = new mapboxgl.Marker({
+            element: element,
+            scale: 1.0,
+          }).setLngLat(lngLat)
+
+          // Replace scaled marker with normal marker
+          marker.remove()
+          newMarker.addTo(map)
+          markersRef.current.set(placeId, { marker: newMarker })
+
+          console.log(`Reset scale for marker ${placeId}`)
+        }
+      }
+    }
+  }, [selectedPlaceId, places, map])
 
   // Separate effect for status updates
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>

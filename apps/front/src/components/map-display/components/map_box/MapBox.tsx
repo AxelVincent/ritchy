@@ -4,8 +4,8 @@ import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 import type { MapboxLocationParameters } from '@/components/map-display/types'
 import { debounce } from '@/lib/debounce'
-import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
+import mapboxgl from 'mapbox-gl'
 import { type FC, Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
 
@@ -17,13 +17,12 @@ const debugLog = (...args: unknown[]) => {
   }
 }
 
-// Improve props interface with more specific types
+// Update props to remove unnecessary props
 interface MapBoxProps {
-  searchResults: Place[] | null
   userLocation: MapboxLocationParameters
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
-  filteredPlaceIds: Set<string>
+  isMobile: boolean
 }
 
 // Move PlaceCard to a separate lazy-loaded component
@@ -34,14 +33,15 @@ const PlaceCard = lazy(() =>
 )
 
 export const MapBox: FC<MapBoxProps> = ({
-  searchResults,
   userLocation,
   dataTableRowSelection,
   radiusInMeters,
-  filteredPlaceIds,
+  isMobile,
 }) => {
-  // Get selectedPlaceId and setSelectedPlaceId from the store
-  const { selectedPlaceId } = useMapStore()
+  const { places, selectedPlaceId, setPlaces, setDisplayedPlaceIds } =
+    useMapStore()
+  const previousPlacesRef = useRef<typeof places>([])
+  const boundsSetRef = useRef(false)
 
   debugLog('MapBox render:', { userLocation, radiusInMeters })
 
@@ -59,7 +59,7 @@ export const MapBox: FC<MapBoxProps> = ({
     mapContainerRef,
     initialCenter,
     MAP_SETTINGS,
-    searchResults ?? [],
+    isMobile,
   )
 
   // Resize observer effect
@@ -88,15 +88,83 @@ export const MapBox: FC<MapBoxProps> = ({
     }
   }, [mapRef])
 
-  // Replace the useMarkerManager call to remove popup-related functionality
   const { markersRef } = useMarkerManager({
     map: mapRef.current,
-    places: searchResults,
-    displayedPlaceIds: filteredPlaceIds,
     dataTableRowSelection,
   })
 
-  // Selection state effect
+  // Set bounds after places are loaded - with debouncing
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    // Only proceed if we have a map and places
+    if (!mapRef.current || !places.length) return
+
+    // Debounce bounds calculation to prevent excessive updates
+    const handleBoundsUpdate = debounce(() => {
+      debugLog('Setting map bounds with places:', places.length)
+
+      // Compare with previous places data to see if there's a meaningful change
+      const prevIds = previousPlacesRef.current
+        .map((p) => p.id)
+        .sort()
+        .join(',')
+      const currentIds = places
+        .map((p) => p.id)
+        .sort()
+        .join(',')
+
+      // If no change in the data, exit early
+      if (prevIds === currentIds && boundsSetRef.current) return
+
+      // Update our reference to the current places
+      previousPlacesRef.current = places
+
+      // Only calculate bounds if we have actual changes in the data
+      const bounds = new mapboxgl.LngLatBounds()
+      bounds.extend(initialCenter)
+
+      // Limit the number of points used for bounds calculation
+      const placesToUse = places.length > 100 ? places.slice(0, 100) : places
+
+      for (const place of placesToUse) {
+        const coordinates = [
+          place.location.longitude,
+          place.location.latitude,
+        ] as [number, number]
+        bounds.extend(coordinates)
+      }
+
+      // Function to fit bounds
+      const fitMapBounds = () => {
+        if (!mapRef.current) return
+
+        mapRef.current.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          maxZoom: 15,
+          duration: 500,
+        })
+
+        boundsSetRef.current = true
+        debugLog('Bounds set successfully')
+      }
+
+      // If map is already loaded, fit bounds immediately
+      if (mapRef.current?.loaded()) {
+        fitMapBounds()
+      } else {
+        // Otherwise wait for the load event
+        mapRef.current?.once('load', fitMapBounds)
+      }
+    }, 250) // Debounce for 250ms
+
+    handleBoundsUpdate()
+
+    return () => {
+      handleBoundsUpdate.cancel()
+    }
+  }, [places, initialCenter])
+
+  // Optimize selection state updates
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     debugLog('Selection state effect', {
@@ -104,11 +172,16 @@ export const MapBox: FC<MapBoxProps> = ({
       currentSelectedPlaceIdRef,
       mapRef,
     })
-    if (!mapRef.current) {
-      debugLog('Selection state skipped: no map')
+
+    // Skip if nothing changed
+    if (
+      !mapRef.current ||
+      selectedPlaceId === currentSelectedPlaceIdRef.current
+    ) {
       return
     }
 
+    // Reset selection if null
     if (!selectedPlaceId) {
       currentSelectedPlaceIdRef.current = null
       return
@@ -174,14 +247,23 @@ export const MapBox: FC<MapBoxProps> = ({
     mapRef.current.on('moveend', onMoveEnd)
   }, [selectedPlaceId])
 
+  // Update effect to store places in Zustand and initialize displayedPlaceIds
+  useEffect(() => {
+    if (places && places.length > 0) {
+      // Initialize with all places and set all places as displayed
+      setPlaces(places)
+
+      // Explicitly initialize all places as displayed
+      // This ensures markers show up immediately without waiting for DataTable
+      setDisplayedPlaceIds(new Set(places.map((place) => place.id)))
+    }
+  }, [places, setPlaces, setDisplayedPlaceIds])
+
   return (
     <div className="relative h-full w-full">
       <div ref={mapContainerRef} className="h-full w-full" />
       <Suspense fallback={<div>Loading...</div>}>
-        <PlaceCard
-          places={searchResults}
-          displayedPlaceIds={filteredPlaceIds}
-        />
+        <PlaceCard />
       </Suspense>
     </div>
   )

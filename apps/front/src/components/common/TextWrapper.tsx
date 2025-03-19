@@ -5,9 +5,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Label } from '@radix-ui/react-label'
-import { Copy, MapPinned, MessageSquareText, Trash } from 'lucide-react'
+import { Copy, MapPinned, MessageSquareText, Phone, Trash } from 'lucide-react'
+
 import React from 'react'
 
 // Move ICONS outside component to avoid recreation
@@ -16,6 +20,8 @@ const ICONS = {
   MapPinned,
   Trash,
   MessageSquareText,
+  Phone,
+  faWhatsapp,
 } as const
 
 export interface Action {
@@ -48,7 +54,15 @@ const ActionButton = React.memo(
             className="h-5 w-5 p-2 rounded-sm"
             size="icon"
           >
-            <Icon className="text-muted-foreground" />
+            {action.icon === 'faWhatsapp' ? (
+              <FontAwesomeIcon
+                icon={faWhatsapp}
+                className="text-muted-foreground"
+              />
+            ) : (
+              // @ts-expect-error - LucideIcon is a valid JSX element
+              <Icon className="text-muted-foreground" />
+            )}
           </Button>
         </TooltipTrigger>
         {action.label && (
@@ -69,6 +83,8 @@ export const TextWrapper = React.memo(
     id,
     disableContentTooltip = false,
   }: TextWrapperProps) => {
+    const isMobile = useIsMobile()
+
     // Cache the text content check
     const { isTextContent, textContent } = React.useMemo(() => {
       const isText =
@@ -105,7 +121,7 @@ export const TextWrapper = React.memo(
             </Label>
           )}
 
-          {actions.length > 0 && (
+          {actions.length > 0 && !isMobile && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 bg-background rounded-md p-0.5 border border-border">
               {actions.map((action) => (
                 <ActionButton
