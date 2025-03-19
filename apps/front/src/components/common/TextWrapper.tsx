@@ -5,6 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -82,6 +83,8 @@ export const TextWrapper = React.memo(
     id,
     disableContentTooltip = false,
   }: TextWrapperProps) => {
+    const isMobile = useIsMobile()
+
     // Cache the text content check
     const { isTextContent, textContent } = React.useMemo(() => {
       const isText =
@@ -118,7 +121,7 @@ export const TextWrapper = React.memo(
             </Label>
           )}
 
-          {actions.length > 0 && (
+          {actions.length > 0 && !isMobile && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 bg-background rounded-md p-0.5 border border-border">
               {actions.map((action) => (
                 <ActionButton

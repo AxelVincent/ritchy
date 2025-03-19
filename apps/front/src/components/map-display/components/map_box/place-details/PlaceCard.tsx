@@ -13,7 +13,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { DragHandleDots2Icon } from '@radix-ui/react-icons'
 
 import { StatusDropdown } from '@/components/status/status-dropdown'
-import { useIsMobile } from '@/hooks/useIsMobile'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ExternalLink, Star, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
