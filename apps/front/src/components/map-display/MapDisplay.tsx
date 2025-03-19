@@ -1,6 +1,5 @@
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 
-import { DataTable } from '@/components/data-table/DataTable'
 import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
@@ -87,16 +86,8 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const [dataTableRowSelection, setDataTableRowSelection] =
     useState<RowSelectionState>({})
 
-  // Add state for mobile view toggle with localStorage persistence
-  const [mobileView, setMobileView] = useState<'map' | 'table'>(() => {
-    const savedView = localStorage.getItem('mobileMapView')
-    return savedView === 'map' || savedView === 'table' ? savedView : 'map'
-  })
-
-  // Save mobile view preference to localStorage
-  useEffect(() => {
-    localStorage.setItem('mobileMapView', mobileView)
-  }, [mobileView])
+  // Simplified mobile view state - always defaults to 'table' without localStorage
+  const [mobileView, setMobileView] = useState<'map' | 'table'>('table')
 
   // Effects
   useEffect(() => {
@@ -122,6 +113,22 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
       <div className="flex flex-col h-full relative">
         {/* Content area with both views always mounted but conditionally visible */}
         <div className="flex-1 relative">
+          {/* DataTable div moved first for priority loading */}
+          <div
+            className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
+          >
+            <div className="h-full overflow-auto">
+              <Suspense fallback={<TableLoadingFallback />}>
+                <LazyDataTable
+                  columns={columns}
+                  setDataTableRowSelection={setDataTableRowSelection}
+                  dataTableRowSelection={dataTableRowSelection}
+                  listId={listId}
+                  searchId={searchId}
+                />
+              </Suspense>
+            </div>
+          </div>
           <div
             className={`h-full w-full absolute inset-0 ${mobileView === 'map' ? 'block' : 'hidden'}`}
           >
@@ -134,21 +141,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                 listId={listId ?? null}
               />
             </Suspense>
-          </div>
-          <div
-            className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
-          >
-            <div className="h-full overflow-auto">
-              <Suspense fallback={<TableLoadingFallback />}>
-                <DataTable
-                  columns={columns}
-                  setDataTableRowSelection={setDataTableRowSelection}
-                  dataTableRowSelection={dataTableRowSelection}
-                  listId={listId}
-                  searchId={searchId}
-                />
-              </Suspense>
-            </div>
           </div>
         </div>
 
