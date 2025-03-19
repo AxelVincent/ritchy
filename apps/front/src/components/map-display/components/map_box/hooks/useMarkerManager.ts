@@ -223,7 +223,7 @@ export const useMarkerManager = ({
                 ? true
                 : displayedPlaceIds.has(place.id)
             const isSelected = dataTableRowSelection[place.id] ?? false
-            const isSelectedPlace = place.id === selectedPlaceId
+            const isFocused = place.id === selectedPlaceId
 
             const element = markerRef.marker.getElement()
 
@@ -236,7 +236,7 @@ export const useMarkerManager = ({
 
             const svg =
               isDisplayed || displayedPlaceIds.size === 0
-                ? createActiveMarkerSvg(color, place, isSelectedPlace)
+                ? createActiveMarkerSvg(color, place, isFocused)
                 : createFilteredMarkerSvg()
 
             if (svg && element) {
@@ -254,8 +254,7 @@ export const useMarkerManager = ({
               if (isDisplayed) element.classList.add('active-marker')
               else element.classList.remove('active-marker')
 
-              if (isSelectedPlace)
-                element.classList.add('selected-place-marker')
+              if (isSelected) element.classList.add('selected-place-marker')
               else element.classList.remove('selected-place-marker')
             }
           }
@@ -296,7 +295,10 @@ export const useMarkerManager = ({
 
       // Update newly selected marker
       if (selectedPlaceId) {
-        await updateMarker(selectedPlaceId, { isSelected: true })
+        await updateMarker(selectedPlaceId, {
+          isSelected: false,
+          isFocused: true,
+        })
       }
 
       // Reset previously selected markers
@@ -337,6 +339,7 @@ export const useMarkerManager = ({
     options: {
       isSelected?: boolean
       statusChanged?: boolean
+      isFocused?: boolean
       isDisplayed?: boolean
     },
   ) => {
@@ -359,7 +362,7 @@ export const useMarkerManager = ({
 
       const svg =
         options.isDisplayed !== false
-          ? createActiveMarkerSvg(color, place, options.isSelected === true)
+          ? createActiveMarkerSvg(color, place, options.isFocused)
           : createFilteredMarkerSvg()
 
       // Update DOM safely
