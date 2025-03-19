@@ -50,6 +50,7 @@ export const SearchMap: FC<MapBoxProps> = ({
     mapContainerRef,
     initialCenter,
     MAP_SETTINGS,
+    false,
   )
 
   const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)

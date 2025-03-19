@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { cn } from '@/lib/utils'
 import { MagicWandIcon } from '@radix-ui/react-icons'
-import type { SearchResult } from '@ritchy/types'
+import type { Place, SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -32,7 +32,6 @@ import { useEnrichment } from './hooks/useEnrichment'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
   setDataTableRowSelection: React.Dispatch<
     React.SetStateAction<RowSelectionState>
   >
@@ -40,7 +39,6 @@ interface DataTableProps<TData, TValue> {
   listId?: string
   searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
-  setData: React.Dispatch<React.SetStateAction<TData[]>>
   storageKey?: string
 }
 
@@ -49,8 +47,6 @@ const ROW_HEIGHT = '34px'
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
-  data,
-  setData,
   setDataTableRowSelection,
   dataTableRowSelection,
   listId,
@@ -58,8 +54,12 @@ export const DataTable = <TData extends SearchResult, TValue>({
   onFilteredDataChange,
   storageKey,
 }: DataTableProps<TData, TValue>) => {
-  // Get selectedPlaceId and setSelectedPlaceId from the store
-  const { selectedPlaceId, centerPlaceSpreadsheetId } = useMapStore()
+  const {
+    selectedPlaceId,
+    centerPlaceSpreadsheetId,
+    tableData,
+    updateTableData,
+  } = useMapStore()
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   const [sorting, setSorting] = useState<SortingState>([])
@@ -69,10 +69,22 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [showAddListDialog, setShowAddListDialog] = useState(false)
   const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
 
-  // Use the enrichment hook
+  // Use tableData from the store instead of the prop
+  const data = tableData as TData[]
+
+  // Create a compatible setter that meets the React.Dispatch<SetStateAction<TData[]>> interface
+  const setData = (value: React.SetStateAction<TData[]>) => {
+    if (typeof value === 'function') {
+      updateTableData((prev) => value(prev as TData[]) as Place[])
+    } else {
+      updateTableData(() => value as Place[])
+    }
+  }
+
+  // Use the enrichment hook with store data
   const { pendingFetches, handleFetchEnrichment } = useEnrichment({
     data,
-    setData,
+    setData: (newData) => updateTableData(() => newData as Place[]),
     listId,
     searchId,
   })
@@ -150,7 +162,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       columnSizing,
     },
     meta: {
-      setData,
+      updateTableData: setData,
     },
     onColumnSizingChange: (updater) => {
       const newSizing =

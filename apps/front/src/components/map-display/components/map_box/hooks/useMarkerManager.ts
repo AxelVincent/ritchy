@@ -17,8 +17,6 @@ type MarkerRef = {
 
 type UseMarkerManagerProps = {
   map: mapboxgl.Map | null
-  places: Place[] | null
-  displayedPlaceIds: Set<string>
   dataTableRowSelection: RowSelectionState
 }
 
@@ -73,21 +71,18 @@ const getColorWithCache = (status: string): string => {
 
 export const useMarkerManager = ({
   map,
-  places: propPlaces,
-  displayedPlaceIds,
   dataTableRowSelection,
 }: UseMarkerManagerProps) => {
   const {
     setCenterPlaceSpreadsheetId,
-    places: storePlaces,
+    places,
     updatedPlaceStatuses,
+    displayedPlaceIds,
     setSelectedPlaceId,
     selectedPlaceId,
   } = useMapStore()
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
-
-  const places = storePlaces.length > 0 ? storePlaces : propPlaces
 
   // Effect for initial marker creation and cleanup
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -159,6 +154,7 @@ export const useMarkerManager = ({
   }, [map, places])
 
   // Separate status update handler
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const updateMarkersStatus = useMemo(
     () =>
       throttle(
@@ -190,7 +186,7 @@ export const useMarkerManager = ({
         100,
         { leading: true, trailing: true },
       ),
-    [displayedPlaceIds, selectedPlaceId, places],
+    [displayedPlaceIds, selectedPlaceId],
   )
 
   // Main marker update function (now without status updates)
@@ -215,9 +211,10 @@ export const useMarkerManager = ({
                 ? getColorWithCache(place.status.status)
                 : MARKER_COLORS.DEFAULT
 
-            const svg = isDisplayed
-              ? createActiveMarkerSvg(color, place, isSelectedPlace)
-              : createFilteredMarkerSvg()
+            const svg =
+              isDisplayed || displayedPlaceIds.size === 0
+                ? createActiveMarkerSvg(color, place, isSelectedPlace)
+                : createFilteredMarkerSvg()
 
             if (svg && element) {
               // Remove only the existing SVG, not other elements

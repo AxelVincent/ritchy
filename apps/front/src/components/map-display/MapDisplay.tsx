@@ -6,9 +6,11 @@ import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
-import { useMediaQuery } from '@/hooks/use-media-query'
+import { useIsMobile } from '@/hooks/use-mobile'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
+import { ListIcon } from 'lucide-react'
+import { MapIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
 import { useMapStore } from './store/useMapStore'
@@ -21,8 +23,8 @@ interface MapDisplayProps {
 }
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
-  const setPlaces = useMapStore((state) => state.setPlaces)
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const { setPlaces, setDisplayedPlaceIds } = useMapStore()
+  const isMobile = useIsMobile()
 
   // Core location state
   const defaultLocation =
@@ -50,28 +52,15 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     localStorage.setItem('mapDisplayPanelSizes', JSON.stringify(sizes))
   }
 
-  // Update searchResults to use listData when available, fallback to mockData in development
-  const [searchResults, setSearchResults] = useState<Place[]>(() => {
-    if (places && places.length > 0) {
-      return places
-    }
-    return process.env.NODE_ENV === 'development' ? [] : []
-  })
-
   // Search and selection state
   const [dataTableRowSelection, setDataTableRowSelection] =
     useState<RowSelectionState>({})
-  const [filteredPlaceIds, setFilteredPlaceIds] = useState<Set<string>>(
-    () =>
-      new Set(
-        places && places.length > 0
-          ? places.map((item) => item.id)
-          : searchResults.map((item) => item.id),
-      ),
-  )
 
-  // Add a safety check to ensure we never pass undefined
-  const safeFilteredPlaceIds = filteredPlaceIds ?? new Set<string>()
+  // Add state for mobile view toggle with localStorage persistence
+  const [mobileView, setMobileView] = useState<'map' | 'table'>(() => {
+    const savedView = localStorage.getItem('mobileMapView')
+    return savedView === 'map' || savedView === 'table' ? savedView : 'map'
+  })
 
   // Effects
   useEffect(() => {
@@ -80,14 +69,10 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     }
   }, [currentLocation])
 
-  const [tableData, setTableData] = useState<Place[]>(places)
-
   // Update effect to store places in Zustand
   useEffect(() => {
     if (places && places.length > 0) {
       setPlaces(places)
-      setSearchResults(places)
-      setTableData(places)
     }
   }, [places, setPlaces])
 
@@ -95,20 +80,67 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     return <EmptyListState listId={listId} />
   }
 
-  // On mobile, show only the DataTable
+  // On mobile, show either the Map or DataTable based on toggle state
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full">
-        <DataTable
-          columns={columns}
-          data={tableData}
-          setData={setTableData}
-          setDataTableRowSelection={setDataTableRowSelection}
-          dataTableRowSelection={dataTableRowSelection}
-          onFilteredDataChange={setFilteredPlaceIds}
-          listId={listId}
-          searchId={searchId}
-        />
+      <div className="flex flex-col h-full relative">
+        {/* Content area with both views always mounted but conditionally visible */}
+        <div className="flex-1 relative">
+          <div
+            className={`h-full w-full absolute inset-0 ${mobileView === 'map' ? 'block' : 'hidden'}`}
+          >
+            <MapBox
+              userLocation={currentLocation}
+              dataTableRowSelection={dataTableRowSelection}
+              radiusInMeters={currentLocation.radiusInMeters}
+              isMobile={true}
+            />
+          </div>
+          <div
+            className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
+          >
+            <div className="h-full overflow-auto">
+              <DataTable
+                columns={columns}
+                setDataTableRowSelection={setDataTableRowSelection}
+                dataTableRowSelection={dataTableRowSelection}
+                onFilteredDataChange={setDisplayedPlaceIds}
+                listId={listId}
+                searchId={searchId}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Toggle as a fixed element at the bottom */}
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
+          <div className="inline-flex items-center rounded-md border border-input bg-background/95 backdrop-blur-sm shadow-md p-1 text-sm pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => setMobileView('map')}
+              className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
+                mobileView === 'map'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <MapIcon className="h-3.5 w-3.5" />
+              Map
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileView('table')}
+              className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
+                mobileView === 'table'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <ListIcon className="h-3.5 w-3.5" />
+              List
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
@@ -127,11 +159,9 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
         >
           <DataTable
             columns={columns}
-            data={tableData}
-            setData={setTableData}
             setDataTableRowSelection={setDataTableRowSelection}
             dataTableRowSelection={dataTableRowSelection}
-            onFilteredDataChange={setFilteredPlaceIds}
+            onFilteredDataChange={setDisplayedPlaceIds}
             listId={listId}
             searchId={searchId}
           />
@@ -139,11 +169,10 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={panelSizes[1]} className="flex-1">
           <MapBox
-            searchResults={searchResults}
             userLocation={currentLocation}
             dataTableRowSelection={dataTableRowSelection}
             radiusInMeters={currentLocation.radiusInMeters}
-            filteredPlaceIds={safeFilteredPlaceIds}
+            isMobile={false}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

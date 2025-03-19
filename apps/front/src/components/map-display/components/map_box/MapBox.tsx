@@ -4,7 +4,6 @@ import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 import type { MapboxLocationParameters } from '@/components/map-display/types'
 import { debounce } from '@/lib/debounce'
-import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { type FC, Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
@@ -17,13 +16,12 @@ const debugLog = (...args: unknown[]) => {
   }
 }
 
-// Improve props interface with more specific types
+// Update props to remove unnecessary props
 interface MapBoxProps {
-  searchResults: Place[] | null
   userLocation: MapboxLocationParameters
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
-  filteredPlaceIds: Set<string>
+  isMobile: boolean
 }
 
 // Move PlaceCard to a separate lazy-loaded component
@@ -34,13 +32,12 @@ const PlaceCard = lazy(() =>
 )
 
 export const MapBox: FC<MapBoxProps> = ({
-  searchResults,
   userLocation,
   dataTableRowSelection,
   radiusInMeters,
-  filteredPlaceIds,
+  isMobile,
 }) => {
-  // Get selectedPlaceId and setSelectedPlaceId from the store
+  // Get all data from the store instead of props
   const { selectedPlaceId } = useMapStore()
 
   debugLog('MapBox render:', { userLocation, radiusInMeters })
@@ -59,7 +56,7 @@ export const MapBox: FC<MapBoxProps> = ({
     mapContainerRef,
     initialCenter,
     MAP_SETTINGS,
-    searchResults ?? [],
+    isMobile,
   )
 
   // Resize observer effect
@@ -88,11 +85,9 @@ export const MapBox: FC<MapBoxProps> = ({
     }
   }, [mapRef])
 
-  // Replace the useMarkerManager call to remove popup-related functionality
+  // Replace the useMarkerManager call to use store data directly
   const { markersRef } = useMarkerManager({
     map: mapRef.current,
-    places: searchResults,
-    displayedPlaceIds: filteredPlaceIds,
     dataTableRowSelection,
   })
 
@@ -178,10 +173,7 @@ export const MapBox: FC<MapBoxProps> = ({
     <div className="relative h-full w-full">
       <div ref={mapContainerRef} className="h-full w-full" />
       <Suspense fallback={<div>Loading...</div>}>
-        <PlaceCard
-          places={searchResults}
-          displayedPlaceIds={filteredPlaceIds}
-        />
+        <PlaceCard />
       </Suspense>
     </div>
   )
