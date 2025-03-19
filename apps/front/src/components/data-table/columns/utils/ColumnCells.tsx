@@ -11,6 +11,7 @@ import {
 
 import { Notes } from '@/components/notes/Notes'
 import { formatDistanceToNow } from 'date-fns'
+import posthog from 'posthog-js'
 
 interface BaseColumnCellProps {
   row: Row<SearchResult>
@@ -178,6 +179,7 @@ export const PhoneCell = ({
         {
           icon: 'Phone',
           onClick: () => {
+            posthog.capture('click_call_button', { property: 'value' })
             window.open(`tel:${content}`, '_blank')
           },
           label: 'Call',
@@ -185,6 +187,7 @@ export const PhoneCell = ({
         {
           icon: 'faWhatsapp',
           onClick: () => {
+            posthog.capture('click_whatsapp_button', { property: 'value' })
             const formattedPhone = content.replace(/\D/g, '')
             window.open(`https://wa.me/${formattedPhone}`, '_blank')
           },
@@ -197,6 +200,7 @@ export const PhoneCell = ({
         onClick={handleCall}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
+            posthog.capture('click_phone_number', { property: 'value' })
             handleCall(e as unknown as React.MouseEvent)
           }
         }}
