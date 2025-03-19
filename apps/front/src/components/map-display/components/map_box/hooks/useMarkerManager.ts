@@ -234,10 +234,9 @@ export const useMarkerManager = ({
                 ? getColorWithCache(place.status.status)
                 : MARKER_COLORS.DEFAULT
 
-            const svg =
-              isDisplayed || displayedPlaceIds.size === 0
-                ? createActiveMarkerSvg(color, place, isFocused)
-                : createFilteredMarkerSvg()
+            const svg = isDisplayed
+              ? createActiveMarkerSvg(color, place, isFocused)
+              : createFilteredMarkerSvg()
 
             if (svg && element) {
               // Remove only the existing SVG, not other elements
@@ -295,20 +294,30 @@ export const useMarkerManager = ({
 
       // Update newly selected marker
       if (selectedPlaceId) {
+        const isDisplayed =
+          displayedPlaceIds.size === 0
+            ? true
+            : displayedPlaceIds.has(selectedPlaceId)
         await updateMarker(selectedPlaceId, {
           isSelected: false,
           isFocused: true,
+          isDisplayed,
         })
       }
 
       // Reset previously selected markers
       for (const placeId of markersRef.current.keys()) {
         if (placeId !== selectedPlaceId) {
-          await updateMarker(placeId, { isSelected: false })
+          const isDisplayed =
+            displayedPlaceIds.size === 0 ? true : displayedPlaceIds.has(placeId)
+          await updateMarker(placeId, {
+            isSelected: false,
+            isDisplayed,
+          })
         }
       }
     })
-  }, [selectedPlaceId, places, map])
+  }, [selectedPlaceId, places, map, displayedPlaceIds])
 
   // Status updates - now queued
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
