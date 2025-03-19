@@ -165,6 +165,11 @@ export const PhoneCell = ({
     [id, content],
   )
 
+  const handleCall = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    window.open(`tel:${content}`, '_blank')
+  }
+
   return (
     <TextWrapper
       id={id}
@@ -187,7 +192,17 @@ export const PhoneCell = ({
         },
       ]}
     >
-      {content}
+      <span
+        className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
+        onClick={handleCall}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleCall(e as unknown as React.MouseEvent)
+          }
+        }}
+      >
+        {content}
+      </span>
     </TextWrapper>
   )
 }
