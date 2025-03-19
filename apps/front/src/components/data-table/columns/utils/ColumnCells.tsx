@@ -1,7 +1,6 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import type { Note, SearchResult } from '@ritchy/types'
-import type { Row, Table } from '@tanstack/react-table'
 import React from 'react'
 import {
   createColumnPinActions,
@@ -11,10 +10,10 @@ import {
 
 import { Notes } from '@/components/notes/Notes'
 import { formatDistanceToNow } from 'date-fns'
+import posthog from 'posthog-js'
 
 interface BaseColumnCellProps {
-  row: Row<SearchResult>
-  table: Table<SearchResult>
+  id: string
   content: React.ReactNode
 }
 
@@ -24,21 +23,20 @@ interface ColumnPinCopyCellProps extends BaseColumnCellProps {
 }
 
 export interface NotesColumnCellProps {
-  row: Row<SearchResult>
-  table: Table<SearchResult>
+  id: string
   place: SearchResult
   content: Note | null
 }
 
 // For columns that need both pin and copy actions
 export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
-  row,
+  id,
   content,
   href,
 }: ColumnPinCopyCellProps) {
   const actions = React.useMemo(
-    () => createColumnPinCopyActions(row.original.id, content),
-    [row.original.id, content],
+    () => createColumnPinCopyActions(id, content),
+    [id, content],
   )
 
   const displayContent = href ? (
@@ -56,7 +54,7 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
   )
 
   return (
-    <TextWrapper id={row.original.id} actions={actions}>
+    <TextWrapper id={id} actions={actions}>
       {displayContent}
     </TextWrapper>
   )
@@ -64,16 +62,13 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
 
 // For columns that only need pin action
 export const ColumnPinCell = React.memo(function ColumnPinCell({
-  row,
+  id,
   content,
 }: BaseColumnCellProps) {
-  const actions = React.useMemo(
-    () => createColumnPinActions(row.original.id),
-    [row.original.id],
-  )
+  const actions = React.useMemo(() => createColumnPinActions(id), [id])
 
   return (
-    <TextWrapper id={row.original.id} actions={actions}>
+    <TextWrapper id={id} actions={actions}>
       {content}
     </TextWrapper>
   )
@@ -81,12 +76,12 @@ export const ColumnPinCell = React.memo(function ColumnPinCell({
 
 // Specialized cell component for notes
 export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
-  row,
+  id,
   place,
 }: NotesColumnCellProps) {
-  const actions = createColumnPinNoteActions(row.original.id, () => {
+  const actions = createColumnPinNoteActions(id, () => {
     const dialogTrigger = document.querySelector(
-      `[data-notes-dialog-trigger="${row.original.id}"]`,
+      `[data-notes-dialog-trigger="${id}"]`,
     ) as HTMLButtonElement
     dialogTrigger?.click()
   })
@@ -110,13 +105,13 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
 
   const handleClick = () => {
     const dialogTrigger = document.querySelector(
-      `[data-notes-dialog-trigger="${row.original.id}"]`,
+      `[data-notes-dialog-trigger="${id}"]`,
     ) as HTMLButtonElement
     dialogTrigger?.click()
   }
 
   return (
-    <TextWrapper id={row.original.id} actions={actions}>
+    <TextWrapper id={id} actions={actions}>
       <Dialog modal={false}>
         <div
           className="group flex items-center w-full cursor-pointer min-h-[24px]"
@@ -137,10 +132,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
           </span>
           <div className="flex-1" />
           <DialogTrigger asChild>
-            <div
-              data-notes-dialog-trigger={row.original.id}
-              className="hidden"
-            />
+            <div data-notes-dialog-trigger={id} className="hidden" />
           </DialogTrigger>
         </div>
         <DialogContent className="max-w-md h-[60vh] flex flex-col overflow-hidden">
@@ -178,6 +170,7 @@ export const PhoneCell = ({
         {
           icon: 'Phone',
           onClick: () => {
+            posthog.capture('click_call_button', { property: 'value' })
             window.open(`tel:${content}`, '_blank')
           },
           label: 'Call',
@@ -185,6 +178,7 @@ export const PhoneCell = ({
         {
           icon: 'faWhatsapp',
           onClick: () => {
+            posthog.capture('click_whatsapp_button', { property: 'value' })
             const formattedPhone = content.replace(/\D/g, '')
             window.open(`https://wa.me/${formattedPhone}`, '_blank')
           },
@@ -197,6 +191,7 @@ export const PhoneCell = ({
         onClick={handleCall}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
+            posthog.capture('click_phone_number', { property: 'value' })
             handleCall(e as unknown as React.MouseEvent)
           }
         }}

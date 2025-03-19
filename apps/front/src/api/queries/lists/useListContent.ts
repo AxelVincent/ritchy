@@ -1,7 +1,7 @@
 import { useApiQuery } from '@/hooks/useApi'
 import type { ListContentApiResponse } from '@ritchy/types'
 
-const listContentKeys = {
+export const listContentKeys = {
   all: ['listContent'] as const,
   list: (listId: string) => [...listContentKeys.all, listId] as const,
 }
