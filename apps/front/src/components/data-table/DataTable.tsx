@@ -3,7 +3,8 @@ import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialo
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { useMediaQuery } from '@/hooks/use-media-query'
+
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { Place, SearchResult } from '@ritchy/types'
@@ -24,7 +25,7 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Loader2, Plus, Trash } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DeleteItemsFromListDialog } from '../lists/delete-items-from-list-dialog'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
@@ -60,7 +61,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     tableData,
     updateTableData,
   } = useMapStore()
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const isMobile = useIsMobile()
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -183,7 +184,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     measureElement: () => 200,
     getScrollElement: () => tableContainerRef.current,
     horizontal: true,
-    overscan: 8, // Increased for smoother horizontal scrolling
+    overscan: 4,
   })
 
   // Row virtualizer
@@ -196,7 +197,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       navigator.userAgent.indexOf('Firefox') === -1
         ? (element) => element?.getBoundingClientRect().height
         : undefined,
-    overscan: 10,
+    overscan: 5,
   })
 
   const virtualColumns = columnVirtualizer.getVirtualItems()
@@ -238,14 +239,18 @@ export const DataTable = <TData extends SearchResult, TValue>({
     }
   }, [centerPlaceSpreadsheetId])
 
-  // Add effect to track filtered results
-  // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
+  // Memoize filtered rows calculation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const filteredRows = useMemo(
+    () => table.getFilteredRowModel().rows,
+    [table.getFilteredRowModel().rows.length],
+  )
+
+  // Use memoized value in effect
   useEffect(() => {
-    const filteredIds = new Set(
-      table.getFilteredRowModel().rows.map((row) => row.original.id),
-    )
+    const filteredIds = new Set(filteredRows.map((row) => row.original.id))
     onFilteredDataChange(filteredIds)
-  }, [table.getFilteredRowModel().rows, onFilteredDataChange])
+  }, [filteredRows, onFilteredDataChange])
 
   // Replace the handleFetchEnrichment function with this wrapper
   const handleEnrichSelectedRows = () => {
