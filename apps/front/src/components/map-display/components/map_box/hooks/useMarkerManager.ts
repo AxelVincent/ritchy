@@ -84,6 +84,9 @@ export const useMarkerManager = ({
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
 
+  // Add a ref to track if we have initialized markers
+  const initialMarkersCreatedRef = useRef(false)
+
   // Effect for initial marker creation and cleanup
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -118,6 +121,20 @@ export const useMarkerManager = ({
           markerElement.style.cursor = 'pointer'
           markerElement.style.transform = 'translate(-50%, -100%)'
 
+          // Initialize with visible style by default
+          const color = place.status
+            ? getColorWithCache(place.status.status)
+            : MARKER_COLORS.DEFAULT
+
+          const svg = createActiveMarkerSvg(
+            color,
+            place,
+            place.id === selectedPlaceId,
+          )
+          if (svg) {
+            markerElement.appendChild(svg)
+          }
+
           const marker = new mapboxgl.Marker({
             element: markerElement,
             scale: 1,
@@ -136,8 +153,13 @@ export const useMarkerManager = ({
         }
       }
 
-      // Initial update for all markers
-      throttledUpdateMarkers(places)
+      initialMarkersCreatedRef.current = true
+
+      // Initial update for all markers - this now just applies styles
+      // but markers are already visible
+      if (places.length > 0) {
+        throttledUpdateMarkers(places)
+      }
     }
 
     setupInitialMarkers().catch((error) => {
@@ -150,6 +172,7 @@ export const useMarkerManager = ({
       }
       markersRef.current.clear()
       mapLoadedRef.current = false
+      initialMarkersCreatedRef.current = false
     }
   }, [map, places])
 
@@ -164,7 +187,11 @@ export const useMarkerManager = ({
             if (!markerRef) continue
 
             const element = markerRef.marker.getElement()
-            const isDisplayed = displayedPlaceIds.has(placeId)
+            // Consider all places displayed by default if no filtering is active
+            const isDisplayed =
+              displayedPlaceIds.size === 0
+                ? true
+                : displayedPlaceIds.has(placeId)
             const isSelectedPlace = placeId === selectedPlaceId
 
             // Skip if marker is filtered or selected as these have different colors
@@ -198,7 +225,11 @@ export const useMarkerManager = ({
             const markerRef = markersRef.current.get(place.id)
             if (!markerRef) continue
 
-            const isDisplayed = displayedPlaceIds.has(place.id)
+            // Consider a marker visible by default if no filtering is active
+            const isDisplayed =
+              displayedPlaceIds.size === 0
+                ? true
+                : displayedPlaceIds.has(place.id)
             const isSelected = dataTableRowSelection[place.id] ?? false
             const isSelectedPlace = place.id === selectedPlaceId
 
@@ -247,7 +278,11 @@ export const useMarkerManager = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!map || !places) return
-    throttledUpdateMarkers(places)
+
+    // Only run the update if we have markers created
+    if (initialMarkersCreatedRef.current) {
+      throttledUpdateMarkers(places)
+    }
 
     return () => {
       throttledUpdateMarkers.cancel()
