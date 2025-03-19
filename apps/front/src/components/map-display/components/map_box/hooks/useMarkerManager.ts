@@ -189,7 +189,7 @@ export const useMarkerManager = ({
     [displayedPlaceIds, selectedPlaceId],
   )
 
-  // Main marker update function (now without status updates)
+  // Main marker update function
   const throttledUpdateMarkers = useMemo(
     () =>
       throttle(
@@ -258,6 +258,59 @@ export const useMarkerManager = ({
     selectedPlaceId,
     throttledUpdateMarkers,
   ])
+
+  // Add a dedicated effect for selection changes
+  useEffect(() => {
+    if (!map || !places) return
+
+    console.log('Selection changed to:', selectedPlaceId)
+
+    // If we have a selected place, update its size
+    if (selectedPlaceId) {
+      const markerRef = markersRef.current.get(selectedPlaceId)
+      if (markerRef) {
+        // Remove and recreate the marker with a larger scale
+        const marker = markerRef.marker
+        const element = marker.getElement()
+        const lngLat = marker.getLngLat()
+
+        // Apply scale to the whole marker using mapbox's scale option
+        const newMarker = new mapboxgl.Marker({
+          element: element,
+        }).setLngLat(lngLat)
+
+        // Replace old marker with new scaled marker
+        marker.remove()
+        newMarker.addTo(map)
+        markersRef.current.set(selectedPlaceId, { marker: newMarker })
+      }
+    }
+
+    // Reset any previously selected markers
+    for (const [placeId, markerRef] of markersRef.current.entries()) {
+      if (placeId !== selectedPlaceId) {
+        const element = markerRef.marker.getElement()
+        if (element.classList.contains('selected-place-marker')) {
+          // Need to recreate the marker with normal scale
+          const marker = markerRef.marker
+          const lngLat = marker.getLngLat()
+
+          // Create new marker with default scale
+          const newMarker = new mapboxgl.Marker({
+            element: element,
+            scale: 1.0,
+          }).setLngLat(lngLat)
+
+          // Replace scaled marker with normal marker
+          marker.remove()
+          newMarker.addTo(map)
+          markersRef.current.set(placeId, { marker: newMarker })
+
+          console.log(`Reset scale for marker ${placeId}`)
+        }
+      }
+    }
+  }, [selectedPlaceId, places, map])
 
   // Separate effect for status updates
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
