@@ -152,3 +152,42 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
     </TextWrapper>
   )
 })
+
+export const PhoneCell = ({
+  id,
+  content,
+}: {
+  id: string
+  content: string
+}) => {
+  const actions = React.useMemo(
+    () => createColumnPinCopyActions(id, content),
+    [id, content],
+  )
+
+  return (
+    <TextWrapper
+      id={id}
+      actions={[
+        ...actions,
+        {
+          icon: 'Phone',
+          onClick: () => {
+            window.open(`tel:${content}`, '_blank')
+          },
+          label: 'Call',
+        },
+        {
+          icon: 'faWhatsapp',
+          onClick: () => {
+            const formattedPhone = content.replace(/\D/g, '')
+            window.open(`https://wa.me/${formattedPhone}`, '_blank')
+          },
+          label: 'WhatsApp',
+        },
+      ]}
+    >
+      {content}
+    </TextWrapper>
+  )
+}

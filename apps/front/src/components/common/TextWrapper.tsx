@@ -6,8 +6,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Label } from '@radix-ui/react-label'
-import { Copy, MapPinned, MessageSquareText, Trash } from 'lucide-react'
+import { Copy, MapPinned, MessageSquareText, Phone, Trash } from 'lucide-react'
+
 import React from 'react'
 
 // Move ICONS outside component to avoid recreation
@@ -16,6 +19,8 @@ const ICONS = {
   MapPinned,
   Trash,
   MessageSquareText,
+  Phone,
+  faWhatsapp,
 } as const
 
 export interface Action {
@@ -48,7 +53,15 @@ const ActionButton = React.memo(
             className="h-5 w-5 p-2 rounded-sm"
             size="icon"
           >
-            <Icon className="text-muted-foreground" />
+            {action.icon === 'faWhatsapp' ? (
+              <FontAwesomeIcon
+                icon={faWhatsapp}
+                className="text-muted-foreground"
+              />
+            ) : (
+              // @ts-expect-error - LucideIcon is a valid JSX element
+              <Icon className="text-muted-foreground" />
+            )}
           </Button>
         </TooltipTrigger>
         {action.label && (
