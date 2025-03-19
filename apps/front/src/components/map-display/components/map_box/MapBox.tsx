@@ -270,13 +270,14 @@ export const MapBox: FC<MapBoxProps> = ({
 
     isSelectionMovement.current = true
 
-    const markerData = markersRef.current.get(selectedPlaceId)
-    if (!markerData?.marker.getLngLat()) {
+    const marker = markersRef.current.get(selectedPlaceId)
+
+    if (!marker?.marker.getLngLat()) {
       debugLog('No marker location found for selection')
       return
     }
 
-    const markerLocation = markerData.marker.getLngLat()
+    const markerLocation = marker.marker.getLngLat()
     const currentCenter = mapRef.current.getCenter()
     const distanceInDegrees = Math.sqrt(
       (currentCenter.lng - markerLocation.lng) ** 2 +
