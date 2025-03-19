@@ -83,9 +83,42 @@ export const useMarkerManager = ({
   } = useMapStore()
   const markersRef = useRef<Map<string, MarkerRef>>(new Map())
   const mapLoadedRef = useRef(false)
-
-  // Add a ref to track if we have initialized markers
   const initialMarkersCreatedRef = useRef(false)
+
+  // Add operation queue
+  const operationQueueRef = useRef<Array<() => Promise<void>>>([])
+  const isProcessingQueueRef = useRef(false)
+
+  // Queue processor function
+  const processQueue = async () => {
+    if (isProcessingQueueRef.current || operationQueueRef.current.length === 0)
+      return
+
+    isProcessingQueueRef.current = true
+
+    try {
+      // Process one operation at a time
+      const operation = operationQueueRef.current.shift()
+      if (operation) {
+        await operation()
+      }
+    } catch (error) {
+      console.error('Error processing marker operation:', error)
+    } finally {
+      isProcessingQueueRef.current = false
+
+      // Continue processing if there are more operations
+      if (operationQueueRef.current.length > 0) {
+        processQueue()
+      }
+    }
+  }
+
+  // Queue an operation
+  const queueMarkerOperation = (operation: () => Promise<void>) => {
+    operationQueueRef.current.push(operation)
+    processQueue()
+  }
 
   // Effect for initial marker creation and cleanup
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -175,47 +208,6 @@ export const useMarkerManager = ({
       initialMarkersCreatedRef.current = false
     }
   }, [map, places])
-
-  // Separate status update handler
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const updateMarkersStatus = useMemo(
-    () =>
-      throttle(
-        (updatedStatuses: Map<string, string>) => {
-          for (const [placeId, status] of updatedStatuses.entries()) {
-            const markerRef = markersRef.current.get(placeId)
-            if (!markerRef) continue
-
-            const element = markerRef.marker.getElement()
-            // Consider all places displayed by default if no filtering is active
-            const isDisplayed =
-              displayedPlaceIds.size === 0
-                ? true
-                : displayedPlaceIds.has(placeId)
-            const isSelectedPlace = placeId === selectedPlaceId
-
-            // Skip if marker is filtered or selected as these have different colors
-            if (!isDisplayed || isSelectedPlace) continue
-
-            const color = getColorWithCache(status)
-            const place = places?.find((p) => p.id === placeId)
-            if (!place) continue
-            const svg = createActiveMarkerSvg(color, place, isSelectedPlace)
-
-            if (svg && element) {
-              while (element.firstChild) {
-                element.removeChild(element.firstChild)
-              }
-              element.appendChild(svg)
-            }
-          }
-        },
-        100,
-        { leading: true, trailing: true },
-      ),
-    [displayedPlaceIds, selectedPlaceId],
-  )
-
   // Main marker update function
   const throttledUpdateMarkers = useMemo(
     () =>
@@ -294,73 +286,115 @@ export const useMarkerManager = ({
     throttledUpdateMarkers,
   ])
 
-  // Add a dedicated effect for selection changes
-  useEffect(() => {
-    if (!map || !places) return
-
-    console.log('Selection changed to:', selectedPlaceId)
-
-    // If we have a selected place, update its size
-    if (selectedPlaceId) {
-      const markerRef = markersRef.current.get(selectedPlaceId)
-      if (markerRef) {
-        // Remove and recreate the marker with a larger scale
-        const marker = markerRef.marker
-        const element = marker.getElement()
-        const lngLat = marker.getLngLat()
-
-        // Apply scale to the whole marker using mapbox's scale option
-        const newMarker = new mapboxgl.Marker({
-          element: element,
-        }).setLngLat(lngLat)
-
-        // Replace old marker with new scaled marker
-        marker.remove()
-        newMarker.addTo(map)
-        markersRef.current.set(selectedPlaceId, { marker: newMarker })
-      }
-    }
-
-    // Reset any previously selected markers
-    for (const [placeId, markerRef] of markersRef.current.entries()) {
-      if (placeId !== selectedPlaceId) {
-        const element = markerRef.marker.getElement()
-        if (element.classList.contains('selected-place-marker')) {
-          // Need to recreate the marker with normal scale
-          const marker = markerRef.marker
-          const lngLat = marker.getLngLat()
-
-          // Create new marker with default scale
-          const newMarker = new mapboxgl.Marker({
-            element: element,
-            scale: 1.0,
-          }).setLngLat(lngLat)
-
-          // Replace scaled marker with normal marker
-          marker.remove()
-          newMarker.addTo(map)
-          markersRef.current.set(placeId, { marker: newMarker })
-
-          console.log(`Reset scale for marker ${placeId}`)
-        }
-      }
-    }
-  }, [selectedPlaceId, places, map])
-
-  // Separate effect for status updates
+  // Selection changes - now queued
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    if (!map || !places || updatedPlaceStatuses.size === 0) return
+    if (!map || !places || !initialMarkersCreatedRef.current) return
 
-    updateMarkersStatus(updatedPlaceStatuses)
+    queueMarkerOperation(async () => {
+      console.log('Processing selection change', selectedPlaceId)
 
-    // Clear the updated statuses after applying them
-    useMapStore.setState({ updatedPlaceStatuses: new Map() })
+      // Update newly selected marker
+      if (selectedPlaceId) {
+        await updateMarker(selectedPlaceId, { isSelected: true })
+      }
 
-    return () => {
-      updateMarkersStatus.cancel()
-    }
+      // Reset previously selected markers
+      for (const placeId of markersRef.current.keys()) {
+        if (placeId !== selectedPlaceId) {
+          await updateMarker(placeId, { isSelected: false })
+        }
+      }
+    })
+  }, [selectedPlaceId, places, map])
+
+  // Status updates - now queued
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    if (
+      !map ||
+      !places ||
+      updatedPlaceStatuses.size === 0 ||
+      !initialMarkersCreatedRef.current
+    )
+      return
+
+    queueMarkerOperation(async () => {
+      console.log('Processing status updates', updatedPlaceStatuses.size)
+
+      // Process each status update
+      for (const [placeId] of updatedPlaceStatuses.entries()) {
+        await updateMarker(placeId, { statusChanged: true })
+      }
+
+      // Only clear statuses after successful updates
+      useMapStore.setState({ updatedPlaceStatuses: new Map() })
+    })
   }, [updatedPlaceStatuses])
+
+  const updateMarker = async (
+    placeId: string,
+    options: {
+      isSelected?: boolean
+      statusChanged?: boolean
+      isDisplayed?: boolean
+    },
+  ) => {
+    const markerRef = markersRef.current.get(placeId)
+    if (!markerRef || !map) return false
+
+    try {
+      const place = places.find((p) => p.id === placeId)
+      if (!place) return false
+
+      const marker = markerRef.marker
+      const element = marker.getElement()
+
+      // Update visual appearance
+      const color = options.isSelected
+        ? MARKER_COLORS.SELECTED
+        : place.status
+          ? getColorWithCache(place.status.status)
+          : MARKER_COLORS.DEFAULT
+
+      const svg =
+        options.isDisplayed !== false
+          ? createActiveMarkerSvg(color, place, options.isSelected === true)
+          : createFilteredMarkerSvg()
+
+      // Update DOM safely
+      const existingSvg = element.querySelector('svg')
+      if (existingSvg) {
+        element.removeChild(existingSvg)
+      }
+      element.appendChild(svg)
+
+      // Update CSS classes
+      if (options.isDisplayed === false)
+        element.classList.add('filtered-marker')
+      else element.classList.remove('filtered-marker')
+
+      if (options.isDisplayed !== false) element.classList.add('active-marker')
+      else element.classList.remove('active-marker')
+
+      if (options.isSelected) element.classList.add('selected-place-marker')
+      else element.classList.remove('selected-place-marker')
+
+      // Update scale without recreating the marker
+      if (options.isSelected !== undefined) {
+        // Just update the scale rather than recreating
+        const newScale = options.isSelected ? 1.2 : 1.0
+
+        // Apply scale transform directly to the element
+        element.style.transform = `translate(-50%, -100%) scale(${newScale})`
+      }
+
+      return true
+    } catch (error) {
+      console.error(`Error updating marker ${placeId}:`, error)
+      return false
+    }
+  }
 
   return { markersRef }
 }
