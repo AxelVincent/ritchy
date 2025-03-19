@@ -27,18 +27,36 @@ const NoteEditor = ({
     setContent(e.target.value)
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // For desktop: Submit on Ctrl+Enter or Cmd+Enter
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      handleSubmit()
+      return
+    }
+
+    // For mobile: Submit on Enter key without modifiers
+    if (
+      e.key === 'Enter' &&
+      !e.shiftKey &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey
+    ) {
+      e.preventDefault()
+      handleSubmit()
+      // Blur the textarea to close the keyboard on mobile
+      e.currentTarget.blur()
+    }
+  }
+
   return (
     <div className="flex items-center">
       <Textarea
         placeholder="Add a note..."
         value={content}
         onChange={handleChange}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault()
-            handleSubmit()
-          }
-        }}
+        onKeyDown={handleKeyDown}
         className="min-h-[36px] max-h-[36px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-2"
         disabled={isSubmitting}
         style={{
