@@ -59,22 +59,40 @@ export const PlaceCard = () => {
       }
     }
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isResizing && resizeRef.current && e.touches.length > 0) {
+        const containerRect = resizeRef.current.getBoundingClientRect()
+        const touch = e.touches[0]
+        const newHeight = Math.max(250, containerRect.bottom - touch.clientY)
+        setCardHeight(newHeight)
+        localStorage.setItem('placeCardHeight', newHeight.toString())
+      }
+    }
+
     const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    const handleTouchEnd = () => {
       setIsResizing(false)
     }
 
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('touchmove', handleTouchMove)
+      document.addEventListener('touchend', handleTouchEnd)
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
     }
   }, [isResizing])
 
-  const handleResizeStart = (e: React.MouseEvent) => {
+  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault()
     setIsResizing(true)
   }
@@ -121,6 +139,7 @@ export const PlaceCard = () => {
           <div
             className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-ns-resize"
             onMouseDown={handleResizeStart}
+            onTouchStart={handleResizeStart}
           >
             <div className="flex h-4 w-6 items-center justify-center rounded-sm border bg-border  hover:bg-gray-300 transition-colors">
               <DragHandleDots2Icon className="h-4 w-3.5 rotate-90" />
