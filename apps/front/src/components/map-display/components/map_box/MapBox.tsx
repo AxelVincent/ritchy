@@ -23,6 +23,7 @@ interface MapBoxProps {
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
   isMobile: boolean
+  listId: string | null
 }
 
 // Move PlaceCard to a separate lazy-loaded component
@@ -37,9 +38,9 @@ export const MapBox: FC<MapBoxProps> = ({
   dataTableRowSelection,
   radiusInMeters,
   isMobile,
+  listId,
 }) => {
-  const { places, selectedPlaceId, setPlaces, setDisplayedPlaceIds } =
-    useMapStore()
+  const { places, selectedPlaceId } = useMapStore()
   const previousPlacesRef = useRef<typeof places>([])
   const boundsSetRef = useRef(false)
 
@@ -329,23 +330,11 @@ export const MapBox: FC<MapBoxProps> = ({
     mapRef.current.on('moveend', onMoveEnd)
   }, [selectedPlaceId])
 
-  // Update effect to store places in Zustand and initialize displayedPlaceIds
-  useEffect(() => {
-    if (places && places.length > 0) {
-      // Initialize with all places and set all places as displayed
-      setPlaces(places)
-
-      // Explicitly initialize all places as displayed
-      // This ensures markers show up immediately without waiting for DataTable
-      setDisplayedPlaceIds(new Set(places.map((place) => place.id)))
-    }
-  }, [places, setPlaces, setDisplayedPlaceIds])
-
   return (
     <div className="relative h-full w-full">
       <div ref={mapContainerRef} className="h-full w-full" />
       <Suspense fallback={<div>Loading...</div>}>
-        <PlaceCard />
+        <PlaceCard listId={listId} />
       </Suspense>
     </div>
   )

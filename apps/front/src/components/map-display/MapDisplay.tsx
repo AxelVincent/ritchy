@@ -53,7 +53,7 @@ const MapLoadingFallback = () => (
 )
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
-  const { setPlaces, setDisplayedPlaceIds } = useMapStore()
+  const { setPlaces } = useMapStore()
   const isMobile = useIsMobile()
 
   // Core location state
@@ -126,12 +126,8 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     if (places && places.length > 0) {
       // Initialize with all places and set all places as displayed
       setPlaces(places)
-
-      // Explicitly initialize all places as displayed
-      // This ensures markers show up immediately without waiting for DataTable
-      setDisplayedPlaceIds(new Set(places.map((place) => place.id)))
     }
-  }, [places, setPlaces, setDisplayedPlaceIds])
+  }, [places, setPlaces])
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
@@ -153,6 +149,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                   dataTableRowSelection={dataTableRowSelection}
                   radiusInMeters={currentLocation.radiusInMeters}
                   isMobile={true}
+                  listId={listId ?? null}
                 />
               </Suspense>
             )}
@@ -167,7 +164,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                     columns={columns}
                     setDataTableRowSelection={setDataTableRowSelection}
                     dataTableRowSelection={dataTableRowSelection}
-                    onFilteredDataChange={setDisplayedPlaceIds}
                     listId={listId}
                     searchId={searchId}
                   />
@@ -230,7 +226,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                 columns={columns}
                 setDataTableRowSelection={setDataTableRowSelection}
                 dataTableRowSelection={dataTableRowSelection}
-                onFilteredDataChange={setDisplayedPlaceIds}
                 listId={listId}
                 searchId={searchId}
               />
@@ -247,6 +242,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
               dataTableRowSelection={dataTableRowSelection}
               radiusInMeters={currentLocation.radiusInMeters}
               isMobile={false}
+              listId={listId ?? null}
             />
           </Suspense>
         </ResizablePanel>

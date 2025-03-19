@@ -39,7 +39,6 @@ interface DataTableProps<TData, TValue> {
   dataTableRowSelection: RowSelectionState
   listId?: string
   searchId?: string
-  onFilteredDataChange: (ids: Set<string>) => void
   storageKey?: string
 }
 
@@ -52,13 +51,13 @@ export const DataTable = <TData extends SearchResult, TValue>({
   dataTableRowSelection,
   listId,
   searchId,
-  onFilteredDataChange,
   storageKey,
 }: DataTableProps<TData, TValue>) => {
   const {
     selectedPlaceId,
     centerPlaceSpreadsheetId,
     tableData,
+    setDisplayedPlaceIds,
     updateTableData,
   } = useMapStore()
   const isMobile = useIsMobile()
@@ -249,8 +248,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
   // Use memoized value in effect
   useEffect(() => {
     const filteredIds = new Set(filteredRows.map((row) => row.original.id))
-    onFilteredDataChange(filteredIds)
-  }, [filteredRows, onFilteredDataChange])
+    setDisplayedPlaceIds(filteredIds)
+  }, [filteredRows, setDisplayedPlaceIds])
 
   // Replace the handleFetchEnrichment function with this wrapper
   const handleEnrichSelectedRows = () => {
