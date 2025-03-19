@@ -26,12 +26,11 @@ export const priceLevelColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Price Level" />,
-  cell: ({ row, table }) => {
+  cell: ({ row }) => {
     const formattedLevel = formatPriceLevel(row.original.priceLevel)
     return (
       <ColumnPinCell
-        row={row}
-        table={table}
+        id={row.original.id}
         content={formattedLevel === noPriceLevel ? null : formattedLevel}
       />
     )

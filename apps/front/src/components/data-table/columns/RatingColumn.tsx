@@ -16,13 +16,12 @@ export const ratingColumn: ColumnDef<SearchResult> = {
   sortingFn: 'alphanumeric',
   sortUndefined: -1,
   sortDescFirst: true,
-  cell: ({ row, table }) => {
+  cell: ({ row }) => {
     const rating = row.original.rating
 
     return (
       <ColumnPinCell
-        row={row}
-        table={table}
+        id={row.original.id}
         content={
           rating ? (
             <div className="flex items-center gap-1">
