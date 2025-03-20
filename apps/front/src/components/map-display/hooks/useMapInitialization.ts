@@ -1,3 +1,4 @@
+import { useIsMobile } from '@/hooks/use-mobile'
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder'
 import type { Place } from '@ritchy/types'
 import mapboxgl, { type IControl } from 'mapbox-gl'
@@ -32,6 +33,7 @@ const createControls = (searchResults?: Place[]): IControl[] => {
         flyTo: { duration: 0 },
         mapboxgl,
         placeholder: 'Location',
+        responsive: true,
       }) as IControl,
       ...baseControls,
     ]
@@ -69,6 +71,7 @@ export const useMapInitialization = (
   searchResults?: Place[],
 ) => {
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const isMobile = useIsMobile()
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -209,6 +212,17 @@ export const useMapInitialization = (
       duration: 500,
     })
   }, [searchResults])
+
+  // Handle updates to isMobile state
+  useEffect(() => {
+    if (!mapContainerRef.current) return
+
+    if (isMobile) {
+      mapContainerRef.current.classList.add('mobile-map-container')
+    } else {
+      mapContainerRef.current.classList.remove('mobile-map-container')
+    }
+  }, [isMobile, mapContainerRef.current])
 
   return mapRef
 }
