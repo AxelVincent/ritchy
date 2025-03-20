@@ -114,6 +114,9 @@ importers:
       '@clerk/clerk-react':
         specifier: 5.19.1
         version: 5.19.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@emoji-mart/data':
+        specifier: 1.2.1
+        version: 1.2.1
       '@fortawesome/fontawesome-svg-core':
         specifier: 6.7.2
         version: 6.7.2
@@ -222,6 +225,9 @@ importers:
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
+      emoji-mart:
+        specifier: 5.6.0
+        version: 5.6.0
       framer-motion:
         specifier: 12.4.4
         version: 12.4.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -700,6 +706,9 @@ packages:
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
+
+  '@emoji-mart/data@1.2.1':
+    resolution: {integrity: sha512-no2pQMWiBy6gpBEiqGeU77/bFejDqUTRY7KX+0+iur13op3bqUsXdnwoZs6Xb1zbv0gAj5VvS1PWoUUckSr5Dw==}
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
@@ -3797,6 +3806,9 @@ packages:
   electron-to-chromium@1.5.63:
     resolution: {integrity: sha512-ddeXKuY9BHo/mw145axlyWjlJ1UBt4WK3AlvkT7W2AbqfRQoacVoRUCF6wL3uIx/8wT9oLKXzI+rFqHHscByaA==}
 
+  emoji-mart@5.6.0:
+    resolution: {integrity: sha512-eJp3QRe79pjwa+duv+n7+5YsNhRcMl812EcFVwrnRvYKoNPoQb5qxU8DG6Bgwji0akHdp6D4Ln6tYLG58MFSow==}
+
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
 
@@ -6260,6 +6272,8 @@ snapshots:
   '@csstools/css-tokenizer@3.0.3': {}
 
   '@drizzle-team/brocli@0.10.2': {}
+
+  '@emoji-mart/data@1.2.1': {}
 
   '@esbuild-kit/core-utils@3.3.2':
     dependencies:
@@ -9733,6 +9747,8 @@ snapshots:
   electron-to-chromium@1.5.24: {}
 
   electron-to-chromium@1.5.63: {}
+
+  emoji-mart@5.6.0: {}
 
   emoji-regex@8.0.0: {}
 

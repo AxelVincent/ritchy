@@ -1,4 +1,5 @@
 import type { Place } from '@ritchy/types'
+import { getAppleEmojiUrl } from '../../../../../lib/utils/emojiUtils'
 
 // Utility function to lighten a hex color
 const lightenColor = (hex: string, amount: number): string => {
@@ -22,15 +23,19 @@ const lightenColor = (hex: string, amount: number): string => {
 // Cache common SVG namespace
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
-// Create a template for the marker structure
+// Create a template for the marker structure that more closely matches the original
 const createMarkerTemplate = () => {
   const template = document.createElement('template')
   template.innerHTML = `
     <svg viewBox="0 0 36 36" role="img">
       <foreignObject x="0" y="0" width="36" height="36">
         <div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-          <div class="white-layer" style="position:absolute;font-size:28px;color:transparent"></div>
-          <div class="color-layer" style="position:absolute;font-size:28px;color:white"></div>
+          <div class="white-layer" style="position:absolute;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+            <img class="emoji-image-white" style="width:70%;height:70%;object-fit:contain;" />
+          </div>
+          <div class="color-layer" style="position:absolute;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+            <img class="emoji-image-color" style="width:70%;height:70%;object-fit:contain;" />
+          </div>
         </div>
       </foreignObject>
     </svg>
@@ -90,12 +95,12 @@ export const createFilteredMarkerSvg = (): SVGElement => {
   return svg
 }
 
-// Pure function to create active marker SVG
-export const createActiveMarkerSvg = (
+// Make the function async since we need to fetch emoji URLs
+export const createActiveMarkerSvg = async (
   color: string,
   place: Place,
   isSelected = false,
-): SVGElement => {
+): Promise<SVGElement> => {
   try {
     if (place.lists?.[0]?.emoji) {
       // Clone the template instead of creating elements
@@ -113,40 +118,45 @@ export const createActiveMarkerSvg = (
         `Location marker with ${place.lists[0].emoji}`,
       )
 
-      // Get references to layers
-      const colorLayer = svg.querySelector('.color-layer') as HTMLDivElement
-      const whiteLayer = svg.querySelector('.white-layer') as HTMLDivElement
+      // Get the emoji image elements
+      const whiteLayerDiv = svg.querySelector('.white-layer') as HTMLDivElement
+      const colorLayerDiv = svg.querySelector('.color-layer') as HTMLDivElement
+      const whiteEmojiImg = svg.querySelector(
+        '.emoji-image-white',
+      ) as HTMLImageElement
+      const colorEmojiImg = svg.querySelector(
+        '.emoji-image-color',
+      ) as HTMLImageElement
 
-      // Set emoji content
-      colorLayer.textContent = place.lists[0].emoji
-      whiteLayer.textContent = place.lists[0].emoji
+      // Get Apple emoji URL
+      const emojiUrl = await getAppleEmojiUrl(place.lists[0].emoji)
 
-      // Keep same font size but scale the color layer
-      colorLayer.style.fontSize = '30px'
-      whiteLayer.style.fontSize = '30px'
+      // Set emoji image sources
+      whiteEmojiImg.src = emojiUrl
+      colorEmojiImg.src = emojiUrl
 
-      // Apply text shadows - unchanged
-      whiteLayer.style.textShadow = `
-        -3.5px -3.5px 0 white,
-        3.5px -3.5px 0 white,
-        -3.5px 3.5px 0 white,
-        3.5px 3.5px 0 white,
-        -3.5px 0 0 white,
-        3.5px 0 0 white,
-        0 -3.5px 0 white,
-        0 3.5px 0 white
+      // Apply white outline effect to white layer (similar to original)
+      whiteLayerDiv.style.filter = `
+        drop-shadow(-1.5px -1.5px 0 white)
+        drop-shadow(1.5px -1.5px 0 white)
+        drop-shadow(-1.5px 1.5px 0 white)
+        drop-shadow(1.5px 1.5px 0 white)
+        drop-shadow(-1.5px 0 0 white)
+        drop-shadow(1.5px 0 0 white)
+        drop-shadow(0 -1.5px 0 white)
+        drop-shadow(0 1.5px 0 white)
       `
 
-      colorLayer.style.textShadow = `
-        -2.5px -2.5px 0 ${color},
-        2.5px -2.5px 0 ${color},
-        -2.5px 2.5px 0 ${color},
-        2.5px 2.5px 0 ${color},
-        -2.5px 0 0 ${color},
-        2.5px 0 0 ${color},
-        0 -2.5px 0 ${color},
-        0 2.5px 0 ${color},
-        0 0 8px ${color}
+      // Apply color shadow effect to color layer but REMOVE the blur
+      colorLayerDiv.style.filter = `
+        drop-shadow(-1px -1px 0 ${color})
+        drop-shadow(1px -1px 0 ${color})
+        drop-shadow(-1px 1px 0 ${color})
+        drop-shadow(1px 1px 0 ${color})
+        drop-shadow(-1px 0 0 ${color})
+        drop-shadow(1px 0 0 ${color})
+        drop-shadow(0 -1px 0 ${color})
+        drop-shadow(0 1px 0 ${color})
       `
 
       // Add badge if needed

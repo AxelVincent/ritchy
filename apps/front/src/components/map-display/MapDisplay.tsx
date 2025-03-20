@@ -54,7 +54,7 @@ const MapLoadingFallback = () => (
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const isMobile = useIsMobile()
-  const { setPlaces } = useMapStore()
+  const { setPlaces, setDisplayedPlaceIds } = useMapStore()
 
   // Core location state
   const defaultLocation =
@@ -100,8 +100,9 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   useEffect(() => {
     if (places && places.length > 0) {
       setPlaces(places)
+      setDisplayedPlaceIds(new Set(places.map((place) => place.id)))
     }
-  }, [places])
+  }, [])
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />

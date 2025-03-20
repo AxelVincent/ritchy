@@ -126,7 +126,7 @@ export const useMarkerManager = ({
             ? getColorWithCache(place.status.status)
             : MARKER_COLORS.DEFAULT
 
-          const svg = createActiveMarkerSvg(
+          const svg = await createActiveMarkerSvg(
             color,
             place,
             place.id === selectedPlaceId,
@@ -181,7 +181,7 @@ export const useMarkerManager = ({
   const updateMarkersStatus = useMemo(
     () =>
       throttle(
-        (updatedStatuses: Map<string, string>) => {
+        async (updatedStatuses: Map<string, string>) => {
           for (const [placeId, status] of updatedStatuses.entries()) {
             const markerRef = markersRef.current.get(placeId)
             if (!markerRef) continue
@@ -200,7 +200,11 @@ export const useMarkerManager = ({
             const color = getColorWithCache(status)
             const place = places?.find((p) => p.id === placeId)
             if (!place) continue
-            const svg = createActiveMarkerSvg(color, place, isSelectedPlace)
+            const svg = await createActiveMarkerSvg(
+              color,
+              place,
+              isSelectedPlace,
+            )
 
             if (svg && element) {
               while (element.firstChild) {
@@ -220,16 +224,13 @@ export const useMarkerManager = ({
   const throttledUpdateMarkers = useMemo(
     () =>
       throttle(
-        (places: Place[] | null) => {
+        async (places: Place[] | null) => {
           for (const place of places || []) {
             const markerRef = markersRef.current.get(place.id)
             if (!markerRef) continue
 
             // Consider a marker visible by default if no filtering is active
-            const isDisplayed =
-              displayedPlaceIds.size === 0
-                ? true
-                : displayedPlaceIds.has(place.id)
+            const isDisplayed = displayedPlaceIds.has(place.id)
             const isSelected = dataTableRowSelection[place.id] ?? false
             const isSelectedPlace = place.id === selectedPlaceId
 
@@ -244,7 +245,7 @@ export const useMarkerManager = ({
 
             const svg =
               isDisplayed || displayedPlaceIds.size === 0
-                ? createActiveMarkerSvg(color, place, isSelectedPlace)
+                ? await createActiveMarkerSvg(color, place, isSelectedPlace)
                 : createFilteredMarkerSvg()
 
             if (svg && element) {
