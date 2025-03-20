@@ -17,12 +17,13 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
   sortingFn: 'alphanumeric',
   sortUndefined: -1,
   sortDescFirst: true,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const count = row.original.ratingCount
 
     return (
       <ColumnPinCell
-        id={row.original.id}
+        row={row}
+        table={table}
         content={
           count ? (
             <span>{count.toLocaleString()} reviews</span>

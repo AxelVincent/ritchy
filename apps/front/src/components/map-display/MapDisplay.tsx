@@ -1,3 +1,4 @@
+import { MapBox } from '@/components/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 
 import { EmptyListState } from '@/components/lists/empty-list-state'
@@ -27,15 +28,6 @@ const LazyDataTable = lazy(() =>
   })),
 )
 
-// Lazy load the MapBox component
-const LazyMapBox = lazy(() =>
-  import('@/components/map-display/components/map_box/MapBox').then(
-    (module) => ({
-      default: module.MapBox,
-    }),
-  ),
-)
-
 // Add a loading component for the Suspense fallback
 const TableLoadingFallback = () => (
   <div className="flex items-center justify-center h-full w-full p-8">
@@ -45,15 +37,8 @@ const TableLoadingFallback = () => (
   </div>
 )
 
-// Add a map loading component for the Suspense fallback
-const MapLoadingFallback = () => (
-  <div className="flex items-center justify-center h-full w-full p-8">
-    <div className="animate-pulse text-muted-foreground">Loading map...</div>
-  </div>
-)
-
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
-  const { setPlaces } = useMapStore()
+  const { setPlaces, setDisplayedPlaceIds } = useMapStore()
   const isMobile = useIsMobile()
 
   // Core location state
@@ -126,8 +111,12 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     if (places && places.length > 0) {
       // Initialize with all places and set all places as displayed
       setPlaces(places)
+
+      // Explicitly initialize all places as displayed
+      // This ensures markers show up immediately without waiting for DataTable
+      setDisplayedPlaceIds(new Set(places.map((place) => place.id)))
     }
-  }, [places, setPlaces])
+  }, [places, setPlaces, setDisplayedPlaceIds])
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
@@ -142,17 +131,12 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           <div
             className={`h-full w-full absolute inset-0 ${mobileView === 'map' ? 'block' : 'hidden'}`}
           >
-            {mobileView === 'map' && (
-              <Suspense fallback={<MapLoadingFallback />}>
-                <LazyMapBox
-                  userLocation={currentLocation}
-                  dataTableRowSelection={dataTableRowSelection}
-                  radiusInMeters={currentLocation.radiusInMeters}
-                  isMobile={true}
-                  listId={listId ?? null}
-                />
-              </Suspense>
-            )}
+            <MapBox
+              userLocation={currentLocation}
+              dataTableRowSelection={dataTableRowSelection}
+              radiusInMeters={currentLocation.radiusInMeters}
+              isMobile={true}
+            />
           </div>
           <div
             className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
@@ -164,6 +148,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                     columns={columns}
                     setDataTableRowSelection={setDataTableRowSelection}
                     dataTableRowSelection={dataTableRowSelection}
+                    onFilteredDataChange={setDisplayedPlaceIds}
                     listId={listId}
                     searchId={searchId}
                   />
@@ -226,6 +211,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                 columns={columns}
                 setDataTableRowSelection={setDataTableRowSelection}
                 dataTableRowSelection={dataTableRowSelection}
+                onFilteredDataChange={setDisplayedPlaceIds}
                 listId={listId}
                 searchId={searchId}
               />
@@ -236,15 +222,12 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={panelSizes[1]} className="flex-1">
-          <Suspense fallback={<MapLoadingFallback />}>
-            <LazyMapBox
-              userLocation={currentLocation}
-              dataTableRowSelection={dataTableRowSelection}
-              radiusInMeters={currentLocation.radiusInMeters}
-              isMobile={false}
-              listId={listId ?? null}
-            />
-          </Suspense>
+          <MapBox
+            userLocation={currentLocation}
+            dataTableRowSelection={dataTableRowSelection}
+            radiusInMeters={currentLocation.radiusInMeters}
+            isMobile={false}
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

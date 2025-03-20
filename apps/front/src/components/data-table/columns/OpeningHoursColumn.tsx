@@ -25,13 +25,14 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Opening Hours" />
   ),
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const openingHours = row.original.openingHours
     const utcOffsetMinutes = row.original.utcOffsetMinutes
 
     return (
       <ColumnPinCell
-        id={row.original.id}
+        row={row}
+        table={table}
         content={
           openingHours ? (
             <Dialog>

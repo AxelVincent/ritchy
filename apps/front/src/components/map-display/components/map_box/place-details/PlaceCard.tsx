@@ -21,11 +21,7 @@ import { PlaceHoursTab } from './tabs/PlaceHoursTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
 
-export const PlaceCard = ({
-  listId,
-}: {
-  listId: string | null
-}) => {
+export const PlaceCard = () => {
   const {
     selectedPlaceId,
     displayedPlaceIds,
@@ -182,8 +178,6 @@ export const PlaceCard = ({
                   <StatusDropdown
                     placeId={currentPlace.id}
                     currentStatus={currentPlace.status?.status || 'NEW'}
-                    listId={listId}
-                    searchId={currentPlace.searchId}
                   />
                   {currentPlace.website && (
                     <Button
