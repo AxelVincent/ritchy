@@ -1,5 +1,5 @@
 import { AuroraBackground } from '@/components/ui/aurora-background'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { SignIn } from '@clerk/clerk-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
