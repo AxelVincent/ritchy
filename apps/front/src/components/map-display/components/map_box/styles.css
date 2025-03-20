@@ -41,3 +41,68 @@
 .mapboxgl-canvas {
   border: none !important;
 }
+
+/* Optimized emoji marker styling */
+.emoji-marker {
+  position: relative;
+  text-align: center;
+  font-size: 28px;
+  color: white;
+  overflow: visible;
+}
+
+/* More efficient white outline using fewer shadow values */
+.emoji-marker::before {
+  content: attr(data-emoji);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  text-shadow: -3px -3px 0 white, 3px -3px 0 white, -3px 3px 0 white, 3px 3px 0
+    white;
+}
+
+/* Colored outline using CSS variable for dynamic coloring */
+.emoji-marker {
+  text-shadow:
+    -2px -2px 0 var(--marker-color),
+    2px -2px 0 var(--marker-color),
+    -2px 2px 0 var(--marker-color),
+    2px 2px 0 var(--marker-color),
+    -1px -1px 0 var(--marker-color),
+    1px -1px 0 var(--marker-color),
+    -1px 1px 0 var(--marker-color),
+    1px 1px 0 var(--marker-color);
+}
+
+/* Selected markers with stronger glow */
+.emoji-marker.selected {
+  z-index: 3;
+  transform: scale(1.5);
+  transform-origin: center bottom;
+}
+
+/* Badge for multiple lists using pseudo-element */
+.emoji-marker.with-badge::after {
+  content: "+";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  border: 1px solid var(--marker-color);
+  font-size: 8px;
+  text-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  padding-bottom: 2px;
+  padding-left: 0.5px;
+  color: black;
+  font-weight: bold;
+}

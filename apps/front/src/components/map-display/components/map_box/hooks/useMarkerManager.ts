@@ -7,8 +7,9 @@ import mapboxgl from 'mapbox-gl'
 import { useEffect, useMemo, useRef } from 'react'
 import { MARKER_COLORS } from '../constants/markers'
 import {
-  createActiveMarkerSvg,
+  createActiveMarker,
   createFilteredMarkerSvg,
+  updateEmojiMarker,
 } from '../place_marker/markerSvg'
 
 type MarkerRef = {
@@ -89,6 +90,21 @@ export const useMarkerManager = ({
 
   const places = storePlaces.length > 0 ? storePlaces : propPlaces
 
+  // Add a state cache to track marker appearance
+  const markerStateCache = useRef(
+    new Map<
+      string,
+      {
+        color: string
+        isDisplayed: boolean
+        isSelected: boolean
+        isSelectedPlace: boolean
+        emoji?: string
+        hasBadge?: boolean
+      }
+    >(),
+  ).current
+
   // Effect for initial marker creation and cleanup
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -112,6 +128,7 @@ export const useMarkerManager = ({
         if (!currentPlaceIds.has(id)) {
           marker.remove()
           markersRef.current.delete(id)
+          markerStateCache.delete(id)
         }
       }
 
@@ -126,6 +143,7 @@ export const useMarkerManager = ({
           const marker = new mapboxgl.Marker({
             element: markerElement,
             scale: 1,
+            offset: [0, -14],
           }).setLngLat([place.location.longitude, place.location.latitude])
 
           const added = await addMarkerWithRetry(marker, map)
@@ -155,6 +173,12 @@ export const useMarkerManager = ({
       }
       markersRef.current.clear()
       mapLoadedRef.current = false
+
+      // Add this line to clean the state cache
+      markerStateCache.clear()
+
+      // Cancel pending operations
+      throttledUpdateMarkers.cancel()
     }
   }, [map, places])
 
@@ -162,7 +186,7 @@ export const useMarkerManager = ({
   const updateMarkersStatus = useMemo(
     () =>
       throttle(
-        (updatedStatuses: Map<string, string>) => {
+        async (updatedStatuses: Map<string, string>) => {
           for (const [placeId, status] of updatedStatuses.entries()) {
             const markerRef = markersRef.current.get(placeId)
             if (!markerRef) continue
@@ -177,7 +201,7 @@ export const useMarkerManager = ({
             const color = getColorWithCache(status)
             const place = places?.find((p) => p.id === placeId)
             if (!place) continue
-            const svg = createActiveMarkerSvg(color, place, isSelectedPlace)
+            const svg = createActiveMarker(color, place, isSelectedPlace)
 
             if (svg && element) {
               while (element.firstChild) {
@@ -193,11 +217,12 @@ export const useMarkerManager = ({
     [displayedPlaceIds, selectedPlaceId, places],
   )
 
-  // Main marker update function (now without status updates)
+  // Modify throttledUpdateMarkers to only update when needed
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const throttledUpdateMarkers = useMemo(
     () =>
       throttle(
-        (places: Place[] | null) => {
+        async (places: Place[] | null) => {
           for (const place of places || []) {
             const markerRef = markersRef.current.get(place.id)
             if (!markerRef) continue
@@ -206,44 +231,93 @@ export const useMarkerManager = ({
             const isSelected = dataTableRowSelection[place.id] ?? false
             const isSelectedPlace = place.id === selectedPlaceId
 
-            const element = markerRef.marker.getElement()
-
-            // Only update the marker if necessary
+            // Calculate current state
             const color = isSelected
               ? MARKER_COLORS.SELECTED
               : place.status
                 ? getColorWithCache(place.status.status)
                 : MARKER_COLORS.DEFAULT
 
-            const svg = isDisplayed
-              ? createActiveMarkerSvg(color, place, isSelectedPlace)
-              : createFilteredMarkerSvg()
+            const emoji = place.lists?.[0]?.emoji
+            const hasBadge = place.lists && place.lists.length > 1
 
-            if (svg && element) {
-              // Remove only the existing SVG, not other elements
-              const existingSvg = element.querySelector('svg')
-              if (existingSvg) {
-                element.removeChild(existingSvg)
+            // Check if marker state has changed
+            const cachedState = markerStateCache.get(place.id)
+            const hasChanged =
+              !cachedState ||
+              cachedState.color !== color ||
+              cachedState.isDisplayed !== isDisplayed ||
+              cachedState.isSelected !== isSelected ||
+              cachedState.isSelectedPlace !== isSelectedPlace ||
+              cachedState.emoji !== emoji ||
+              cachedState.hasBadge !== hasBadge
+
+            if (hasChanged) {
+              const element = markerRef.marker.getElement()
+
+              // Try to update existing emoji marker first
+              if (
+                isDisplayed &&
+                emoji &&
+                element.firstChild &&
+                (element.firstChild as HTMLElement).classList?.contains(
+                  'emoji-marker',
+                )
+              ) {
+                // Update in-place instead of recreating
+                updateEmojiMarker(
+                  element.firstChild as HTMLElement,
+                  color,
+                  isSelectedPlace,
+                  !!hasBadge,
+                )
+
+                // Update element classes
+                element.classList.toggle('filtered-marker', !isDisplayed)
+                element.classList.toggle('active-marker', isDisplayed)
+                element.classList.toggle(
+                  'selected-place-marker',
+                  isSelectedPlace,
+                )
+              } else {
+                // Full recreation needed
+                const newElement = isDisplayed
+                  ? createActiveMarker(color, place, isSelectedPlace)
+                  : createFilteredMarkerSvg()
+
+                // Clear existing content
+                while (element.firstChild) {
+                  element.removeChild(element.firstChild)
+                }
+
+                // Add new content
+                element.appendChild(newElement)
+
+                // Update classes
+                element.classList.toggle('filtered-marker', !isDisplayed)
+                element.classList.toggle('active-marker', isDisplayed)
+                element.classList.toggle(
+                  'selected-place-marker',
+                  isSelectedPlace,
+                )
               }
-              element.appendChild(svg)
 
-              // Update classes without removing other classes
-              if (!isDisplayed) element.classList.add('filtered-marker')
-              else element.classList.remove('filtered-marker')
-
-              if (isDisplayed) element.classList.add('active-marker')
-              else element.classList.remove('active-marker')
-
-              if (isSelectedPlace)
-                element.classList.add('selected-place-marker')
-              else element.classList.remove('selected-place-marker')
+              // Update cache
+              markerStateCache.set(place.id, {
+                color,
+                isDisplayed,
+                isSelected,
+                isSelectedPlace,
+                emoji,
+                hasBadge,
+              })
             }
           }
         },
         100,
         { leading: true, trailing: true },
       ),
-    [displayedPlaceIds, dataTableRowSelection, selectedPlaceId],
+    [displayedPlaceIds, dataTableRowSelection, selectedPlaceId, places],
   )
 
   // Split the effects
