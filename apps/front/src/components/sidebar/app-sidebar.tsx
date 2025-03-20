@@ -8,13 +8,14 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { useMediaQuery } from '@/hooks/use-media-query'
+
+import { useIsMobile } from '@/hooks/use-mobile'
 import { NavHistory } from './nav-history'
 import { NavMain } from './nav-main'
 import { RitchyLogo } from './ritchy-logo'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const isMobile = useIsMobile()
 
   return (
     <>
