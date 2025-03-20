@@ -11,7 +11,7 @@ declare module '@tanstack/react-table' {
 
   interface TableMeta {
     setSelectedPlaceId?: (placeId: string) => void
-    updateTableData?: React.Dispatch<React.SetStateAction<TData[]>>
+    setData?: React.Dispatch<React.SetStateAction<TData[]>>
     hoveredRowId?: string | null
     onCellHover?: (
       id: string,

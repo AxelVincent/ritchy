@@ -4,7 +4,7 @@ import {
 } from '@/api/queries/users/useUserSubscription'
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { SignedIn, SignedOut } from '@clerk/clerk-react'
 import { useUser } from '@clerk/clerk-react'
 import {
@@ -91,7 +91,7 @@ function ClerkRedirect() {
     subscriptionData && isSubscriptionSuccess(subscriptionData)
       ? subscriptionData.plan
       : 'FREE'
-  const isMobile = useIsMobile()
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   useEffect(() => {
     if (!isLoaded || !user || isLoadingSubscription) return

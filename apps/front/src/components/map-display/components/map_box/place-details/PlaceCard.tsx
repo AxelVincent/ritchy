@@ -1,3 +1,4 @@
+import { StatusIndicator } from '@/components/common/StatusIndicator'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,9 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { DragHandleDots2Icon } from '@radix-ui/react-icons'
-
-import { StatusDropdown } from '@/components/status/status-dropdown'
-import { useIsMobile } from '@/hooks/use-mobile'
+import type { Place } from '@ritchy/types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ExternalLink, Star, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -21,15 +20,14 @@ import { PlaceHoursTab } from './tabs/PlaceHoursTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
 
-export const PlaceCard = () => {
-  const {
-    selectedPlaceId,
-    displayedPlaceIds,
-    places,
-    setSelectedPlaceId,
-    setCenterPlaceSpreadsheetId,
-  } = useMapStore()
-  const isMobile = useIsMobile()
+interface PlaceCardProps {
+  places: Place[] | null
+  displayedPlaceIds: Set<string>
+}
+
+export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
+  const { selectedPlaceId, setSelectedPlaceId, setCenterPlaceSpreadsheetId } =
+    useMapStore()
   const displayedIds = Array.from(displayedPlaceIds)
   const [currentIndex, setCurrentIndex] = useState(0)
   const currentPlace = places?.find((place) => place.id === selectedPlaceId)
@@ -59,40 +57,22 @@ export const PlaceCard = () => {
       }
     }
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isResizing && resizeRef.current && e.touches.length > 0) {
-        const containerRect = resizeRef.current.getBoundingClientRect()
-        const touch = e.touches[0]
-        const newHeight = Math.max(250, containerRect.bottom - touch.clientY)
-        setCardHeight(newHeight)
-        localStorage.setItem('placeCardHeight', newHeight.toString())
-      }
-    }
-
     const handleMouseUp = () => {
-      setIsResizing(false)
-    }
-
-    const handleTouchEnd = () => {
       setIsResizing(false)
     }
 
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
-      document.addEventListener('touchmove', handleTouchMove)
-      document.addEventListener('touchend', handleTouchEnd)
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
-      document.removeEventListener('touchmove', handleTouchMove)
-      document.removeEventListener('touchend', handleTouchEnd)
     }
   }, [isResizing])
 
-  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleResizeStart = (e: React.MouseEvent) => {
     e.preventDefault()
     setIsResizing(true)
   }
@@ -126,9 +106,7 @@ export const PlaceCard = () => {
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        className={`absolute ${
-          isMobile ? 'bottom-20' : 'bottom-4'
-        } left-4 right-4 mx-auto z-10`}
+        className="absolute bottom-4 left-4 right-4 mx-auto z-10"
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
@@ -139,7 +117,6 @@ export const PlaceCard = () => {
           <div
             className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-ns-resize"
             onMouseDown={handleResizeStart}
-            onTouchStart={handleResizeStart}
           >
             <div className="flex h-4 w-6 items-center justify-center rounded-sm border bg-border  hover:bg-gray-300 transition-colors">
               <DragHandleDots2Icon className="h-4 w-3.5 rotate-90" />
@@ -151,12 +128,10 @@ export const PlaceCard = () => {
           >
             <CardHeader className="pb-2 pt-3 px-4 shrink-0">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <CardTitle className="text-lg truncate max-w-[200px] md:max-w-[300px]">
-                    {currentPlace.name}
-                  </CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">{currentPlace.name}</CardTitle>
                   |
-                  <div className="flex items-center gap-2 text-sm shrink-0">
+                  <div className="flex items-center gap-2 text-sm">
                     {currentPlace.rating ? (
                       <div className="flex items-center gap-1">
                         <span className="font-medium">
@@ -172,13 +147,14 @@ export const PlaceCard = () => {
                         No reviews
                       </div>
                     )}
+                    {currentPlace.openingHours && (
+                      <StatusIndicator
+                        isOpen={currentPlace.openingHours.openNow}
+                      />
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-2">
-                  <StatusDropdown
-                    placeId={currentPlace.id}
-                    currentStatus={currentPlace.status?.status || 'NEW'}
-                  />
+                <div className="flex items-center gap-2">
                   {currentPlace.website && (
                     <Button
                       variant="ghost"

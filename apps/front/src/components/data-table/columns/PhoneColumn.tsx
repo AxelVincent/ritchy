@@ -1,6 +1,6 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { PhoneCell } from './utils/ColumnCells'
+import { ColumnPinCopyCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const phoneColumn: ColumnDef<SearchResult> = {
@@ -11,8 +11,8 @@ export const phoneColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Phone" />,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const phone = row.getValue('phone') as string
-    return <PhoneCell id={row.original.id} content={phone} />
+    return <ColumnPinCopyCell row={row} table={table} content={phone} />
   },
 }
