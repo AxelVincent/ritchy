@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import https from 'node:https'
 import { logger } from '@ritchy/logger'
 import { type EnrichResponse, SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
@@ -406,22 +407,38 @@ async function scrapeFromOptimizedUrls(
   timeoutMs = SCRAPING_TIMEOUT_MS,
 ): Promise<EnrichResponse> {
   const sitemapUrl = `${baseUrl}/sitemap.xml`
-  if (IS_DEBUG) {
-    logger.info({
-      msg: `Fetching sitemap from ${sitemapUrl}`,
-      event: 'fetch_sitemap',
+
+  // Try to get sitemap
+  let sitemapUrls: string[] = []
+  try {
+    sitemapUrls = await getPagesFromSitemap(sitemapUrl)
+    logger.debug({
+      msg: 'Sitemap fetched successfully',
+      event: 'sitemap_fetch_success',
+      metadata: { baseUrl, urlCount: sitemapUrls.length },
+    })
+  } catch (error) {
+    logger.debug({
+      msg: 'Sitemap not available',
+      event: 'sitemap_fetch_failed',
+      metadata: { baseUrl, sitemapUrl, error: (error as Error).message },
     })
   }
-  const sitemapUrls = await getPagesFromSitemap(sitemapUrl)
 
   const relevantUrls = filterRelevantUrls(
     sitemapUrls,
     baseUrl,
     POTENTIAL_SUBPAGES,
   )
-  logger.info({
-    msg: `Filtered ${relevantUrls.length} relevant URLs from sitemap.`,
-    event: 'filter_relevant_urls',
+
+  logger.debug({
+    msg: 'Starting to scrape targeted URLs',
+    event: 'scraping_urls',
+    metadata: {
+      id,
+      baseUrl,
+      urlCount: relevantUrls.length,
+    },
   })
 
   const allEmails: Set<string> = new Set()
@@ -439,22 +456,17 @@ async function scrapeFromOptimizedUrls(
   // Scrape relevant URLs
   const tasks = relevantUrls.map((url) =>
     limit(async () => {
-      if (IS_DEBUG) {
-        logger.info({
-          msg: `Scraping page: ${url}`,
-          event: 'scrape_page',
-        })
-      }
+      // Removed the individual URL fetch logs to reduce noise
       const { emails, socialLinks, error } = await scrapeEmailsAndSocials(
         url,
         SOCIAL_MEDIA_DOMAINS,
       )
 
       if (error && IS_DEBUG) {
-        logger.error({
-          msg: `Error scraping ${url}`,
+        logger.debug({
+          msg: 'Error scraping page',
           event: 'scrape_page_error',
-          metadata: { error },
+          metadata: { url, error },
         })
       }
 
@@ -492,11 +504,28 @@ async function scrapeFromOptimizedUrls(
     aggregatedSocialLinks[domain] = Array.from(allSocialLinks[domain])
   }
 
-  return {
+  const result = {
     id,
     emails: Array.from(allEmails),
     socialLinks: mapSocialLinks(aggregatedSocialLinks),
   }
+
+  // Log final results summary
+  logger.info({
+    msg: 'Scraping completed',
+    event: 'scraping_complete',
+    metadata: {
+      id,
+      baseUrl,
+      stats: {
+        urlsScraped: relevantUrls.length,
+        emailsFound: result.emails.length,
+        socialPlatforms: Object.keys(result.socialLinks).length,
+      },
+    },
+  })
+
+  return result
 }
 
 // Example usage
