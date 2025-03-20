@@ -41,12 +41,13 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
     },
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Lists" />,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const lists = row.original.lists
 
     return (
       <ColumnPinCell
-        id={row.original.id}
+        row={row}
+        table={table}
         content={
           lists?.length ? (
             <DynamicBadgeList

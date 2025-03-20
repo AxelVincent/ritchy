@@ -21,11 +21,11 @@ export const formattedAddressColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Address" />,
   enableSorting: false,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const address = row.original.address.formattedAddress
     if (!address) return null
 
-    return <ColumnPinCopyCell id={row.original.id} content={address} />
+    return <ColumnPinCopyCell row={row} table={table} content={address} />
   },
 }
 
@@ -37,9 +37,10 @@ export const countryColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Country" />,
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.country ?? null}
     />
   ),
@@ -53,9 +54,10 @@ export const localityColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="City" />,
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.locality ?? null}
     />
   ),
@@ -69,9 +71,10 @@ export const sublocalityColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Sublocality" />,
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.sublocality ?? null}
     />
   ),
@@ -85,9 +88,10 @@ export const postalCodeColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Postal Code" />,
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.postalCode ?? null}
     />
   ),
@@ -103,9 +107,10 @@ export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Postal Code Suffix" />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.postalCodeSuffix ?? null}
     />
   ),
@@ -119,9 +124,10 @@ export const plusCodeColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Plus Code" />,
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.plusCode ?? null}
     />
   ),
@@ -135,9 +141,10 @@ export const streetColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Street" />,
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.street ?? null}
     />
   ),
@@ -153,9 +160,10 @@ export const neighborhoodColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Neighborhood" />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.neighborhood ?? null}
     />
   ),
@@ -171,9 +179,10 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Administ. Area Level 1" />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.administrativeAreaLevel1 ?? null}
     />
   ),
@@ -189,9 +198,10 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Administ. Area Level 2" />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.administrativeAreaLevel2 ?? null}
     />
   ),
@@ -207,9 +217,10 @@ export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Administ. Area Level 3" />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCopyCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={row.original.address.administrativeAreaLevel3 ?? null}
     />
   ),

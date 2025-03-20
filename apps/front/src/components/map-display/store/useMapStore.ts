@@ -33,19 +33,21 @@ export const useMapStore = create<MapStore>((set) => ({
   setCenterPlaceSpreadsheetId: (id) => set({ centerPlaceSpreadsheetId: id }),
   setPlaces: (places) =>
     set(() => {
+      // Always initialize the displayed place IDs with all place IDs
+      // This ensures markers show up immediately when places are loaded
+      const placeIds = new Set(places.map((place) => place.id))
+
       return {
         places,
         tableData: places,
+        displayedPlaceIds: placeIds,
       }
     }),
-  resetDisplayedPlaceIds: () => {
+  resetDisplayedPlaceIds: () =>
     set((state) => ({
       displayedPlaceIds: new Set(state.places.map((place) => place.id)),
-    }))
-  },
-  setDisplayedPlaceIds: (ids) => {
-    set({ displayedPlaceIds: ids })
-  },
+    })),
+  setDisplayedPlaceIds: (ids) => set({ displayedPlaceIds: ids }),
   addToDisplayedPlaceIds: (ids: string[]) =>
     set((state) => {
       const newDisplayedIds = new Set(state.displayedPlaceIds)

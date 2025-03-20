@@ -14,15 +14,11 @@ import { StatusBadge } from './status-badge'
 interface StatusDropdownProps {
   placeId: string
   currentStatus: StatusType
-  listId: string | null
-  searchId: string | null
 }
 
 export const StatusDropdown = ({
   placeId,
   currentStatus,
-  listId,
-  searchId,
 }: StatusDropdownProps) => {
   const [status, setStatus] = useState<StatusType>(currentStatus)
   const { mutate: updateStatus, isPending } = useUpdatePlaceStatus()
@@ -44,12 +40,7 @@ export const StatusDropdown = ({
 
   const handleStatusChange = (newStatus: StatusType) => {
     setStatus(newStatus)
-    updateStatus({
-      placeId,
-      status: newStatus,
-      listId,
-      searchId,
-    })
+    updateStatus({ placeId, status: newStatus })
   }
 
   return (

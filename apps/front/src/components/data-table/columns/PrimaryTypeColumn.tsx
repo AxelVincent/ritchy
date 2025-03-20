@@ -14,9 +14,10 @@ export const primaryTypeColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Primary Type" />
   ),
-  cell: ({ row }) => (
+  cell: ({ row, table }) => (
     <ColumnPinCell
-      id={row.original.id}
+      row={row}
+      table={table}
       content={
         row.original.primaryType && (
           <Badge variant="secondary">{row.original.primaryType}</Badge>

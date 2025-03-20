@@ -3,7 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ColumnPinCopyCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
-export const getDomainFromUrl = (url: string): string => {
+const getDomainFromUrl = (url: string): string => {
   try {
     const domain = new URL(url).hostname.replace('www.', '')
     return domain
@@ -20,11 +20,12 @@ export const websiteColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     const website = row.getValue('website') as string
     return (
       <ColumnPinCopyCell
-        id={row.original.id}
+        row={row}
+        table={table}
         content={website ? getDomainFromUrl(website) : ''}
         href={website}
       />

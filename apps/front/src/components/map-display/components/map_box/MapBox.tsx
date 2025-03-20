@@ -23,7 +23,6 @@ interface MapBoxProps {
   dataTableRowSelection: RowSelectionState
   radiusInMeters: number
   isMobile: boolean
-  listId: string | null
 }
 
 // Move PlaceCard to a separate lazy-loaded component
@@ -38,9 +37,9 @@ export const MapBox: FC<MapBoxProps> = ({
   dataTableRowSelection,
   radiusInMeters,
   isMobile,
-  listId,
 }) => {
-  const { places, selectedPlaceId } = useMapStore()
+  const { places, selectedPlaceId, setPlaces, setDisplayedPlaceIds } =
+    useMapStore()
   const previousPlacesRef = useRef<typeof places>([])
   const boundsSetRef = useRef(false)
 
@@ -94,14 +93,11 @@ export const MapBox: FC<MapBoxProps> = ({
     dataTableRowSelection,
   })
 
-  // Set bounds after places are loaded - with intelligent sampling and progressive rendering
+  // Set bounds after places are loaded - with debouncing
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     // Only proceed if we have a map and places
     if (!mapRef.current || !places.length) return
-
-    // More aggressive debounce for large datasets
-    const debounceTime = places.length > 1000 ? 500 : 250
 
     // Debounce bounds calculation to prevent excessive updates
     const handleBoundsUpdate = debounce(() => {
@@ -127,62 +123,10 @@ export const MapBox: FC<MapBoxProps> = ({
       const bounds = new mapboxgl.LngLatBounds()
       bounds.extend(initialCenter)
 
-      // Smart sampling for bounds calculation based on dataset size
-      const getRepresentativeSample = (data: typeof places) => {
-        if (data.length <= 200) return data // Use all points for smaller datasets
-
-        // For larger datasets, use a smarter sampling strategy
-        // 1. Include boundaries (min/max lat/lng) to ensure full coverage
-        // 2. Include a representative sample from across the dataset
-
-        // Sort places by latitude and longitude to find extremes
-        const byLat = [...data].sort(
-          (a, b) => a.location.latitude - b.location.latitude,
-        )
-        const byLng = [...data].sort(
-          (a, b) => a.location.longitude - b.location.longitude,
-        )
-
-        // Get points from the extremes (4 corners + some near them)
-        const extremePoints = new Set(
-          [
-            byLat[0],
-            byLat[Math.floor(data.length * 0.05)], // Min lat
-            byLat[Math.floor(data.length * 0.95)],
-            byLat[data.length - 1], // Max lat
-            byLng[0],
-            byLng[Math.floor(data.length * 0.05)], // Min lng
-            byLng[Math.floor(data.length * 0.95)],
-            byLng[data.length - 1], // Max lng
-          ]
-            .filter(Boolean)
-            .map((p) => p.id),
-        )
-
-        // Add systematic sampling across the dataset
-        const sampleSize = Math.min(200, data.length)
-        const step = Math.max(1, Math.floor(data.length / sampleSize))
-
-        const sampledPoints = []
-        for (let i = 0; i < data.length; i += step) {
-          if (!extremePoints.has(data[i].id)) {
-            sampledPoints.push(data[i])
-          }
-        }
-
-        // Combine extreme points with sampled points
-        return [
-          ...Array.from(extremePoints).map((id) =>
-            data.find((p) => p.id === id),
-          ),
-          ...sampledPoints,
-        ].filter(Boolean)
-      }
-
-      const placesToUse = getRepresentativeSample(places)
+      // Limit the number of points used for bounds calculation
+      const placesToUse = places.length > 100 ? places.slice(0, 100) : places
 
       for (const place of placesToUse) {
-        if (!place) continue
         const coordinates = [
           place.location.longitude,
           place.location.latitude,
@@ -190,44 +134,18 @@ export const MapBox: FC<MapBoxProps> = ({
         bounds.extend(coordinates)
       }
 
-      // Adaptive padding based on dataset size
-      const getPadding = () => {
-        const base = 50
-        // More padding for larger datasets, less for smaller ones
-        const scaleFactor = Math.min(1.5, Math.max(0.5, places.length / 1000))
-        return {
-          top: base * scaleFactor,
-          bottom: base * scaleFactor,
-          left: base * scaleFactor,
-          right: base * scaleFactor,
-        }
-      }
-
-      // Function to fit bounds with a fallback strategy
+      // Function to fit bounds
       const fitMapBounds = () => {
         if (!mapRef.current) return
 
-        try {
-          // First attempt: Try to fit all points
-          mapRef.current.fitBounds(bounds, {
-            padding: getPadding(),
-            maxZoom: places.length > 500 ? 12 : 15, // Lower max zoom for very large datasets
-            duration: 800,
-          })
+        mapRef.current.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          maxZoom: 15,
+          duration: 500,
+        })
 
-          boundsSetRef.current = true
-          debugLog('Bounds set successfully')
-        } catch (error) {
-          // Fallback: If bounds calculation fails, use a more conservative approach
-          debugLog('Bounds calculation failed, using fallback', error)
-
-          // Try a more conservative view centered on initial location
-          mapRef.current.flyTo({
-            center: initialCenter,
-            zoom: 10,
-            duration: 800,
-          })
-        }
+        boundsSetRef.current = true
+        debugLog('Bounds set successfully')
       }
 
       // If map is already loaded, fit bounds immediately
@@ -237,7 +155,7 @@ export const MapBox: FC<MapBoxProps> = ({
         // Otherwise wait for the load event
         mapRef.current?.once('load', fitMapBounds)
       }
-    }, debounceTime)
+    }, 250) // Debounce for 250ms
 
     handleBoundsUpdate()
 
@@ -271,14 +189,13 @@ export const MapBox: FC<MapBoxProps> = ({
 
     isSelectionMovement.current = true
 
-    const marker = markersRef.current.get(selectedPlaceId)
-
-    if (!marker?.marker.getLngLat()) {
+    const markerData = markersRef.current.get(selectedPlaceId)
+    if (!markerData?.marker.getLngLat()) {
       debugLog('No marker location found for selection')
       return
     }
 
-    const markerLocation = marker.marker.getLngLat()
+    const markerLocation = markerData.marker.getLngLat()
     const currentCenter = mapRef.current.getCenter()
     const distanceInDegrees = Math.sqrt(
       (currentCenter.lng - markerLocation.lng) ** 2 +
@@ -330,11 +247,23 @@ export const MapBox: FC<MapBoxProps> = ({
     mapRef.current.on('moveend', onMoveEnd)
   }, [selectedPlaceId])
 
+  // Update effect to store places in Zustand and initialize displayedPlaceIds
+  useEffect(() => {
+    if (places && places.length > 0) {
+      // Initialize with all places and set all places as displayed
+      setPlaces(places)
+
+      // Explicitly initialize all places as displayed
+      // This ensures markers show up immediately without waiting for DataTable
+      setDisplayedPlaceIds(new Set(places.map((place) => place.id)))
+    }
+  }, [places, setPlaces, setDisplayedPlaceIds])
+
   return (
     <div className="relative h-full w-full">
       <div ref={mapContainerRef} className="h-full w-full" />
       <Suspense fallback={<div>Loading...</div>}>
-        <PlaceCard listId={listId} />
+        <PlaceCard />
       </Suspense>
     </div>
   )

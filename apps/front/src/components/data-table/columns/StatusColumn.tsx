@@ -17,16 +17,15 @@ export const statusColumn: ColumnDef<SearchResult> = {
     filterVariant: 'multi-select',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Status" />,
-  cell: ({ row }) => {
+  cell: ({ row, table }) => {
     return (
       <ColumnPinCell
-        id={row.original.id}
+        row={row}
+        table={table}
         content={
           <StatusDropdown
             placeId={row.original.id}
             currentStatus={row.original.status?.status || 'NEW'}
-            listId={row.original.lists?.[0]?.id ?? null}
-            searchId={row.original.searchId ?? null}
           />
         }
       />
