@@ -94,7 +94,15 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => (
                 },
               ]}
             >
-              {new URL(place.website).hostname}
+              <a
+                href={place.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {new URL(place.website).hostname}
+              </a>
             </TextWrapper>
           </div>
         )}
