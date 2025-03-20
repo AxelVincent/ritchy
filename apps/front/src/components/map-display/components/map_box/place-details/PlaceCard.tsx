@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { DragHandleDots2Icon } from '@radix-ui/react-icons'
@@ -18,13 +19,13 @@ import { useEffect, useRef, useState } from 'react'
 import { PlaceHoursTab } from './tabs/PlaceHoursTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
-
 interface PlaceCardProps {
   places: Place[] | null
   displayedPlaceIds: Set<string>
 }
 
 export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
+  const isMobile = useIsMobile()
   const { selectedPlaceId, setSelectedPlaceId, setCenterPlaceSpreadsheetId } =
     useMapStore()
   const displayedIds = Array.from(displayedPlaceIds)
@@ -56,22 +57,40 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
       }
     }
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isResizing && resizeRef.current && e.touches.length > 0) {
+        const containerRect = resizeRef.current.getBoundingClientRect()
+        const touch = e.touches[0]
+        const newHeight = Math.max(250, containerRect.bottom - touch.clientY)
+        setCardHeight(newHeight)
+        localStorage.setItem('placeCardHeight', newHeight.toString())
+      }
+    }
+
     const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    const handleTouchEnd = () => {
       setIsResizing(false)
     }
 
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('touchmove', handleTouchMove)
+      document.addEventListener('touchend', handleTouchEnd)
     }
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
     }
   }, [isResizing])
 
-  const handleResizeStart = (e: React.MouseEvent) => {
+  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault()
     setIsResizing(true)
   }
@@ -105,7 +124,9 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        className="absolute bottom-4 left-4 right-4 mx-auto z-10"
+        className={`absolute ${
+          isMobile ? 'bottom-20' : 'bottom-4'
+        } left-4 right-4 mx-auto z-10`}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
@@ -116,6 +137,7 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
           <div
             className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 cursor-ns-resize"
             onMouseDown={handleResizeStart}
+            onTouchStart={handleResizeStart}
           >
             <div className="flex h-4 w-6 items-center justify-center rounded-sm border bg-border  hover:bg-gray-300 transition-colors">
               <DragHandleDots2Icon className="h-4 w-3.5 rotate-90" />
