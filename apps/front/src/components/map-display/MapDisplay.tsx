@@ -1,6 +1,5 @@
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 
-import { DataTable } from '@/components/data-table/DataTable'
 import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
@@ -54,8 +53,8 @@ const MapLoadingFallback = () => (
 )
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
-  const isMobile = useIsMobile()
   const { setPlaces } = useMapStore()
+  const isMobile = useIsMobile()
 
   // Core location state
   const defaultLocation =
@@ -93,6 +92,23 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     return savedView === 'map' || savedView === 'table' ? savedView : 'map'
   })
 
+  // Track if we should load the data table
+  const [shouldLoadTable, setShouldLoadTable] = useState(false)
+
+  // Load table when in table view on mobile or after a short delay on desktop
+  useEffect(() => {
+    if (isMobile && mobileView === 'table') {
+      setShouldLoadTable(true)
+    } else if (!isMobile) {
+      // On desktop, delay-load the table
+      const timer = setTimeout(() => {
+        setShouldLoadTable(true)
+      }, 800) // Adjust delay as needed
+
+      return () => clearTimeout(timer)
+    }
+  }, [isMobile, mobileView])
+
   // Save mobile view preference to localStorage
   useEffect(() => {
     localStorage.setItem('mobileMapView', mobileView)
@@ -105,12 +121,13 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     }
   }, [currentLocation])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // Update effect to store places in Zustand and initialize displayedPlaceIds
   useEffect(() => {
     if (places && places.length > 0) {
+      // Initialize with all places and set all places as displayed
       setPlaces(places)
     }
-  }, [places])
+  }, [places, setPlaces])
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
@@ -125,29 +142,35 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           <div
             className={`h-full w-full absolute inset-0 ${mobileView === 'map' ? 'block' : 'hidden'}`}
           >
-            <Suspense fallback={<MapLoadingFallback />}>
-              <LazyMapBox
-                userLocation={currentLocation}
-                dataTableRowSelection={dataTableRowSelection}
-                radiusInMeters={currentLocation.radiusInMeters}
-                isMobile={true}
-                listId={listId ?? null}
-              />
-            </Suspense>
+            {mobileView === 'map' && (
+              <Suspense fallback={<MapLoadingFallback />}>
+                <LazyMapBox
+                  userLocation={currentLocation}
+                  dataTableRowSelection={dataTableRowSelection}
+                  radiusInMeters={currentLocation.radiusInMeters}
+                  isMobile={true}
+                  listId={listId ?? null}
+                />
+              </Suspense>
+            )}
           </div>
           <div
             className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
           >
             <div className="h-full overflow-auto">
-              <Suspense fallback={<TableLoadingFallback />}>
-                <DataTable
-                  columns={columns}
-                  setDataTableRowSelection={setDataTableRowSelection}
-                  dataTableRowSelection={dataTableRowSelection}
-                  listId={listId}
-                  searchId={searchId}
-                />
-              </Suspense>
+              {shouldLoadTable ? (
+                <Suspense fallback={<TableLoadingFallback />}>
+                  <LazyDataTable
+                    columns={columns}
+                    setDataTableRowSelection={setDataTableRowSelection}
+                    dataTableRowSelection={dataTableRowSelection}
+                    listId={listId}
+                    searchId={searchId}
+                  />
+                </Suspense>
+              ) : (
+                <TableLoadingFallback />
+              )}
             </div>
           </div>
         </div>
@@ -197,15 +220,19 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           defaultSize={panelSizes[0]}
           className="flex-1 flex flex-col overflow-hidden"
         >
-          <Suspense fallback={<TableLoadingFallback />}>
-            <LazyDataTable
-              columns={columns}
-              setDataTableRowSelection={setDataTableRowSelection}
-              dataTableRowSelection={dataTableRowSelection}
-              listId={listId}
-              searchId={searchId}
-            />
-          </Suspense>
+          {shouldLoadTable ? (
+            <Suspense fallback={<TableLoadingFallback />}>
+              <LazyDataTable
+                columns={columns}
+                setDataTableRowSelection={setDataTableRowSelection}
+                dataTableRowSelection={dataTableRowSelection}
+                listId={listId}
+                searchId={searchId}
+              />
+            </Suspense>
+          ) : (
+            <TableLoadingFallback />
+          )}
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={panelSizes[1]} className="flex-1">
