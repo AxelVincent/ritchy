@@ -3,6 +3,8 @@ import type { Place } from '@ritchy/types'
 import mapboxgl, { type IControl } from 'mapbox-gl'
 import { useEffect, useRef } from 'react'
 import type { MapSettings } from '../types'
+import { MAP_PERFORMANCE_OPTIONS } from '../types'
+import { transformMapboxRequest } from '../utils/mapboxUtils'
 
 const accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string
 
@@ -72,13 +74,16 @@ export const useMapInitialization = (
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
 
+    // Set global accessToken
     mapboxgl.accessToken = accessToken
+
+    // Track performance
+    performance.mark('map-init-start')
 
     try {
       const initialBounds = calculateInitialBounds(initialCenter, searchResults)
-      console.log('initialBounds', initialBounds)
 
-      // Initialize map
+      // Initialize map with performance options
       mapRef.current = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: settings.style,
@@ -86,6 +91,11 @@ export const useMapInitialization = (
         zoom: settings.zoom,
         maxZoom: settings.maxZoom,
         minZoom: settings.minZoom,
+        renderWorldCopies: MAP_PERFORMANCE_OPTIONS.renderWorldCopies,
+        fadeDuration: MAP_PERFORMANCE_OPTIONS.fadeDuration,
+        localIdeographFontFamily:
+          MAP_PERFORMANCE_OPTIONS.localIdeographFontFamily,
+        transformRequest: transformMapboxRequest,
         ...(initialBounds && {
           bounds: initialBounds,
           fitBoundsOptions: {
@@ -112,6 +122,7 @@ export const useMapInitialization = (
       mapRef.current.on('error', (e) => {
         console.error('Mapbox error:', e)
       })
+
       // Add controls
       const controls = createControls(searchResults)
       for (const control of controls) {
@@ -120,6 +131,14 @@ export const useMapInitialization = (
 
       // Log performance measurements
       mapRef.current.once('load', () => {
+        performance.mark('map-init-end')
+        performance.measure(
+          'map-initialization',
+          'map-init-start',
+          'map-init-end',
+        )
+
+        // Log all performance measurements
         const measurements = performance.getEntriesByType('measure')
         console.table(
           measurements.map((m) => ({
@@ -127,6 +146,18 @@ export const useMapInitialization = (
             duration: `${m.duration.toFixed(2)}ms`,
           })),
         )
+
+        // If resource timing is enabled, log tile loading performance
+        if (MAP_PERFORMANCE_OPTIONS.collectResourceTiming) {
+          mapRef.current?.on('data', (e) => {
+            // Check if the event contains tile resource timing data
+            // @ts-expect-error MapSourceDataEvent may include resourceTiming when collectResourceTiming is set
+            if (e.dataType === 'source' && e.tile && e.resourceTiming) {
+              // @ts-expect-error MapSourceDataEvent may include resourceTiming when collectResourceTiming is set
+              console.debug('Tile timing:', e.resourceTiming)
+            }
+          })
+        }
       })
     } catch (error) {
       console.error('Failed to initialize map:', error)

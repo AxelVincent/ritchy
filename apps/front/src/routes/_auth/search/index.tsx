@@ -78,7 +78,6 @@ function RouteComponent() {
       ...newLocation,
     })
   }
-  console.log('currentLocation', currentLocation)
 
   // Update from geolocation only on initial load
   useEffect(() => {

@@ -117,8 +117,6 @@ export const createCheckoutSession = async (
         ? STRIPE_PLANS[plan].price?.yearly
         : STRIPE_PLANS[plan].price?.monthly
 
-    console.log('priceId', billingInterval, priceId)
-
     if (!priceId) {
       logger.error({
         msg: 'Invalid plan or billing interval requested',

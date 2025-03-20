@@ -1,8 +1,9 @@
-// import './styles.css'
 import { useMapInitialization } from '@/components/map-display/hooks/useMapInitialization'
 import { useMapSquare } from '@/components/map-display/hooks/useMapSquare'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 import type { MapboxLocationParameters } from '@/components/map-display/types'
+// import './styles.css'
+import { clearMapboxCache } from '@/components/map-display/utils/mapboxUtils'
 import { debounce } from '@/lib/debounce'
 import mapboxgl, { type LngLat } from 'mapbox-gl'
 import { type FC, useEffect, useMemo, useRef } from 'react'
@@ -29,6 +30,14 @@ interface MapBoxProps {
   radiusInMeters: number
 }
 
+// Optimized animation options for smoother transitions
+const ANIMATION_OPTIONS = {
+  essential: true, // Won't be affected by reduced motion preferences
+  maxDuration: 800, // Cap animation time
+  speed: 1.2,
+  curve: 1.42,
+}
+
 export const SearchMap: FC<MapBoxProps> = ({
   onLocationChange,
   userLocation,
@@ -53,6 +62,45 @@ export const SearchMap: FC<MapBoxProps> = ({
   )
 
   const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
+
+  // Implement cache clearing for long sessions
+  useEffect(() => {
+    // Set up a timer to periodically clear the cache during long sessions
+    const cacheCleanupInterval = setInterval(
+      () => {
+        // Only clear cache if the user has been active for a while
+        const lastActivity = localStorage.getItem('lastMapActivity')
+        const now = Date.now()
+
+        if (lastActivity && now - Number(lastActivity) > 15 * 60 * 1000) {
+          debugLog('Clearing MapBox cache after period of inactivity')
+          clearMapboxCache()
+        }
+      },
+      30 * 60 * 1000,
+    ) // Check every 30 minutes
+
+    return () => {
+      clearInterval(cacheCleanupInterval)
+    }
+  }, [])
+
+  // Record user activity
+  useEffect(() => {
+    const recordActivity = () => {
+      localStorage.setItem('lastMapActivity', Date.now().toString())
+    }
+
+    window.addEventListener('mousemove', recordActivity)
+    window.addEventListener('keydown', recordActivity)
+    window.addEventListener('touchstart', recordActivity)
+
+    return () => {
+      window.removeEventListener('mousemove', recordActivity)
+      window.removeEventListener('keydown', recordActivity)
+      window.removeEventListener('touchstart', recordActivity)
+    }
+  }, [])
 
   // Resize observer effect
   useEffect(() => {
@@ -194,6 +242,44 @@ export const SearchMap: FC<MapBoxProps> = ({
     }
     updateSquareData(mapRef.current.getCenter(), radiusInMeters)
   }, [radiusInMeters, mapRef, updateSquareData])
+
+  // Update when user location changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    // Get current center
+    const currentCenter = mapRef.current.getCenter()
+    const targetCenter = [userLocation.longitude, userLocation.latitude]
+
+    // Calculate distance to determine if we need to fly or jump
+    const distanceInDegrees = Math.sqrt(
+      (currentCenter.lng - targetCenter[0]) ** 2 +
+        (currentCenter.lat - targetCenter[1]) ** 2,
+    )
+
+    isSelectionMovement.current = true
+
+    if (distanceInDegrees > 0.2) {
+      // For larger distances, just jump there
+      mapRef.current.jumpTo({
+        center: targetCenter as [number, number],
+      })
+    } else {
+      // For smaller distances, fly smoothly
+      mapRef.current.flyTo({
+        center: targetCenter as [number, number],
+        ...ANIMATION_OPTIONS,
+      })
+    }
+
+    // Reset selection movement flag after animation completes
+    const onMoveEnd = () => {
+      isSelectionMovement.current = false
+      mapRef.current?.off('moveend', onMoveEnd)
+    }
+    mapRef.current.on('moveend', onMoveEnd)
+  }, [userLocation.latitude, userLocation.longitude])
 
   return (
     <>

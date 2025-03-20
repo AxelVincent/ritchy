@@ -2,6 +2,8 @@ import './App.css'
 import { Toaster } from '@/components/ui/toaster'
 import { ClerkProvider, useUser } from '@clerk/clerk-react'
 import { RouterProvider } from '@tanstack/react-router'
+import { useEffect } from 'react'
+import { cleanupMapboxResources } from './components/map-display/utils/mapboxUtils'
 import { QueryProvider } from './providers/query-provider'
 import { ThemeProvider } from './providers/theme-provider'
 import { createRouter } from './router'
@@ -11,6 +13,14 @@ const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 function InnerApp() {
   const { isSignedIn, user } = useUser()
+
+  // Clean up Mapbox resources when app unmounts
+  useEffect(() => {
+    return () => {
+      cleanupMapboxResources()
+    }
+  }, [])
+
   return (
     <RouterProvider
       router={router}

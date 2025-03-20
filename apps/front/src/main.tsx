@@ -5,6 +5,10 @@ import './index.css'
 
 import * as Sentry from '@sentry/react'
 import { PostHogProvider } from 'posthog-js/react'
+import { initMapboxPerformanceSettings } from './components/map-display/utils/mapboxUtils'
+
+// Initialize Mapbox performance settings before any map instances are created
+initMapboxPerformanceSettings()
 
 const options = {
   api_host: import.meta.env.VITE_POSTHOG_HOST,
