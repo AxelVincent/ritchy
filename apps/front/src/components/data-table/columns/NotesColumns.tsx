@@ -9,12 +9,11 @@ export const notesColumn: ColumnDef<SearchResult> = {
   size: 200,
   enableColumnFilter: false,
   header: ({ column }) => <HeaderWrapper column={column} title="Notes" />,
-  cell: ({ row, table }) => {
+  cell: ({ row }) => {
     const place = row.original
     return (
       <ColumnPinNoteCell
-        row={row}
-        table={table}
+        id={row.original.id}
         place={place}
         content={place.notes?.[0] || null}
       />

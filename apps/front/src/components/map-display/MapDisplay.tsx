@@ -6,7 +6,7 @@ import { EmptyListState } from '@/components/lists/empty-list-state'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
-import { useMediaQuery } from '@/hooks/use-media-query'
+import { useIsMobile } from '@/hooks/use-mobile'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { useEffect, useState } from 'react'
@@ -22,7 +22,7 @@ interface MapDisplayProps {
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const setPlaces = useMapStore((state) => state.setPlaces)
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const isMobile = useIsMobile()
 
   // Core location state
   const defaultLocation =

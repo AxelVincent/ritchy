@@ -5,10 +5,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Label } from '@radix-ui/react-label'
-import { Copy, MapPinned, MessageSquareText, Trash } from 'lucide-react'
-import React from 'react'
+import { Copy, MapPinned, MessageSquareText, Phone, Trash } from 'lucide-react'
+import { isValidElement, memo, useMemo } from 'react'
 
 // Move ICONS outside component to avoid recreation
 const ICONS = {
@@ -16,6 +19,8 @@ const ICONS = {
   MapPinned,
   Trash,
   MessageSquareText,
+  Phone,
+  faWhatsapp,
 } as const
 
 export interface Action {
@@ -33,35 +38,41 @@ interface TextWrapperProps {
 }
 
 // Memoized action button component
-const ActionButton = React.memo(
-  ({ action }: { action: Action; id: string }) => {
-    const Icon = ICONS[action.icon]
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation()
-              action.onClick(e)
-            }}
-            className="h-5 w-5 p-2 rounded-sm"
-            size="icon"
-          >
+const ActionButton = memo(({ action }: { action: Action; id: string }) => {
+  const Icon = ICONS[action.icon]
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation()
+            action.onClick(e)
+          }}
+          className="h-5 w-5 p-2 rounded-sm"
+          size="icon"
+        >
+          {action.icon === 'faWhatsapp' ? (
+            <FontAwesomeIcon
+              icon={faWhatsapp}
+              className="text-muted-foreground"
+            />
+          ) : (
+            // @ts-expect-error - LucideIcon is a valid JSX element
             <Icon className="text-muted-foreground" />
-          </Button>
-        </TooltipTrigger>
-        {action.label && (
-          <TooltipContent side="bottom">
-            <p className="text-xs">{action.label}</p>
-          </TooltipContent>
-        )}
-      </Tooltip>
-    )
-  },
-)
+          )}
+        </Button>
+      </TooltipTrigger>
+      {action.label && (
+        <TooltipContent side="bottom">
+          <p className="text-xs">{action.label}</p>
+        </TooltipContent>
+      )}
+    </Tooltip>
+  )
+})
 
-export const TextWrapper = React.memo(
+export const TextWrapper = memo(
   ({
     children,
     className,
@@ -69,11 +80,12 @@ export const TextWrapper = React.memo(
     id,
     disableContentTooltip = false,
   }: TextWrapperProps) => {
+    const isMobile = useIsMobile()
     // Cache the text content check
-    const { isTextContent, textContent } = React.useMemo(() => {
+    const { isTextContent, textContent } = useMemo(() => {
       const isText =
         typeof children === 'string' ||
-        (React.isValidElement(children) &&
+        (isValidElement(children) &&
           typeof children.props.children === 'string')
 
       const content = isText
@@ -105,7 +117,7 @@ export const TextWrapper = React.memo(
             </Label>
           )}
 
-          {actions.length > 0 && (
+          {actions.length > 0 && !isMobile && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 absolute right-2 top-1/2 -translate-y-1/2 flex-shrink-0 bg-background rounded-md p-0.5 border border-border">
               {actions.map((action) => (
                 <ActionButton

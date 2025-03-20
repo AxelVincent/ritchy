@@ -14,9 +14,9 @@ export const nameColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => {
     return <HeaderWrapper column={column} title="Name" />
   },
-  cell: ({ row, table }) => {
+  cell: ({ row }) => {
     return (
-      <ColumnPinCopyCell row={row} table={table} content={row.original.name} />
+      <ColumnPinCopyCell id={row.original.id} content={row.original.name} />
     )
   },
 }

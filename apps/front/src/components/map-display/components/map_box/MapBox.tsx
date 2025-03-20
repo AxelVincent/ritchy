@@ -151,6 +151,12 @@ export const MapBox: FC<MapBoxProps> = ({
       lat: markerLocation.lat + latOffset,
     }
 
+    // Optimized animation options
+    const animationOptions = {
+      essential: true, // Won't be affected by reduced motion preferences
+      maxDuration: 1000, // Cap animation time
+    }
+
     // Center on the marker with the simplified adjustment
     if (distanceInDegrees > 0.2) {
       mapRef.current.jumpTo({
@@ -162,6 +168,7 @@ export const MapBox: FC<MapBoxProps> = ({
         center: adjustedCenter,
         speed: 1,
         zoom: zoomLevel,
+        ...animationOptions,
       })
     }
 

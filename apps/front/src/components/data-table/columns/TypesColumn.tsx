@@ -18,13 +18,12 @@ export const typesColumn: ColumnDef<SearchResult> = {
     return filterValue.some((filter) => rowTypes.includes(filter))
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Types" />,
-  cell: ({ row, table }) => {
+  cell: ({ row }) => {
     const types = row.original.types
 
     return (
       <ColumnPinCell
-        row={row}
-        table={table}
+        id={row.original.id}
         content={
           <DynamicBadgeList
             items={types}

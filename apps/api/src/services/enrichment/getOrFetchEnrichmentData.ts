@@ -16,37 +16,54 @@ export const getOrFetchEnrichmentData = async (
   website: string,
   maxRetries = 5,
 ): Promise<EnrichResponse | null> => {
-  // Check Redis cache first
   const cacheKey = REDIS_KEYS.enrich(website)
   let enrichmentData = await redisClient.get<EnrichResponse>(cacheKey)
 
-  // If data is in cache, return it
   if (enrichmentData) {
+    logger.debug({
+      msg: 'Retrieved enrichment data from cache',
+      event: 'enrichment_cache_hit',
+      metadata: { placeId, website },
+    })
     return enrichmentData
   }
 
-  // Log cache miss
   logger.info({
-    msg: 'No cached enrichment data, scraping website and caching',
-    event: 'enrichment_cache_miss',
+    msg: 'Beginning enrichment process',
+    event: 'enrichment_process_start',
     metadata: { placeId, website },
   })
 
   try {
-    // Fetch the enrichment data
     enrichmentData = await scrapeFromOptimizedUrls(placeId, website, maxRetries)
 
-    // Cache the results if successful
     if (enrichmentData) {
       await redisClient.set(cacheKey, enrichmentData)
+      logger.info({
+        msg: 'Enrichment completed successfully',
+        event: 'enrichment_complete',
+        metadata: {
+          placeId,
+          website,
+          stats: {
+            emailsFound: enrichmentData.emails.length,
+            socialPlatformsFound: Object.keys(enrichmentData.socialLinks)
+              .length,
+          },
+        },
+      })
     }
 
     return enrichmentData
   } catch (error) {
     logger.error({
-      msg: 'Failed to fetch enrichment data',
-      event: 'enrichment_fetch_error',
-      metadata: { placeId, website, error },
+      msg: 'Enrichment process failed',
+      event: 'enrichment_process_error',
+      metadata: {
+        placeId,
+        website,
+        error: error instanceof Error ? error.message : String(error),
+      },
     })
     return null
   }

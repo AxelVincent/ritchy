@@ -22,24 +22,7 @@ const lightenColor = (hex: string, amount: number): string => {
 // Cache common SVG namespace
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
-// Create a template for the marker structure
-const createMarkerTemplate = () => {
-  const template = document.createElement('template')
-  template.innerHTML = `
-    <svg viewBox="0 0 36 36" role="img">
-      <foreignObject x="0" y="0" width="36" height="36">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-          <div class="white-layer" style="position:absolute;font-size:28px;color:transparent"></div>
-          <div class="color-layer" style="position:absolute;font-size:28px;color:white"></div>
-        </div>
-      </foreignObject>
-    </svg>
-  `
-  return template
-}
-
 // Cache the template
-const markerTemplate = createMarkerTemplate()
 
 const pinMarkerTemplate = (() => {
   const svg = document.createElementNS(SVG_NS, 'svg')
@@ -90,80 +73,35 @@ export const createFilteredMarkerSvg = (): SVGElement => {
   return svg
 }
 
-// Pure function to create active marker SVG
-export const createActiveMarkerSvg = (
+// Simplified marker creation function
+export const createActiveMarker = (
   color: string,
   place: Place,
   isSelected = false,
-): SVGElement => {
+): Element => {
   try {
     if (place.lists?.[0]?.emoji) {
-      // Clone the template instead of creating elements
-      const svg = markerTemplate.content.firstElementChild?.cloneNode(
-        true,
-      ) as SVGElement
+      // Create a simple div element instead of complex SVG structure
+      const div = document.createElement('div')
 
-      // Apply dynamic attributes
-      const scale = isSelected ? 1.5 : 1
-      const baseSize = 36 // Reduced from 64 to match emoji size better
-      svg.setAttribute('width', `${baseSize * scale}`)
-      svg.setAttribute('height', `${baseSize * scale}`)
-      svg.setAttribute(
-        'aria-label',
-        `Location marker with ${place.lists[0].emoji}`,
-      )
+      // Set the emoji as text content
+      div.textContent = place.lists[0].emoji
 
-      // Get references to layers
-      const colorLayer = svg.querySelector('.color-layer') as HTMLDivElement
-      const whiteLayer = svg.querySelector('.white-layer') as HTMLDivElement
+      // Store emoji in data attribute for pseudo-element
+      div.setAttribute('data-emoji', place.lists[0].emoji)
 
-      // Set emoji content
-      colorLayer.textContent = place.lists[0].emoji
-      whiteLayer.textContent = place.lists[0].emoji
+      // Apply classes for styling
+      div.className = `emoji-marker ${isSelected ? 'selected' : ''} ${place.lists.length > 1 ? 'with-badge' : ''}`
 
-      // Keep same font size but scale the color layer
-      colorLayer.style.fontSize = '30px'
-      whiteLayer.style.fontSize = '30px'
+      // Set color as CSS variable for styling
+      div.style.setProperty('--marker-color', color)
 
-      // Apply text shadows - unchanged
-      whiteLayer.style.textShadow = `
-        -3.5px -3.5px 0 white,
-        3.5px -3.5px 0 white,
-        -3.5px 3.5px 0 white,
-        3.5px 3.5px 0 white,
-        -3.5px 0 0 white,
-        3.5px 0 0 white,
-        0 -3.5px 0 white,
-        0 3.5px 0 white
-      `
-
-      colorLayer.style.textShadow = `
-        -2.5px -2.5px 0 ${color},
-        2.5px -2.5px 0 ${color},
-        -2.5px 2.5px 0 ${color},
-        2.5px 2.5px 0 ${color},
-        -2.5px 0 0 ${color},
-        2.5px 0 0 ${color},
-        0 -2.5px 0 ${color},
-        0 2.5px 0 ${color},
-        0 0 8px ${color}
-      `
-
-      // Add badge if needed
-      if (place.lists.length > 1) {
-        addBadgeToMarker(svg, color, baseSize)
-      }
-
-      return svg
+      return div
     }
 
     return createPinMarker(color, isSelected)
   } catch (error) {
-    console.error('Error creating active marker SVG:', {
-      error: error instanceof Error ? error.message : String(error),
-      place,
-      color,
-    })
+    console.error('Error creating active marker:', error)
     return createPinMarker(color, isSelected)
   }
 }
@@ -190,51 +128,19 @@ const createPinMarker = (color: string, isSelected: boolean): SVGElement => {
   return svg
 }
 
-// Separate badge creation
-const addBadgeToMarker = (svg: SVGElement, color: string, baseSize = 36) => {
-  const badgeGroup = document.createElementNS(SVG_NS, 'g')
+/**
+ * Update an existing emoji marker without recreating it
+ */
+export const updateEmojiMarker = (
+  element: HTMLElement,
+  color: string,
+  isSelected: boolean,
+  hasBadge: boolean,
+): void => {
+  // Update classes efficiently
+  element.classList.toggle('selected', isSelected)
+  element.classList.toggle('with-badge', hasBadge)
 
-  // Common coordinates for all badge elements (adjusted for smaller viewBox)
-  const cx = `${baseSize * 0.75}` // Position relative to new base size
-  const cy = `${baseSize * 0.25}` // Position relative to new base size
-
-  // White border glow
-  const whiteBorderGlow = document.createElementNS(SVG_NS, 'circle')
-  whiteBorderGlow.setAttribute('cx', cx)
-  whiteBorderGlow.setAttribute('cy', cy)
-  whiteBorderGlow.setAttribute('r', '4.5')
-  whiteBorderGlow.setAttribute('stroke', 'white')
-  whiteBorderGlow.setAttribute('stroke-width', '2')
-  whiteBorderGlow.setAttribute('fill', 'none')
-  badgeGroup.appendChild(whiteBorderGlow)
-
-  // Colored glow
-  const badgeGlow = document.createElementNS(SVG_NS, 'circle')
-  badgeGlow.setAttribute('cx', cx)
-  badgeGlow.setAttribute('cy', cy)
-  badgeGlow.setAttribute('r', '4.5')
-  badgeGlow.setAttribute('stroke', color)
-  badgeGlow.setAttribute('stroke-width', '1.5')
-  badgeGlow.setAttribute('fill', 'none')
-  badgeGroup.appendChild(badgeGlow)
-
-  // Badge circle
-  const badge = document.createElementNS(SVG_NS, 'circle')
-  badge.setAttribute('cx', cx)
-  badge.setAttribute('cy', cy)
-  badge.setAttribute('r', '4')
-  badge.setAttribute('fill', '#FFFFFF')
-  badgeGroup.appendChild(badge)
-
-  // Badge text
-  const badgeText = document.createElementNS(SVG_NS, 'text')
-  badgeText.setAttribute('x', cx)
-  badgeText.setAttribute('y', `${Number.parseFloat(cy) + 1.5}`) // Adjusted to match new cy position
-  badgeText.setAttribute('text-anchor', 'middle')
-  badgeText.setAttribute('fill', '#000000')
-  badgeText.setAttribute('font-size', '7px')
-  badgeText.textContent = '+'
-  badgeGroup.appendChild(badgeText)
-
-  svg.appendChild(badgeGroup)
+  // Update color variable
+  element.style.setProperty('--marker-color', color)
 }

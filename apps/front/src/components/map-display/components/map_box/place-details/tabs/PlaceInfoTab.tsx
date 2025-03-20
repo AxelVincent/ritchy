@@ -1,11 +1,15 @@
+import { StatusIndicator } from '@/components/common/StatusIndicator'
 import { TextWrapper } from '@/components/common/TextWrapper'
+import { PhoneCell } from '@/components/data-table/columns/utils/ColumnCells'
 import { Badge } from '@/components/ui/badge'
 import type { Place } from '@ritchy/types'
 import {
+  Clock,
   ExternalLink,
   MapPin,
   MapPinPlusInside,
   Phone,
+  Store,
   Tags,
 } from 'lucide-react'
 
@@ -21,6 +25,38 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => (
   <div className="h-full flex flex-col">
     <div className="flex-1 overflow-y-auto overflow-x-hidden">
       <div className="flex flex-col w-full">
+        {/* Full Place Name */}
+        <div className="flex items-center gap-3 mb-2">
+          <Store className="h-5 w-5 text-muted-foreground shrink-0" />
+          <TextWrapper
+            id={place.id}
+            actions={[
+              {
+                icon: 'Copy',
+                onClick: () => {
+                  navigator.clipboard.writeText(place.name)
+                },
+                label: 'Copy',
+              },
+            ]}
+          >
+            <span className="font-medium">{place.name}</span>
+          </TextWrapper>
+        </div>
+
+        {/* Opening hours status */}
+        {place.openingHours && (
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-2">
+              <TextWrapper id={place.id}>
+                <span>
+                  <StatusIndicator isOpen={place.openingHours.openNow} />
+                </span>
+              </TextWrapper>
+            </div>
+          </div>
+        )}
         {/* Address */}
         <div className="flex items-center gap-3 min-w-0 mb-2">
           <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -58,7 +94,15 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => (
                 },
               ]}
             >
-              {new URL(place.website).hostname}
+              <a
+                href={place.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {new URL(place.website).hostname}
+              </a>
             </TextWrapper>
           </div>
         )}
@@ -67,20 +111,7 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => (
         {place.phone && (
           <div className="flex items-center gap-3 mb-2">
             <Phone className="h-5 w-5 text-muted-foreground shrink-0" />
-            <TextWrapper
-              id={place.id}
-              actions={[
-                {
-                  icon: 'Copy',
-                  onClick: () => {
-                    navigator.clipboard.writeText(place.phone ?? '')
-                  },
-                  label: 'Copy',
-                },
-              ]}
-            >
-              {place.phone}
-            </TextWrapper>
+            <PhoneCell id={place.id} content={place.phone} />
           </div>
         )}
 

@@ -1,4 +1,3 @@
-import { StatusIndicator } from '@/components/common/StatusIndicator'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import {
@@ -128,10 +127,12 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
           >
             <CardHeader className="pb-2 pt-3 px-4 shrink-0">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">{currentPlace.name}</CardTitle>
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <CardTitle className="text-lg truncate max-w-[200px] md:max-w-[300px]">
+                    {currentPlace.name}
+                  </CardTitle>
                   |
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm shrink-0">
                     {currentPlace.rating ? (
                       <div className="flex items-center gap-1">
                         <span className="font-medium">
@@ -146,11 +147,6 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                       <div className="flex items-center gap-1 text-muted-foreground">
                         No reviews
                       </div>
-                    )}
-                    {currentPlace.openingHours && (
-                      <StatusIndicator
-                        isOpen={currentPlace.openingHours.openNow}
-                      />
                     )}
                   </div>
                 </div>
