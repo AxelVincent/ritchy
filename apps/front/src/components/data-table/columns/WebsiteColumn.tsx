@@ -20,12 +20,11 @@ export const websiteColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
-  cell: ({ row, table }) => {
+  cell: ({ row }) => {
     const website = row.getValue('website') as string
     return (
       <ColumnPinCopyCell
-        row={row}
-        table={table}
+        id={row.original.id}
         content={website ? getDomainFromUrl(website) : ''}
         href={website}
       />

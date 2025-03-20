@@ -3,7 +3,7 @@ import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialo
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { useMediaQuery } from '@/hooks/use-media-query'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
@@ -60,7 +60,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId and setSelectedPlaceId from the store
   const { selectedPlaceId, centerPlaceSpreadsheetId } = useMapStore()
-  const isMobile = useMediaQuery('(max-width: 768px)')
+  const isMobile = useIsMobile()
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])

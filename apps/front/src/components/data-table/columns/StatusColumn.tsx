@@ -57,8 +57,7 @@ export const statusColumn: ColumnDef<SearchResult> = {
 
     return (
       <ColumnPinCell
-        row={row}
-        table={table}
+        id={row.original.id}
         content={
           <StatusDropdown
             placeId={row.original.id}
