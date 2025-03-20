@@ -6,6 +6,7 @@ import { throttle } from 'lodash'
 import mapboxgl from 'mapbox-gl'
 import { useEffect, useMemo, useRef } from 'react'
 import { MARKER_COLORS } from '../constants/markers'
+import { getEmojiSvg } from '../place_marker/emojiCache'
 import {
   createActiveMarkerSvg,
   createFilteredMarkerSvg,
@@ -112,6 +113,19 @@ export const useMarkerManager = ({
           markersRef.current.delete(id)
         }
       }
+
+      // Preload emojis for better performance
+      const uniqueEmojis = new Set<string>()
+      for (const place of places) {
+        if (place.lists?.[0]?.emoji) {
+          uniqueEmojis.add(place.lists[0].emoji)
+        }
+      }
+
+      // Preload emojis in parallel
+      await Promise.all(
+        Array.from(uniqueEmojis).map((emoji) => getEmojiSvg(emoji)),
+      )
 
       // Create new markers only for places that don't have them
       for (const place of places) {

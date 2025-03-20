@@ -1,5 +1,5 @@
 import type { Place } from '@ritchy/types'
-import { getAppleEmojiUrl } from '../../../../../lib/utils/emojiUtils'
+import { getEmojiSvg, styleEmojiSvg } from './emojiCache'
 
 // Utility function to lighten a hex color
 const lightenColor = (hex: string, amount: number): string => {
@@ -22,55 +22,6 @@ const lightenColor = (hex: string, amount: number): string => {
 
 // Cache common SVG namespace
 const SVG_NS = 'http://www.w3.org/2000/svg'
-
-// Create a template for the marker structure that more closely matches the original
-const createMarkerTemplate = () => {
-  const template = document.createElement('template')
-  template.innerHTML = `
-    <svg viewBox="0 0 36 36" role="img">
-      <foreignObject x="0" y="0" width="36" height="36">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-          <div class="white-layer" style="position:absolute;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-            <img class="emoji-image-white" style="width:70%;height:70%;object-fit:contain;" />
-          </div>
-          <div class="color-layer" style="position:absolute;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
-            <img class="emoji-image-color" style="width:70%;height:70%;object-fit:contain;" />
-          </div>
-        </div>
-      </foreignObject>
-    </svg>
-  `
-  return template
-}
-
-// Cache the template
-const markerTemplate = createMarkerTemplate()
-
-const pinMarkerTemplate = (() => {
-  const svg = document.createElementNS(SVG_NS, 'svg')
-  svg.setAttribute('viewBox', '0 0 64 64')
-  svg.setAttribute('width', '64')
-  svg.setAttribute('height', '64')
-  svg.setAttribute('role', 'img')
-  svg.setAttribute('aria-label', 'Location marker')
-
-  const path = document.createElementNS(SVG_NS, 'path')
-  path.setAttribute(
-    'd',
-    'M24 8C17.383 8 12 13.383 12 20c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z',
-  )
-  svg.appendChild(path)
-
-  const innerRing = document.createElementNS(SVG_NS, 'path')
-  innerRing.setAttribute(
-    'd',
-    'M24 9.5C18.21 9.5 13.5 14.21 13.5 20c0 8.15 10.5 18.5 10.5 18.5S34.5 28.15 34.5 20c0-5.79-4.71-10.5-10.5-10.5z',
-  )
-  innerRing.setAttribute('fill', 'none')
-  svg.appendChild(innerRing)
-
-  return svg
-})()
 
 // Pure function to create filtered marker SVG
 export const createFilteredMarkerSvg = (): SVGElement => {
@@ -95,6 +46,63 @@ export const createFilteredMarkerSvg = (): SVGElement => {
   return svg
 }
 
+// Create SVG defs element for sprite definitions
+const createSvgSprites = (): SVGElement => {
+  const svg = document.createElementNS(SVG_NS, 'svg')
+  svg.style.display = 'none'
+  svg.innerHTML = `
+    <defs>
+      <symbol id="pin-marker" viewBox="0 0 64 64">
+        <path d="M24 8C17.383 8 12 13.383 12 20c0 9 12 20 12 20s12-11 12-20c0-6.617-5.383-12-12-12z" />
+        <path class="inner-ring" d="M24 9.5C18.21 9.5 13.5 14.21 13.5 20c0 8.15 10.5 18.5 10.5 18.5S34.5 28.15 34.5 20c0-5.79-4.71-10.5-10.5-10.5z" fill="none" />
+      </symbol>
+      <symbol id="filtered-marker" viewBox="0 0 8 8">
+        <circle cx="4" cy="4" r="3" fill="#808080" stroke="#000000" stroke-width="1" stroke-opacity="0.3" />
+      </symbol>
+    </defs>
+  `
+
+  // Add to document body once
+  document.body.appendChild(svg)
+  return svg
+}
+
+// Call this once when the app initializes
+let spritesCreated = false
+const ensureSpritesExist = () => {
+  if (!spritesCreated) {
+    createSvgSprites()
+    spritesCreated = true
+  }
+}
+
+// Then, update createPinMarker to use the sprite
+const createPinMarker = (color: string, isSelected: boolean): SVGElement => {
+  ensureSpritesExist()
+
+  const svg = document.createElementNS(SVG_NS, 'svg')
+  const scale = isSelected ? 1.5 : 1
+  svg.setAttribute('viewBox', '0 0 64 64')
+  svg.setAttribute('width', `${64 * scale}`)
+  svg.setAttribute('height', `${64 * scale}`)
+
+  const use = document.createElementNS(SVG_NS, 'use')
+  use.setAttribute('href', '#pin-marker')
+  use.setAttribute('fill', color)
+  use.setAttribute('stroke', '#000000')
+  use.setAttribute('stroke-width', isSelected ? '1' : '0.5')
+  use.setAttribute('stroke-opacity', '0.3')
+
+  svg.appendChild(use)
+
+  // Style the inner ring
+  const innerRingStyle = document.createElementNS(SVG_NS, 'style')
+  innerRingStyle.textContent = `.inner-ring { stroke: ${lightenColor(color, 0.8)}; stroke-width: 0.75; }`
+  svg.appendChild(innerRingStyle)
+
+  return svg
+}
+
 // Make the function async since we need to fetch emoji URLs
 export const createActiveMarkerSvg = async (
   color: string,
@@ -103,68 +111,15 @@ export const createActiveMarkerSvg = async (
 ): Promise<SVGElement> => {
   try {
     if (place.lists?.[0]?.emoji) {
-      // Clone the template instead of creating elements
-      const svg = markerTemplate.content.firstElementChild?.cloneNode(
-        true,
-      ) as SVGElement
+      // Get emoji SVG from cache or create a new one
+      const svg = await getEmojiSvg(place.lists[0].emoji)
 
-      // Apply dynamic attributes
-      const scale = isSelected ? 1.5 : 1
-      const baseSize = 36 // Reduced from 64 to match emoji size better
-      svg.setAttribute('width', `${baseSize * scale}`)
-      svg.setAttribute('height', `${baseSize * scale}`)
-      svg.setAttribute(
-        'aria-label',
-        `Location marker with ${place.lists[0].emoji}`,
-      )
+      if (svg) {
+        // Apply styling based on current marker state
+        styleEmojiSvg(svg, color, isSelected, place.lists.length > 1)
 
-      // Get the emoji image elements
-      const whiteLayerDiv = svg.querySelector('.white-layer') as HTMLDivElement
-      const colorLayerDiv = svg.querySelector('.color-layer') as HTMLDivElement
-      const whiteEmojiImg = svg.querySelector(
-        '.emoji-image-white',
-      ) as HTMLImageElement
-      const colorEmojiImg = svg.querySelector(
-        '.emoji-image-color',
-      ) as HTMLImageElement
-
-      // Get Apple emoji URL
-      const emojiUrl = await getAppleEmojiUrl(place.lists[0].emoji)
-
-      // Set emoji image sources
-      whiteEmojiImg.src = emojiUrl
-      colorEmojiImg.src = emojiUrl
-
-      // Apply white outline effect to white layer (similar to original)
-      whiteLayerDiv.style.filter = `
-        drop-shadow(-1.5px -1.5px 0 white)
-        drop-shadow(1.5px -1.5px 0 white)
-        drop-shadow(-1.5px 1.5px 0 white)
-        drop-shadow(1.5px 1.5px 0 white)
-        drop-shadow(-1.5px 0 0 white)
-        drop-shadow(1.5px 0 0 white)
-        drop-shadow(0 -1.5px 0 white)
-        drop-shadow(0 1.5px 0 white)
-      `
-
-      // Apply color shadow effect to color layer but REMOVE the blur
-      colorLayerDiv.style.filter = `
-        drop-shadow(-1px -1px 0 ${color})
-        drop-shadow(1px -1px 0 ${color})
-        drop-shadow(-1px 1px 0 ${color})
-        drop-shadow(1px 1px 0 ${color})
-        drop-shadow(-1px 0 0 ${color})
-        drop-shadow(1px 0 0 ${color})
-        drop-shadow(0 -1px 0 ${color})
-        drop-shadow(0 1px 0 ${color})
-      `
-
-      // Add badge if needed
-      if (place.lists.length > 1) {
-        addBadgeToMarker(svg, color, baseSize)
+        return svg
       }
-
-      return svg
     }
 
     return createPinMarker(color, isSelected)
@@ -176,75 +131,4 @@ export const createActiveMarkerSvg = async (
     })
     return createPinMarker(color, isSelected)
   }
-}
-
-// Optimize createPinMarker to use the template
-const createPinMarker = (color: string, isSelected: boolean): SVGElement => {
-  const svg = pinMarkerTemplate.cloneNode(true) as SVGElement
-  const scale = isSelected ? 1.5 : 1
-
-  // Apply scale to the SVG dimensions
-  svg.setAttribute('width', `${64 * scale}`)
-  svg.setAttribute('height', `${64 * scale}`)
-
-  const path = svg.firstChild as SVGPathElement
-  path.setAttribute('fill', color)
-  path.setAttribute('stroke', '#000000')
-  path.setAttribute('stroke-width', isSelected ? '1' : '0.5')
-  path.setAttribute('stroke-opacity', '0.3')
-
-  const innerRing = svg.lastChild as SVGPathElement
-  innerRing.setAttribute('stroke', lightenColor(color, 0.8))
-  innerRing.setAttribute('stroke-width', '0.75')
-
-  return svg
-}
-
-// Separate badge creation
-const addBadgeToMarker = (svg: SVGElement, color: string, baseSize = 36) => {
-  const badgeGroup = document.createElementNS(SVG_NS, 'g')
-
-  // Common coordinates for all badge elements (adjusted for smaller viewBox)
-  const cx = `${baseSize * 0.75}` // Position relative to new base size
-  const cy = `${baseSize * 0.25}` // Position relative to new base size
-
-  // White border glow
-  const whiteBorderGlow = document.createElementNS(SVG_NS, 'circle')
-  whiteBorderGlow.setAttribute('cx', cx)
-  whiteBorderGlow.setAttribute('cy', cy)
-  whiteBorderGlow.setAttribute('r', '4.5')
-  whiteBorderGlow.setAttribute('stroke', 'white')
-  whiteBorderGlow.setAttribute('stroke-width', '2')
-  whiteBorderGlow.setAttribute('fill', 'none')
-  badgeGroup.appendChild(whiteBorderGlow)
-
-  // Colored glow
-  const badgeGlow = document.createElementNS(SVG_NS, 'circle')
-  badgeGlow.setAttribute('cx', cx)
-  badgeGlow.setAttribute('cy', cy)
-  badgeGlow.setAttribute('r', '4.5')
-  badgeGlow.setAttribute('stroke', color)
-  badgeGlow.setAttribute('stroke-width', '1.5')
-  badgeGlow.setAttribute('fill', 'none')
-  badgeGroup.appendChild(badgeGlow)
-
-  // Badge circle
-  const badge = document.createElementNS(SVG_NS, 'circle')
-  badge.setAttribute('cx', cx)
-  badge.setAttribute('cy', cy)
-  badge.setAttribute('r', '4')
-  badge.setAttribute('fill', '#FFFFFF')
-  badgeGroup.appendChild(badge)
-
-  // Badge text
-  const badgeText = document.createElementNS(SVG_NS, 'text')
-  badgeText.setAttribute('x', cx)
-  badgeText.setAttribute('y', `${Number.parseFloat(cy) + 1.5}`) // Adjusted to match new cy position
-  badgeText.setAttribute('text-anchor', 'middle')
-  badgeText.setAttribute('fill', '#000000')
-  badgeText.setAttribute('font-size', '7px')
-  badgeText.textContent = '+'
-  badgeGroup.appendChild(badgeText)
-
-  svg.appendChild(badgeGroup)
 }
