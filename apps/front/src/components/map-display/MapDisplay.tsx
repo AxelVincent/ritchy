@@ -9,7 +9,8 @@ import { ResizablePanel } from '@/components/ui/resizable'
 import { useIsMobile } from '@/hooks/use-mobile'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
-import { useEffect, useState } from 'react'
+import { ListIcon, MapIcon } from 'lucide-react'
+import { Suspense, useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
 import { useMapStore } from './store/useMapStore'
 import type { MapboxLocationParameters } from './types'
@@ -20,9 +21,22 @@ interface MapDisplayProps {
   places: Place[]
 }
 
+// Add a loading component for the Suspense fallback
+const TableLoadingFallback = () => (
+  <div className="flex items-center justify-center h-full w-full p-8">
+    <div className="animate-pulse text-muted-foreground">
+      Loading table data...
+    </div>
+  </div>
+)
+
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const setPlaces = useMapStore((state) => state.setPlaces)
   const isMobile = useIsMobile()
+  const [mobileView, setMobileView] = useState<'map' | 'table'>(() => {
+    const savedView = localStorage.getItem('mobileMapView')
+    return savedView === 'map' || savedView === 'table' ? savedView : 'map'
+  })
 
   // Core location state
   const defaultLocation =
@@ -99,16 +113,70 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   if (isMobile) {
     return (
       <div className="flex flex-col h-full">
-        <DataTable
-          columns={columns}
-          data={tableData}
-          setData={setTableData}
-          setDataTableRowSelection={setDataTableRowSelection}
-          dataTableRowSelection={dataTableRowSelection}
-          onFilteredDataChange={setFilteredPlaceIds}
-          listId={listId}
-          searchId={searchId}
-        />
+        <div className="flex flex-col h-full relative">
+          {/* Content area with both views always mounted but conditionally visible */}
+          <div className="flex-1 relative">
+            <div
+              className={`h-full w-full absolute inset-0 ${mobileView === 'map' ? 'block' : 'hidden'}`}
+            >
+              <MapBox
+                searchResults={searchResults}
+                userLocation={currentLocation}
+                dataTableRowSelection={dataTableRowSelection}
+                radiusInMeters={currentLocation.radiusInMeters}
+                filteredPlaceIds={safeFilteredPlaceIds}
+              />
+            </div>
+            <div
+              className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
+            >
+              <div className="h-full overflow-auto">
+                <Suspense fallback={<TableLoadingFallback />}>
+                  <DataTable
+                    columns={columns}
+                    data={tableData}
+                    setData={setTableData}
+                    setDataTableRowSelection={setDataTableRowSelection}
+                    dataTableRowSelection={dataTableRowSelection}
+                    onFilteredDataChange={setFilteredPlaceIds}
+                    listId={listId}
+                    searchId={searchId}
+                  />
+                </Suspense>
+              </div>
+            </div>
+          </div>
+
+          {/* Toggle as a fixed element at the bottom */}
+          <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
+            <div className="inline-flex items-center rounded-md border border-input bg-background/95 backdrop-blur-sm shadow-md p-1 text-sm pointer-events-auto">
+              <button
+                type="button"
+                onClick={() => setMobileView('map')}
+                className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
+                  mobileView === 'map'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                <MapIcon className="h-3.5 w-3.5" />
+                Map
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileView('table')}
+                className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
+                  mobileView === 'table'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                <ListIcon className="h-3.5 w-3.5" />
+                List
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
