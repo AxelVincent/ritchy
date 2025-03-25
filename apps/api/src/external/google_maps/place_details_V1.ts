@@ -6,15 +6,15 @@ import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
 import {
-  type AdvancedPlace,
   AdvancedPlaceSchema,
   PREFERRED_PLACE_KEYS,
+  type PreferredPlace,
 } from './types'
 import { calculateOpenNow } from './utils/calculateOpenNow'
 import { mapToPlaceDetails } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
 
-async function fetchPlaceDetails(placeId: string): Promise<AdvancedPlace> {
+async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
   const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places/${placeId}`)
 
   const startTime = Date.now()
@@ -79,7 +79,7 @@ export async function getPlaceDetailsV1(
 ): Promise<PlaceBase & { fromCache: boolean }> {
   const key = REDIS_KEYS.place(placeId)
   // Check cache first
-  const cachedData = await redisClient.get<AdvancedPlace>(key)
+  const cachedData = await redisClient.get<PreferredPlace>(key)
 
   if (cachedData) {
     // Apply mapper to cached raw data

@@ -1,29 +1,22 @@
 import { logger } from '@ritchy/logger'
-import {
-  type AddNoteApiResponse,
-  type AddNoteRequest,
-  AddNoteRequestSchema,
-} from '@ritchy/types'
+import type { AddNoteApiResponse, AddNoteRequest } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../../db/db'
-import { note } from '../../../db/schema'
 
 export const addPlaceNote = async (
   req: Request<AddNoteRequest>,
   res: Response<AddNoteApiResponse>,
 ): Promise<void> => {
   try {
-    const parsedBody = AddNoteRequestSchema.parse({
-      placeId: req.params.placeId,
-      note: req.body.note,
-    })
+    const { note } = req.body
+    const { placeId } = req.params
 
     const [result] = await db
       .insert(note)
       .values({
-        placeId: parsedBody.placeId,
-        note: parsedBody.note,
+        placeId: placeId,
+        note: note,
         userId: req.auth.userId,
       })
       .returning()

@@ -5,6 +5,7 @@ import {
   OpeningHoursSchema,
   PriceLevelEnum,
   PriceRangeSchema,
+  ReviewSchema,
 } from '@ritchy/types'
 import { z } from 'zod'
 
@@ -26,22 +27,6 @@ const LatLngSchema = z.object({
 const ViewportSchema = z.object({
   low: LatLngSchema,
   high: LatLngSchema,
-})
-
-const ReviewSchema = z.object({
-  name: z.string(),
-  relativePublishTimeDescription: z.string(),
-  text: LocalizedTextSchema,
-  originalText: LocalizedTextSchema,
-  rating: z.number().min(1).max(5),
-  authorAttribution: z.object({
-    displayName: z.string(),
-    uri: z.string(),
-    photoUri: z.string(),
-  }),
-  publishTime: z.string(),
-  flagContentUri: z.string(),
-  googleMapsUri: z.string(),
 })
 
 const PhotoSchema = z.object({
@@ -309,7 +294,7 @@ export const GooglePlacesTextSearchRequestBodySchema = z.object({
 })
 
 export const GooglePlacesTextSearchResponseSchema = z.object({
-  places: z.array(AdvancedPlaceSchema).optional(),
+  places: z.array(PreferredPlaceSchema).optional(),
   contextualContents: z
     .array(
       z.object({
@@ -344,7 +329,6 @@ export const PREFERRED_PLACE_KEYS_TEXT_SEARCH =
   generatePlaceKeys(PreferredPlaceSchema)
 
 // Type Inference for Place Stages
-export type AdvancedPlace = z.infer<typeof AdvancedPlaceSchema>
 export type PreferredPlace = z.infer<typeof PreferredPlaceSchema>
 
 // Type Inference for TextSearch Request/Response
