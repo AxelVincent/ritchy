@@ -1,28 +1,21 @@
 import { logger } from '@ritchy/logger'
-import {
-  type UpdateStatusApiResponse,
-  type UpdateStatusRequest,
-  UpdateStatusRequestSchema,
+import type {
+  UpdateStatusApiResponse,
+  UpdateStatusRequest,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { upsertLeadStatus } from '../../services/status/upsertStatus'
+import { upsertPlaceStatus } from '../../../services/places/status/upsertStatus'
 
 export const updateStatus = async (
   req: Request<UpdateStatusRequest>,
   res: Response<UpdateStatusApiResponse>,
 ): Promise<void> => {
   try {
-    const parsedBody = UpdateStatusRequestSchema.parse({
-      placeId: req.params.placeId,
-      status: req.body.status,
-    })
+    const { status } = req.body
+    const { placeId } = req.params
 
-    const result = await upsertLeadStatus(
-      parsedBody.placeId,
-      req.auth.userId,
-      parsedBody.status,
-    )
+    const result = await upsertPlaceStatus(placeId, req.auth.userId, status)
 
     res.json(result)
     return

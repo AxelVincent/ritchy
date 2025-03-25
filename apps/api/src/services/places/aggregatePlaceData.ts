@@ -5,8 +5,8 @@ import { z } from 'zod'
 import { getOrFetchEnrichmentData } from '../enrichment/getOrFetchEnrichmentData'
 import { getUserEnrichedPlaces } from '../enrichment/getUserEnrichedPlaces'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
-import { getNotesByPlaceIds } from '../notes/getNotesByPlaceIds'
-import { getStatusByPlaceIds } from '../status/getStatusByPlaceIds'
+import { getNotesByPlaceIds } from '../places/notes/getNotesByPlaceIds'
+import { getStatusByPlaceIds } from '../places/status/getStatusByPlaceIds'
 
 interface AggregatePlaceDataOptions {
   userId: string

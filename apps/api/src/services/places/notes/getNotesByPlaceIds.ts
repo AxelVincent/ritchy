@@ -1,7 +1,7 @@
 import type { Note } from '@ritchy/types'
 import { and, desc, eq, inArray } from 'drizzle-orm'
-import { db } from '../../db/db'
-import { note } from '../../db/schema'
+import { db } from '../../../db/db'
+import { note } from '../../../db/schema'
 
 export const getNotesByPlaceIds = async (
   placeIds: string[],

@@ -1,19 +1,25 @@
 import { logger } from '@ritchy/logger'
-import type { NotesApiResponse } from '@ritchy/types'
+import {
+  type GetNotesRequest,
+  type NotesApiResponse,
+  NotesParamsSchema,
+} from '@ritchy/types'
 import { desc, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
-import { db } from '../../db/db'
-import { note } from '../../db/schema'
+import { db } from '../../../db/db'
+import { note } from '../../../db/schema'
 
 export const getPlaceNotes = async (
-  req: Request<{ placeId: string }>,
+  req: Request<GetNotesRequest>,
   res: Response<NotesApiResponse>,
 ): Promise<void> => {
   try {
+    const paramsParse = NotesParamsSchema.parse({ placeId: req.params.placeId })
+
     const notes = await db
       .select()
       .from(note)
-      .where(eq(note.placeId, req.params.placeId))
+      .where(eq(note.placeId, paramsParse.placeId))
       .orderBy(desc(note.createdAt))
 
     res.json(

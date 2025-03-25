@@ -1,10 +1,9 @@
 import { logger } from '@ritchy/logger'
 import type { Status, StatusType } from '@ritchy/types'
-import { and, eq } from 'drizzle-orm'
-import { db } from '../../db/db'
-import { status as statusTable } from '../../db/schema'
+import { db } from '../../../db/db'
+import { status as statusTable } from '../../../db/schema'
 
-export const upsertLeadStatus = async (
+export const upsertPlaceStatus = async (
   placeId: string,
   userId: string,
   status: StatusType,
@@ -34,8 +33,8 @@ export const upsertLeadStatus = async (
     }
   } catch (error) {
     logger.error({
-      msg: 'Failed to upsert lead status',
-      event: 'lead_status_upsert_error',
+      msg: 'Failed to upsert place status',
+      event: 'place_status_upsert_error',
       metadata: {
         error: error instanceof Error ? error : { error },
         placeId,

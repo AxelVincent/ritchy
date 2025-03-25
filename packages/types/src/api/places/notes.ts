@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
+export const NotesParamsSchema = z.object({
+  placeId: z.string(),
+})
+
 // Basic Schema
 export const NoteSchema = z.object({
   id: z.string().uuid(),
@@ -13,11 +17,15 @@ export const NoteSchema = z.object({
 
 export const NotesResponseSchema = z.array(NoteSchema)
 
-// Request Schemas
-export const AddNoteRequestSchema = z.object({
-  placeId: z.string(),
+export const AddNoteBodySchema = z.object({
   note: z.string().min(1),
 })
+
+// Request Schemas
+export const AddNoteRequestSchema = z.intersection(
+  NotesParamsSchema,
+  AddNoteBodySchema,
+)
 
 // Response Schemas with Error Handling
 export const NotesApiResponseSchema = z.union([
@@ -36,3 +44,4 @@ export type NotesResponse = z.infer<typeof NotesResponseSchema>
 export type NotesApiResponse = z.infer<typeof NotesApiResponseSchema>
 export type AddNoteRequest = z.infer<typeof AddNoteRequestSchema>
 export type AddNoteApiResponse = z.infer<typeof AddNoteApiResponseSchema>
+export type GetNotesRequest = z.infer<typeof NotesParamsSchema>

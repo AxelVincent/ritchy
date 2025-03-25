@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
+export const StatusParamsSchema = z.object({
+  placeId: z.string(),
+})
+
 export const StatusEnum = z.enum([
   'NEW',
   'NO_ANSWER',
@@ -18,11 +22,15 @@ export const StatusSchema = z.object({
   updatedAt: z.string(),
 })
 
-// Request Schemas
-export const UpdateStatusRequestSchema = z.object({
-  placeId: z.string(),
+export const UpdateStatusBodySchema = z.object({
   status: StatusEnum,
 })
+
+// Request Schemas
+export const UpdateStatusRequestSchema = z.intersection(
+  StatusParamsSchema,
+  UpdateStatusBodySchema,
+)
 
 // Response Schemas with Error Handling
 export const UpdateStatusApiResponseSchema = z.union([

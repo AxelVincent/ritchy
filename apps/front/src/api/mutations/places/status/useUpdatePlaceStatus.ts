@@ -9,10 +9,11 @@ export const useUpdatePlaceStatus = () => {
   const queryClient = useQueryClient()
 
   return useApiMutation<UpdateStatusApiResponse, UpdateStatusRequest>(
-    '/status/:placeId',
+    '/places/:placeId/status',
     {
       method: 'PUT',
-      getEndpoint: ({ placeId }) => `/status/${placeId}`,
+      getEndpoint: ({ placeId }) => `/places/${placeId}/status`,
+      getBody: ({ status }) => ({ status }),
       onSuccess: (_, { placeId }) => {
         // Invalidate queries that might contain this place
         queryClient.invalidateQueries({

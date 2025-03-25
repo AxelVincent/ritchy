@@ -1,12 +1,16 @@
 import { logger } from '@ritchy/logger'
-import { type AddNoteApiResponse, AddNoteRequestSchema } from '@ritchy/types'
+import {
+  type AddNoteApiResponse,
+  type AddNoteRequest,
+  AddNoteRequestSchema,
+} from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { db } from '../../db/db'
-import { note } from '../../db/schema'
+import { db } from '../../../db/db'
+import { note } from '../../../db/schema'
 
 export const addPlaceNote = async (
-  req: Request<{ placeId: string }, AddNoteApiResponse, { note: string }>,
+  req: Request<AddNoteRequest>,
   res: Response<AddNoteApiResponse>,
 ): Promise<void> => {
   try {

@@ -1,10 +1,9 @@
 import express, { type Router } from 'express'
 import { enrichWebsite } from './enrich'
 import listsRouter from './lists'
-import notesRouter from './notes'
 import paymentsRouter from './payments'
+import placesRouter from './places'
 import searchesRouter from './searches'
-import statusRouter from './status'
 import usersRouter from './users'
 
 const router: Router = express.Router()
@@ -18,16 +17,13 @@ router.use('/lists', listsRouter)
 // Searches routes
 router.use('/searches', searchesRouter)
 
-// Notes routes
-router.use('/notes', notesRouter)
-
 // Payments routes
 router.use('/payments', paymentsRouter)
 
+// Places routes
+router.use('/places', placesRouter)
+
 // Users routes
 router.use('/users', usersRouter)
-
-// Register the status routes
-router.use('/status', statusRouter)
 
 export default router

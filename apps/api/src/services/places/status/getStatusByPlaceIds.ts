@@ -1,7 +1,7 @@
 import type { Status } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
-import { db } from '../../db/db'
-import { status as statusTable } from '../../db/schema'
+import { db } from '../../../db/db'
+import { status as statusTable } from '../../../db/schema'
 
 export const getStatusByPlaceIds = async (
   placeIds: string[],

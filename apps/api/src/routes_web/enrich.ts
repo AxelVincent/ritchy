@@ -1,10 +1,8 @@
-import crypto from 'node:crypto'
 import { logger } from '@ritchy/logger'
 import {
   type EnrichApiResponse,
   type EnrichRequestQuery,
   EnrichRequestSchema,
-  type EnrichResponse,
   EnrichResponseSchema,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
