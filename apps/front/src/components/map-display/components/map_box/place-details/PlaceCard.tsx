@@ -215,7 +215,7 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     aria-label="Reviews"
                     className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
                   >
-                    Reviews
+                    Top reviews
                   </TabsTrigger>
                   <TabsTrigger
                     value="notes"
