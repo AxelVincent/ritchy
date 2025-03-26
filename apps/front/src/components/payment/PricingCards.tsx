@@ -42,7 +42,7 @@ const pricingTiers: PricingTier[] = [
     amplifyResults: [
       '60 Gmap results/search',
       'Search radius: 50km²',
-      'Up to 3,000 leads',
+      'Unlimited leads',
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
@@ -61,7 +61,7 @@ const pricingTiers: PricingTier[] = [
     amplifyResults: [
       '240 Gmap results/search',
       'Search radius: 50km²',
-      'Up to 10,000 leads',
+      'Unlimited leads',
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
@@ -81,7 +81,7 @@ const pricingTiers: PricingTier[] = [
     amplifyResults: [
       '1,000 Gmap results/search',
       'Search radius: 100km²',
-      'Up to 50,000 leads',
+      'Unlimited leads',
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
@@ -101,7 +101,7 @@ const pricingTiers: PricingTier[] = [
     amplifyResults: [
       '4,000 Gmap results/search',
       'Search radius: 150km²',
-      'Up to 100,000 leads',
+      'Unlimited leads',
       'Unlimited enrichments (email, social network)',
     ],
     maximizeConversion: [
