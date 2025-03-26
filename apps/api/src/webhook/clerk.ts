@@ -6,6 +6,7 @@ import { CLERK_CONFIG } from '../config/clerk'
 import { eq } from 'drizzle-orm'
 import { db } from '../db/db'
 import { user, webhookEvent } from '../db/schema'
+import { sendSlackNotification } from '../external/slack/slack'
 import { deleteUser } from '../services/user/deleteUser'
 
 type WebhookResponse = {
@@ -20,6 +21,19 @@ type ClerkWebhookEvent = {
     email_addresses: Array<{ email_address: string }>
     first_name: string
     last_name: string
+    phone_numbers: Array<{
+      id: string
+      phone_number: string
+      object: string
+      created_at: number
+      updated_at: number
+      default_second_factor: boolean
+      reserved: boolean
+      reserved_for_second_factor: boolean
+      backup_codes: null
+      verification: null
+      linked_to: unknown[]
+    }>
   }
   type: string
   object: 'event'
@@ -31,6 +45,7 @@ export type ClerkUserData = {
   email: string
   firstName: string
   lastName: string
+  phoneNumber: string
 }
 
 export const clerkWebhook = async (
@@ -98,6 +113,7 @@ export const clerkWebhook = async (
         email: msg.data.email_addresses?.[0]?.email_address || '',
         firstName: msg.data.first_name || '',
         lastName: msg.data.last_name || '',
+        phoneNumber: msg.data.phone_numbers?.[0]?.phone_number || '',
       }
 
       logger.info({
@@ -132,6 +148,11 @@ export const clerkWebhook = async (
               })
 
               await db.insert(user).values(userData)
+
+              sendSlackNotification({
+                text: `🎉 New user registered!\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nPhone: ${userData.phoneNumber}`,
+                channel: 'users',
+              })
 
               logger.info({
                 msg: 'User created successfully',

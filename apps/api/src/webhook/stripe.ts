@@ -5,6 +5,7 @@ import Stripe from 'stripe'
 import { STRIPE_CONFIG, getPlanFromProductId } from '../config/stripe'
 import { db } from '../db/db'
 import { subscription, user as userTable, webhookEvent } from '../db/schema'
+import { sendSlackNotification } from '../external/slack/slack'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
   apiVersion: '2025-01-27.acacia',
@@ -274,7 +275,7 @@ export const stripeWebhook = async (
               const status = stripeEvent.status
 
               // Now perform the database operation with validated data
-              await db
+              const result = await db
                 .insert(subscription)
                 .values({
                   userId,
@@ -293,14 +294,30 @@ export const stripeWebhook = async (
                     updatedAt: new Date(),
                   },
                 })
+                .returning()
+
+              const isNewSubscription =
+                result[0].createdAt.getTime() === result[0].updatedAt.getTime()
+
+              sendSlackNotification({
+                text: isNewSubscription
+                  ? `🎉 New subscription!\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
+                  : `📝 Subscription updated\nUser: ${user.email}\nNew Plan: ${planType}\nStatus: ${status}`,
+                channel: 'subscriptions',
+              })
 
               logger.info({
-                msg: 'Subscription created/updated',
-                event: 'subscription_created',
+                msg: isNewSubscription
+                  ? 'New subscription created'
+                  : 'Subscription updated',
+                event: isNewSubscription
+                  ? 'subscription_created'
+                  : 'subscription_updated',
                 metadata: {
                   subscriptionId: stripeSubscriptionId,
                   plan: planType,
                   status,
+                  isNewSubscription,
                 },
               })
               break
