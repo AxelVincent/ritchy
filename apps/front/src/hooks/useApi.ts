@@ -74,6 +74,7 @@ export function useApiMutation<
     requireAuth?: boolean
     method?: 'POST' | 'PUT' | 'DELETE' | 'PATCH'
     getEndpoint?: (variables: TVariables) => string
+    getBody?: (variables: TVariables) => Record<string, unknown>
   },
 ) {
   const { getToken } = useAuth()
@@ -81,19 +82,20 @@ export function useApiMutation<
     requireAuth = true,
     method = 'POST',
     getEndpoint,
+    getBody,
     ...mutationOptions
   } = options || {}
 
   return useMutation<TData, TError, TVariables>({
     mutationFn: async (variables) => {
       const token = requireAuth ? await getToken() : null
-      // Use the dynamic endpoint if provided, otherwise use the template
       const endpoint = getEndpoint ? getEndpoint(variables) : endpointTemplate
+      const body = getBody ? getBody(variables) : variables
       return webApiClient.fetchWithAuth<TData>(
         endpoint,
         {
           method,
-          body: JSON.stringify(variables),
+          body: JSON.stringify(body),
         },
         token,
       )

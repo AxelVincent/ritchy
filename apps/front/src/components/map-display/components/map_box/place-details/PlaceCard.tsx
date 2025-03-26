@@ -14,11 +14,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { DragHandleDots2Icon } from '@radix-ui/react-icons'
 import type { Place } from '@ritchy/types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, ExternalLink, Star, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { PlaceHoursTab } from './tabs/PlaceHoursTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
+import { PlaceReviewsTab } from './tabs/PlaceReviewsTab'
+
 interface PlaceCardProps {
   places: Place[] | null
   displayedPlaceIds: Set<string>
@@ -153,24 +154,6 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                   <CardTitle className="text-lg truncate max-w-[200px] md:max-w-[300px]">
                     {currentPlace.name}
                   </CardTitle>
-                  |
-                  <div className="flex items-center gap-2 text-sm shrink-0">
-                    {currentPlace.rating ? (
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">
-                          {currentPlace.rating.toFixed(1)}
-                        </span>
-                        <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                        <span className="text-muted-foreground">
-                          ({currentPlace.ratingCount?.toLocaleString() ?? 0})
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        No reviews
-                      </div>
-                    )}
-                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {currentPlace.website && (
@@ -215,29 +198,29 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
             </CardHeader>
 
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-              <Tabs defaultValue="info" className="flex flex-col h-full">
+              <Tabs defaultValue="details" className="flex flex-col h-full">
                 <TabsList
-                  className="p-0 grid grid-cols-3 h-[45px] shrink-0 items-center bg-transparent"
+                  className="p-0 flex flex-wrap h-auto min-h-[45px] shrink-0 items-center bg-transparent"
                   aria-label="Place details"
                 >
                   <TabsTrigger
-                    value="info"
-                    aria-label="Information"
-                    className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                    value="details"
+                    aria-label="Informations"
+                    className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
                   >
-                    Information
+                    Informations
                   </TabsTrigger>
                   <TabsTrigger
-                    value="hours"
-                    aria-label="Opening hours"
-                    className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                    value="reviews"
+                    aria-label="Reviews"
+                    className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
                   >
-                    Opening hours
+                    Top reviews
                   </TabsTrigger>
                   <TabsTrigger
                     value="notes"
                     aria-label="Notes"
-                    className="relative flex-1 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                    className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
                   >
                     Notes
                   </TabsTrigger>
@@ -245,17 +228,10 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
 
                 <div className="flex-1 overflow-hidden flex flex-col">
                   <TabsContent
-                    value="info"
+                    value="details"
                     className="mt-0 p-4 h-full flex-1 overflow-auto"
                   >
                     <PlaceInfoTab place={currentPlace} />
-                  </TabsContent>
-
-                  <TabsContent
-                    value="hours"
-                    className="mt-0 px-4 h-full flex-1 overflow-auto"
-                  >
-                    <PlaceHoursTab place={currentPlace} />
                   </TabsContent>
 
                   <TabsContent
@@ -263,6 +239,13 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
                   >
                     <PlaceNotesTab place={currentPlace} />
+                  </TabsContent>
+
+                  <TabsContent
+                    value="reviews"
+                    className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
+                  >
+                    <PlaceReviewsTab place={currentPlace} />
                   </TabsContent>
                 </div>
               </Tabs>

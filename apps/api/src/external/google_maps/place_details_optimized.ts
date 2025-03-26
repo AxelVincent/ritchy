@@ -1,12 +1,13 @@
 import { logger } from '@ritchy/logger'
 import type { Place, PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
-import { and, eq, sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { listPlace, search } from '../../db/schema'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
 import { getPlaceDetailsV1 } from './place_details_V1'
 import { postTextSearchV1 } from './text_search_V1'
+import type { PreferredPlace } from './types'
 import { mapToPlaceDetails } from './utils/mapper'
 
 // How recently a search should have been refreshed to be considered "fresh" (in milliseconds)
@@ -47,7 +48,7 @@ export async function getPlaceDetailsOptimized(
 
   const key = REDIS_KEYS.place(placeId)
 
-  const cachedPlace = await redisClient.get<Place>(key)
+  const cachedPlace = await redisClient.get<PreferredPlace>(key)
   if (cachedPlace) {
     scenario = 'cache_hit'
     // Only log cache hits in summary statistics, not individually
@@ -108,7 +109,7 @@ export async function getPlaceDetailsOptimized(
             await existingRefresh
 
             // Check if our place is now in cache after the search refresh
-            const refreshedPlace = await redisClient.get<Place>(key)
+            const refreshedPlace = await redisClient.get<PreferredPlace>(key)
             if (refreshedPlace) {
               const place = mapToPlaceDetails(refreshedPlace)
               return { ...place, fromCache: true }

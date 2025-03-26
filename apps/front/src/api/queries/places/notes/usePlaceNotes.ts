@@ -8,7 +8,7 @@ const notesKeys = {
 
 export const usePlaceNotesQuery = (placeId: string) => {
   return useApiQuery<NotesApiResponse>(
-    `/notes/${placeId}`,
+    `/places/${placeId}/notes`,
     notesKeys.place(placeId),
   )
 }

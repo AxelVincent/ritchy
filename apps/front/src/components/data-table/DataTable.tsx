@@ -1,11 +1,8 @@
 import { DataExport } from '@/components/data-export/DataExport'
-import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialog'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
-import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
@@ -23,11 +20,11 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Loader2, Plus, Trash } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { DeleteItemsFromListDialog } from '../lists/delete-items-from-list-dialog'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
+import { EnrichmentButtons } from './EnrichmentButtons'
+import { ListManagementButtons } from './ListManagementButtons'
 import { useEnrichment } from './hooks/useEnrichment'
 
 interface DataTableProps<TData, TValue> {
@@ -66,8 +63,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnOrder, setColumnOrder] = useState<string[]>([])
-  const [showAddListDialog, setShowAddListDialog] = useState(false)
-  const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
 
   // Use the enrichment hook
   const { pendingFetches, handleFetchEnrichment } = useEnrichment({
@@ -201,9 +196,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
       (virtualColumns[virtualColumns.length - 1]?.end ?? 0)
   }
 
-  // Get the selected rows data
-  const selectedRows = table.getSelectedRowModel().rows
-
   // Add this effect to handle scrolling
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -235,16 +227,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onFilteredDataChange(filteredIds)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
 
-  // Replace the handleFetchEnrichment function with this wrapper
-  const handleEnrichSelectedRows = () => {
-    const selectedRows = table.getSelectedRowModel().rows
-    const selectedIds = selectedRows
-      .filter((row) => row.original.website)
-      .map((row) => row.original.id)
-
-    handleFetchEnrichment(selectedIds)
-  }
-
   // If there are no visible columns, show a message
   if (visibleColumns.length === 0) {
     return (
@@ -261,86 +243,12 @@ export const DataTable = <TData extends SearchResult, TValue>({
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
         <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto">
-          {listId ? (
-            <>
-              <DeleteItemsFromListDialog
-                open={showDeleteListDialog}
-                onOpenChange={setShowDeleteListDialog}
-                selectedItems={selectedRows.map((row) => row.original.id)}
-                listId={listId}
-              />
-              <AddItemsToListDialog
-                open={showAddListDialog}
-                onOpenChange={setShowAddListDialog}
-                selectedItems={selectedRows.map((row) => ({
-                  placeId: row.original.id,
-                  searchId: row.original.searchId,
-                }))}
-              />
-              {selectedRows.length > 0 && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    onClick={() => setShowAddListDialog(true)}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add {selectedRows.length} lead
-                    {selectedRows.length === 1 ? '' : 's'} to a list
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setShowDeleteListDialog(true)}
-                  >
-                    <Trash className="w-4 h-4" />
-                    Remove {selectedRows.length} lead
-                    {selectedRows.length === 1 ? '' : 's'}
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <AddItemsToListDialog
-                open={showAddListDialog}
-                onOpenChange={setShowAddListDialog}
-                selectedItems={selectedRows.map((row) => ({
-                  placeId: row.original.id,
-                  searchId: row.original.searchId,
-                }))}
-              />
-              {selectedRows.length > 0 && (
-                <Button
-                  variant="default"
-                  onClick={() => setShowAddListDialog(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add {selectedRows.length} lead
-                  {selectedRows.length === 1 ? '' : 's'} to a list
-                </Button>
-              )}
-            </>
-          )}
-          {selectedRows.length > 0 &&
-            selectedRows.some((row) => row.original.website) && (
-              <Button
-                variant="outline"
-                onClick={handleEnrichSelectedRows}
-                disabled={pendingFetches.size > 0}
-              >
-                {pendingFetches.size > 0 ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enriching ({pendingFetches.size} remaining)
-                  </>
-                ) : (
-                  <>
-                    <MagicWandIcon className="mr-2 h-4 w-4" />
-                    Enrich (
-                    {selectedRows.filter((row) => row.original.website).length})
-                  </>
-                )}
-              </Button>
-            )}
+          <ListManagementButtons table={table} listId={listId} />
+          <EnrichmentButtons
+            table={table}
+            pendingFetches={pendingFetches}
+            handleFetchEnrichment={handleFetchEnrichment}
+          />
           {!isMobile && (
             <DataExport
               data={table.getFilteredRowModel().rows.map((row) => row.original)}

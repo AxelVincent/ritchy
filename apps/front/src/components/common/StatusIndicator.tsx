@@ -6,11 +6,11 @@ interface StatusIndicatorProps {
 }
 
 export const StatusIndicator = ({ isOpen }: StatusIndicatorProps) => (
-  <div className="flex items-center gap-2">
+  <div className="flex items-center gap-2 cursor-pointer">
     <Badge
       variant="secondary"
       className={cn(
-        'transition-none hover:bg-none whitespace-nowrap',
+        'transition-none hover:bg-none whitespace-nowrap cursor-pointer',
         isOpen
           ? 'bg-green-600 text-white hover:bg-green-600'
           : 'bg-red-600 text-white hover:bg-red-600',

@@ -1,4 +1,4 @@
-import { useUpdatePlaceStatus } from '@/api/mutations/status/useUpdatePlaceStatus'
+import { useUpdatePlaceStatus } from '@/api/mutations/places/status/useUpdatePlaceStatus'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,

@@ -48,8 +48,8 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@ritchy/types": "workspace:*",
-    "@types/express": "5.0.0",
-    "@types/node": "22.13.10",
+    "@types/express": "5.0.1",
+    "@types/node": "22.13.13",
     "drizzle-kit": "0.28.1",
     "tsup": "8.3.5",
     "tsx": "4.19.2",
