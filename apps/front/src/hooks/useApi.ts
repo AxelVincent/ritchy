@@ -28,6 +28,12 @@ export function useApiQuery<TData, TError = ApiErrorResponse>(
 
   return useQuery<TData, TError>({
     queryKey,
+    retry: (failureCount) => {
+      if (failureCount >= 3) {
+        return false
+      }
+      return true
+    },
     queryFn: async ({ signal }) => {
       try {
         const token = requireAuth ? await getToken() : null
