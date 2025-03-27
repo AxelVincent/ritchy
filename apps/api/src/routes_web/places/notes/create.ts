@@ -3,6 +3,7 @@ import type { AddNoteApiResponse, AddNoteRequest } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../../db/db'
+import { note as noteTable } from '../../../db/schema'
 
 export const addPlaceNote = async (
   req: Request<AddNoteRequest>,
@@ -13,7 +14,7 @@ export const addPlaceNote = async (
     const { placeId } = req.params
 
     const [result] = await db
-      .insert(note)
+      .insert(noteTable)
       .values({
         placeId: placeId,
         note: note,
