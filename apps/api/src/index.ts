@@ -1,9 +1,12 @@
 import 'dotenv/config'
 import { clerkMiddleware, getAuth } from '@clerk/express'
-import { type LogContext, baseLogger, logger } from '@ritchy/logger'
+import { baseLogger, logger } from '@ritchy/logger'
+import timeout from 'connect-timeout'
 import cors from 'cors'
 import { eq } from 'drizzle-orm'
 import express, { type NextFunction } from 'express'
+import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
 import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
@@ -16,6 +19,7 @@ const app = express()
 // Body parser middleware
 app.use(
   express.json({
+    limit: '10kb', // Adjust based on your needs
     verify: (req: express.Request, _res, buf) => {
       req.rawBody = buf
     },
@@ -146,6 +150,9 @@ app.use(
   }),
 )
 
+// Add near the top of your middleware stack
+app.use(helmet())
+
 // Healthcheck route
 app.get('/health', (_, res) => {
   res.status(200).json({ status: 'ok' })
@@ -219,9 +226,45 @@ setInterval(() => {
 
 // Start server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+})
+
+app.use(limiter)
+
+app.use(timeout('5s'))
+app.use(haltOnTimedout)
+
+function haltOnTimedout(
+  req: express.Request,
+  _res: express.Response,
+  next: NextFunction,
+) {
+  if (!req.timedout) next()
+}
+
 app.listen(PORT, '::', () => {
   logger.info({
     msg: `Server running on port ${PORT} (IPv4/IPv6)`,
     event: 'server_started',
+  })
+})
+
+process.on('uncaughtException', (error) => {
+  logger.error({
+    msg: 'Uncaught Exception',
+    event: 'uncaught_exception',
+    metadata: { error },
+  })
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error({
+    msg: 'Unhandled Rejection',
+    event: 'unhandled_rejection',
+    metadata: { reason, promise },
   })
 })
