@@ -40,6 +40,7 @@ async function fetchSinglePage(
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
         'X-Goog-FieldMask': PREFERRED_PLACE_KEYS_TEXT_SEARCH,
+        Referer: GOOGLE_MAPS_CONFIG.REFERRER,
       },
       body: JSON.stringify(body),
     })

@@ -25,6 +25,7 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
       headers: {
         'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
         'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
+        Referer: GOOGLE_MAPS_CONFIG.REFERRER,
       },
     })
 

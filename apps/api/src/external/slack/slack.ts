@@ -16,19 +16,39 @@ export const sendSlackNotification = ({
   // Fire and forget
   void (async () => {
     try {
-      const response = await fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${SLACK_CONFIG.BOT_TOKEN}`,
-        },
-        body: JSON.stringify({
-          channel: SLACK_CHANNEL_IDS[channel],
-          text,
-        }),
-      })
+      const sendMessage = async () => {
+        const response = await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${SLACK_CONFIG.BOT_TOKEN}`,
+          },
+          body: JSON.stringify({
+            channel: SLACK_CHANNEL_IDS[channel],
+            text,
+          }),
+        })
 
-      const data = await response.json()
+        return await response.json()
+      }
+
+      let data = await sendMessage()
+
+      // If not in channel, join and retry
+      if (!data.ok && data.error === 'not_in_channel') {
+        await fetch('https://slack.com/api/conversations.join', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${SLACK_CONFIG.BOT_TOKEN}`,
+          },
+          body: JSON.stringify({
+            channel: SLACK_CHANNEL_IDS[channel],
+          }),
+        })
+
+        data = await sendMessage()
+      }
 
       if (!data.ok) {
         throw new Error(`Slack API error: ${data.error || 'Unknown error'}`)
