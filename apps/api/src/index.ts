@@ -19,10 +19,17 @@ const app = express()
 // Body parser middleware
 app.use(
   express.json({
-    limit: '10kb', // Adjust based on your needs
+    limit: '10mb',
     verify: (req: express.Request, _res, buf) => {
       req.rawBody = buf
     },
+  }),
+)
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
   }),
 )
 
