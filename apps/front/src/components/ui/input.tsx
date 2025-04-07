@@ -11,9 +11,6 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
         autoCapitalize="none"
         autoComplete="off"
         autoCorrect="off"
-        // Only apply autofocus={false} for iOS PWA
-        // biome-ignore lint/a11y/noAutofocus: <explanation>
-        autoFocus={false}
         style={{
           fontSize: '16px',
         }}
