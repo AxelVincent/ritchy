@@ -5,6 +5,7 @@ import {
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
+import { InstallPrompt } from '@/components/common/InstallPrompt'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { SignedIn, SignedOut } from '@clerk/clerk-react'
 import { useUser } from '@clerk/clerk-react'
@@ -53,6 +54,9 @@ function AuthedLayout() {
             <Outlet />
           </SidebarInset>
         </SidebarProvider>
+        <div className="fixed bottom-4 left-4 z-50">
+          <InstallPrompt />
+        </div>
       </SignedIn>
 
       <SignedOut>

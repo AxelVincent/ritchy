@@ -1,0 +1,47 @@
+{
+  "name": "Ritchy",
+  "short_name": "Ritchy",
+  "description": "Your loyal companion for sales success",
+  "start_url": "/search",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "id": "/",
+  "scope": "/",
+  "categories": ["productivity"],
+  "launch_handler": {
+    "client_mode": "auto"
+  },
+  "display_override": ["standalone"],
+  "icons": [
+    {
+      "src": "/icons/icon_mobile_ritchy_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Home",
+      "url": "/",
+      "icons": [
+        { "src": "/icons/icon_mobile_ritchy_512x512.png", "sizes": "512x512" }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "handle_links": "preferred",
+  "share_target": {
+    "action": "/share-target",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
