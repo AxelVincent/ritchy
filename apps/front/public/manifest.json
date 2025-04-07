@@ -11,9 +11,8 @@
   "scope": "/",
   "categories": ["productivity"],
   "launch_handler": {
-    "client_mode": "auto"
+    "client_mode": ["auto"]
   },
-  "display_override": ["standalone"],
   "icons": [
     {
       "src": "/icons/icon_mobile_ritchy_512x512.png",
