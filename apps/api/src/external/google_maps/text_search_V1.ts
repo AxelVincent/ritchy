@@ -1,12 +1,12 @@
 import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import {
-  divideSquareIntoFour,
+  divideRectangleIntoFour,
   getLargestSquareFromCoordinates,
 } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
-import type { Place, PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
+import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
 import {
@@ -110,20 +110,20 @@ export async function postTextSearchV1(
   // 4 * 3 = 12 requests
   // 12 * 0.04 = 0.48 $
   // 0.48 / 2 = 0.24 $
-  const squares240 = divideSquareIntoFour(largestSquare, ratio)
+  const squares240 = divideRectangleIntoFour(largestSquare, ratio)
   // 240 * 4 = 960 potential results
   // 12 * 4 = 48 requests
   // 48 * 0.04 = 1.92 $
   // 1.92 / 2 = 0.96 $
   const squares960 = squares240.flatMap((square) =>
-    divideSquareIntoFour(square, ratio),
+    divideRectangleIntoFour(square, ratio),
   )
   // 960 * 4 = 3840 potential results
   // 48 * 4 = 192 requests
   // 192 * 0.04 = 7.68 $
   // 7.68 / 2 = 3.84 $
   const squares3840 = squares960.flatMap((square) =>
-    divideSquareIntoFour(square, ratio),
+    divideRectangleIntoFour(square, ratio),
   )
 
   const squares = (() => {
