@@ -1,7 +1,7 @@
+import type { Rectangle } from '@ritchy/types'
 import { center, featureCollection, point } from '@turf/turf'
 import { describe, expect, it } from 'vitest'
 import {
-  type Square,
   divideRectangleIntoFour,
   getLargestSquareFromCoordinates,
 } from '../geo_utils'
@@ -20,9 +20,7 @@ describe('geo_utils', () => {
 
       // Check if all corners are present
       expect(result).toHaveProperty('northEast')
-      expect(result).toHaveProperty('southEast')
       expect(result).toHaveProperty('southWest')
-      expect(result).toHaveProperty('northWest')
 
       // Check if coordinates are numbers and within reasonable bounds
       for (const corner of Object.values(result)) {
@@ -38,11 +36,9 @@ describe('geo_utils', () => {
 
   describe('divideRectangleIntoFour', () => {
     it('should divide a rectangle into four equal rectangles', () => {
-      const originalRectangle: Square = {
+      const originalRectangle: Rectangle = {
         northEast: { latitude: 41, longitude: -74 },
-        southEast: { latitude: 40, longitude: -74 },
-        southWest: { latitude: 40, longitude: -76 }, // Note: wider than the square test
-        northWest: { latitude: 41, longitude: -76 },
+        southWest: { latitude: 40, longitude: -76 },
       }
 
       const result = divideRectangleIntoFour(originalRectangle)
@@ -53,9 +49,7 @@ describe('geo_utils', () => {
       // Check if each resulting rectangle has the correct properties
       for (const rectangle of result) {
         expect(rectangle).toHaveProperty('northEast')
-        expect(rectangle).toHaveProperty('southEast')
         expect(rectangle).toHaveProperty('southWest')
-        expect(rectangle).toHaveProperty('northWest')
 
         // Check if coordinates are numbers and within the bounds of the original rectangle
         for (const corner of Object.values(rectangle)) {
@@ -68,7 +62,7 @@ describe('geo_utils', () => {
             originalRectangle.northEast.latitude,
           )
           expect(corner.longitude).toBeGreaterThanOrEqual(
-            originalRectangle.northWest.longitude,
+            originalRectangle.southWest.longitude,
           )
           expect(corner.longitude).toBeLessThanOrEqual(
             originalRectangle.northEast.longitude,
@@ -77,12 +71,12 @@ describe('geo_utils', () => {
       }
 
       // Test that rectangles maintain proper width/height ratio
-      const getWidthAndHeight = (rect: Square) => {
+      const getWidthAndHeight = (rect: Rectangle) => {
         const width = Math.abs(
-          rect.northEast.longitude - rect.northWest.longitude,
+          rect.northEast.longitude - rect.southWest.longitude,
         )
         const height = Math.abs(
-          rect.northEast.latitude - rect.southEast.latitude,
+          rect.northEast.latitude - rect.southWest.latitude,
         )
         return { width, height }
       }
@@ -98,12 +92,12 @@ describe('geo_utils', () => {
       }
 
       // Test that rectangles don't overlap by checking their centers are different
-      const getCenterPoint = (rect: Square) => {
+      const getCenterPoint = (rect: Rectangle) => {
         const points = [
           point([rect.northEast.longitude, rect.northEast.latitude]),
-          point([rect.southEast.longitude, rect.southEast.latitude]),
+          point([rect.northEast.longitude, rect.southWest.latitude]),
           point([rect.southWest.longitude, rect.southWest.latitude]),
-          point([rect.northWest.longitude, rect.northWest.latitude]),
+          point([rect.southWest.longitude, rect.northEast.latitude]),
         ]
         const centerPoint = center(featureCollection(points))
         return {
@@ -122,11 +116,9 @@ describe('geo_utils', () => {
     })
 
     it('should properly scale rectangles when ratio is provided', () => {
-      const originalRectangle: Square = {
+      const originalRectangle: Rectangle = {
         northEast: { latitude: 41, longitude: -74 },
-        southEast: { latitude: 40, longitude: -74 },
         southWest: { latitude: 40, longitude: -76 },
-        northWest: { latitude: 41, longitude: -76 },
       }
 
       const ratio = 0.9
@@ -138,73 +130,55 @@ describe('geo_utils', () => {
       result.forEach((scaledRect, index) => {
         const unscaledRect = unscaledRectangles[index]
         const scaledWidth = Math.abs(
-          scaledRect.northEast.longitude - scaledRect.northWest.longitude,
+          scaledRect.northEast.longitude - scaledRect.southWest.longitude,
         )
         const unscaledWidth = Math.abs(
-          unscaledRect.northEast.longitude - unscaledRect.northWest.longitude,
+          unscaledRect.northEast.longitude - unscaledRect.southWest.longitude,
         )
         expect(scaledWidth).toBeLessThan(unscaledWidth)
       })
     })
 
     it('should reconstruct the original rectangle when combining all quarters', () => {
-      const originalRectangle: Square = {
+      const originalRectangle: Rectangle = {
         northEast: { latitude: 41, longitude: -74 },
-        southEast: { latitude: 40, longitude: -74 },
         southWest: { latitude: 40, longitude: -76 },
-        northWest: { latitude: 41, longitude: -76 },
       }
 
       const quarters = divideRectangleIntoFour(originalRectangle)
 
-      // Check north edge reconstruction
-      expect(quarters[0].northWest.latitude).toBe(
-        originalRectangle.northWest.latitude,
-      )
-      expect(quarters[0].northWest.longitude).toBe(
-        originalRectangle.northWest.longitude,
-      )
-      expect(quarters[1].northEast.latitude).toBe(
-        originalRectangle.northEast.latitude,
-      )
-      expect(quarters[1].northEast.longitude).toBe(
-        originalRectangle.northEast.longitude,
-      )
-
-      // Check south edge reconstruction
-      expect(quarters[2].southWest.latitude).toBe(
-        originalRectangle.southWest.latitude,
-      )
-      expect(quarters[2].southWest.longitude).toBe(
-        originalRectangle.southWest.longitude,
-      )
-      expect(quarters[3].southEast.latitude).toBe(
-        originalRectangle.southEast.latitude,
-      )
-      expect(quarters[3].southEast.longitude).toBe(
-        originalRectangle.southEast.longitude,
-      )
+      // Check outer boundaries match original rectangle
+      expect(quarters[1].northEast).toEqual(originalRectangle.northEast)
+      expect(quarters[2].southWest).toEqual(originalRectangle.southWest)
 
       // Check that quarters share exact coordinates at their meeting points
-      // Center point check
-      expect(quarters[0].southEast).toEqual(quarters[1].southWest)
-      expect(quarters[2].northEast).toEqual(quarters[3].northWest)
-      expect(quarters[0].southWest).toEqual(quarters[2].northWest)
-      expect(quarters[1].southEast).toEqual(quarters[3].northEast)
-
-      // Middle edge points check
-      expect(quarters[0].northEast.latitude).toBe(
-        quarters[1].northWest.latitude,
-      )
+      // Vertical middle line
       expect(quarters[0].northEast.longitude).toBe(
-        quarters[1].northWest.longitude,
+        quarters[1].southWest.longitude,
       )
-      expect(quarters[2].southEast.latitude).toBe(
-        quarters[3].southWest.latitude,
-      )
-      expect(quarters[2].southEast.longitude).toBe(
+      expect(quarters[2].northEast.longitude).toBe(
         quarters[3].southWest.longitude,
       )
+
+      // Horizontal middle line
+      expect(quarters[0].southWest.latitude).toBe(
+        quarters[2].northEast.latitude,
+      )
+      expect(quarters[1].southWest.latitude).toBe(
+        quarters[3].northEast.latitude,
+      )
+
+      // Center point
+      const centerLat = quarters[0].southWest.latitude
+      const centerLon = quarters[0].northEast.longitude
+      expect(quarters[0].southWest.latitude).toBe(centerLat)
+      expect(quarters[1].southWest.latitude).toBe(centerLat)
+      expect(quarters[2].northEast.latitude).toBe(centerLat)
+      expect(quarters[3].northEast.latitude).toBe(centerLat)
+      expect(quarters[0].northEast.longitude).toBe(centerLon)
+      expect(quarters[1].southWest.longitude).toBe(centerLon)
+      expect(quarters[2].northEast.longitude).toBe(centerLon)
+      expect(quarters[3].southWest.longitude).toBe(centerLon)
     })
   })
 })

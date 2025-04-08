@@ -95,22 +95,17 @@ async function fetchSinglePage(
 export async function postTextSearchV1(
   requestBody: PlacesSearchRequestBody,
 ): Promise<PlaceBase[]> {
-  const largestSquare = getLargestSquareFromCoordinates(
-    requestBody.locationBias.circle.center,
-    requestBody.locationBias.circle.radiusInMeters,
-  )
-
   const ratio = 1
   // 60 potential results
   // 1 * 3 = 3 requests
   // 3 * 0.04 = 0.12 $
   // 0.12 / 2 = 0.06 $
-  const squares60 = [largestSquare]
+  const squares60 = [requestBody.rectangle]
   // 240 potential results
   // 4 * 3 = 12 requests
   // 12 * 0.04 = 0.48 $
   // 0.48 / 2 = 0.24 $
-  const squares240 = divideRectangleIntoFour(largestSquare, ratio)
+  const squares240 = divideRectangleIntoFour(requestBody.rectangle, ratio)
   // 240 * 4 = 960 potential results
   // 12 * 4 = 48 requests
   // 48 * 0.04 = 1.92 $

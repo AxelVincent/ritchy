@@ -23,12 +23,21 @@ export const SearchModelEnum = z.enum([
 ])
 export type SearchModel = z.infer<typeof SearchModelEnum>
 
+const CoordinateSchema = z.object({
+  latitude: z.number(),
+  longitude: z.number(),
+})
+
+export const RectangleSchema = z.object({
+  northEast: CoordinateSchema,
+  southWest: CoordinateSchema,
+})
+
+export type Coordinate = z.infer<typeof CoordinateSchema>
+export type Rectangle = z.infer<typeof RectangleSchema>
+
 export const CreateSearchRequestBodySchema = z.object({
-  location: z.object({
-    latitude: z.number(),
-    longitude: z.number(),
-  }),
-  radiusInMeters: z.number(),
+  rectangle: RectangleSchema,
   placeName: z.string(),
   keyword: z.string(),
   model: SearchModelEnum,

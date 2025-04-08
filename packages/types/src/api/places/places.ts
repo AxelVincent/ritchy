@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { EnrichResponseSchema } from '../enrich'
-import { SearchModelEnum } from '../search'
+import { RectangleSchema, SearchModelEnum } from '../search'
 import { NoteSchema } from './notes'
 import { StatusSchema } from './status'
 
@@ -124,12 +124,7 @@ export const PriceRangeSchema = z.object({
 // API Request/Response Schemas
 export const PlacesSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
-  locationBias: z.object({
-    circle: z.object({
-      center: LocationSchema,
-      radiusInMeters: z.number().positive(),
-    }),
-  }),
+  rectangle: RectangleSchema,
   model: SearchModelEnum.default('ESSENTIALS'),
 })
 

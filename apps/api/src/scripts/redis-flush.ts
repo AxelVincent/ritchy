@@ -66,36 +66,36 @@ Examples:
         }
 
         // This requires a database query to find all places associated with the search
-        console.log(`Finding places associated with search "${searchId}"...`)
+        console.log(`Finding searches associated with search "${searchId}"...`)
 
         // Import necessary modules
         const { db } = await import('../db/db')
-        const { listPlace } = await import('../db/schema')
+        const { search } = await import('../db/schema')
         const { eq } = await import('drizzle-orm')
 
         // Get all places associated with this search
-        const places = await db
-          .select({ placeId: listPlace.placeId })
-          .from(listPlace)
-          .where(eq(listPlace.searchId, searchId))
+        const searches = await db
+          .select({ id: search.id })
+          .from(search)
+          .where(eq(search.id, searchId))
 
-        if (places.length === 0) {
-          console.log(`No places found for search "${searchId}"`)
+        if (searches.length === 0) {
+          console.log(`No searches found for search "${searchId}"`)
           break
         }
 
-        console.log(`Found ${places.length} places to delete`)
+        console.log(`Found ${searches.length} searches to delete`)
 
         // Delete each place from Redis
         let deletedCount = 0
-        for (const place of places) {
-          const key = REDIS_KEYS.place(place.placeId)
+        for (const search of searches) {
+          const key = REDIS_KEYS.search(search.id)
           await redisClient.del(key)
           deletedCount++
         }
 
         console.log(
-          `Deleted ${deletedCount} out of ${places.length} places for search "${searchId}"`,
+          `Deleted ${deletedCount} out of ${searches.length} searches for search "${searchId}"`,
         )
         break
       }

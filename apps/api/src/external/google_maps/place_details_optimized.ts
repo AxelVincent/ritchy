@@ -134,15 +134,7 @@ export async function getPlaceDetailsOptimized(
             // Create search request
             const searchRequestBody: PlacesSearchRequestBody = {
               textQuery: searchData.keyword,
-              locationBias: {
-                circle: {
-                  center: {
-                    latitude: Number(searchData.latitude),
-                    longitude: Number(searchData.longitude),
-                  },
-                  radiusInMeters: searchData.radiusInMeters,
-                },
-              },
+              rectangle: searchData.rectangle,
               model: searchData.model,
             }
 
