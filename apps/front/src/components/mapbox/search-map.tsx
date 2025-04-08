@@ -175,20 +175,28 @@ export const SearchMap: FC<MapBoxProps> = ({
           return
         }
 
-        const rectangle = {
+        // Add bounds width validation
+        const width = Math.abs(ne.lng - sw.lng)
+        if (width > 180) {
+          console.warn('Viewport too wide, skipping update:', width)
+          return
+        }
+
+        // Ensure coordinates are within valid ranges
+        const normalizedRectangle = {
           northEast: {
-            latitude: ne.lat,
-            longitude: ne.lng,
+            latitude: Math.min(Math.max(ne.lat, -90), 90),
+            longitude: Math.min(Math.max(ne.lng, -180), 180),
           },
           southWest: {
-            latitude: sw.lat,
-            longitude: sw.lng,
+            latitude: Math.min(Math.max(sw.lat, -90), 90),
+            longitude: Math.min(Math.max(sw.lng, -180), 180),
           },
         }
 
         // Only update if we have valid coordinates
         centerMarkerRef.current?.setLngLat(center)
-        debouncedLocationChange(center, rectangle)
+        debouncedLocationChange(center, normalizedRectangle)
       }
     })
 
