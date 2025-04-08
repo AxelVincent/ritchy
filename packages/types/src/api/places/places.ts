@@ -113,7 +113,7 @@ export const PriceLevelEnum = z.enum([
 
 export const MoneySchema = z.object({
   currencyCode: z.string(),
-  units: z.string(),
+  units: z.string().optional(),
   nanos: z.number().optional(),
 })
 export const PriceRangeSchema = z.object({
