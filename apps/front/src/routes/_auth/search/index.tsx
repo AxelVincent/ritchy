@@ -1,8 +1,7 @@
 import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
-import type { MapboxLocationParameters } from '@/components/map-display/types'
-import { SearchMap } from '@/components/mapbox/search-map'
+import { type Location, SearchMap } from '@/components/mapbox/search-map'
 import { PlacesTextSearch } from '@/components/search/places-text-search'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
@@ -40,10 +39,7 @@ function RouteComponent() {
     false,
   )
   const [currentLocation, setCurrentLocation] =
-    useState<MapboxLocationParameters>(defaultLocation)
-  const [radiusInMeters, setRadiusInMeters] = useState(
-    defaultLocation.radiusInMeters,
-  )
+    useState<Location>(defaultLocation)
 
   const navigate = useNavigate()
   const createSearchMutation = useCreateSearch()
@@ -73,16 +69,23 @@ function RouteComponent() {
     })
   }
 
-  const handleLocationChange = (newLocation: MapboxLocationParameters) => {
+  const handleLocationChange = (newLocation: {
+    center: Location['center']
+    bounds: Location['bounds']
+  }) => {
     setCurrentLocation({
-      ...newLocation,
+      center: newLocation.center,
+      bounds: newLocation.bounds,
     })
   }
 
   // Update from geolocation only on initial load
   useEffect(() => {
     if (geoLocation && currentLocation === defaultLocation) {
-      setCurrentLocation(geoLocation)
+      setCurrentLocation({
+        center: geoLocation,
+        bounds: defaultLocation.bounds,
+      })
     }
   }, [geoLocation, currentLocation, defaultLocation])
 
@@ -95,14 +98,11 @@ function RouteComponent() {
       <PlacesTextSearch
         location={currentLocation}
         onSearch={triggerSearch}
-        radiusInMeters={radiusInMeters}
-        setRadiusInMeters={setRadiusInMeters}
         onLocationChange={handleLocationChange}
       />
       <SearchMap
         onLocationChange={handleLocationChange}
         userLocation={currentLocation}
-        radiusInMeters={radiusInMeters}
       />
     </div>
   )

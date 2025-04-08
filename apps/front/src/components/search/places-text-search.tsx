@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
 import { useNavigate } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
 
@@ -16,37 +15,26 @@ import {
   isSubscriptionSuccess,
   useUserSubscription,
 } from '@/api/queries/users/useUserSubscription'
-import { RADIUS_SETTINGS } from '@/components/map-display/types'
 import { LocationAutocomplete } from '@/components/mapbox/location-autocomplete'
+import type { Location } from '@/components/mapbox/search-map'
 import { isModelAvailable } from '@/lib/subscription'
-import {
-  type CreateSearchRequestBody,
-  type GeocodingResult,
-  PLAN_RADIUS_LIMITS,
-  type SearchModel,
+import type {
+  CreateSearchRequestBody,
+  GeocodingResult,
+  SearchModel,
 } from '@ritchy/types'
 import { useEffect, useState } from 'react'
 
-interface LocationParams {
-  latitude: number
-  longitude: number
-  radiusInMeters: number
-}
-
 interface PlaceSearchProps {
-  location: LocationParams
+  location: Location
   onSearch: (params: CreateSearchRequestBody) => void
   className?: string
-  radiusInMeters: number
-  setRadiusInMeters: (radiusInMeters: number) => void
-  onLocationChange?: (location: LocationParams) => void
+  onLocationChange?: (location: Location) => void
 }
 
 export const PlacesTextSearch = ({
   location,
   onSearch,
-  radiusInMeters,
-  setRadiusInMeters,
   onLocationChange,
 }: PlaceSearchProps) => {
   const navigate = useNavigate()
@@ -54,8 +42,7 @@ export const PlacesTextSearch = ({
   const [searchText, setSearchText] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [model, setModel] = useState<SearchModel>('ESSENTIALS')
-  const [currentLocation, setCurrentLocation] =
-    useState<LocationParams>(location)
+  const [currentLocation, setCurrentLocation] = useState<Location>(location)
   const userPlan =
     subscription && isSubscriptionSuccess(subscription)
       ? subscription.plan
@@ -64,40 +51,9 @@ export const PlacesTextSearch = ({
   useEffect(() => {
     setCurrentLocation({
       ...location,
-      radiusInMeters,
+      bounds: location.bounds,
     })
-  }, [location, radiusInMeters])
-
-  const getMaxRadius = () => {
-    if (subscription && isSubscriptionSuccess(subscription)) {
-      return PLAN_RADIUS_LIMITS[subscription.plan]
-    }
-    return PLAN_RADIUS_LIMITS.FREE
-  }
-
-  const getNextTierRadius = () => {
-    const userPlan =
-      subscription && isSubscriptionSuccess(subscription)
-        ? subscription.plan
-        : 'FREE'
-
-    switch (userPlan) {
-      case 'FREE':
-      case 'ESSENTIALS':
-        return PLAN_RADIUS_LIMITS.EXPLORER
-      case 'NAVIGATOR':
-        return PLAN_RADIUS_LIMITS.EXPLORER
-      case 'EXPLORER':
-        return PLAN_RADIUS_LIMITS.PRO
-      default:
-        return null
-    }
-  }
-
-  const isNearPlanLimit = () => {
-    const currentMax = getMaxRadius()
-    return radiusInMeters >= currentMax * 0.9 // Show upsell when within 90% of limit
-  }
+  }, [location])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,11 +62,7 @@ export const PlacesTextSearch = ({
     }
 
     const searchParams: CreateSearchRequestBody = {
-      location: {
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude,
-      },
-      radiusInMeters: currentLocation.radiusInMeters,
+      rectangle: currentLocation.bounds,
       placeName: placeName,
       keyword: searchText,
       model,
@@ -122,11 +74,7 @@ export const PlacesTextSearch = ({
   const handleClear = () => {
     setSearchText('')
     onSearch({
-      location: {
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude,
-      },
-      radiusInMeters: currentLocation.radiusInMeters,
+      rectangle: currentLocation.bounds,
       placeName: placeName,
       keyword: '',
       model,
@@ -141,9 +89,11 @@ export const PlacesTextSearch = ({
 
   const handleLocationSelect = (newLocation: GeocodingResult) => {
     const updatedLocation = {
-      latitude: newLocation.center[1],
-      longitude: newLocation.center[0],
-      radiusInMeters,
+      center: {
+        latitude: newLocation.center[1],
+        longitude: newLocation.center[0],
+      },
+      bounds: currentLocation.bounds,
     }
 
     setCurrentLocation(updatedLocation)
@@ -172,43 +122,6 @@ export const PlacesTextSearch = ({
           <div className="space-y-1.5 sm:space-y-2 w-full">
             <Label htmlFor="location-input">Where are you searching?</Label>
             <LocationAutocomplete onLocationSelect={handleLocationSelect} />
-          </div>
-          <div className="space-y-1.5 mb-1 sm:space-y-2 w-full">
-            <div className="flex justify-between">
-              <Label
-                htmlFor="radius-input"
-                className="text-sm font-medium text-foreground"
-              >
-                Research area
-              </Label>
-              <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground">
-                  {radiusInMeters / 1000} km
-                </Label>
-                {isNearPlanLimit() && getNextTierRadius() && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0 text-xs text-primary font-medium"
-                    onClick={() => navigate({ to: '/pricing' })}
-                  >
-                    Upgrade for {(getNextTierRadius() ?? 0) / 1000} km
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div>
-              <Slider
-                id="radius-input"
-                min={RADIUS_SETTINGS.min}
-                max={getMaxRadius()}
-                step={RADIUS_SETTINGS.step}
-                value={[radiusInMeters]}
-                onValueChange={([newValue]) => setRadiusInMeters(newValue)}
-                aria-label="Radius"
-                className="cursor-pointer h-[32.4px]"
-              />
-            </div>
           </div>
           <div className="space-y-1.5 mb-1 sm:space-y-2 w-full">
             <Label htmlFor="search">What are you looking for?</Label>

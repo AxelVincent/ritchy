@@ -2,13 +2,12 @@ import './styles.css'
 import { useMapInitialization } from '@/components/map-display/hooks/useMapInitialization'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { MAP_SETTINGS } from '@/components/map-display/types'
-import type { MapboxLocationParameters } from '@/components/map-display/types'
+import type { Location } from '@/components/mapbox/search-map'
 import { debounce } from '@/lib/debounce'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
 import { type FC, Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
-
 const DEBUG = false
 
 const debugLog = (...args: unknown[]) => {
@@ -20,9 +19,8 @@ const debugLog = (...args: unknown[]) => {
 // Improve props interface with more specific types
 interface MapBoxProps {
   searchResults: Place[] | null
-  userLocation: MapboxLocationParameters
+  userLocation: Location
   dataTableRowSelection: RowSelectionState
-  radiusInMeters: number
   filteredPlaceIds: Set<string>
 }
 
@@ -37,13 +35,11 @@ export const MapBox: FC<MapBoxProps> = ({
   searchResults,
   userLocation,
   dataTableRowSelection,
-  radiusInMeters,
   filteredPlaceIds,
 }) => {
-  // Get selectedPlaceId and setSelectedPlaceId from the store
   const { selectedPlaceId } = useMapStore()
 
-  debugLog('MapBox render:', { userLocation, radiusInMeters })
+  debugLog('MapBox render:', { userLocation })
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const currentSelectedPlaceIdRef = useRef<string | null>(null)
@@ -52,8 +48,11 @@ export const MapBox: FC<MapBoxProps> = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const initialCenter = useMemo(() => {
     debugLog('Calculating initial center:', userLocation)
-    return [userLocation.longitude, userLocation.latitude] as [number, number]
-  }, [userLocation.latitude, userLocation.longitude])
+    return [userLocation.center.longitude, userLocation.center.latitude] as [
+      number,
+      number,
+    ]
+  }, [userLocation.center.latitude, userLocation.center.longitude])
 
   const mapRef = useMapInitialization(
     mapContainerRef,

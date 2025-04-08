@@ -1,19 +1,19 @@
-import type { MapboxLocationParameters } from '@/components/map-display/types'
+import type { Location } from '@/components/mapbox/search-map'
 import { useEffect, useRef, useState } from 'react'
 
 interface GeolocationState {
-  location: MapboxLocationParameters
+  location: Location['center']
   error: string | null
   loading: boolean
 }
 
 export const useGeolocation = (
-  defaultLocation: MapboxLocationParameters,
+  defaultLocation: Location,
   skipGeolocation: boolean,
   runOnce = false,
 ) => {
   const [state, setState] = useState<GeolocationState>({
-    location: defaultLocation,
+    location: defaultLocation.center,
     error: null,
     loading: true,
   })
@@ -47,7 +47,6 @@ export const useGeolocation = (
           location: {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            radiusInMeters: defaultLocation?.radiusInMeters || 3000,
           },
           error: null,
           loading: false,
@@ -76,7 +75,7 @@ export const useGeolocation = (
       },
       options,
     )
-  }, [defaultLocation?.radiusInMeters, skipGeolocation, runOnce])
+  }, [skipGeolocation, runOnce])
 
   return state
 }

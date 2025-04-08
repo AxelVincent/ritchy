@@ -43,9 +43,3 @@ export const RADIUS_SETTINGS: RadiusSettings = {
   initial: 5000,
   max: 50000, // Default max for FREE/NAVIGATOR plans
 }
-
-export interface MapboxLocationParameters {
-  latitude: number
-  longitude: number
-  radiusInMeters: number
-}

@@ -1,11 +1,8 @@
 import { useMapInitialization } from '@/components/map-display/hooks/useMapInitialization'
-import { useMapSquare } from '@/components/map-display/hooks/useMapSquare'
 import { MAP_SETTINGS } from '@/components/map-display/types'
-import type { MapboxLocationParameters } from '@/components/map-display/types'
-// import './styles.css'
-import { clearMapboxCache } from '@/components/map-display/utils/mapboxUtils'
+
 import { debounce } from '@/lib/debounce'
-import mapboxgl, { type LngLat } from 'mapbox-gl'
+import type { Rectangle } from '@ritchy/types'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 
 const DEBUG = false
@@ -16,18 +13,25 @@ const debugLog = (...args: unknown[]) => {
   }
 }
 
-// Create a dedicated type for the location change event
-type LocationChangeEvent = {
+type center = {
   latitude: number
   longitude: number
-  radiusInMeters: number
+}
+
+type bounds = {
+  northEast: center
+  southWest: center
+}
+
+export type Location = {
+  center: center
+  bounds: bounds
 }
 
 // Improve props interface with more specific types
 interface MapBoxProps {
-  onLocationChange: (location: LocationChangeEvent) => void
-  userLocation: MapboxLocationParameters
-  radiusInMeters: number
+  onLocationChange: (location: Location) => void
+  userLocation: Location
 }
 
 // Optimized animation options for smoother transitions
@@ -41,9 +45,8 @@ const ANIMATION_OPTIONS = {
 export const SearchMap: FC<MapBoxProps> = ({
   onLocationChange,
   userLocation,
-  radiusInMeters,
 }) => {
-  debugLog('MapBox render:', { userLocation, radiusInMeters })
+  debugLog('MapBox render:', { userLocation })
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
@@ -52,38 +55,18 @@ export const SearchMap: FC<MapBoxProps> = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const initialCenter = useMemo(() => {
     debugLog('Calculating initial center:', userLocation)
-    return [userLocation.longitude, userLocation.latitude] as [number, number]
-  }, [userLocation.latitude, userLocation.longitude])
+    return [userLocation.center.longitude, userLocation.center.latitude] as [
+      number,
+      number,
+    ]
+  }, [userLocation.center.latitude, userLocation.center.longitude])
 
+  console.log('initialCenter', initialCenter)
   const mapRef = useMapInitialization(
     mapContainerRef,
     initialCenter,
     MAP_SETTINGS,
   )
-
-  const { calculateSquareCoordinates, updateSquareData } = useMapSquare(mapRef)
-
-  // Implement cache clearing for long sessions
-  useEffect(() => {
-    // Set up a timer to periodically clear the cache during long sessions
-    const cacheCleanupInterval = setInterval(
-      () => {
-        // Only clear cache if the user has been active for a while
-        const lastActivity = localStorage.getItem('lastMapActivity')
-        const now = Date.now()
-
-        if (lastActivity && now - Number(lastActivity) > 15 * 60 * 1000) {
-          debugLog('Clearing MapBox cache after period of inactivity')
-          clearMapboxCache()
-        }
-      },
-      30 * 60 * 1000,
-    ) // Check every 30 minutes
-
-    return () => {
-      clearInterval(cacheCleanupInterval)
-    }
-  }, [])
 
   // Record user activity
   useEffect(() => {
@@ -113,7 +96,7 @@ export const SearchMap: FC<MapBoxProps> = ({
     const debouncedResize = debounce(() => {
       debugLog('Resizing map')
       mapRef.current?.resize()
-    }, 100)
+    }, 300)
 
     const resizeObserver = new ResizeObserver(debouncedResize)
     resizeObserver.observe(mapContainerRef.current)
@@ -128,88 +111,31 @@ export const SearchMap: FC<MapBoxProps> = ({
     }
   }, [mapRef])
 
-  // Map initialization effect
-  useEffect(() => {
-    debugLog('Map initialization effect running')
-    if (!mapRef.current) {
-      debugLog('Map initialization skipped:', {
-        hasMap: !!mapRef.current,
-      })
-      return
-    }
-
-    mapRef.current.on('load', () => {
-      debugLog('Map load event triggered')
-      if (!mapRef.current) {
-        debugLog('Map ref lost during load event')
-        return
-      }
-
-      debugLog('Creating center marker')
-      centerMarkerRef.current = new mapboxgl.Marker()
-        .setLngLat(mapRef.current.getCenter())
-        .addTo(mapRef.current)
-
-      debugLog('Adding square source')
-      try {
-        mapRef.current?.addSource('square', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'Polygon',
-              coordinates: [
-                calculateSquareCoordinates(
-                  mapRef.current.getCenter(),
-                  radiusInMeters,
-                ),
-              ],
-            },
-          },
-        })
-
-        debugLog('Adding square fill layer')
-        mapRef.current?.addLayer({
-          id: 'center-square',
-          type: 'fill',
-          source: 'square',
-          paint: {
-            'fill-color': 'blue',
-            'fill-opacity': 0.1,
-          },
-        })
-
-        debugLog('Adding square border layer')
-        mapRef.current?.addLayer({
-          id: 'center-square-border',
-          type: 'line',
-          source: 'square',
-          paint: {
-            'line-color': 'blue',
-            'line-width': 1,
-          },
-        })
-      } catch (error) {
-        debugLog('Error setting up map layers:', error)
-      }
-    })
-  }, [radiusInMeters, mapRef, calculateSquareCoordinates])
-
   // Create a memoized debounced handler
   const debouncedLocationChange = useMemo(
     () =>
-      debounce((center: LngLat) => {
+      debounce((center: mapboxgl.LngLat, rectangle: Rectangle) => {
         onLocationChange({
-          latitude: center.lat,
-          longitude: center.lng,
-          radiusInMeters,
+          center: {
+            latitude: center.lat,
+            longitude: center.lng,
+          },
+          bounds: {
+            northEast: {
+              latitude: rectangle.northEast.latitude,
+              longitude: rectangle.northEast.longitude,
+            },
+            southWest: {
+              latitude: rectangle.southWest.latitude,
+              longitude: rectangle.southWest.longitude,
+            },
+          },
         })
-      }, 1000),
-    [onLocationChange, radiusInMeters],
+      }, 500),
+    [onLocationChange],
   )
 
-  // Map movement effect
+  // Update the map movement effect
   useEffect(() => {
     debugLog('Setting up map movement handlers')
     if (!mapRef.current) {
@@ -221,27 +147,56 @@ export const SearchMap: FC<MapBoxProps> = ({
       if (isSelectionMovement.current) return
 
       if (mapRef.current) {
+        const bounds = mapRef.current.getBounds()
         const center = mapRef.current.getCenter()
+
+        // Add validation checks
+        if (
+          !bounds ||
+          !center ||
+          !Number.isFinite(center.lat) ||
+          !Number.isFinite(center.lng)
+        ) {
+          console.warn('Invalid map coordinates detected:', { bounds, center })
+          return
+        }
+
+        const ne = bounds.getNorthEast()
+        const sw = bounds.getSouthWest()
+
+        // Validate bound coordinates
+        if (
+          !Number.isFinite(ne.lat) ||
+          !Number.isFinite(ne.lng) ||
+          !Number.isFinite(sw.lat) ||
+          !Number.isFinite(sw.lng)
+        ) {
+          console.warn('Invalid bounds coordinates:', { ne, sw })
+          return
+        }
+
+        const rectangle = {
+          northEast: {
+            latitude: ne.lat,
+            longitude: ne.lng,
+          },
+          southWest: {
+            latitude: sw.lat,
+            longitude: sw.lng,
+          },
+        }
+
+        // Only update if we have valid coordinates
         centerMarkerRef.current?.setLngLat(center)
-        updateSquareData(center, radiusInMeters)
-        debouncedLocationChange(center)
+        debouncedLocationChange(center, rectangle)
       }
     })
 
+    // Clean up the debounced function when the component unmounts
     return () => {
       debouncedLocationChange.cancel()
     }
-  }, [radiusInMeters, mapRef, updateSquareData, debouncedLocationChange])
-
-  // Square update effect
-  useEffect(() => {
-    debugLog('Square update effect')
-    if (!mapRef.current) {
-      debugLog('Square update skipped')
-      return
-    }
-    updateSquareData(mapRef.current.getCenter(), radiusInMeters)
-  }, [radiusInMeters, mapRef, updateSquareData])
+  }, [mapRef, debouncedLocationChange])
 
   // Update when user location changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
@@ -250,7 +205,10 @@ export const SearchMap: FC<MapBoxProps> = ({
 
     // Get current center
     const currentCenter = mapRef.current.getCenter()
-    const targetCenter = [userLocation.longitude, userLocation.latitude]
+    const targetCenter = [
+      userLocation.center.longitude,
+      userLocation.center.latitude,
+    ]
 
     // Calculate distance to determine if we need to fly or jump
     const distanceInDegrees = Math.sqrt(
@@ -279,7 +237,7 @@ export const SearchMap: FC<MapBoxProps> = ({
       mapRef.current?.off('moveend', onMoveEnd)
     }
     mapRef.current.on('moveend', onMoveEnd)
-  }, [userLocation.latitude, userLocation.longitude])
+  }, [userLocation.center.latitude, userLocation.center.longitude])
 
   return (
     <>
