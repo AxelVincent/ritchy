@@ -52,7 +52,9 @@ export const InstallPrompt = () => {
   }
 
   // Show install button if it's iOS Safari or we have an install prompt
-  const showButton = (isIOS && isSafari) || prompt
+  const showButton =
+    ((isIOS && isSafari) || prompt) &&
+    (deviceType === 'ios' || deviceType === 'android')
 
   if (!showButton) return null
 
