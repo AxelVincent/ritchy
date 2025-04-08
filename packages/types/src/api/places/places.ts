@@ -97,6 +97,7 @@ export const AddressComponentSchema = z.object({
       'street_number',
       'sublocality',
       'plus_code',
+      'beach',
     ]),
   ),
   languageCode: z.string(),
