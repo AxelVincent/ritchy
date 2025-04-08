@@ -30,12 +30,14 @@ interface PlaceSearchProps {
   onSearch: (params: CreateSearchRequestBody) => void
   className?: string
   onLocationChange?: (location: Location) => void
+  isLoading?: boolean
 }
 
 export const PlacesTextSearch = ({
   location,
   onSearch,
   onLocationChange,
+  isLoading = false,
 }: PlaceSearchProps) => {
   const navigate = useNavigate()
   const { data: subscription } = useUserSubscription()
@@ -246,11 +248,20 @@ export const PlacesTextSearch = ({
             <Button
               type="submit"
               variant="default"
-              disabled={searchText.length < 3}
+              disabled={searchText.length < 3 || isLoading}
               className="w-full sm:w-auto mb-1"
             >
-              <Search className="w-4 h-4 mr-2" />
-              Search
+              {isLoading ? (
+                <>
+                  <span className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -99,6 +99,7 @@ function RouteComponent() {
         location={currentLocation}
         onSearch={triggerSearch}
         onLocationChange={handleLocationChange}
+        isLoading={createSearchMutation.isPending}
       />
       <SearchMap
         onLocationChange={handleLocationChange}
