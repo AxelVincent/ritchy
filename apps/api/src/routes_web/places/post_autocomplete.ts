@@ -1,9 +1,9 @@
+import { logger } from '@ritchy/logger'
 import type {
   AutocompleteApiResponse,
   AutocompleteRequestBody,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
-import { logger } from 'packages/logger/dist'
 import { postAutocompleteV1 } from '../../external/google_maps/autocomplete_V1'
 
 export const postAutocomplete = async (
