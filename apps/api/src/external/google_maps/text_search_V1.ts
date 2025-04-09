@@ -1,9 +1,6 @@
 import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
-import {
-  divideRectangleIntoFour,
-  getLargestSquareFromCoordinates,
-} from '../../utils/geo_utils'
+import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
@@ -22,7 +19,7 @@ import { placesApiQueue } from './utils/places_api_queue'
 async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
 ): Promise<GooglePlacesTextSearchResponse> {
-  const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places:searchText`)
+  const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places:searchText`)
 
   const body = {
     textQuery: formattedRequest.textQuery,
@@ -38,7 +35,7 @@ async function fetchSinglePage(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
+        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
         'X-Goog-FieldMask': PREFERRED_PLACE_KEYS_TEXT_SEARCH,
         Referer: GOOGLE_MAPS_CONFIG.REFERRER,
       },

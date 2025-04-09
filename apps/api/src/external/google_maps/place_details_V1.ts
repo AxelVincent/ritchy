@@ -15,7 +15,7 @@ import { mapToPlaceDetails } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
 
 async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
-  const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places/${placeId}`)
+  const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places/${placeId}`)
 
   const startTime = Date.now()
 
@@ -23,7 +23,7 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
+        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
         'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
         Referer: GOOGLE_MAPS_CONFIG.REFERRER,
       },
