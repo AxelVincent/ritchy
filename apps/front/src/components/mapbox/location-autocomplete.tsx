@@ -11,11 +11,15 @@ import {
 } from '../ui/command-location-dropdown'
 
 import { cn } from '@/lib/utils'
-import type { GeocodingResult, MapboxGeocodeResponse } from '@ritchy/types'
+import type {
+  GeocodeLocation,
+  GeocodingResult,
+  MapboxGeocodeResponse,
+} from '@ritchy/types'
 import { Check } from 'lucide-react'
 import { LoadingSpinner } from '../ui/loading-spinner'
 interface LocationAutocompleteProps {
-  onLocationSelect: (location: GeocodingResult) => void
+  onLocationSelect: (location: GeocodeLocation) => void
 }
 
 export function LocationAutocomplete({
@@ -61,7 +65,26 @@ export function LocationAutocomplete({
     (selectedOption: GeocodingResult) => {
       setInputValue(selectedOption.place_name)
       setSelected(selectedOption)
-      onLocationSelect(selectedOption)
+      onLocationSelect({
+        formatted_address: selectedOption.place_name,
+        geometry: {
+          location: {
+            lat: selectedOption.center[1],
+            lng: selectedOption.center[0],
+          },
+          location_type: selectedOption.place_type[0],
+          viewport: {
+            northeast: {
+              lat: selectedOption?.bbox?.[0] ?? 0,
+              lng: selectedOption?.bbox?.[1] ?? 0,
+            },
+            southwest: {
+              lat: selectedOption?.bbox?.[2] ?? 0,
+              lng: selectedOption?.bbox?.[3] ?? 0,
+            },
+          },
+        },
+      })
       setTimeout(() => {
         inputRef?.current?.blur()
       }, 0)

@@ -1,9 +1,11 @@
 import { useMapInitialization } from '@/components/map-display/hooks/useMapInitialization'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 
+import { Button } from '@/components/ui/button'
 import { debounce } from '@/lib/debounce'
 import type { Rectangle } from '@ritchy/types'
-import { type FC, useEffect, useMemo, useRef } from 'react'
+import { Search } from 'lucide-react'
+import { type FC, useCallback, useEffect, useMemo, useRef } from 'react'
 
 const DEBUG = false
 
@@ -32,6 +34,12 @@ export type Location = {
 interface MapBoxProps {
   onLocationChange: (location: Location) => void
   userLocation: Location
+  onSearchArea: () => void
+  searchInfo: {
+    keyword: string
+    placeName: string
+    model: string
+  }
 }
 
 // Optimized animation options for smoother transitions
@@ -45,6 +53,8 @@ const ANIMATION_OPTIONS = {
 export const SearchMap: FC<MapBoxProps> = ({
   onLocationChange,
   userLocation,
+  onSearchArea,
+  searchInfo,
 }) => {
   debugLog('MapBox render:', { userLocation })
 
@@ -135,88 +145,102 @@ export const SearchMap: FC<MapBoxProps> = ({
     [onLocationChange],
   )
 
-  // Update the map movement effect
-  useEffect(() => {
-    debugLog('Setting up map movement handlers')
-    if (!mapRef.current) {
-      debugLog('Map movement setup skipped')
+  // Memoize the location update handler
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const handleMapMove = useCallback(() => {
+    if (isSelectionMovement.current || !mapRef.current) return
+
+    const bounds = mapRef.current.getBounds()
+    const center = mapRef.current.getCenter()
+
+    // Add validation checks
+    if (
+      !bounds ||
+      !center ||
+      !Number.isFinite(center.lat) ||
+      !Number.isFinite(center.lng)
+    ) {
+      console.warn('Invalid map coordinates detected:', { bounds, center })
       return
     }
 
-    mapRef.current.on('move', () => {
-      if (isSelectionMovement.current) return
+    const ne = bounds.getNorthEast()
+    const sw = bounds.getSouthWest()
 
-      if (mapRef.current) {
-        const bounds = mapRef.current.getBounds()
-        const center = mapRef.current.getCenter()
-
-        // Add validation checks
-        if (
-          !bounds ||
-          !center ||
-          !Number.isFinite(center.lat) ||
-          !Number.isFinite(center.lng)
-        ) {
-          console.warn('Invalid map coordinates detected:', { bounds, center })
-          return
-        }
-
-        const ne = bounds.getNorthEast()
-        const sw = bounds.getSouthWest()
-
-        // Validate bound coordinates
-        if (
-          !Number.isFinite(ne.lat) ||
-          !Number.isFinite(ne.lng) ||
-          !Number.isFinite(sw.lat) ||
-          !Number.isFinite(sw.lng)
-        ) {
-          console.warn('Invalid bounds coordinates:', { ne, sw })
-          return
-        }
-
-        // Add bounds width validation
-        const width = Math.abs(ne.lng - sw.lng)
-        if (width > 180) {
-          console.warn('Viewport too wide, skipping update:', width)
-          return
-        }
-
-        // Ensure coordinates are within valid ranges
-        const normalizedRectangle = {
-          northEast: {
-            latitude: Math.min(Math.max(ne.lat, -90), 90),
-            longitude: Math.min(Math.max(ne.lng, -180), 180),
-          },
-          southWest: {
-            latitude: Math.min(Math.max(sw.lat, -90), 90),
-            longitude: Math.min(Math.max(sw.lng, -180), 180),
-          },
-        }
-
-        // Only update if we have valid coordinates
-        centerMarkerRef.current?.setLngLat(center)
-        debouncedLocationChange(center, normalizedRectangle)
-      }
-    })
-
-    // Clean up the debounced function when the component unmounts
-    return () => {
-      debouncedLocationChange.cancel()
+    // Validate bound coordinates
+    if (
+      !Number.isFinite(ne.lat) ||
+      !Number.isFinite(ne.lng) ||
+      !Number.isFinite(sw.lat) ||
+      !Number.isFinite(sw.lng)
+    ) {
+      console.warn('Invalid bounds coordinates:', { ne, sw })
+      return
     }
-  }, [mapRef, debouncedLocationChange])
 
-  // Update when user location changes
+    // Add bounds width validation
+    const width = Math.abs(ne.lng - sw.lng)
+    if (width > 180) {
+      console.warn('Viewport too wide, skipping update:', width)
+      return
+    }
+
+    // Ensure coordinates are within valid ranges
+    const normalizedRectangle = {
+      northEast: {
+        latitude: Math.min(Math.max(ne.lat, -90), 90),
+        longitude: Math.min(Math.max(ne.lng, -180), 180),
+      },
+      southWest: {
+        latitude: Math.min(Math.max(sw.lat, -90), 90),
+        longitude: Math.min(Math.max(sw.lng, -180), 180),
+      },
+    }
+
+    centerMarkerRef.current?.setLngLat(center)
+    debouncedLocationChange(center, normalizedRectangle)
+  }, [debouncedLocationChange])
+
+  // Set up map movement handlers once
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!mapRef.current) return
 
-    // Get current center
-    const currentCenter = mapRef.current.getCenter()
+    const map = mapRef.current
+    map.on('move', handleMapMove)
+
+    return () => {
+      map.off('move', handleMapMove)
+    }
+  }, [handleMapMove])
+
+  // Improve location update effect
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const map = mapRef.current
+    const currentCenter = map.getCenter()
     const targetCenter = [
       userLocation.center.longitude,
       userLocation.center.latitude,
     ]
+
+    // Skip if we're already at the target location
+    if (
+      currentCenter.lng === targetCenter[0] &&
+      currentCenter.lat === targetCenter[1]
+    ) {
+      return
+    }
+
+    isSelectionMovement.current = true
+
+    const onMoveEnd = () => {
+      isSelectionMovement.current = false
+    }
+
+    map.once('moveend', onMoveEnd) // Use once instead of on/off
 
     // Calculate distance to determine if we need to fly or jump
     const distanceInDegrees = Math.sqrt(
@@ -224,32 +248,31 @@ export const SearchMap: FC<MapBoxProps> = ({
         (currentCenter.lat - targetCenter[1]) ** 2,
     )
 
-    isSelectionMovement.current = true
-
     if (distanceInDegrees > 0.2) {
       // For larger distances, just jump there
-      mapRef.current.jumpTo({
+      map.jumpTo({
         center: targetCenter as [number, number],
       })
     } else {
       // For smaller distances, fly smoothly
-      mapRef.current.flyTo({
+      map.flyTo({
         center: targetCenter as [number, number],
         ...ANIMATION_OPTIONS,
       })
     }
-
-    // Reset selection movement flag after animation completes
-    const onMoveEnd = () => {
-      isSelectionMovement.current = false
-      mapRef.current?.off('moveend', onMoveEnd)
-    }
-    mapRef.current.on('moveend', onMoveEnd)
   }, [userLocation.center.latitude, userLocation.center.longitude])
 
   return (
     <>
       <div ref={mapContainerRef} className="h-full w-full" />
+      {(searchInfo.keyword || searchInfo.placeName) && (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
+          <Button size="lg" onClick={onSearchArea} className="shadow-lg">
+            <Search className="w-4 h-4 mr-2" />
+            Search in this area
+          </Button>
+        </div>
+      )}
     </>
   )
 }
