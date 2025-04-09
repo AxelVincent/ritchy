@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { EnrichResponseSchema } from '../enrich'
-import { RectangleSchema, SearchModelEnum } from '../search'
+import { RectangleSchema, SearchModelEnum } from '../searches/search'
 import { NoteSchema } from './notes'
 import { StatusSchema } from './status'
 
