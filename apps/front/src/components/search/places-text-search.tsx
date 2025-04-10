@@ -50,6 +50,18 @@ export const PlacesTextSearch = ({
   const [isOpen, setIsOpen] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [step, setStep] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isSelectOpen, setIsSelectOpen] = useState(false)
+
+  // Remove the refs and focus effect since we'll use autoFocus prop
+  const [isFirstRender, setIsFirstRender] = useState(true)
+
+  useEffect(() => {
+    if (isFirstRender) {
+      setIsFirstRender(false)
+      return
+    }
+  }, [isFirstRender])
 
   useEffect(() => {
     currentLocationRef.current = {
@@ -58,6 +70,69 @@ export const PlacesTextSearch = ({
     }
   }, [location])
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // If the select is open, don't handle card closing
+      if (isSelectOpen) {
+        return
+      }
+
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside, true)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true)
+    }
+  }, [isSelectOpen])
+
+  // Add keyboard event handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isOpen) return
+
+      // Prevent handling if focus is in a select element
+      if (isSelectOpen) return
+
+      switch (event.key) {
+        case 'Enter':
+          event.preventDefault()
+          if (step === 0 && placeName) {
+            nextStep()
+          } else if (step === 1 && searchText.trim()) {
+            nextStep()
+          } else if (step === 2) {
+            handleComplete()
+          }
+          break
+        case 'ArrowRight':
+          event.preventDefault()
+          if (step === 0 && placeName) {
+            nextStep()
+          } else if (step === 1 && searchText.trim()) {
+            nextStep()
+          }
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+          if (step > 0) {
+            prevStep()
+          }
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, isSelectOpen, step, placeName, searchText])
+
   const handleLocationSelect = useCallback(
     (location: GeocodeLocation) => {
       const updatedLocation = {
@@ -65,12 +140,23 @@ export const PlacesTextSearch = ({
           latitude: location.geometry.location.lat,
           longitude: location.geometry.location.lng,
         },
-        bounds: currentLocationRef.current.bounds,
+        bounds: {
+          northEast: {
+            latitude: location.geometry.viewport.northeast.lat,
+            longitude: location.geometry.viewport.northeast.lng,
+          },
+          southWest: {
+            latitude: location.geometry.viewport.southwest.lat,
+            longitude: location.geometry.viewport.southwest.lng,
+          },
+        },
       }
 
       onLocationChange?.(updatedLocation)
       setPlaceName(location.formatted_address)
-      nextStep()
+      if (location.formatted_address) {
+        nextStep()
+      }
     },
     [onLocationChange],
   )
@@ -90,6 +176,10 @@ export const PlacesTextSearch = ({
   }
 
   const handleComplete = () => {
+    setIsOpen(false)
+  }
+
+  const nextStep = () => {
     const searchPowerLabel = {
       ESSENTIALS: 'Basic',
       NAVIGATOR: 'Enhanced',
@@ -97,24 +187,23 @@ export const PlacesTextSearch = ({
       PRO: 'Premium',
     }[model]
 
-    const combinedInput = [
-      placeName,
-      `"${searchText}"`,
-      `(${searchPowerLabel} search)`,
-    ]
-      .filter(Boolean)
-      .join(' • ')
+    const parts = []
+    if (step >= 0 && placeName) parts.push(placeName)
+    console.log('step', step, placeName)
+    if (step >= 1 && searchText) parts.push(searchText)
+    if (step >= 2) parts.push(`(${searchPowerLabel} search)`)
 
+    const combinedInput = parts.filter(Boolean).join(' • ')
     setSearchInput(combinedInput)
-    setIsOpen(false)
-    onSearchInfoChange?.({
-      keyword: searchText,
-      placeName: placeName,
-      model: model,
-    })
-  }
 
-  const nextStep = () => {
+    if (step >= 1 && placeName && searchText) {
+      onSearchInfoChange?.({
+        keyword: searchText,
+        placeName: placeName,
+        model: model,
+      })
+    }
+
     setStep(step + 1)
   }
 
@@ -123,14 +212,39 @@ export const PlacesTextSearch = ({
   }
 
   const renderStep = () => {
+    const totalSteps = 3
+    const stepNames = ['location', 'search', 'model']
+    const stepIndicator = (
+      <div className="mb-4">
+        <div className="flex justify-between items-center text-sm text-muted-foreground">
+          <span>
+            Step {step + 1} of {totalSteps}
+          </span>
+          <div className="flex gap-1">
+            {stepNames.map((name, i) => (
+              <div
+                key={name}
+                className={`h-1.5 w-8 rounded-full ${
+                  i <= step ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+
     switch (step) {
       case 0:
         return (
           <div className="space-y-4">
+            {stepIndicator}
             <h2 className="text-lg font-semibold">Where are you searching?</h2>
             <div className="space-y-1.5">
               <SearchLocationAutocomplete
                 onLocationSelect={handleLocationSelect}
+                initialAddress={placeName}
+                autoFocus={!isFirstRender}
               />
             </div>
             <div className="flex justify-end">
@@ -141,15 +255,18 @@ export const PlacesTextSearch = ({
       case 1:
         return (
           <div className="space-y-4">
+            {stepIndicator}
             <h2 className="text-lg font-semibold">What are you looking for?</h2>
             <div className="space-y-1.5">
               <div className="relative">
                 <Input
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
+                  onClear={() => setSearchText('')}
                   placeholder="Restaurant, surf shop, cocktail bar, etc."
                   minLength={3}
                   required
+                  autoFocus
                 />
               </div>
             </div>
@@ -174,9 +291,14 @@ export const PlacesTextSearch = ({
       case 2:
         return (
           <div className="space-y-4">
+            {stepIndicator}
             <h2 className="text-lg font-semibold">Choose your search power</h2>
             <div className="space-y-1.5">
-              <Select value={model} onValueChange={handleModelChange}>
+              <Select
+                value={model}
+                onValueChange={handleModelChange}
+                onOpenChange={setIsSelectOpen}
+              >
                 <SelectTrigger id="model-select" className="w-[100px]">
                   <SelectValue placeholder="Select a model">
                     {model === 'ESSENTIALS' && 'Essentials'}
@@ -278,14 +400,17 @@ export const PlacesTextSearch = ({
   }
 
   return (
-    <div className="absolute top-4 left-4 z-10">
-      <div className="relative w-full max-w-sm">
+    <div
+      className="absolute top-4 left-1/2 md:left-4 -translate-x-1/2 md:-translate-x-0 z-10"
+      ref={containerRef}
+    >
+      <div className="relative w-[calc(100vw-110px)] md:w-[min(100%,_max(300px,_fit-content))] max-w-sm">
         {!isOpen && (
           <>
             <Input
               value={searchInput}
               placeholder="Search your next customers"
-              className="pr-10 bg-background min-w-[300px]"
+              className="bg-background w-full h-[40px] border-x"
               readOnly
               onClick={() => {
                 setStep(0)

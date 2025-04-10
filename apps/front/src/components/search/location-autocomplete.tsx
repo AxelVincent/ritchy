@@ -10,22 +10,29 @@ import { useEffect } from 'react'
 
 interface LocationAutocompleteProps {
   onLocationSelect: (location: GeocodeLocation) => void
+  initialAddress?: string
+  autoFocus?: boolean
 }
 
 export function LocationAutocomplete({
   onLocationSelect,
+  initialAddress,
+  autoFocus,
 }: LocationAutocompleteProps) {
   const [value, setValue] = React.useState('')
-  const [inputValue, setInputValue] = React.useState('')
+  const [inputValue, setInputValue] = React.useState(initialAddress || '')
   const [selectedPlaceId, setSelectedPlaceId] = React.useState<string | null>(
     null,
   )
+  const [shouldFetchGeocode, setShouldFetchGeocode] = React.useState(false)
+  const [predictions, setPredictions] = React.useState<
+    AutocompletePrediction[]
+  >([])
 
   const { mutate: searchPlaces, data: response } = usePlaceAutocomplete()
-  const { data: geocodeData } = usePlaceGeocode(selectedPlaceId || '')
-
-  const predictions =
-    response && 'predictions' in response ? response.predictions : []
+  const { data: geocodeData } = usePlaceGeocode(selectedPlaceId || '', {
+    enabled: shouldFetchGeocode,
+  })
 
   const debouncedSearch = React.useMemo(
     () =>
@@ -33,7 +40,7 @@ export function LocationAutocomplete({
         if (search.length >= 3) {
           searchPlaces({ input: search })
         }
-      }, 300),
+      }, 1000),
     [searchPlaces],
   )
 
@@ -42,24 +49,36 @@ export function LocationAutocomplete({
     return () => debouncedSearch.cancel()
   }, [inputValue, debouncedSearch])
 
+  React.useEffect(() => {
+    if (initialAddress) {
+      setInputValue(initialAddress)
+    }
+  }, [initialAddress])
+
+  useEffect(() => {
+    if (response && 'predictions' in response) {
+      setPredictions(response.predictions)
+    }
+  }, [response])
+
   const handleLocationSelect = async (location: AutocompletePrediction) => {
     setValue(location.placeId)
     setInputValue(location.mainText)
     setSelectedPlaceId(location.placeId)
+    setShouldFetchGeocode(true)
   }
-
-  console.log('predictions', predictions)
 
   useEffect(() => {
     if (
       geocodeData &&
       'result' in geocodeData &&
-      'geometry' in geocodeData.result
+      'formatted_address' in geocodeData.result
     ) {
       onLocationSelect({
         formatted_address: geocodeData.result.formatted_address,
         geometry: geocodeData.result.geometry,
       })
+      setShouldFetchGeocode(false)
     }
   }, [geocodeData, onLocationSelect])
 
@@ -79,6 +98,11 @@ export function LocationAutocomplete({
         placeholder="Search location..."
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
+        onClear={() => {
+          setInputValue('')
+          setPredictions([])
+        }}
+        autoFocus={autoFocus}
       />
 
       {predictions.length > 0 && (

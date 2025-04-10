@@ -23,23 +23,6 @@ export const initMapboxPerformanceSettings = (): void => {
 }
 
 /**
- * Clear Mapbox cache and storage
- * @param callback Optional callback function to handle errors
- */
-export const clearMapboxCache = (
-  callback?: (err?: Error | null) => void,
-): void => {
-  mapboxgl.clearStorage((err) => {
-    if (err) {
-      console.error('Error clearing Mapbox storage:', err)
-    }
-    if (callback) {
-      callback(err || undefined)
-    }
-  })
-}
-
-/**
  * Clean up prewarmed resources - call when user is unlikely to return to map view
  */
 export const cleanupMapboxResources = (): void => {

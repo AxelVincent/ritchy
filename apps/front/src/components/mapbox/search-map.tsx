@@ -42,14 +42,6 @@ interface MapBoxProps {
   }
 }
 
-// Optimized animation options for smoother transitions
-const ANIMATION_OPTIONS = {
-  essential: true, // Won't be affected by reduced motion preferences
-  maxDuration: 800, // Cap animation time
-  speed: 1.2,
-  curve: 1.42,
-}
-
 export const SearchMap: FC<MapBoxProps> = ({
   onLocationChange,
   userLocation,
@@ -60,7 +52,6 @@ export const SearchMap: FC<MapBoxProps> = ({
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
-  const isSelectionMovement = useRef(false)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const initialCenter = useMemo(() => {
@@ -71,7 +62,6 @@ export const SearchMap: FC<MapBoxProps> = ({
     ]
   }, [userLocation.center.latitude, userLocation.center.longitude])
 
-  console.log('initialCenter', initialCenter)
   const mapRef = useMapInitialization(
     mapContainerRef,
     initialCenter,
@@ -148,7 +138,7 @@ export const SearchMap: FC<MapBoxProps> = ({
   // Memoize the location update handler
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const handleMapMove = useCallback(() => {
-    if (isSelectionMovement.current || !mapRef.current) return
+    if (!mapRef.current) return
 
     const bounds = mapRef.current.getBounds()
     const center = mapRef.current.getCenter()
@@ -234,32 +224,17 @@ export const SearchMap: FC<MapBoxProps> = ({
       return
     }
 
-    isSelectionMovement.current = true
-
-    const onMoveEnd = () => {
-      isSelectionMovement.current = false
-    }
-
-    map.once('moveend', onMoveEnd) // Use once instead of on/off
-
-    // Calculate distance to determine if we need to fly or jump
-    const distanceInDegrees = Math.sqrt(
-      (currentCenter.lng - targetCenter[0]) ** 2 +
-        (currentCenter.lat - targetCenter[1]) ** 2,
-    )
-
-    if (distanceInDegrees > 0.2) {
-      // For larger distances, just jump there
-      map.jumpTo({
-        center: targetCenter as [number, number],
-      })
-    } else {
-      // For smaller distances, fly smoothly
-      map.flyTo({
-        center: targetCenter as [number, number],
-        ...ANIMATION_OPTIONS,
-      })
-    }
+    console.log('userLocation.bounds', userLocation.bounds)
+    map.fitBounds([
+      [
+        userLocation.bounds.southWest.longitude,
+        userLocation.bounds.southWest.latitude,
+      ],
+      [
+        userLocation.bounds.northEast.longitude,
+        userLocation.bounds.northEast.latitude,
+      ],
+    ])
   }, [userLocation.center.latitude, userLocation.center.longitude])
 
   return (
