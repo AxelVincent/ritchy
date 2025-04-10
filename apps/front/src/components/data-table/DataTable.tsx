@@ -242,7 +242,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
-        <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto">
+        <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto md:pl-2 pl-16 md:mt-0 mt-2">
           <ListManagementButtons table={table} listId={listId} />
           <EnrichmentButtons
             table={table}
