@@ -244,7 +244,7 @@ export const SearchMap: FC<MapBoxProps> = ({
   return (
     <>
       <div ref={mapContainerRef} className="h-full w-full" />
-      {(searchInfo.keyword || searchInfo.placeName) && (
+      {searchInfo.keyword && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
           <Button size="lg" onClick={onSearchArea} className="shadow-lg">
             <Search className="w-4 h-4 mr-2" />

@@ -189,17 +189,16 @@ export const PlacesTextSearch = ({
 
     const parts = []
     if (step >= 0 && placeName) parts.push(placeName)
-    console.log('step', step, placeName)
     if (step >= 1 && searchText) parts.push(searchText)
     if (step >= 2) parts.push(`(${searchPowerLabel} search)`)
 
     const combinedInput = parts.filter(Boolean).join(' • ')
     setSearchInput(combinedInput)
 
-    if (step >= 1 && placeName && searchText) {
+    if (step >= 1 && searchText) {
       onSearchInfoChange?.({
         keyword: searchText,
-        placeName: placeName,
+        placeName: placeName || '',
         model: model,
       })
     }
@@ -248,7 +247,12 @@ export const PlacesTextSearch = ({
               />
             </div>
             <div className="flex justify-end">
-              <Button onClick={nextStep}>Next</Button>
+              <Button
+                variant={placeName ? 'default' : 'secondary'}
+                onClick={nextStep}
+              >
+                {placeName ? 'Next' : 'Skip'}
+              </Button>
             </div>
           </div>
         )
