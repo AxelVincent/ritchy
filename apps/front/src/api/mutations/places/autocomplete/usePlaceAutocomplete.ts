@@ -8,8 +8,6 @@ export const usePlaceAutocomplete = () => {
   return useApiMutation<AutocompleteApiResponse, AutocompleteRequestBody>(
     '/places/autocomplete',
     {
-      method: 'POST',
-      getEndpoint: () => '/places/autocomplete',
       getBody: (body) => body,
     },
   )
