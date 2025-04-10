@@ -224,17 +224,21 @@ export const SearchMap: FC<MapBoxProps> = ({
       return
     }
 
-    console.log('userLocation.bounds', userLocation.bounds)
-    map.fitBounds([
+    map.fitBounds(
       [
-        userLocation.bounds.southWest.longitude,
-        userLocation.bounds.southWest.latitude,
+        [
+          userLocation.bounds.southWest.longitude,
+          userLocation.bounds.southWest.latitude,
+        ],
+        [
+          userLocation.bounds.northEast.longitude,
+          userLocation.bounds.northEast.latitude,
+        ],
       ],
-      [
-        userLocation.bounds.northEast.longitude,
-        userLocation.bounds.northEast.latitude,
-      ],
-    ])
+      {
+        maxZoom: 16,
+      },
+    )
   }, [userLocation.center.latitude, userLocation.center.longitude])
 
   return (

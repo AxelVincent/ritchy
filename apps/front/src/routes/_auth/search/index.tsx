@@ -114,10 +114,7 @@ function RouteComponent() {
   // Update from geolocation only on initial load
   useEffect(() => {
     if (geoLocation && currentLocation === defaultLocation) {
-      setCurrentLocation({
-        center: geoLocation,
-        bounds: defaultLocation.bounds,
-      })
+      setCurrentLocation(geoLocation)
     }
   }, [geoLocation, currentLocation, defaultLocation])
 
