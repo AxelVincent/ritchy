@@ -410,7 +410,7 @@ export const PlacesTextSearch = ({
       className="absolute top-4 left-1/2 md:left-4 -translate-x-1/2 md:-translate-x-0 z-10"
       ref={containerRef}
     >
-      <div className="relative w-[calc(100vw-110px)] md:w-[min(100%,_max(300px,_fit-content))] max-w-sm">
+      <div className="relative w-[calc(100vw-120px)] md:w-[min(100%,_max(300px,_fit-content))] max-w-sm">
         {!isOpen && (
           <>
             <Input
