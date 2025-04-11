@@ -1,8 +1,8 @@
 import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
-import { type Location, SearchMap } from '@/components/mapbox/search-map'
 import { PlacesTextSearch } from '@/components/search/places-text-search'
+import { type Location, SearchMap } from '@/components/search/search-map'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -87,6 +87,7 @@ function RouteComponent() {
       keyword: searchInfo.keyword,
       model: searchInfo.model as SearchModel,
     }
+    console.log('search', search)
     createSearchMutation.mutate(search, {
       onSuccess: (response) => {
         if ('id' in response) {

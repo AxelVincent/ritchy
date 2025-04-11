@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { debounce } from '@/lib/debounce'
 import type { Rectangle } from '@ritchy/types'
 import { Search } from 'lucide-react'
+import mapboxgl from 'mapbox-gl'
 import { type FC, useCallback, useEffect, useMemo, useRef } from 'react'
 
 const DEBUG = false
@@ -40,6 +41,35 @@ interface MapBoxProps {
     placeName: string
     model: string
   }
+}
+
+const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
+  const bounds = map.getBounds()
+  if (!bounds) return null
+  const ne = bounds.getNorthEast()
+  const sw = bounds.getSouthWest()
+
+  // Get container dimensions
+  const { width, height } = map.getContainer().getBoundingClientRect()
+  const isPortrait = height > width
+
+  if (isPortrait) {
+    // For portrait (mobile), adjust the longitude bounds to match height/width ratio
+    const lat = ne.lat - sw.lat
+    const lng = ne.lng - sw.lng
+    const targetRatio = width / height
+
+    // Adjust longitude spread to match container ratio
+    const newLngSpread = lat * targetRatio
+    const lngDiff = (newLngSpread - lng) / 2
+
+    return new mapboxgl.LngLatBounds(
+      [sw.lng - lngDiff, sw.lat],
+      [ne.lng + lngDiff, ne.lat],
+    )
+  }
+
+  return bounds
 }
 
 export const SearchMap: FC<MapBoxProps> = ({
@@ -140,8 +170,9 @@ export const SearchMap: FC<MapBoxProps> = ({
   const handleMapMove = useCallback(() => {
     if (!mapRef.current) return
 
-    const bounds = mapRef.current.getBounds()
-    const center = mapRef.current.getCenter()
+    const map = mapRef.current
+    const center = map.getCenter()
+    const bounds = calculateAspectRatioBounds(map)
 
     // Add validation checks
     if (
@@ -246,7 +277,11 @@ export const SearchMap: FC<MapBoxProps> = ({
       <div ref={mapContainerRef} className="h-full w-full" />
       {searchInfo.keyword && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
-          <Button size="lg" onClick={onSearchArea} className="shadow-lg">
+          <Button
+            size="lg"
+            onClick={onSearchArea}
+            className="shadow-lg h-[40px]"
+          >
             <Search className="w-4 h-4 mr-2" />
             Search in this area
           </Button>

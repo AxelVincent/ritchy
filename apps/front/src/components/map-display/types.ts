@@ -5,13 +5,6 @@ export interface MapSettings {
   minZoom: number
 }
 
-export interface RadiusSettings {
-  min: number
-  max: number
-  step: number
-  initial: number
-}
-
 export interface MapPerformanceOptions {
   maxParallelImageRequests: number
   workerCount: number
@@ -35,11 +28,4 @@ export const MAP_SETTINGS: MapSettings = {
   zoom: 10,
   maxZoom: 20,
   minZoom: 1,
-}
-
-export const RADIUS_SETTINGS: RadiusSettings = {
-  min: 500,
-  step: 500,
-  initial: 5000,
-  max: 50000, // Default max for FREE/NAVIGATOR plans
 }

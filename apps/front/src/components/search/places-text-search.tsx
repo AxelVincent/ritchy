@@ -16,8 +16,8 @@ import {
   isSubscriptionSuccess,
   useUserSubscription,
 } from '@/api/queries/users/useUserSubscription'
-import type { Location } from '@/components/mapbox/search-map'
 import { LocationAutocomplete as SearchLocationAutocomplete } from '@/components/search/location-autocomplete'
+import type { Location } from '@/components/search/search-map'
 import { isModelAvailable } from '@/lib/subscription'
 import type { GeocodeLocation, SearchModel } from '@ritchy/types'
 
@@ -176,21 +176,23 @@ export const PlacesTextSearch = ({
   }
 
   const handleComplete = () => {
+    nextStep()
     setIsOpen(false)
   }
 
   const nextStep = () => {
     const searchPowerLabel = {
-      ESSENTIALS: 'Basic',
-      NAVIGATOR: 'Enhanced',
-      EXPLORER: 'Advanced',
-      PRO: 'Premium',
+      ESSENTIALS: 'Essentials (60 results)',
+      NAVIGATOR: 'Navigator (240 results)',
+      EXPLORER: 'Explorer (1000 results)',
+      PRO: 'Pro (4000 results)',
     }[model]
 
     const parts = []
-    if (step >= 0 && placeName) parts.push(placeName)
-    if (step >= 1 && searchText) parts.push(searchText)
-    if (step >= 2) parts.push(`(${searchPowerLabel} search)`)
+    if (step >= 1 && searchText) {
+      parts.push(searchText)
+      parts.push(`${searchPowerLabel}`)
+    }
 
     const combinedInput = parts.filter(Boolean).join(' • ')
     setSearchInput(combinedInput)

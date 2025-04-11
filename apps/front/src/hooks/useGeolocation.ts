@@ -1,4 +1,4 @@
-import type { Location } from '@/components/mapbox/search-map'
+import type { Location } from '@/components/search/search-map'
 import { useEffect, useRef, useState } from 'react'
 
 interface GeolocationState {

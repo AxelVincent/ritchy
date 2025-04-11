@@ -42,7 +42,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-ring"
             aria-label="Clear input"
           >
-            <X className="h-4 w-4" />
+            {!props.readOnly && <X className="h-4 w-4" />}
           </button>
         )}
       </div>

@@ -3,7 +3,7 @@ import { MapBox } from '@/components/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 
 import { EmptyListState } from '@/components/lists/empty-list-state'
-import type { Location } from '@/components/mapbox/search-map'
+import type { Location } from '@/components/search/search-map'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
