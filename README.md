@@ -11,50 +11,17 @@ TypeScript monorepo built with Turborepo, featuring a React frontend and Node.js
 - Access to internal environment variables (ask a team member)
 
 ### Quick Setup
-
-#### Setup dependencies
 ```bash
 # Clone the repository
 git clone [repository-url]
 
 # Install dependencies
 pnpm install
-```
 
-#### Setup database
-```bash
+# Start development environment (includes dockerized services)
 docker-compose up -d
-cd apps/api
-pnpm db:migrate
+pnpm dev
 ```
-
-
-#### Setup local user
-Prerequisite: your account should have been created in staging
-
-Install svix
-```bash
-brew install svix/svix/svix-cli
-```
-
-Create the webhook listener
-```bash
-svix listen http://localhost:3030/webhook/clerk/
-```
-
-You are gonna receive message like this one: 
-```bash
-> svix listen http://localhost:3030/webhook/clerk/
-Webhook relay is now listening at
-https://play.svix.com/in/c_9jmjwdcJd8kjGiHnL2qtU8QOpFJ/
-
-All requests on this endpoint will be forwarded to your local URL:
-http://localhost:3030/webhook/clerk/
-```
-
-Update the dev webhook in clerk with the svix link provided, update the account in staging (eg username, photo, no matter)
-
-User should be successfully created in local
 
 ## 💻 Development Workflow
 
