@@ -46,7 +46,15 @@ export const getSearchContent = async (
       results = await postTextSearchV1({
         model: result.model,
         textQuery: result.keyword,
-        rectangle: result.rectangle,
+        locationBias: {
+          circle: {
+            radiusInMeters: result.radiusInMeters,
+            center: {
+              latitude: Number(result.latitude),
+              longitude: Number(result.longitude),
+            },
+          },
+        },
       })
       await redisClient.set(key, results)
     }

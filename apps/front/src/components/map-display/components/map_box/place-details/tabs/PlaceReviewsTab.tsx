@@ -91,7 +91,7 @@ export const PlaceReviewsTab = ({ place }: { place: Place }) => {
         {data &&
           'reviews' in data &&
           data.reviews.map((review) => {
-            const reviewId = `${review.authorAttribution?.displayName}-${review.publishTime}`
+            const reviewId = `${review.authorAttribution.displayName}-${review.publishTime}`
             const hasTranslation =
               review.text?.text !== review.originalText?.text
 
@@ -100,12 +100,12 @@ export const PlaceReviewsTab = ({ place }: { place: Place }) => {
                 <div className="flex items-center gap-2 mb-2">
                   <Avatar className="w-8 h-8">
                     <AvatarFallback>
-                      {getInitials(review.authorAttribution?.displayName ?? '')}
+                      {getInitials(review.authorAttribution.displayName)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="font-medium">
-                      {review.authorAttribution?.displayName}
+                      {review.authorAttribution.displayName}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {review.relativePublishTimeDescription}

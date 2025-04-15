@@ -8,13 +8,11 @@ export const ReviewSchema = z.object({
   text: LocalizedTextSchema.optional(),
   originalText: LocalizedTextSchema.optional(),
   rating: z.number().min(1).max(5),
-  authorAttribution: z
-    .object({
-      displayName: z.string().optional(),
-      uri: z.string().optional(),
-      photoUri: z.string().optional(),
-    })
-    .optional(),
+  authorAttribution: z.object({
+    displayName: z.string(),
+    uri: z.string(),
+    photoUri: z.string(),
+  }),
   publishTime: z.string(),
   flagContentUri: z.string(),
   googleMapsUri: z.string(),

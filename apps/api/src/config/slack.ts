@@ -7,3 +7,5 @@ const slackConfigSchema = z.object({
 export const SLACK_CONFIG = slackConfigSchema.parse({
   BOT_TOKEN: process.env.SLACK_BOT_TOKEN,
 })
+
+export type SlackConfig = z.infer<typeof slackConfigSchema>

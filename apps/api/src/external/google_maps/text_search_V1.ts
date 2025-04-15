@@ -1,9 +1,12 @@
 import 'dotenv/config'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
-import { divideRectangleIntoFour } from '../../utils/geo_utils'
+import {
+  divideSquareIntoFour,
+  getLargestSquareFromCoordinates,
+} from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
-import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
+import type { Place, PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
 import {
@@ -19,7 +22,7 @@ import { placesApiQueue } from './utils/places_api_queue'
 async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
 ): Promise<GooglePlacesTextSearchResponse> {
-  const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places:searchText`)
+  const url = new URL(`${GOOGLE_MAPS_CONFIG.BASE_URL}/places:searchText`)
 
   const body = {
     textQuery: formattedRequest.textQuery,
@@ -35,7 +38,7 @@ async function fetchSinglePage(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
+        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.API_KEY,
         'X-Goog-FieldMask': PREFERRED_PLACE_KEYS_TEXT_SEARCH,
         Referer: GOOGLE_MAPS_CONFIG.REFERRER,
       },
@@ -92,30 +95,35 @@ async function fetchSinglePage(
 export async function postTextSearchV1(
   requestBody: PlacesSearchRequestBody,
 ): Promise<PlaceBase[]> {
+  const largestSquare = getLargestSquareFromCoordinates(
+    requestBody.locationBias.circle.center,
+    requestBody.locationBias.circle.radiusInMeters,
+  )
+
   const ratio = 1
   // 60 potential results
   // 1 * 3 = 3 requests
   // 3 * 0.04 = 0.12 $
   // 0.12 / 2 = 0.06 $
-  const squares60 = [requestBody.rectangle]
+  const squares60 = [largestSquare]
   // 240 potential results
   // 4 * 3 = 12 requests
   // 12 * 0.04 = 0.48 $
   // 0.48 / 2 = 0.24 $
-  const squares240 = divideRectangleIntoFour(requestBody.rectangle, ratio)
+  const squares240 = divideSquareIntoFour(largestSquare, ratio)
   // 240 * 4 = 960 potential results
   // 12 * 4 = 48 requests
   // 48 * 0.04 = 1.92 $
   // 1.92 / 2 = 0.96 $
   const squares960 = squares240.flatMap((square) =>
-    divideRectangleIntoFour(square, ratio),
+    divideSquareIntoFour(square, ratio),
   )
   // 960 * 4 = 3840 potential results
   // 48 * 4 = 192 requests
   // 192 * 0.04 = 7.68 $
   // 7.68 / 2 = 3.84 $
   const squares3840 = squares960.flatMap((square) =>
-    divideRectangleIntoFour(square, ratio),
+    divideSquareIntoFour(square, ratio),
   )
 
   const squares = (() => {

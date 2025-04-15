@@ -92,16 +92,12 @@ export const search = pgTable('search', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  latitude: numeric('latitude'),
-  longitude: numeric('longitude'),
-  radiusInMeters: integer('radius_in_meters'),
+  latitude: numeric('latitude').notNull(),
+  longitude: numeric('longitude').notNull(),
+  radiusInMeters: integer('radius_in_meters').notNull(),
   placeName: text('place_name').notNull(),
   keyword: text('keyword').notNull(),
   model: searchModelEnum('model').notNull(),
-  rectangle: jsonb('rectangle').notNull().$type<{
-    northEast: { latitude: number; longitude: number }
-    southWest: { latitude: number; longitude: number }
-  }>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

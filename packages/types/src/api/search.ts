@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from '../../common'
-import { PlaceSchema } from '../places/places'
+import { ApiErrorResponseSchema } from '../common'
+import { PlaceSchema } from './places/places'
 
 export const SearchItemSchema = z.object({
   id: z.string().uuid(),
@@ -23,21 +23,12 @@ export const SearchModelEnum = z.enum([
 ])
 export type SearchModel = z.infer<typeof SearchModelEnum>
 
-export const CoordinateSchema = z.object({
-  latitude: z.number(),
-  longitude: z.number(),
-})
-
-export const RectangleSchema = z.object({
-  northEast: CoordinateSchema,
-  southWest: CoordinateSchema,
-})
-
-export type Coordinate = z.infer<typeof CoordinateSchema>
-export type Rectangle = z.infer<typeof RectangleSchema>
-
 export const CreateSearchRequestBodySchema = z.object({
-  rectangle: RectangleSchema,
+  location: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }),
+  radiusInMeters: z.number(),
   placeName: z.string(),
   keyword: z.string(),
   model: SearchModelEnum,

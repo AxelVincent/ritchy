@@ -226,11 +226,11 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
 
             const formatPrice = (price: {
               currencyCode: string
-              units?: string
+              units: string
               nanos?: number
             }) => {
               const amount =
-                Number(price.units || '0') +
+                Number(price.units) +
                 (price.nanos ? price.nanos / 1_000_000_000 : 0)
               return `${price.currencyCode} ${amount.toFixed(2)}`
             }
