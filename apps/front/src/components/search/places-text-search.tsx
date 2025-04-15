@@ -429,7 +429,7 @@ export const PlacesTextSearch = ({
       </div>
 
       {isOpen && (
-        <Card className="max-w-sm min-w-[300px] w-[calc(100vw-120px)]">
+        <Card className="max-w-sm w-[calc(100vw-120px)]">
           <CardContent className="p-4">{renderStep()}</CardContent>
         </Card>
       )}
