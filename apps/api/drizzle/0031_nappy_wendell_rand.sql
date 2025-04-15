@@ -5,7 +5,7 @@ DECLARE
     pi CONSTANT float := 3.14159265358979323846;
 BEGIN
     -- First add the new column
-    ALTER TABLE "search" ADD COLUMN "rectangle" jsonb;
+    ALTER TABLE "search" ADD COLUMN IF NOT EXISTS "rectangle" jsonb;
 
     -- Then backfill data for all existing searches
     FOR search_record IN SELECT id, latitude::float, longitude::float, radius_in_meters FROM "search"
