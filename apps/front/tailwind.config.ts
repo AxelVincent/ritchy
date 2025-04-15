@@ -115,11 +115,6 @@ const config = {
     animate,
     require('tailwindcss-animate'),
     addVariablesForColors,
-    ({ addBase }) => {
-      addBase({
-        html: { fontSize: '90%' },
-      })
-    },
   ],
 } satisfies Config
 
