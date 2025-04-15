@@ -1,177 +1,129 @@
-import {
-  bearing,
-  center,
-  featureCollection,
-  point,
-  polygon,
-  transformScale,
-} from '@turf/turf'
+import type { Coordinate, Rectangle } from '@ritchy/types'
+import { point, polygon, transformScale } from '@turf/turf'
 import { destination } from '@turf/turf'
 
-interface Coordinate {
-  latitude: number
-  longitude: number
-}
-
-export interface Square {
-  northEast: Coordinate
-  southEast: Coordinate
-  southWest: Coordinate
-  northWest: Coordinate
-}
-
-// TODO - Create a GeoJSON shared package
 export const getLargestSquareFromCoordinates = (
   center: Coordinate,
   radiusInMeters: number,
-): Square => {
+): Rectangle => {
   const centerPoint = point([center.longitude, center.latitude])
   const coordinates = [
     destination(centerPoint, radiusInMeters, 45, { units: 'meters' }).geometry
-      .coordinates, // NW
-    destination(centerPoint, radiusInMeters, 135, { units: 'meters' }).geometry
       .coordinates, // NE
     destination(centerPoint, radiusInMeters, 225, { units: 'meters' }).geometry
-      .coordinates, // SE
-    destination(centerPoint, radiusInMeters, 315, { units: 'meters' }).geometry
       .coordinates, // SW
-    destination(centerPoint, radiusInMeters, 45, { units: 'meters' }).geometry
-      .coordinates, // Back to NW to close the polygon
   ]
 
-  const corners = {
+  const corners: Rectangle = {
     northEast: {
       latitude: coordinates[0][1],
       longitude: coordinates[0][0],
     },
-    southEast: {
+    southWest: {
       latitude: coordinates[1][1],
       longitude: coordinates[1][0],
-    },
-    southWest: {
-      latitude: coordinates[2][1],
-      longitude: coordinates[2][0],
-    },
-    northWest: {
-      latitude: coordinates[3][1],
-      longitude: coordinates[3][0],
     },
   }
 
   return corners
 }
 
-export const divideSquareIntoFour = (square: Square, ratio = 1): Square[] => {
-  // Create points for the original square corners
-  const nePt = point([square.northEast.longitude, square.northEast.latitude])
-  const sePt = point([square.southEast.longitude, square.southEast.latitude])
-  const swPt = point([square.southWest.longitude, square.southWest.latitude])
-  const nwPt = point([square.northWest.longitude, square.northWest.latitude])
+export const divideRectangleIntoFour = (
+  rect: Rectangle,
+  ratio = 1,
+): Rectangle[] => {
+  // Create points for the original rectangle corners
+  const nePt = point([rect.northEast.longitude, rect.northEast.latitude])
+  const swPt = point([rect.southWest.longitude, rect.southWest.latitude])
 
-  // Calculate midpoints of each side
-  const northMid = center(featureCollection([nePt, nwPt]))
-  const eastMid = center(featureCollection([nePt, sePt]))
-  const southMid = center(featureCollection([sePt, swPt]))
-  const westMid = center(featureCollection([nwPt, swPt]))
+  // Calculate distances for width and height
+  const width = nePt.geometry.coordinates[0] - swPt.geometry.coordinates[0]
+  const height = nePt.geometry.coordinates[1] - swPt.geometry.coordinates[1]
 
-  // Calculate center of the square
-  const centerPt = center(featureCollection([nePt, sePt, swPt, nwPt]))
+  const widthQuarter = width / 2
+  const heightQuarter = height / 2
 
-  // Helper function to convert Square corners to polygon coordinates
-  const squareToPolygon = (square: Square) => {
+  // Create the four rectangles (NW, NE, SW, SE)
+  const quarters = [
+    // Northwest quarter
+    {
+      northEast: {
+        longitude: swPt.geometry.coordinates[0] + widthQuarter,
+        latitude: nePt.geometry.coordinates[1],
+      },
+      southWest: {
+        longitude: swPt.geometry.coordinates[0],
+        latitude: swPt.geometry.coordinates[1] + heightQuarter,
+      },
+    },
+    // Northeast quarter
+    {
+      northEast: {
+        longitude: nePt.geometry.coordinates[0],
+        latitude: nePt.geometry.coordinates[1],
+      },
+      southWest: {
+        longitude: swPt.geometry.coordinates[0] + widthQuarter,
+        latitude: swPt.geometry.coordinates[1] + heightQuarter,
+      },
+    },
+    // Southwest quarter
+    {
+      northEast: {
+        longitude: swPt.geometry.coordinates[0] + widthQuarter,
+        latitude: swPt.geometry.coordinates[1] + heightQuarter,
+      },
+      southWest: {
+        longitude: swPt.geometry.coordinates[0],
+        latitude: swPt.geometry.coordinates[1],
+      },
+    },
+    // Southeast quarter
+    {
+      northEast: {
+        longitude: nePt.geometry.coordinates[0],
+        latitude: swPt.geometry.coordinates[1] + heightQuarter,
+      },
+      southWest: {
+        longitude: swPt.geometry.coordinates[0] + widthQuarter,
+        latitude: swPt.geometry.coordinates[1],
+      },
+    },
+  ]
+
+  // If ratio is 1, return the quarters as is
+  if (ratio === 1) {
+    return quarters
+  }
+
+  // Helper function to convert rectangle to polygon for scaling
+  const rectangleToPolygon = (rect: Rectangle) => {
     return polygon([
       [
-        [square.northEast.longitude, square.northEast.latitude],
-        [square.southEast.longitude, square.southEast.latitude],
-        [square.southWest.longitude, square.southWest.latitude],
-        [square.northWest.longitude, square.northWest.latitude],
-        [square.northEast.longitude, square.northEast.latitude], // Close the ring
+        [rect.northEast.longitude, rect.northEast.latitude],
+        [rect.northEast.longitude, rect.southWest.latitude],
+        [rect.southWest.longitude, rect.southWest.latitude],
+        [rect.southWest.longitude, rect.northEast.latitude],
+        [rect.northEast.longitude, rect.northEast.latitude], // Close the ring
       ],
     ])
   }
 
-  // Helper function to convert scaled polygon back to Square
-  const polygonToSquare = (poly: GeoJSON.Feature<GeoJSON.Polygon>): Square => {
+  // Helper function to convert polygon back to rectangle
+  const polygonToRectangle = (
+    poly: GeoJSON.Feature<GeoJSON.Polygon>,
+  ): Rectangle => {
     const coords = poly.geometry.coordinates[0]
     return {
       northEast: { longitude: coords[0][0], latitude: coords[0][1] },
-      southEast: { longitude: coords[1][0], latitude: coords[1][1] },
       southWest: { longitude: coords[2][0], latitude: coords[2][1] },
-      northWest: { longitude: coords[3][0], latitude: coords[3][1] },
     }
   }
 
-  const squares = [
-    // Northeast square
-    {
-      northEast: square.northEast,
-      southEast: {
-        latitude: eastMid.geometry.coordinates[1],
-        longitude: eastMid.geometry.coordinates[0],
-      },
-      southWest: {
-        latitude: centerPt.geometry.coordinates[1],
-        longitude: centerPt.geometry.coordinates[0],
-      },
-      northWest: {
-        latitude: northMid.geometry.coordinates[1],
-        longitude: northMid.geometry.coordinates[0],
-      },
-    },
-    // Southeast square
-    {
-      northEast: {
-        latitude: eastMid.geometry.coordinates[1],
-        longitude: eastMid.geometry.coordinates[0],
-      },
-      southEast: square.southEast,
-      southWest: {
-        latitude: southMid.geometry.coordinates[1],
-        longitude: southMid.geometry.coordinates[0],
-      },
-      northWest: {
-        latitude: centerPt.geometry.coordinates[1],
-        longitude: centerPt.geometry.coordinates[0],
-      },
-    },
-    // Southwest square
-    {
-      northEast: {
-        latitude: centerPt.geometry.coordinates[1],
-        longitude: centerPt.geometry.coordinates[0],
-      },
-      southEast: {
-        latitude: southMid.geometry.coordinates[1],
-        longitude: southMid.geometry.coordinates[0],
-      },
-      southWest: square.southWest,
-      northWest: {
-        latitude: westMid.geometry.coordinates[1],
-        longitude: westMid.geometry.coordinates[0],
-      },
-    },
-    // Northwest square
-    {
-      northEast: {
-        latitude: northMid.geometry.coordinates[1],
-        longitude: northMid.geometry.coordinates[0],
-      },
-      southEast: {
-        latitude: centerPt.geometry.coordinates[1],
-        longitude: centerPt.geometry.coordinates[0],
-      },
-      southWest: {
-        latitude: westMid.geometry.coordinates[1],
-        longitude: westMid.geometry.coordinates[0],
-      },
-      northWest: square.northWest,
-    },
-  ]
-
-  // Scale each square individually
-  return squares.map((square) => {
-    const poly = squareToPolygon(square)
+  // Scale each rectangle if ratio is not 1
+  return quarters.map((quarter) => {
+    const poly = rectangleToPolygon(quarter)
     const scaled = transformScale(poly, ratio, { origin: 'center' })
-    return polygonToSquare(scaled)
+    return polygonToRectangle(scaled)
   })
 }

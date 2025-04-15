@@ -1,14 +1,49 @@
-import type { MapboxLocationParameters } from '@/components/map-display/types'
+import type { Location } from '@/components/search/search-map'
 import { useEffect, useRef, useState } from 'react'
 
 interface GeolocationState {
-  location: MapboxLocationParameters
+  location: Location
   error: string | null
   loading: boolean
 }
 
+// Add a helper function to calculate bounds from center
+const calculateBounds = (center: Location['center'], radiusKm = 1) => {
+  // Earth's radius in kilometers
+  const R = 6371
+
+  // Convert radius from km to radians
+  const radiusRad = radiusKm / R
+
+  // Convert lat/lng to radians
+  const lat = (center.latitude * Math.PI) / 180
+  const lng = (center.longitude * Math.PI) / 180
+
+  // Calculate lat bounds
+  const latMin = lat - radiusRad
+  const latMax = lat + radiusRad
+
+  // Calculate lng bounds
+  // Need to consider smaller radius at higher latitudes
+  const lngDelta = Math.asin(Math.sin(radiusRad) / Math.cos(lat))
+  const lngMin = lng - lngDelta
+  const lngMax = lng + lngDelta
+
+  // Convert back to degrees
+  return {
+    northEast: {
+      latitude: (latMax * 180) / Math.PI,
+      longitude: (lngMax * 180) / Math.PI,
+    },
+    southWest: {
+      latitude: (latMin * 180) / Math.PI,
+      longitude: (lngMin * 180) / Math.PI,
+    },
+  }
+}
+
 export const useGeolocation = (
-  defaultLocation: MapboxLocationParameters,
+  defaultLocation: Location,
   skipGeolocation: boolean,
   runOnce = false,
 ) => {
@@ -43,11 +78,15 @@ export const useGeolocation = (
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const center = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }
+
         setState({
           location: {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            radiusInMeters: defaultLocation?.radiusInMeters || 3000,
+            center,
+            bounds: calculateBounds(center),
           },
           error: null,
           loading: false,
@@ -76,7 +115,7 @@ export const useGeolocation = (
       },
       options,
     )
-  }, [defaultLocation?.radiusInMeters, skipGeolocation, runOnce])
+  }, [skipGeolocation, runOnce])
 
   return state
 }
