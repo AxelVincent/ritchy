@@ -214,7 +214,7 @@ export const PlacesTextSearch = ({
 
   const renderStep = () => {
     const totalSteps = 3
-    const stepNames = ['location', 'search', 'model']
+    const stepNames = ['search', 'location', 'model']
     const stepIndicator = (
       <div className="mb-4">
         <div className="flex justify-between items-center text-sm text-muted-foreground">
@@ -240,28 +240,6 @@ export const PlacesTextSearch = ({
         return (
           <div className="space-y-4">
             {stepIndicator}
-            <h2 className="text-lg font-semibold">Where are you searching?</h2>
-            <div className="space-y-1.5">
-              <SearchLocationAutocomplete
-                onLocationSelect={handleLocationSelect}
-                initialAddress={placeName}
-                autoFocus={!isFirstRender}
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button
-                variant={placeName ? 'default' : 'secondary'}
-                onClick={nextStep}
-              >
-                {placeName ? 'Next' : 'Skip'}
-              </Button>
-            </div>
-          </div>
-        )
-      case 1:
-        return (
-          <div className="space-y-4">
-            {stepIndicator}
             <h2 className="text-lg font-semibold">What are you looking for?</h2>
             <div className="space-y-1.5">
               <div className="relative">
@@ -276,10 +254,7 @@ export const PlacesTextSearch = ({
                 />
               </div>
             </div>
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>
-                Back
-              </Button>
+            <div className="flex justify-end">
               <Button
                 onClick={nextStep}
                 disabled={!searchText.trim()}
@@ -290,6 +265,31 @@ export const PlacesTextSearch = ({
                 }
               >
                 Next
+              </Button>
+            </div>
+          </div>
+        )
+      case 1:
+        return (
+          <div className="space-y-4">
+            {stepIndicator}
+            <h2 className="text-lg font-semibold">Where are you searching?</h2>
+            <div className="space-y-1.5">
+              <SearchLocationAutocomplete
+                onLocationSelect={handleLocationSelect}
+                initialAddress={placeName}
+                autoFocus={!isFirstRender}
+              />
+            </div>
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={prevStep}>
+                Back
+              </Button>
+              <Button
+                variant={placeName ? 'default' : 'secondary'}
+                onClick={nextStep}
+              >
+                {placeName ? 'Next' : 'Skip'}
               </Button>
             </div>
           </div>
