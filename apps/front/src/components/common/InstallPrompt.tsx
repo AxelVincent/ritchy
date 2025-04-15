@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useDevice } from '../../hooks/useDevice'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
 
 interface SafariNavigator extends Navigator {
   standalone?: boolean
 }
 
 export const InstallPrompt = () => {
-  const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstructions, setShowInstructions] = useState(false)
   const { deviceType, browserName } = useDevice()
 
@@ -25,38 +19,21 @@ export const InstallPrompt = () => {
   const isIOS = deviceType === 'ios'
   const isSafari = browserName === 'safari'
   const isChrome = browserName === 'chrome'
+  const isMobile = deviceType === 'ios' || deviceType === 'android'
 
   // If already in PWA mode, don't show anything
   if (isPWA) return null
 
-  useEffect(() => {
-    const handlePrompt = (e: Event) => {
-      e.preventDefault()
-      setPrompt(e as BeforeInstallPromptEvent)
-    }
-
-    window.addEventListener('beforeinstallprompt', handlePrompt)
-    return () => window.removeEventListener('beforeinstallprompt', handlePrompt)
-  }, [])
-
   const handleInstallClick = () => {
-    if (isIOS) {
-      setShowInstructions(true)
-    } else if (prompt) {
-      prompt.prompt()
-    }
+    setShowInstructions(true)
   }
+
+  // Only show on mobile devices
+  if (!isMobile) return null
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href)
   }
-
-  // Show install button if it's iOS Safari or we have an install prompt
-  const showButton =
-    ((isIOS && isSafari) || prompt) &&
-    (deviceType === 'ios' || deviceType === 'android')
-
-  if (!showButton) return null
 
   return (
     <>

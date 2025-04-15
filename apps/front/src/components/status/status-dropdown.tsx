@@ -54,7 +54,7 @@ export const StatusDropdown = ({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -65,7 +65,7 @@ export const StatusDropdown = ({
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" sideOffset={4}>
         {statusOptions.map((statusOption) => (
           <DropdownMenuItem
             key={statusOption}
