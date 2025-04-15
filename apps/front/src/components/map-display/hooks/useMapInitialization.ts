@@ -94,7 +94,6 @@ export const useMapInitialization = (
         zoom: settings.zoom,
         maxZoom: settings.maxZoom,
         minZoom: settings.minZoom,
-        projection: 'mercator',
         renderWorldCopies: MAP_PERFORMANCE_OPTIONS.renderWorldCopies,
         fadeDuration: MAP_PERFORMANCE_OPTIONS.fadeDuration,
         localIdeographFontFamily:

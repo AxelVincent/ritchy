@@ -34,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarRail />
       </Sidebar>
       {isMobile && (
-        <div className="fixed top-4 left-2 z-50 bg-background rounded-md shadow-md p-2">
+        <div className="fixed top-4 left-4 z-50 bg-background rounded-md shadow-md p-2">
           <SidebarTrigger />
         </div>
       )}

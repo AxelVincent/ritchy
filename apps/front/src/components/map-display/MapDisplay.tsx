@@ -3,7 +3,6 @@ import { MapBox } from '@/components/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 
 import { EmptyListState } from '@/components/lists/empty-list-state'
-import type { Location } from '@/components/search/search-map'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
@@ -14,6 +13,7 @@ import { ListIcon, MapIcon } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
 import { useMapStore } from './store/useMapStore'
+import type { MapboxLocationParameters } from './types'
 
 interface MapDisplayProps {
   listId?: string
@@ -42,15 +42,14 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const defaultLocation =
     places && places.length > 0
       ? {
-          center: {
-            latitude: places[0].location.latitude,
-            longitude: places[0].location.longitude,
-          },
-          bounds: DEFAULT_LOCATION.bounds,
+          latitude: places[0].location.latitude,
+          longitude: places[0].location.longitude,
+          radiusInMeters: DEFAULT_LOCATION.radiusInMeters,
         }
       : DEFAULT_LOCATION
 
-  const [currentLocation, setLocation] = useState<Location>(defaultLocation)
+  const [currentLocation, setLocation] =
+    useState<MapboxLocationParameters>(defaultLocation)
 
   // Add state for panel sizes with localStorage persistence
   const [panelSizes, setPanelSizes] = useState<number[]>(() => {
@@ -124,6 +123,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                 searchResults={searchResults}
                 userLocation={currentLocation}
                 dataTableRowSelection={dataTableRowSelection}
+                radiusInMeters={currentLocation.radiusInMeters}
                 filteredPlaceIds={safeFilteredPlaceIds}
               />
             </div>
@@ -210,6 +210,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
             searchResults={searchResults}
             userLocation={currentLocation}
             dataTableRowSelection={dataTableRowSelection}
+            radiusInMeters={currentLocation.radiusInMeters}
             filteredPlaceIds={safeFilteredPlaceIds}
           />
         </ResizablePanel>

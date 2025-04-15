@@ -45,12 +45,6 @@
 /* Scrollbar styles for dark mode */
 :root {
   scrollbar-color: #666 #201c1c; /* thumb and track colors */
-
-  /* iOS safe areas */
-  --sat: env(safe-area-inset-top);
-  --sar: env(safe-area-inset-right);
-  --sab: env(safe-area-inset-bottom);
-  --sal: env(safe-area-inset-left);
 }
 
 /* For Webkit browsers (Chrome, Safari, etc.) */
@@ -69,23 +63,4 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #888;
-}
-
-/* iOS standalone mode styles */
-@media all and (display-mode: standalone) {
-  body {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-}
-
-/* iOS safe area utilities */
-.pt-safe-area {
-  padding-top: var(--sat);
-}
-
-.pb-safe-area {
-  padding-bottom: var(--sab);
 }
