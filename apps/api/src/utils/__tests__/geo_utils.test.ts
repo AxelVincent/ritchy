@@ -1,8 +1,8 @@
+import type { Rectangle } from '@ritchy/types'
 import { center, featureCollection, point } from '@turf/turf'
 import { describe, expect, it } from 'vitest'
 import {
-  type Square,
-  divideSquareIntoFour,
+  divideRectangleIntoFour,
   getLargestSquareFromCoordinates,
 } from '../geo_utils'
 
@@ -20,9 +20,7 @@ describe('geo_utils', () => {
 
       // Check if all corners are present
       expect(result).toHaveProperty('northEast')
-      expect(result).toHaveProperty('southEast')
       expect(result).toHaveProperty('southWest')
-      expect(result).toHaveProperty('northWest')
 
       // Check if coordinates are numbers and within reasonable bounds
       for (const corner of Object.values(result)) {
@@ -36,53 +34,70 @@ describe('geo_utils', () => {
     })
   })
 
-  describe('divideSquareIntoFour', () => {
-    it('should divide a square into four equal squares', () => {
-      const originalSquare: Square = {
+  describe('divideRectangleIntoFour', () => {
+    it('should divide a rectangle into four equal rectangles', () => {
+      const originalRectangle: Rectangle = {
         northEast: { latitude: 41, longitude: -74 },
-        southEast: { latitude: 40, longitude: -74 },
-        southWest: { latitude: 40, longitude: -75 },
-        northWest: { latitude: 41, longitude: -75 },
+        southWest: { latitude: 40, longitude: -76 },
       }
 
-      const result = divideSquareIntoFour(originalSquare)
+      const result = divideRectangleIntoFour(originalRectangle)
 
-      // Check if we get 4 squares
+      // Check if we get 4 rectangles
       expect(result).toHaveLength(4)
 
-      // Check if each resulting square has the correct properties
-      for (const square of result) {
-        expect(square).toHaveProperty('northEast')
-        expect(square).toHaveProperty('southEast')
-        expect(square).toHaveProperty('southWest')
-        expect(square).toHaveProperty('northWest')
+      // Check if each resulting rectangle has the correct properties
+      for (const rectangle of result) {
+        expect(rectangle).toHaveProperty('northEast')
+        expect(rectangle).toHaveProperty('southWest')
 
-        // Check if coordinates are numbers and within the bounds of the original square
-        for (const corner of Object.values(square)) {
+        // Check if coordinates are numbers and within the bounds of the original rectangle
+        for (const corner of Object.values(rectangle)) {
           expect(typeof corner.latitude).toBe('number')
           expect(typeof corner.longitude).toBe('number')
           expect(corner.latitude).toBeGreaterThanOrEqual(
-            originalSquare.southWest.latitude,
+            originalRectangle.southWest.latitude,
           )
           expect(corner.latitude).toBeLessThanOrEqual(
-            originalSquare.northEast.latitude,
+            originalRectangle.northEast.latitude,
           )
           expect(corner.longitude).toBeGreaterThanOrEqual(
-            originalSquare.northWest.longitude,
+            originalRectangle.southWest.longitude,
           )
           expect(corner.longitude).toBeLessThanOrEqual(
-            originalSquare.northEast.longitude,
+            originalRectangle.northEast.longitude,
           )
         }
       }
 
-      // Test that squares don't overlap by checking their centers are different using Turf
-      const getCenterPoint = (square: Square) => {
+      // Test that rectangles maintain proper width/height ratio
+      const getWidthAndHeight = (rect: Rectangle) => {
+        const width = Math.abs(
+          rect.northEast.longitude - rect.southWest.longitude,
+        )
+        const height = Math.abs(
+          rect.northEast.latitude - rect.southWest.latitude,
+        )
+        return { width, height }
+      }
+
+      const originalDimensions = getWidthAndHeight(originalRectangle)
+      const expectedQuarterWidth = originalDimensions.width / 2
+      const expectedQuarterHeight = originalDimensions.height / 2
+
+      for (const rect of result) {
+        const dimensions = getWidthAndHeight(rect)
+        expect(dimensions.width).toBeCloseTo(expectedQuarterWidth, 6)
+        expect(dimensions.height).toBeCloseTo(expectedQuarterHeight, 6)
+      }
+
+      // Test that rectangles don't overlap by checking their centers are different
+      const getCenterPoint = (rect: Rectangle) => {
         const points = [
-          point([square.northEast.longitude, square.northEast.latitude]),
-          point([square.southEast.longitude, square.southEast.latitude]),
-          point([square.southWest.longitude, square.southWest.latitude]),
-          point([square.northWest.longitude, square.northWest.latitude]),
+          point([rect.northEast.longitude, rect.northEast.latitude]),
+          point([rect.northEast.longitude, rect.southWest.latitude]),
+          point([rect.southWest.longitude, rect.southWest.latitude]),
+          point([rect.southWest.longitude, rect.northEast.latitude]),
         ]
         const centerPoint = center(featureCollection(points))
         return {
@@ -98,6 +113,72 @@ describe('geo_utils', () => {
         ),
       )
       expect(uniqueCenters.size).toBe(4)
+    })
+
+    it('should properly scale rectangles when ratio is provided', () => {
+      const originalRectangle: Rectangle = {
+        northEast: { latitude: 41, longitude: -74 },
+        southWest: { latitude: 40, longitude: -76 },
+      }
+
+      const ratio = 0.9
+      const result = divideRectangleIntoFour(originalRectangle, ratio)
+
+      // Check if scaled rectangles are smaller than unscaled ones
+      const unscaledRectangles = divideRectangleIntoFour(originalRectangle)
+
+      result.forEach((scaledRect, index) => {
+        const unscaledRect = unscaledRectangles[index]
+        const scaledWidth = Math.abs(
+          scaledRect.northEast.longitude - scaledRect.southWest.longitude,
+        )
+        const unscaledWidth = Math.abs(
+          unscaledRect.northEast.longitude - unscaledRect.southWest.longitude,
+        )
+        expect(scaledWidth).toBeLessThan(unscaledWidth)
+      })
+    })
+
+    it('should reconstruct the original rectangle when combining all quarters', () => {
+      const originalRectangle: Rectangle = {
+        northEast: { latitude: 41, longitude: -74 },
+        southWest: { latitude: 40, longitude: -76 },
+      }
+
+      const quarters = divideRectangleIntoFour(originalRectangle)
+
+      // Check outer boundaries match original rectangle
+      expect(quarters[1].northEast).toEqual(originalRectangle.northEast)
+      expect(quarters[2].southWest).toEqual(originalRectangle.southWest)
+
+      // Check that quarters share exact coordinates at their meeting points
+      // Vertical middle line
+      expect(quarters[0].northEast.longitude).toBe(
+        quarters[1].southWest.longitude,
+      )
+      expect(quarters[2].northEast.longitude).toBe(
+        quarters[3].southWest.longitude,
+      )
+
+      // Horizontal middle line
+      expect(quarters[0].southWest.latitude).toBe(
+        quarters[2].northEast.latitude,
+      )
+      expect(quarters[1].southWest.latitude).toBe(
+        quarters[3].northEast.latitude,
+      )
+
+      // Center point
+      const centerLat = quarters[0].southWest.latitude
+      const centerLon = quarters[0].northEast.longitude
+      expect(quarters[0].southWest.latitude).toBe(centerLat)
+      expect(quarters[1].southWest.latitude).toBe(centerLat)
+      expect(quarters[2].northEast.latitude).toBe(centerLat)
+      expect(quarters[3].northEast.latitude).toBe(centerLat)
+      expect(quarters[0].northEast.longitude).toBe(centerLon)
+      expect(quarters[1].southWest.longitude).toBe(centerLon)
+      expect(quarters[2].northEast.longitude).toBe(centerLon)
+      expect(quarters[3].southWest.longitude).toBe(centerLon)
     })
   })
 })

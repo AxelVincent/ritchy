@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { EnrichResponseSchema } from '../enrich'
-import { SearchModelEnum } from '../search'
+import { RectangleSchema, SearchModelEnum } from '../searches/search'
 import { NoteSchema } from './notes'
 import { StatusSchema } from './status'
 
@@ -97,6 +97,7 @@ export const AddressComponentSchema = z.object({
       'street_number',
       'sublocality',
       'plus_code',
+      'beach',
     ]),
   ),
   languageCode: z.string(),
@@ -112,7 +113,7 @@ export const PriceLevelEnum = z.enum([
 
 export const MoneySchema = z.object({
   currencyCode: z.string(),
-  units: z.string(),
+  units: z.string().optional(),
   nanos: z.number().optional(),
 })
 export const PriceRangeSchema = z.object({
@@ -123,12 +124,7 @@ export const PriceRangeSchema = z.object({
 // API Request/Response Schemas
 export const PlacesSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
-  locationBias: z.object({
-    circle: z.object({
-      center: LocationSchema,
-      radiusInMeters: z.number().positive(),
-    }),
-  }),
+  rectangle: RectangleSchema,
   model: SearchModelEnum.default('ESSENTIALS'),
 })
 

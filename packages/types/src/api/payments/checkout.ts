@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
-import { SearchModelEnum } from '../search'
+import { SearchModelEnum } from '../searches/search'
 
 export const CreateCheckoutSessionRequestBodySchema = z.object({
   plan: SearchModelEnum,
