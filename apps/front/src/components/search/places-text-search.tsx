@@ -102,9 +102,9 @@ export const PlacesTextSearch = ({
       switch (event.key) {
         case 'Enter':
           event.preventDefault()
-          if (step === 0 && placeName) {
+          if (step === 0 && searchText.trim()) {
             nextStep()
-          } else if (step === 1 && searchText.trim()) {
+          } else if (step === 1 && placeName) {
             nextStep()
           } else if (step === 2) {
             handleComplete()
@@ -112,9 +112,9 @@ export const PlacesTextSearch = ({
           break
         case 'ArrowRight':
           event.preventDefault()
-          if (step === 0 && placeName) {
+          if (step === 0 && searchText.trim()) {
             nextStep()
-          } else if (step === 1 && searchText.trim()) {
+          } else if (step === 1 && placeName) {
             nextStep()
           }
           break
