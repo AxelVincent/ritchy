@@ -17,6 +17,9 @@ export const useCreateSearch = () => {
           exact: true,
         })
       },
+      onMutate: () => {
+        queryClient.cancelQueries({ queryKey: ['searches'] })
+      },
     },
   )
 }

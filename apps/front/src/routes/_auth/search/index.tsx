@@ -1,17 +1,17 @@
 import { useCreateSearch } from '@/api/mutations/search/useCreateSearch'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
-import type { MapboxLocationParameters } from '@/components/map-display/types'
-import { SearchMap } from '@/components/mapbox/search-map'
 import { PlacesTextSearch } from '@/components/search/places-text-search'
+import { type Location, SearchMap } from '@/components/search/search-map'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import type { CreateSearchRequestBody } from '@ritchy/types'
+import type { CreateSearchRequestBody, SearchModel } from '@ritchy/types'
 
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { debounce } from 'lodash'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/_auth/search/')({
   component: RouteComponent,
@@ -40,15 +40,54 @@ function RouteComponent() {
     false,
   )
   const [currentLocation, setCurrentLocation] =
-    useState<MapboxLocationParameters>(defaultLocation)
-  const [radiusInMeters, setRadiusInMeters] = useState(
-    defaultLocation.radiusInMeters,
-  )
+    useState<Location>(defaultLocation)
 
   const navigate = useNavigate()
   const createSearchMutation = useCreateSearch()
 
-  const triggerSearch = (search: CreateSearchRequestBody) => {
+  const debouncedSetCurrentLocation = useMemo(
+    () =>
+      debounce((newLocation: Location) => {
+        setCurrentLocation(newLocation)
+      }, 100),
+    [],
+  )
+
+  const handleLocationChange = useCallback(
+    (newLocation: {
+      center: Location['center']
+      bounds: Location['bounds']
+    }) => {
+      debouncedSetCurrentLocation({
+        center: newLocation.center,
+        bounds: newLocation.bounds,
+      })
+    },
+    [debouncedSetCurrentLocation],
+  )
+
+  const [searchInfo, setSearchInfo] = useState({
+    keyword: '',
+    placeName: '',
+    model: 'ESSENTIALS',
+  })
+
+  const handleSearchInfoChange = (info: {
+    keyword: string
+    placeName: string
+    model: SearchModel
+  }) => {
+    setSearchInfo(info)
+  }
+
+  const triggerSearch = () => {
+    const search: CreateSearchRequestBody = {
+      rectangle: currentLocation.bounds,
+      placeName: searchInfo.placeName,
+      keyword: searchInfo.keyword,
+      model: searchInfo.model as SearchModel,
+    }
+    console.log('search', search)
     createSearchMutation.mutate(search, {
       onSuccess: (response) => {
         if ('id' in response) {
@@ -73,12 +112,6 @@ function RouteComponent() {
     })
   }
 
-  const handleLocationChange = (newLocation: MapboxLocationParameters) => {
-    setCurrentLocation({
-      ...newLocation,
-    })
-  }
-
   // Update from geolocation only on initial load
   useEffect(() => {
     if (geoLocation && currentLocation === defaultLocation) {
@@ -91,18 +124,17 @@ function RouteComponent() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <PlacesTextSearch
         location={currentLocation}
-        onSearch={triggerSearch}
-        radiusInMeters={radiusInMeters}
-        setRadiusInMeters={setRadiusInMeters}
         onLocationChange={handleLocationChange}
+        onSearchInfoChange={handleSearchInfoChange}
       />
       <SearchMap
         onLocationChange={handleLocationChange}
         userLocation={currentLocation}
-        radiusInMeters={radiusInMeters}
+        onSearchArea={triggerSearch}
+        searchInfo={searchInfo}
       />
     </div>
   )

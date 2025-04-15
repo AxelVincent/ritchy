@@ -16,7 +16,7 @@ const LocalizedTextSchema = z.object({
 
 const PlusCodeSchema = z.object({
   globalCode: z.string(),
-  compoundCode: z.string(),
+  compoundCode: z.string().optional(),
 })
 
 const LatLngSchema = z.object({

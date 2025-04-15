@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
 import { getUserPlan } from '../../services/subscription'
+import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
 import { type PlanType, hasModelAccess } from '../../utils/plan-access'
 
 export const createSearch = async (
@@ -41,27 +42,8 @@ export const createSearch = async (
       metadata: {
         plan,
         model: parsedBody.model,
-        requestedRadius: parsedBody.radiusInMeters,
       },
     })
-
-    const radiusLimit = PLAN_RADIUS_LIMITS[plan]
-    if (parsedBody.radiusInMeters > radiusLimit) {
-      logger.warn({
-        msg: 'Search radius limit exceeded',
-        event: 'search_radius_exceeded',
-        metadata: {
-          plan,
-          requestedRadius: parsedBody.radiusInMeters,
-          radiusLimit,
-        },
-      })
-      res.status(403).json({
-        error: 'Radius limit exceeded',
-        message: `${plan} plan users are limited to a ${radiusLimit}m search radius`,
-      })
-      return
-    }
 
     if (
       !hasModelAccess(plan as PlanType, parsedBody.model) &&
@@ -120,12 +102,10 @@ export const createSearch = async (
       .insert(search)
       .values({
         userId: req.auth.userId,
-        latitude: parsedBody.location.latitude.toString(),
-        longitude: parsedBody.location.longitude.toString(),
-        radiusInMeters: parsedBody.radiusInMeters,
         placeName: parsedBody.placeName,
         keyword: parsedBody.keyword,
         model: parsedBody.model,
+        rectangle: parsedBody.rectangle,
       })
       .returning({ id: search.id })
 
@@ -136,11 +116,7 @@ export const createSearch = async (
         searchId: result.id,
         plan,
         model: parsedBody.model,
-        location: {
-          latitude: parsedBody.location.latitude,
-          longitude: parsedBody.location.longitude,
-        },
-        radiusInMeters: parsedBody.radiusInMeters,
+        rectangle: parsedBody.rectangle,
       },
     })
 
