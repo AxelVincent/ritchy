@@ -140,11 +140,14 @@ export function NavUser() {
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={async () => {
-                    const url = await createPortalSession.mutateAsync({})
-                    if (typeof url === 'string') {
-                      window.location.href = url
+                    const response = await createPortalSession.mutateAsync({})
+                    if (response && 'url' in response) {
+                      window.location.href = response.url
                     } else {
-                      console.error('Failed to create portal session:', url)
+                      console.error(
+                        'Failed to create portal session:',
+                        response,
+                      )
                     }
                   }}
                 >
