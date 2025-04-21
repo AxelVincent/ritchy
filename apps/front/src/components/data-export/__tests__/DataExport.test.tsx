@@ -121,6 +121,7 @@ describe('DataExport', () => {
         utcOffsetMinutes: 0,
         status: null,
         searchId: null,
+        listId: null,
         enrichment: null,
       },
     ]
@@ -186,6 +187,7 @@ describe('DataExport', () => {
         utcOffsetMinutes: 0,
         status: null,
         searchId: null,
+        listId: null,
         enrichment: null,
       },
     ]
