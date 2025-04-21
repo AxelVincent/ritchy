@@ -136,3 +136,16 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
 }
+
+/* 
+ * Emoji Picker Container/ Viewport
+ * Note: The explicit background and text colors are required for proper scroll behavior.
+ * Without these explicit styles, the browser's layout calculations may not establish
+ * proper stacking contexts and scroll container boundaries.
+ */
+.emoji-picker-container {
+  @apply bg-popover text-popover-foreground;
+}
+.emoji-picker-viewport {
+  @apply bg-popover text-popover-foreground;
+}
