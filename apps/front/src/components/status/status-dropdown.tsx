@@ -8,19 +8,22 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { StatusType } from '@ritchy/types'
 import { ChevronDown } from 'lucide-react'
+import posthog from 'posthog-js'
 import { useEffect, useState } from 'react'
 import { StatusBadge } from './status-badge'
 
 interface StatusDropdownProps {
   placeId: string
   currentStatus: StatusType
-  onStatusChange: (newStatus: StatusType) => void
+  searchId: string | null
+  listId: string | null
 }
 
 export const StatusDropdown = ({
   placeId,
   currentStatus,
-  onStatusChange,
+  searchId,
+  listId,
 }: StatusDropdownProps) => {
   const [status, setStatus] = useState<StatusType>(currentStatus)
   const { mutate: updateStatus, isPending } = useUpdatePlaceStatus()
@@ -44,10 +47,14 @@ export const StatusDropdown = ({
     setStatus(newStatus)
 
     updateStatus(
-      { placeId, status: newStatus },
+      { placeId, status: newStatus, searchId, listId },
       {
         onSuccess: () => {
-          onStatusChange(newStatus)
+          posthog.capture('change_place_status', {
+            property: 'value',
+            place_id: placeId,
+            new_status: newStatus,
+          })
         },
       },
     )
