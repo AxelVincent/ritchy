@@ -72,7 +72,6 @@ export const useMapInitialization = (
 ) => {
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const isMobile = useIsMobile()
-  const firstRender = useRef(true)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
@@ -197,54 +196,22 @@ export const useMapInitialization = (
   useEffect(() => {
     if (!mapRef.current || !searchResults?.length) return
 
-    // Only calculate and fit bounds on first render
-    if (!firstRender.current) {
-      return
+    const bounds = new mapboxgl.LngLatBounds()
+    bounds.extend(initialCenter)
+
+    for (const place of searchResults) {
+      const coordinates = [
+        place.location.longitude,
+        place.location.latitude,
+      ] as [number, number]
+      bounds.extend(coordinates)
     }
 
-    // Wait for the map to be fully loaded before setting bounds
-    if (!mapRef.current.loaded()) {
-      mapRef.current.once('load', () => {
-        const bounds = new mapboxgl.LngLatBounds()
-        bounds.extend(initialCenter)
-
-        for (const place of searchResults) {
-          const coordinates = [
-            place.location.longitude,
-            place.location.latitude,
-          ] as [number, number]
-          bounds.extend(coordinates)
-        }
-
-        mapRef.current?.fitBounds(bounds, {
-          padding: { top: 50, bottom: 50, left: 50, right: 50 },
-          maxZoom: 15,
-          duration: 500,
-        })
-
-        firstRender.current = false
-      })
-    } else {
-      // Map is already loaded, set bounds immediately
-      const bounds = new mapboxgl.LngLatBounds()
-      bounds.extend(initialCenter)
-
-      for (const place of searchResults) {
-        const coordinates = [
-          place.location.longitude,
-          place.location.latitude,
-        ] as [number, number]
-        bounds.extend(coordinates)
-      }
-
-      mapRef.current.fitBounds(bounds, {
-        padding: { top: 50, bottom: 50, left: 50, right: 50 },
-        maxZoom: 15,
-        duration: 500,
-      })
-
-      firstRender.current = false
-    }
+    mapRef.current.fitBounds(bounds, {
+      padding: { top: 50, bottom: 50, left: 50, right: 50 },
+      maxZoom: 15,
+      duration: 500,
+    })
   }, [searchResults])
 
   // Handle updates to isMobile state

@@ -14,7 +14,7 @@ export const ListResponseSchema = z.object({
 
 export const ListsResponseSchema = z.array(ListResponseSchema)
 
-export const GetListContentResponseSchema = z.object({
+export const ListContentResponseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   emoji: z.string(),
@@ -80,8 +80,8 @@ export const AddItemsToListResponseSchema = z.object({
 })
 
 // API Union Types
-export const GetListContentApiResponseSchema = z.union([
-  GetListContentResponseSchema,
+export const ListContentApiResponseSchema = z.union([
+  ListContentResponseSchema,
   ApiErrorResponseSchema,
 ])
 
@@ -141,11 +141,8 @@ export type DeleteItemsFromListRequest = z.infer<
 export type DeleteItemsFromListResponse = z.infer<
   typeof DeleteItemsFromListResponseSchema
 >
-export type GetListContentResponse = z.infer<
-  typeof GetListContentResponseSchema
->
-export type GetListContentApiResponse = z.infer<
-  typeof GetListContentApiResponseSchema
+export type ListContentApiResponse = z.infer<
+  typeof ListContentApiResponseSchema
 >
 export type AddItemsToListResponse = z.infer<
   typeof AddItemsToListResponseSchema
