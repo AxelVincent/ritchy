@@ -87,7 +87,6 @@ function RouteComponent() {
       keyword: searchInfo.keyword,
       model: searchInfo.model as SearchModel,
     }
-    console.log('search', search)
     createSearchMutation.mutate(search, {
       onSuccess: (response) => {
         if ('id' in response) {

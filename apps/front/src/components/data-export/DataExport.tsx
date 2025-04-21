@@ -36,6 +36,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'notes',
     'enrichment',
     'searchId',
+    'listId',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
