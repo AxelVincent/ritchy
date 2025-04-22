@@ -1,7 +1,7 @@
 import { useApiQuery } from '@/hooks/useApi'
 import type { GetSearchContentApiResponse } from '@ritchy/types'
 
-export const searchContentKeys = {
+const searchContentKeys = {
   all: ['searchContent'] as const,
   search: (searchId: string) => [...searchContentKeys.all, searchId] as const,
 }

@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
 import {
-  type GetListContentApiResponse,
+  type ListContentApiResponse,
   type Place,
   PlaceSchema,
 } from '@ritchy/types'
@@ -14,7 +14,7 @@ import { aggregatePlaceData } from '../../services/places/aggregatePlaceData'
 
 export const getListContent = async (
   req: Request<{ id: string }>,
-  res: Response<GetListContentApiResponse>,
+  res: Response<ListContentApiResponse>,
 ): Promise<void> => {
   try {
     const listId = req.params.id
@@ -100,7 +100,6 @@ export const getListContent = async (
       userId,
       excludeListId: listId,
       includeEnrichment: true,
-      listId,
     })
 
     // Validate individual places and collect validation errors

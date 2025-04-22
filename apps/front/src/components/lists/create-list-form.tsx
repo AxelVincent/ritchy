@@ -1,24 +1,30 @@
 import { useCreateList } from '@/api/mutations/lists/useCreateList'
 import { Button } from '@/components/ui/button'
-import {
-  EmojiPicker,
-  EmojiPickerContent,
-  EmojiPickerFooter,
-  EmojiPickerSearch,
-} from '@/components/ui/emoji-picker'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from '@tanstack/react-form'
 import { zodValidator } from '@tanstack/zod-form-adapter'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { EMOJI_CATEGORIES } from './emojis'
 
+const ALL_EMOJIS = Object.values(EMOJI_CATEGORIES).flatMap(
+  (category) => category.emojis,
+)
+
+// Get random emoji for default value
+const getRandomEmoji = () =>
+  ALL_EMOJIS[Math.floor(Math.random() * ALL_EMOJIS.length)]
+
+// Move this to shared types package if needed across components
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name is too long'),
   emoji: z.string().min(1, 'Emoji is required'),
@@ -31,14 +37,35 @@ interface CreateListFormProps {
 export function CreateListForm({ onSuccess }: CreateListFormProps) {
   const { toast } = useToast()
   const createList = useCreateList()
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
-  const formRef = useRef<HTMLFormElement>(null)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
+  const [defaultEmoji] = useState(getRandomEmoji)
+  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target as Node)
+      ) {
+        setShowEmojiPicker(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const scrollToCategory = (categoryKey: string) => {
+    categoryRefs.current[categoryKey]?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   const form = useForm({
     defaultValues: {
       name: '',
-      emoji: '🙂',
+      emoji: defaultEmoji,
     },
+    // Add a validator to support Zod usage in Form and Field (no longer needed with zod@3.24.0 or higher)
     validatorAdapter: zodValidator(),
     validators: {
       onChange: schema,
@@ -65,92 +92,126 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
 
   return (
     <form
-      ref={formRef}
-      className="my-4 w-full"
+      className="my-4"
       onSubmit={(e) => {
         e.preventDefault()
         e.stopPropagation()
         void form.handleSubmit()
       }}
     >
-      <div className="space-y-4">
-        <div className="flex gap-4 items-end">
-          <form.Field name="emoji">
-            {(field) => (
-              <div className="grid gap-1.5">
-                <Label htmlFor={field.name}>Emoji</Label>
-                <Popover
-                  open={isEmojiPickerOpen}
-                  onOpenChange={setIsEmojiPickerOpen}
+      <div className="flex gap-4 items-end">
+        <form.Field name="emoji">
+          {(field) => (
+            <div className="grid gap-1.5">
+              <Label htmlFor={field.name}>Emoji</Label>
+              <div className="relative" ref={emojiPickerRef}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-9 h-9  text-lg"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 >
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-9 h-9 text-lg"
-                    >
-                      <span>{field.state.value}</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="p-1"
-                    side="right"
-                    align="start"
-                    sideOffset={4}
-                  >
-                    <EmojiPicker
-                      className="flex flex-col emoji-picker-container w-full"
-                      onEmojiSelect={({ emoji }) => {
-                        setIsEmojiPickerOpen(false)
-                        field.handleChange(emoji)
-                      }}
-                    >
-                      <EmojiPickerSearch />
-                      <div className="flex-1 min-h-0 emoji-picker-viewport">
-                        <EmojiPickerContent />
-                      </div>
-                      <EmojiPickerFooter />
-                    </EmojiPicker>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-          </form.Field>
-
-          <form.Field name="name">
-            {(field) => (
-              <div className="grid gap-1.5 flex-1">
-                <Label htmlFor={field.name} className="ml-2">
-                  Name
-                </Label>
-                <Input
-                  placeholder="Name"
-                  name={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  data-form-type="other"
-                  aria-autocomplete="none"
-                />
-              </div>
-            )}
-          </form.Field>
-
-          <div className="grid gap-1.5">
-            <Label>&nbsp;</Label>
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <Button type="submit" size="sm" disabled={!canSubmit}>
-                  {isSubmitting ? '...' : 'Create'}
+                  <span>{field.state.value}</span>
                 </Button>
-              )}
-            </form.Subscribe>
-          </div>
-        </div>
+                {showEmojiPicker && (
+                  <div className="fixed mt-1 bg-background border rounded-md shadow-lg z-[100] min-w-[300px]">
+                    <ScrollArea className="h-[300px] p-2">
+                      {Object.entries(EMOJI_CATEGORIES).map(
+                        ([key, category]) => (
+                          <div
+                            key={key}
+                            className="space-y-1"
+                            // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+                            ref={(el) => (categoryRefs.current[key] = el)}
+                          >
+                            <div className="text-sm font-medium text-muted-foreground">
+                              {category.label}
+                            </div>
+                            <div className="grid grid-cols-8">
+                              {category.emojis.map((emoji) => (
+                                <Button
+                                  key={emoji}
+                                  type="button"
+                                  variant="ghost"
+                                  className="w-9 h-9 p-0 text-xl"
+                                  onClick={() => {
+                                    field.handleChange(emoji)
+                                    setShowEmojiPicker(false)
+                                  }}
+                                >
+                                  {emoji}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </ScrollArea>
+
+                    <div className="border-t p-2">
+                      <div className="flex overflow-x-auto">
+                        {Object.entries(EMOJI_CATEGORIES).map(
+                          ([key, category]) => {
+                            const Icon = category.icon
+                            return (
+                              <TooltipProvider key={key}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="flex-shrink-0"
+                                      onClick={() => scrollToCategory(key)}
+                                      aria-label={category.label}
+                                    >
+                                      <Icon className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{category.label}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )
+                          },
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </form.Field>
+
+        <form.Field name="name">
+          {(field) => (
+            <div className="grid gap-1.5 flex-1">
+              <Label htmlFor={field.name}>Name</Label>
+              <Input
+                placeholder="Name"
+                name={field.name}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                data-form-type="other"
+                aria-autocomplete="none"
+              />
+            </div>
+          )}
+        </form.Field>
+
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+          // biome-ignore lint/correctness/noChildrenProp: <explanation>
+          children={([canSubmit, isSubmitting]) => (
+            <Button type="submit" size="sm" disabled={!canSubmit}>
+              {isSubmitting ? '...' : 'Create'}
+            </Button>
+          )}
+        />
       </div>
     </form>
   )
