@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import type { AutocompletePrediction, GeocodeLocation } from '@ritchy/types'
 import { debounce } from 'lodash'
-import { Loader2, MapPin, Store } from 'lucide-react'
+import { MapPin, Store } from 'lucide-react'
 import * as React from 'react'
 import { useEffect } from 'react'
 
@@ -28,7 +28,6 @@ export function LocationAutocomplete({
   const [predictions, setPredictions] = React.useState<
     AutocompletePrediction[]
   >([])
-  const [isSearching, setIsSearching] = React.useState(false)
 
   const { mutate: searchPlaces, data: response } = usePlaceAutocomplete()
   const { data: geocodeData } = usePlaceGeocode(selectedPlaceId || '', {
@@ -39,10 +38,9 @@ export function LocationAutocomplete({
     () =>
       debounce((search: string) => {
         if (search.length >= 3) {
-          setIsSearching(true)
           searchPlaces({ input: search })
         }
-      }, 600),
+      }, 1000),
     [searchPlaces],
   )
 
@@ -60,7 +58,6 @@ export function LocationAutocomplete({
   useEffect(() => {
     if (response && 'predictions' in response) {
       setPredictions(response.predictions)
-      setIsSearching(false)
     }
   }, [response])
 
@@ -97,56 +94,44 @@ export function LocationAutocomplete({
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Input
-          placeholder="Search location..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onClear={() => {
-            setInputValue('')
-            setPredictions([])
-          }}
-          autoFocus={autoFocus}
-        />
-      </div>
+      <Input
+        placeholder="Search location..."
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onClear={() => {
+          setInputValue('')
+          setPredictions([])
+        }}
+        autoFocus={autoFocus}
+      />
 
-      {isSearching ? (
-        <div className="flex items-center gap-2 p-2">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            Searching locations...
-          </span>
-        </div>
-      ) : (
-        predictions.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Locations</p>
-
-            {predictions.map((location) => (
-              <div
-                key={location.placeId}
-                className={cn(
-                  'flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded-md',
-                  value === location.placeId && 'bg-muted',
-                )}
-                onClick={() => handleLocationSelect(location)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleLocationSelect(location)
-                  }
-                }}
-              >
-                {getLocationIcon(location.types)}
-                <div className="flex flex-col">
-                  <span>{location.mainText}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {location.secondaryText}
-                  </span>
-                </div>
+      {predictions.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Locations</p>
+          {predictions.map((location) => (
+            <div
+              key={location.placeId}
+              className={cn(
+                'flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded-md',
+                value === location.placeId && 'bg-muted',
+              )}
+              onClick={() => handleLocationSelect(location)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleLocationSelect(location)
+                }
+              }}
+            >
+              {getLocationIcon(location.types)}
+              <div className="flex flex-col">
+                <span>{location.mainText}</span>
+                <span className="text-sm text-muted-foreground">
+                  {location.secondaryText}
+                </span>
               </div>
-            ))}
-          </div>
-        )
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
