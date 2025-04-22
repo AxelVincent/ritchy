@@ -169,6 +169,7 @@ export const PlaceSchemaBase = z.object({
 
 export const PlaceSchema = PlaceSchemaBase.extend({
   searchId: z.string().uuid().nullable(),
+  listId: z.string().uuid().nullable(),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional().nullable(),
   status: StatusSchema.nullable(),

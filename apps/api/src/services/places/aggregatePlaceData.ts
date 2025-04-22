@@ -10,6 +10,7 @@ import { getStatusByPlaceIds } from '../places/status/getStatusByPlaceIds'
 
 interface AggregatePlaceDataOptions {
   userId: string
+  listId?: string
   excludeListId?: string
   includeEnrichment?: boolean
 }
@@ -22,14 +23,18 @@ export const aggregatePlaceData = async (
   places: PlaceWithSearchId[],
   options: AggregatePlaceDataOptions,
 ): Promise<Place[]> => {
-  const { userId, excludeListId, includeEnrichment = false } = options
+  const { userId, excludeListId, includeEnrichment = false, listId } = options
   const placeIds = places.map((place) => place.id)
 
   // Create a map to store searchIds for each place
   const searchIdMap = new Map<string, string | null>()
+  const listIdMap = new Map<string, string | null>()
   for (const place of places) {
     if (place.searchId) {
       searchIdMap.set(place.id, place.searchId)
+    }
+    if (listId) {
+      listIdMap.set(place.id, listId)
     }
   }
 
@@ -63,6 +68,7 @@ export const aggregatePlaceData = async (
       status: statuses.get(basePlace.id) || null,
       enrichment: null,
       searchId: searchIdMap.get(basePlace.id) || null,
+      listId: listIdMap.get(basePlace.id) || null,
     }
     return placeObject
   }
