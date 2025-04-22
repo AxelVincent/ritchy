@@ -93,13 +93,13 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="w-[280px] p-1"
+                    className="p-1"
                     side="right"
                     align="start"
                     sideOffset={4}
                   >
                     <EmojiPicker
-                      className="flex flex-col h-[400px] emoji-picker-container w-full"
+                      className="flex flex-col emoji-picker-container w-full"
                       onEmojiSelect={({ emoji }) => {
                         setIsEmojiPickerOpen(false)
                         field.handleChange(emoji)
