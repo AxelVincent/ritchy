@@ -1,4 +1,5 @@
 import { useMapStore } from '@/components/map-display/store/useMapStore'
+import { StatusDropdown } from '@/components/status/status-dropdown'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -156,6 +157,12 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                   </CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
+                  <StatusDropdown
+                    placeId={currentPlace.id}
+                    currentStatus={currentPlace.status?.status || 'NEW'}
+                    searchId={currentPlace.searchId}
+                    listId={currentPlace.listId}
+                  />
                   {currentPlace.website && (
                     <Button
                       variant="ghost"

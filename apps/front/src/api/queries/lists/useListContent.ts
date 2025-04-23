@@ -1,13 +1,13 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { ListContentApiResponse } from '@ritchy/types'
+import type { GetListContentApiResponse } from '@ritchy/types'
 
-const listContentKeys = {
+export const listContentKeys = {
   all: ['listContent'] as const,
   list: (listId: string) => [...listContentKeys.all, listId] as const,
 }
 
 export const useListContentQuery = (listId: string) => {
-  return useApiQuery<ListContentApiResponse>(
+  return useApiQuery<GetListContentApiResponse>(
     `/lists/${listId}`,
     listContentKeys.list(listId),
   )

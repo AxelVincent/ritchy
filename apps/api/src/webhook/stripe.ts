@@ -299,25 +299,39 @@ export const stripeWebhook = async (
               const isNewSubscription =
                 result[0].createdAt.getTime() === result[0].updatedAt.getTime()
 
-              sendSlackNotification({
-                text: isNewSubscription
+              let notificationText = ''
+              if (stripeEvent.cancel_at_period_end && stripeEvent.cancel_at) {
+                const cancelDate = new Date(stripeEvent.cancel_at * 1000)
+                notificationText = `❌ Subscription Cancellation Scheduled\nUser: ${user.email}\nPlan: ${planType}\nWill cancel on: ${cancelDate.toLocaleDateString()}\nReason: ${stripeEvent.cancellation_details?.reason || 'Not specified'}`
+              } else {
+                notificationText = isNewSubscription
                   ? `🎉 New subscription!\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
-                  : `📝 Subscription updated\nUser: ${user.email}\nNew Plan: ${planType}\nStatus: ${status}`,
+                  : `📝 Subscription updated\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
+              }
+
+              sendSlackNotification({
+                text: notificationText,
                 channel: 'subscriptions',
               })
-
               logger.info({
-                msg: isNewSubscription
-                  ? 'New subscription created'
-                  : 'Subscription updated',
-                event: isNewSubscription
-                  ? 'subscription_created'
-                  : 'subscription_updated',
+                msg: stripeEvent.cancel_at_period_end
+                  ? 'Subscription scheduled for cancellation'
+                  : isNewSubscription
+                    ? 'New subscription created'
+                    : 'Subscription updated',
+                event: stripeEvent.cancel_at_period_end
+                  ? 'subscription_cancellation_scheduled'
+                  : isNewSubscription
+                    ? 'subscription_created'
+                    : 'subscription_updated',
                 metadata: {
                   subscriptionId: stripeSubscriptionId,
                   plan: planType,
                   status,
-                  isNewSubscription,
+                  cancelAt: stripeEvent.cancel_at
+                    ? new Date(stripeEvent.cancel_at * 1000)
+                    : undefined,
+                  cancellationReason: stripeEvent.cancellation_details?.reason,
                 },
               })
               break

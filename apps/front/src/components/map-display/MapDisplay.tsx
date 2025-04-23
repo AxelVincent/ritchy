@@ -13,7 +13,6 @@ import type { RowSelectionState } from '@tanstack/react-table'
 import { ListIcon, MapIcon } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
-import { useMapStore } from './store/useMapStore'
 
 interface MapDisplayProps {
   listId?: string
@@ -31,7 +30,6 @@ const TableLoadingFallback = () => (
 )
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
-  const setPlaces = useMapStore((state) => state.setPlaces)
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'map' | 'table'>(() => {
     const savedView = localStorage.getItem('mobileMapView')
@@ -97,14 +95,12 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
 
   const [tableData, setTableData] = useState<Place[]>(places)
 
-  // Update effect to store places in Zustand
   useEffect(() => {
     if (places && places.length > 0) {
-      setPlaces(places)
       setSearchResults(places)
       setTableData(places)
     }
-  }, [places, setPlaces])
+  }, [places])
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
@@ -123,7 +119,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
               <MapBox
                 searchResults={searchResults}
                 userLocation={currentLocation}
-                dataTableRowSelection={dataTableRowSelection}
                 filteredPlaceIds={safeFilteredPlaceIds}
               />
             </div>
@@ -209,7 +204,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           <MapBox
             searchResults={searchResults}
             userLocation={currentLocation}
-            dataTableRowSelection={dataTableRowSelection}
             filteredPlaceIds={safeFilteredPlaceIds}
           />
         </ResizablePanel>
