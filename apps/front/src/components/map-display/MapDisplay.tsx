@@ -119,7 +119,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
               <MapBox
                 searchResults={searchResults}
                 userLocation={currentLocation}
-                dataTableRowSelection={dataTableRowSelection}
                 filteredPlaceIds={safeFilteredPlaceIds}
               />
             </div>
@@ -205,7 +204,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           <MapBox
             searchResults={searchResults}
             userLocation={currentLocation}
-            dataTableRowSelection={dataTableRowSelection}
             filteredPlaceIds={safeFilteredPlaceIds}
           />
         </ResizablePanel>
