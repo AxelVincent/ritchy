@@ -5,7 +5,6 @@ import { MAP_SETTINGS } from '@/components/map-display/types'
 import type { Location } from '@/components/search/search-map'
 import { debounce } from '@/lib/debounce'
 import type { Place } from '@ritchy/types'
-import type { RowSelectionState } from '@tanstack/react-table'
 import { type FC, Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
 const DEBUG = false
@@ -20,7 +19,6 @@ const debugLog = (...args: unknown[]) => {
 interface MapBoxProps {
   searchResults: Place[] | null
   userLocation: Location
-  dataTableRowSelection: RowSelectionState
   filteredPlaceIds: Set<string>
 }
 
@@ -34,7 +32,6 @@ const PlaceCard = lazy(() =>
 export const MapBox: FC<MapBoxProps> = ({
   searchResults,
   userLocation,
-  dataTableRowSelection,
   filteredPlaceIds,
 }) => {
   const { selectedPlaceId } = useMapStore()
@@ -92,7 +89,6 @@ export const MapBox: FC<MapBoxProps> = ({
     map: mapRef.current,
     places: searchResults,
     displayedPlaceIds: filteredPlaceIds,
-    dataTableRowSelection,
   })
 
   // Selection state effect
