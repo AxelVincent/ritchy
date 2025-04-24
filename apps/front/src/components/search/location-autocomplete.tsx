@@ -29,6 +29,7 @@ export function LocationAutocomplete({
     AutocompletePrediction[]
   >([])
   const [isSearching, setIsSearching] = React.useState(false)
+  const [isEditing, setIsEditing] = React.useState(false)
 
   const { mutate: searchPlaces, data: response } = usePlaceAutocomplete()
   const { data: geocodeData } = usePlaceGeocode(selectedPlaceId || '', {
@@ -47,9 +48,11 @@ export function LocationAutocomplete({
   )
 
   React.useEffect(() => {
-    debouncedSearch(inputValue)
+    if (isEditing && !selectedPlaceId && inputValue) {
+      debouncedSearch(inputValue)
+    }
     return () => debouncedSearch.cancel()
-  }, [inputValue, debouncedSearch])
+  }, [inputValue, debouncedSearch, selectedPlaceId, isEditing])
 
   React.useEffect(() => {
     if (initialAddress) {
@@ -64,11 +67,19 @@ export function LocationAutocomplete({
     }
   }, [response])
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsEditing(true)
+    setSelectedPlaceId(null)
+    setInputValue(e.target.value)
+  }
+
   const handleLocationSelect = async (location: AutocompletePrediction) => {
     setValue(location.placeId)
-    setInputValue(location.mainText)
+    setInputValue(location.text)
+    setPredictions([])
     setSelectedPlaceId(location.placeId)
     setShouldFetchGeocode(true)
+    setIsEditing(false)
   }
 
   useEffect(() => {
@@ -78,12 +89,12 @@ export function LocationAutocomplete({
       'formatted_address' in geocodeData.result
     ) {
       onLocationSelect({
-        formatted_address: geocodeData.result.formatted_address,
+        formatted_address: inputValue,
         geometry: geocodeData.result.geometry,
       })
       setShouldFetchGeocode(false)
     }
-  }, [geocodeData, onLocationSelect])
+  }, [geocodeData, onLocationSelect, inputValue])
 
   const getLocationIcon = (types: string[]) => {
     if (types.includes('street_address')) {
@@ -101,10 +112,12 @@ export function LocationAutocomplete({
         <Input
           placeholder="Search location..."
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={handleInputChange}
           onClear={() => {
             setInputValue('')
             setPredictions([])
+            setSelectedPlaceId(null)
+            setIsEditing(false)
           }}
           autoFocus={autoFocus}
         />
