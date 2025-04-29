@@ -1,1 +1,6 @@
-export type FilterVariant = 'range' | 'select' | 'multi-select' | 'text'
+export type FilterVariant =
+  | 'range'
+  | 'select'
+  | 'multi-select'
+  | 'text'
+  | 'date-range'

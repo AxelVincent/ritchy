@@ -5,7 +5,7 @@ declare module '@tanstack/react-table' {
     headerClassName?: string
     cellClassName?: string
     label?: string
-    filterVariant?: 'text' | 'range' | 'select' | 'multi-select'
+    filterVariant?: 'text' | 'range' | 'select' | 'multi-select' | 'date-range'
     getFacetedUniqueValues?: (rows: RowData[]) => string[]
   }
 
