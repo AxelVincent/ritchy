@@ -26,10 +26,13 @@ import {
 } from '@/components/ui/tooltip'
 
 import { DynamicBadgeList } from '@/components/common/DynamicBadgeList'
+import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
+import { format } from 'date-fns'
 import { Check, X } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
 import { DebouncedInput } from '../hooks/DebouncedInput'
 import { useUniqueValues } from '../hooks/UseUniqueValues'
@@ -60,6 +63,8 @@ export function Filter({
       }
       case 'select':
         return 'Choose one option to filter by.'
+      case 'date-range':
+        return 'Select a date range to filter by.'
       default:
         return 'Type to filter by text content.'
     }
@@ -299,6 +304,114 @@ export function Filter({
     </div>
   )
 
+  const renderDateRange = () => {
+    const [from, to] = (columnFilterValue as [
+      Date | undefined,
+      Date | undefined,
+    ]) ?? [undefined, undefined]
+    const [showTooltip, setShowTooltip] = useState(false)
+
+    return (
+      <TooltipProvider>
+        <Tooltip open={showTooltip}>
+          <TooltipTrigger asChild>
+            <div
+              className="space-y-1.5 sm:space-y-2"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'w-full sm:w-[130px] justify-start text-left font-normal truncate',
+                        !from && 'text-muted-foreground',
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">
+                        {from ? format(from, 'PP') : 'From date'}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={from}
+                      onSelect={(date) =>
+                        column.setFilterValue(
+                          (old: [Date | undefined, Date | undefined]) => [
+                            date,
+                            old?.[1],
+                          ],
+                        )
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'w-full sm:w-[130px] justify-start text-left font-normal truncate',
+                        !to && 'text-muted-foreground',
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">
+                        {to ? format(to, 'PP') : 'To date'}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={to}
+                      onSelect={(date) =>
+                        column.setFilterValue(
+                          (old: [Date | undefined, Date | undefined]) => [
+                            old?.[0],
+                            date,
+                          ],
+                        )
+                      }
+                      initialFocus
+                      disabled={(date) => date < (from ?? new Date(0))}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {(from || to) && (
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      column.setFilterValue(undefined)
+                    }}
+                    className="h-8 w-8 p-0 sm:self-start"
+                    size="icon"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            {getFilterTooltip('date-range', column)}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
+
   const renderText = () => (
     <div className="space-y-1.5 sm:space-y-2">
       <div className="relative">
@@ -334,6 +447,8 @@ export function Filter({
       return renderRange()
     case 'select':
       return renderSelect()
+    case 'date-range':
+      return renderDateRange()
     default:
       return renderText()
   }
