@@ -86,29 +86,15 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
     dialogTrigger?.click()
   })
 
-  const [notes, setNotes] = React.useState(place.notes || [])
-
-  React.useEffect(() => {
-    setNotes(place.notes || [])
-  }, [place.notes])
-
-  // Function to handle adding a new note
-  const handleNoteAdded = (note: Note) => {
-    // Update local state immediately
-    const updatedNotes = [note, ...notes]
-    setNotes(updatedNotes)
-
-    // Update the original data object to maintain consistency
-    // This ensures that if the component re-renders, it will have the updated notes
-    place.notes = updatedNotes
-  }
-
   const handleClick = () => {
     const dialogTrigger = document.querySelector(
       `[data-notes-dialog-trigger="${id}"]`,
     ) as HTMLButtonElement
     dialogTrigger?.click()
   }
+
+  // Get the most recent note
+  const latestNote = place.notes?.[0]
 
   return (
     <TextWrapper id={id} actions={actions}>
@@ -123,12 +109,21 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
           }}
           aria-label="Open notes"
         >
-          <span className="text-muted-foreground text-sm truncate">
-            {notes[0]
-              ? formatDistanceToNow(new Date(notes[0].createdAt), {
-                  addSuffix: true,
-                })
-              : ''}
+          <span className="text-muted-foreground text-sm flex items-center gap-1.5 w-full">
+            <span className="truncate flex-1">{latestNote?.note}</span>
+            {place.notes && place.notes.length > 0 && (
+              <>
+                <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  {place.notes.length}{' '}
+                  {place.notes.length === 1 ? 'note' : 'notes'}
+                </span>
+                <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
+                  {formatDistanceToNow(new Date(latestNote?.createdAt || ''), {
+                    addSuffix: true,
+                  })}
+                </span>
+              </>
+            )}
           </span>
           <div className="flex-1" />
           <DialogTrigger asChild>
@@ -137,7 +132,11 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
         </div>
         <DialogContent className="max-w-md h-[60vh] flex flex-col overflow-hidden">
           <div className="flex-1 overflow-hidden">
-            <Notes placeId={place.id} onNoteAdded={handleNoteAdded} />
+            <Notes
+              placeId={place.id}
+              searchId={place.searchId}
+              listId={place.listId}
+            />
           </div>
         </DialogContent>
       </Dialog>
