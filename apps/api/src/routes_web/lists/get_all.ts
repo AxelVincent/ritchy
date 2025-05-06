@@ -22,7 +22,7 @@ export const getLists = async (
       .from(list)
       .leftJoin(listPlace, eq(listPlace.listId, list.id))
       .where(eq(list.userId, req.auth.userId))
-      .orderBy(asc(list.updatedAt))
+      .orderBy(asc(list.createdAt))
       .groupBy(list.id)
 
     res.json(

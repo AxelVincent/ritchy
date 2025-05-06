@@ -1,4 +1,4 @@
-import { useCreateList } from '@/api/mutations/lists/useCreateList'
+import { useUpsertList } from '@/api/mutations/lists/useUpsertList'
 import { Button } from '@/components/ui/button'
 import {
   EmojiPicker,
@@ -26,40 +26,54 @@ const schema = z.object({
 
 interface CreateListFormProps {
   onSuccess?: (listId: string) => void
+  initialValues?: {
+    id: string
+    name: string
+    emoji: string
+  }
 }
 
-export function CreateListForm({ onSuccess }: CreateListFormProps) {
+export function CreateListForm({
+  onSuccess,
+  initialValues,
+}: CreateListFormProps) {
   const { toast } = useToast()
-  const createList = useCreateList()
+  const upsertList = useUpsertList()
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
   const form = useForm({
     defaultValues: {
-      name: '',
-      emoji: '🙂',
+      name: initialValues?.name ?? '',
+      emoji: initialValues?.emoji ?? '🙂',
     },
     validatorAdapter: zodValidator(),
     validators: {
       onChange: schema,
     },
     onSubmit: async ({ value }) => {
-      await createList.mutateAsync(value, {
-        onSuccess: (newList) => {
-          toast({
-            title: 'List created successfully',
-            description: 'You can now add items to your list',
-          })
-          onSuccess?.(newList.id)
+      await upsertList.mutateAsync(
+        {
+          ...value,
+          id: initialValues?.id,
         },
-        onError: (error) => {
-          toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive',
-          })
+        {
+          onSuccess: (newList) => {
+            toast({
+              title: 'List created or updated successfully',
+              description: 'You can now add items to your list',
+            })
+            onSuccess?.(newList.id)
+          },
+          onError: (error) => {
+            toast({
+              title: 'Error',
+              description: error.message,
+              variant: 'destructive',
+            })
+          },
         },
-      })
+      )
     },
   })
 
@@ -145,7 +159,7 @@ export function CreateListForm({ onSuccess }: CreateListFormProps) {
             >
               {([canSubmit, isSubmitting]) => (
                 <Button type="submit" size="sm" disabled={!canSubmit}>
-                  {isSubmitting ? '...' : 'Create'}
+                  {isSubmitting ? '...' : initialValues ? 'Update' : 'Create'}
                 </Button>
               )}
             </form.Subscribe>
