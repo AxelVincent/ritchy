@@ -1,10 +1,10 @@
 import express, { type Router } from 'express'
 import { addItemsToList } from './add_items'
-import { upsertList } from './upsertList'
 import { deleteList } from './delete'
 import { deleteItemsFromList } from './delete_items'
 import { getLists } from './get_all'
 import { getListContent } from './get_content'
+import { upsertList } from './upsertList'
 
 const listsRouter: Router = express.Router()
 

@@ -65,10 +65,10 @@ export function CreateListForm({
             })
             onSuccess?.(newList.id)
           },
-          onError: (error) => {
+          onError: () => {
             toast({
               title: 'Error',
-              description: error.message,
+              description: 'Failed to create or update list',
               variant: 'destructive',
             })
           },

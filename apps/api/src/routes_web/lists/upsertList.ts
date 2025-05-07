@@ -4,11 +4,11 @@ import {
   type UpsertListRequest,
   UpsertListRequestSchema,
 } from '@ritchy/types'
+import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list } from '../../db/schema'
-import { eq, and } from 'drizzle-orm'
 
 export const upsertList = async (
   req: Request<Record<string, never>, UpsertListApiResponse, UpsertListRequest>,

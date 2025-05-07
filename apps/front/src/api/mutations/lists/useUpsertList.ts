@@ -1,4 +1,6 @@
 import { useApiMutation } from '@/hooks/useApi'
+import { listContentKeys } from '@/api/queries/lists/useListContent'
+import { searchContentKeys } from '@/api/queries/search/useSearchContent'
 import type {
   Lists,
   UpsertListRequest,
@@ -19,37 +21,64 @@ export const useUpsertList = () => {
       const previousLists = queryClient.getQueryData<Lists>(['lists'])
 
       queryClient.setQueryData<Lists>(['lists'], (old) => {
-        if (newList.id) {
-          return old?.map((list) => {
-            if (list.id === newList.id) {
-              return {
-                ...list,
-                name: newList.name,
-                emoji: newList.emoji,
-              }
-            }
-            return list
-          })
-        }
-        return [
-          ...(old || []),
-          {
-            ...newList,
-            id: `temp-${Date.now()}`,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            itemCount: 0,
-          },
-        ]
+        if (!old) return old
+        const updatedLists = old.map((list) =>
+          list.id === newList.id ? { ...list, ...newList } : list,
+        )
+        return updatedLists
       })
+
+      if (newList.id) {
+        const listContentQueries = queryClient.getQueryCache().findAll({
+          queryKey: listContentKeys.all,
+        })
+        for (const query of listContentQueries) {
+          const listContent = query.state.data as {
+            items: Array<{ lists?: Array<{ id: string; emoji: string }> }>
+          }
+          if (listContent?.items) {
+            queryClient.setQueryData(query.queryKey, {
+              ...listContent,
+              items: listContent.items.map((place) => {
+                if (!place.lists) return place
+                const updatedList = place.lists.find(
+                  (list) => list.id === newList.id,
+                )
+                if (!updatedList) return place
+                const otherLists = place.lists.filter(
+                  (list) => list.id !== newList.id,
+                )
+                return {
+                  ...place,
+                  lists: [
+                    { ...updatedList, emoji: newList.emoji },
+                    ...otherLists,
+                  ],
+                }
+              }),
+            })
+          }
+        }
+      }
+
       return { previousLists }
     },
-    onError: (_, __, context: unknown) => {
+    onError: (_error, _variables, context: unknown) => {
       const typedContext = context as Context
-      queryClient.setQueryData<Lists>(['lists'], typedContext?.previousLists)
+      if (typedContext?.previousLists) {
+        queryClient.setQueryData(['lists'], typedContext.previousLists)
+      }
     },
-    onSettled: () => {
+    onSettled: (data) => {
       queryClient.invalidateQueries({ queryKey: ['lists'] })
+      if (data?.id) {
+        queryClient.invalidateQueries({
+          queryKey: listContentKeys.list(data.id),
+        })
+        queryClient.invalidateQueries({
+          queryKey: searchContentKeys.all,
+        })
+      }
     },
   })
 }
