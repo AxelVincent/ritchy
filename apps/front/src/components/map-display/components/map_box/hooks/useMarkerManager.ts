@@ -7,7 +7,6 @@ import { MARKER_COLORS } from '../constants/markers'
 import {
   createActiveMarker,
   createFilteredMarkerSvg,
-  updateEmojiMarker,
 } from '../place_marker/markerSvg'
 
 type MarkerState = {

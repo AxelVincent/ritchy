@@ -1,7 +1,6 @@
 'use client'
 
 import { useDeleteList } from '@/api/mutations/lists/useDeleteList'
-import { useUpsertList } from '@/api/mutations/lists/useUpsertList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
 import { CreateListForm } from '@/components/lists/create-list-form'
 import {

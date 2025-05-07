@@ -1,6 +1,6 @@
 import { useAddItemsToList } from '@/api/mutations/lists/useAddItemsToList'
-import { useUpsertList } from '@/api/mutations/lists/useUpsertList'
 import { useDeleteItemsFromList } from '@/api/mutations/lists/useDeleteItemsFromList'
+import { useUpsertList } from '@/api/mutations/lists/useUpsertList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
 import type {
   AddItemsToListRequest,
