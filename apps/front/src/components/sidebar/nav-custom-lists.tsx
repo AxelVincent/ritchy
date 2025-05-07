@@ -2,7 +2,7 @@
 
 import { useDeleteList } from '@/api/mutations/lists/useDeleteList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
-import { CreateListForm } from '@/components/lists/create-list-form'
+import { UpsertListForm } from '@/components/lists/create-list-form'
 import {
   Dialog,
   DialogContent,
@@ -58,7 +58,7 @@ const CreateListDialog = ({
           {initialValues ? 'Edit list' : 'Create new list'}
         </DialogTitle>
       </DialogHeader>
-      <CreateListForm
+      <UpsertListForm
         onSuccess={() => onOpenChange(false)}
         initialValues={initialValues}
       />

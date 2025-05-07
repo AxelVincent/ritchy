@@ -24,7 +24,7 @@ const schema = z.object({
   emoji: z.string().min(1, 'Emoji is required'),
 })
 
-interface CreateListFormProps {
+interface UpsertListFormProps {
   onSuccess?: (listId: string) => void
   initialValues?: {
     id: string
@@ -33,10 +33,10 @@ interface CreateListFormProps {
   }
 }
 
-export function CreateListForm({
+export function UpsertListForm({
   onSuccess,
   initialValues,
-}: CreateListFormProps) {
+}: UpsertListFormProps) {
   const { toast } = useToast()
   const upsertList = useUpsertList()
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
