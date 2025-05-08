@@ -1,4 +1,4 @@
-import { UpsertListForm } from '@/components/lists/create-list-form'
+import { UpsertListForm } from '@/components/lists/upsert-list-form'
 import { useLists } from '@/components/map-display/hooks/useLists'
 import { Button } from '@/components/ui/button'
 import {

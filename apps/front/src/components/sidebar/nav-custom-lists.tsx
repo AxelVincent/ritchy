@@ -2,7 +2,7 @@
 
 import { useDeleteList } from '@/api/mutations/lists/useDeleteList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
-import { UpsertListForm } from '@/components/lists/create-list-form'
+import { UpsertListForm } from '@/components/lists/upsert-list-form'
 import {
   Dialog,
   DialogContent,
