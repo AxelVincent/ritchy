@@ -19,8 +19,8 @@ import { useState } from 'react'
 import React from 'react'
 
 interface DataExportProps {
-  /** Array of search results to export */
-  data: SearchResult[]
+  /** Array of search results to export. If selectedRows is undefined, all data will be exported */
+  selectedRows?: SearchResult[]
 }
 
 export const validateAllSearchResultFieldsHaveColumns = (
@@ -96,8 +96,8 @@ export const validateAllSearchResultFieldsHaveColumns = (
  * Component that handles exporting search results to CSV format.
  * Includes enrichment data from website scraping if available.
  */
-export const DataExport = React.memo(({ data }: DataExportProps) => {
-  if (data.length === 0) return null
+export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
+  if (!selectedRows?.length) return null
 
   const [isExporting, setIsExporting] = useState(false)
   const { data: subscription } = useUserSubscription()
@@ -133,7 +133,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
 
       // Create a Map of website URIs to enrichment data
       const enrichmentMap = new Map<string, EnrichmentWithStatus>(
-        data
+        selectedRows
           .filter((row) => row.website)
           .map((row) => {
             // Ensure we always create a valid EnrichmentState object
@@ -403,7 +403,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
       validateAllSearchResultFieldsHaveColumns(columns)
 
       validateAndExportToCsv<SearchResult>({
-        data,
+        data: selectedRows,
         filename: 'places.csv',
         schema: PlaceSchema,
         columns,
@@ -435,7 +435,7 @@ export const DataExport = React.memo(({ data }: DataExportProps) => {
   return (
     <Button variant="outline" onClick={handleExport} disabled={isExporting}>
       <Download className="w-4 h-4 mr-2" />
-      {isExporting ? 'Exporting...' : `Export to CSV (${data.length})`}
+      {isExporting ? 'Exporting...' : `Export to CSV (${selectedRows.length})`}
     </Button>
   )
 })

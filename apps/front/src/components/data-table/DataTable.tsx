@@ -251,7 +251,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
           />
           {!isMobile && (
             <DataExport
-              data={table.getFilteredRowModel().rows.map((row) => row.original)}
+              selectedRows={
+                table.getSelectedRowModel().rows.length > 0
+                  ? table.getSelectedRowModel().rows.map((row) => row.original)
+                  : table.getFilteredRowModel().rows.map((row) => row.original)
+              }
             />
           )}
           <ColumnsSelection table={table} />
