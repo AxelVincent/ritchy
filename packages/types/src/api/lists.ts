@@ -24,7 +24,8 @@ export const GetListContentResponseSchema = z.object({
 })
 
 // Request Schemas
-export const CreateListRequestSchema = z.object({
+export const UpsertListRequestSchema = z.object({
+  id: z.string().uuid().optional(),
   name: z.string().min(1),
   emoji: z.string().min(1),
 })
@@ -61,7 +62,7 @@ export const DeleteItemsFromListRequestSchema = z.object({
 })
 
 // Response Schemas with Error Handling
-export const CreateListResponseSchema = z.object({
+export const UpsertListResponseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   emoji: z.string(),
@@ -90,8 +91,8 @@ export const AddItemsToListApiResponseSchema = z.union([
   ApiErrorResponseSchema,
 ])
 
-export const CreateListApiResponseSchema = z.union([
-  CreateListResponseSchema,
+export const UpsertListApiResponseSchema = z.union([
+  UpsertListResponseSchema,
   ApiErrorResponseSchema,
 ])
 
@@ -122,9 +123,9 @@ export const DeleteListApiResponseSchema = z.union([
 // Type Inferences
 export type List = z.infer<typeof ListResponseSchema>
 export type Lists = z.infer<typeof ListsResponseSchema>
-export type CreateListRequest = z.infer<typeof CreateListRequestSchema>
-export type CreateListResponse = z.infer<typeof CreateListResponseSchema>
-export type CreateListApiResponse = z.infer<typeof CreateListApiResponseSchema>
+export type UpsertListRequest = z.infer<typeof UpsertListRequestSchema>
+export type UpsertListResponse = z.infer<typeof UpsertListResponseSchema>
+export type UpsertListApiResponse = z.infer<typeof UpsertListApiResponseSchema>
 export type AddItemsToListRequest = z.infer<typeof AddItemsToListRequestSchema>
 export type AddItemsToListApiResponse = z.infer<
   typeof AddItemsToListApiResponseSchema
