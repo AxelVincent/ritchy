@@ -7,7 +7,6 @@ import { MARKER_COLORS } from '../constants/markers'
 import {
   createActiveMarker,
   createFilteredMarkerSvg,
-  updateEmojiMarker,
 } from '../place_marker/markerSvg'
 
 type MarkerState = {
@@ -91,6 +90,7 @@ const updateMarkerVisuals = (
   marker: mapboxgl.Marker,
   newState: MarkerState,
   currentState: MarkerState,
+  place: Place,
 ): void => {
   const element = marker.getElement()
   const hasStateChanged =
@@ -98,32 +98,18 @@ const updateMarkerVisuals = (
 
   if (!hasStateChanged) return
 
-  if (
-    newState.isDisplayed &&
-    newState.emoji &&
-    element.firstChild &&
-    (element.firstChild as HTMLElement).classList?.contains('emoji-marker')
-  ) {
-    updateEmojiMarker(
-      element.firstChild as HTMLElement,
-      newState.color,
-      newState.isSelectedPlace,
-      newState.hasBadge,
-    )
-  } else {
-    const newElement = newState.isDisplayed
-      ? createActiveMarker(
-          newState.color,
-          { lists: [{ emoji: newState.emoji }] } as Place,
-          newState.isSelectedPlace,
-        )
-      : createFilteredMarkerSvg()
+  const newElement = newState.isDisplayed
+    ? createActiveMarker(
+        newState.color,
+        { lists: [{ emoji: place?.lists?.[0]?.emoji ?? '' }] } as Place,
+        newState.isSelectedPlace,
+      )
+    : createFilteredMarkerSvg()
 
-    while (element.firstChild) {
-      element.removeChild(element.firstChild)
-    }
-    element.appendChild(newElement)
+  while (element.firstChild) {
+    element.removeChild(element.firstChild)
   }
+  element.appendChild(newElement)
 
   element.classList.toggle('filtered-marker', !newState.isDisplayed)
   element.classList.toggle('active-marker', newState.isDisplayed)
@@ -184,13 +170,14 @@ export const useMarkerManager = ({
           const marker = createMarker(place, handleMarkerClick)
           marker.addTo(map)
           markersRef.current.set(place.id, { marker, currentState: newState })
-          updateMarkerVisuals(marker, newState, {} as MarkerState)
+          updateMarkerVisuals(marker, newState, {} as MarkerState, place)
         } else {
           // Update existing marker
           updateMarkerVisuals(
             markerRef.marker,
             newState,
             markerRef.currentState,
+            place,
           )
           markerRef.currentState = newState
         }

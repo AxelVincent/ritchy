@@ -126,7 +126,7 @@ describe('DataExport', () => {
       },
     ]
 
-    render(<DataExport data={mockData} />)
+    render(<DataExport selectedRows={mockData} />)
 
     const button = screen.getByRole('button')
     expect(button).toHaveTextContent('Export to CSV (1)')
@@ -192,7 +192,7 @@ describe('DataExport', () => {
       },
     ]
 
-    render(<DataExport data={mockData} />)
+    render(<DataExport selectedRows={mockData} />)
 
     const button = screen.getByRole('button')
     expect(button).toHaveTextContent('Export to CSV (1)')
