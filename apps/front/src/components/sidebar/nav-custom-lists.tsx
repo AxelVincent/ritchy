@@ -2,7 +2,7 @@
 
 import { useDeleteList } from '@/api/mutations/lists/useDeleteList'
 import { useListsQuery } from '@/api/queries/lists/useLists'
-import { CreateListForm } from '@/components/lists/create-list-form'
+import { UpsertListForm } from '@/components/lists/upsert-list-form'
 import {
   Dialog,
   DialogContent,
@@ -28,24 +28,40 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { Link, useMatch } from '@tanstack/react-router'
-import { ListPlus, MoreHorizontal, Trash2 } from 'lucide-react'
+import { ListPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 const CreateListDialog = ({
   isOpen,
   onOpenChange,
-}: { isOpen: boolean; onOpenChange: (open: boolean) => void }) => (
+  initialValues,
+}: {
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+  initialValues?: {
+    id: string
+    name: string
+    emoji: string
+  }
+}) => (
   <Dialog open={isOpen} onOpenChange={onOpenChange}>
     <DialogTrigger asChild>
-      <SidebarMenuButton tooltip="Create new list">
+      <SidebarMenuButton
+        tooltip={initialValues ? 'Edit list' : 'Create new list'}
+      >
         <ListPlus size={16} />
       </SidebarMenuButton>
     </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Create new list</DialogTitle>
+        <DialogTitle>
+          {initialValues ? 'Edit list' : 'Create new list'}
+        </DialogTitle>
       </DialogHeader>
-      <CreateListForm onSuccess={() => onOpenChange(false)} />
+      <UpsertListForm
+        onSuccess={() => onOpenChange(false)}
+        initialValues={initialValues}
+      />
     </DialogContent>
   </Dialog>
 )
@@ -55,7 +71,12 @@ export function NavCustomLists() {
   const { data: lists, isLoading } = useListsQuery()
   const deleteList = useDeleteList()
   const match = useMatch({ from: '/_auth/lists/$listId', shouldThrow: false })
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingList, setEditingList] = useState<{
+    id: string
+    name: string
+    emoji: string
+  } | null>(null)
 
   if (isLoading) {
     return (
@@ -77,16 +98,16 @@ export function NavCustomLists() {
             <span className="flex-1">Lists</span>
             <div className="flex-shrink-0">
               <CreateListDialog
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
+                isOpen={isCreateDialogOpen}
+                onOpenChange={setIsCreateDialogOpen}
               />
             </div>
           </div>
         </SidebarGroupLabel>
       ) : (
         <CreateListDialog
-          isOpen={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
+          isOpen={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
         />
       )}
       <SidebarMenu>
@@ -125,6 +146,10 @@ export function NavCustomLists() {
                 side={open ? 'bottom' : 'right'}
                 align={open ? 'end' : 'start'}
               >
+                <DropdownMenuItem onClick={() => setEditingList(list)}>
+                  <Pencil className="text-muted-foreground" />
+                  <p>Edit</p>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => deleteList.mutateAsync({ id: list.id })}
                   disabled={deleteList.isPending}
@@ -138,6 +163,12 @@ export function NavCustomLists() {
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
+
+      <CreateListDialog
+        isOpen={!!editingList}
+        onOpenChange={(open) => !open && setEditingList(null)}
+        initialValues={editingList ?? undefined}
+      />
     </SidebarGroup>
   )
 }
