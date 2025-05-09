@@ -21,12 +21,27 @@ export function validateAndExportToCsv<T>({
   const validatedData = data.map((item) =>
     schema.parse({
       ...item,
-      enrichment: {
-        ...item.enrichment,
-        id: item.id,
-        emails: item.enrichment?.emails ?? [],
-        socialLinks: item.enrichment?.socialLinks ?? {},
-      },
+      enrichment: item.enrichment
+        ? {
+            ...item.enrichment,
+            id: item.id,
+            data: {
+              sector: item.enrichment.sector ?? '',
+              tone: item.enrichment.tone ?? '',
+              values: item.enrichment.values ?? [],
+              description: item.enrichment.description ?? '',
+              social_networks: item.enrichment.social_networks ?? {},
+              contact_info: {
+                address: item.enrichment.contact_info?.address ?? '',
+                email: item.enrichment.contact_info?.email ?? '',
+                phone: item.enrichment.contact_info?.phone ?? '',
+                website: item.enrichment.contact_info?.website ?? '',
+                contact_url: item.enrichment.contact_info?.contact_url ?? '',
+              },
+              last_updated: item.enrichment.last_updated ?? '',
+            },
+          }
+        : undefined,
     }),
   )
 

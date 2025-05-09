@@ -126,3 +126,11 @@ const createTokenBucket = (refillRate: number, capacity: number) => {
  * Note: Google's quota resets every minute, while this provides a rolling window
  */
 export const googlePlacesRateLimiter = createTokenBucket(600 / 60, 600)
+
+/**
+ * Pre-configured rate limiter for Google Places API
+ * Limits requests to 600 per minute as per Google Places API requirements
+ * Both capacity and refill rate are set to 600/minute (6/second)
+ * Note: Google's quota resets every minute, while this provides a rolling window
+ */
+export const websiteAnalysisRateLimiter = createTokenBucket(360 / 60, 360)

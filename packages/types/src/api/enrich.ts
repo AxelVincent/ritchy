@@ -7,6 +7,7 @@ import {
   type LucideIcon,
   MessageCircle,
   Twitter,
+  Video,
   Youtube,
 } from 'lucide-react'
 import { z } from 'zod'
@@ -29,12 +30,8 @@ export const SOCIAL_MEDIA_CONFIG: SocialMediaConfigType = {
   pinterest: { domain: 'pinterest.com', icon: Camera },
   reddit: { domain: 'reddit.com', icon: Globe },
   snapchat: { domain: 'snapchat.com', icon: Camera },
+  vimeo: { domain: 'vimeo.com', icon: Video },
 } as const
-
-// Basic/Common Schemas
-const SocialMediaPlatformEnum = z.enum(
-  Object.keys(SOCIAL_MEDIA_CONFIG) as [string, ...string[]],
-)
 
 // API Request/Response Schemas
 export const EnrichRequestSchema = z.object({
@@ -42,11 +39,27 @@ export const EnrichRequestSchema = z.object({
   website: z.string().url(),
 })
 
-export const EnrichResponseSchema = z.object({
-  id: z.string(),
-  emails: z.array(z.string().email()),
-  socialLinks: z.record(SocialMediaPlatformEnum, z.array(z.string().url())),
+const EnrichResponseDataSchema = z.object({
+  sector: z.string().optional(),
+  tone: z.string().optional(),
+  values: z.array(z.string()).optional(),
+  description: z.string().optional(),
+  social_networks: z.record(z.string(), z.string()).optional(),
+  contact_info: z
+    .object({
+      address: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      website: z.string().optional(),
+      contact_url: z.string().optional(),
+    })
+    .optional(),
+  last_updated: z.string().optional(),
 })
+
+export type EnrichResponseData = z.infer<typeof EnrichResponseDataSchema>
+
+export const EnrichResponseSchema = EnrichResponseDataSchema
 
 export const EnrichApiResponseSchema = z.union([
   EnrichResponseSchema,

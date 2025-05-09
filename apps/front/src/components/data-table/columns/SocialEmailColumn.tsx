@@ -5,9 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -18,15 +16,27 @@ import { SOCIAL_MEDIA_CONFIG, type SocialMediaPlatform } from '@ritchy/types'
 import type { EnrichmentWithStatus, SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
+  Building2,
   Check,
   Copy,
   ExternalLink,
+  Globe,
+  Heart,
+  Info,
+  Link as LinkIcon,
   Loader2,
-  type LucideIcon,
   Mail,
+  Phone,
 } from 'lucide-react'
 import { useState } from 'react'
 import { HeaderWrapper } from './utils/HeaderWrapper'
+
+enum ContentType {
+  TEXT = 'text',
+  LINK = 'link',
+  EMAIL = 'email',
+  PHONE = 'phone',
+}
 
 const SocialCard = ({
   platform,
@@ -36,7 +46,16 @@ const SocialCard = ({
   links: string[]
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
-  const config = SOCIAL_MEDIA_CONFIG[platform]
+  const normalizedPlatform = String(
+    platform,
+  ).toLowerCase() as SocialMediaPlatform
+  const config = SOCIAL_MEDIA_CONFIG[normalizedPlatform]
+
+  if (!config) {
+    console.warn(`Unknown social media platform: ${platform}`)
+    return null
+  }
+
   const IconComponent = config.icon
 
   return (
@@ -64,12 +83,7 @@ const SocialCard = ({
       {isExpanded && (
         <CardContent className="space-y-2">
           {links.map((url) => (
-            <LinkItem
-              key={url}
-              url={url}
-              domain={config.domain}
-              icon={IconComponent}
-            />
+            <LinkItem key={url} text={url} />
           ))}
         </CardContent>
       )}
@@ -78,46 +92,64 @@ const SocialCard = ({
 }
 
 const LinkItem = ({
-  url,
-  domain,
-  icon: Icon,
+  text,
+  type = ContentType.TEXT,
 }: {
-  url: string
-  domain: string
-  icon: LucideIcon
+  text: string
+  type?: ContentType
 }) => {
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(
-      url.startsWith('mailto:') ? url.slice(7) : url,
-    )
+    await navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const displayUrl = url.startsWith('mailto:')
-    ? url.slice(7)
-    : url.replace(`https://${domain}/`, '')
-
-  const href = url.startsWith('mailto:') ? url : url
+  const getContent = () => {
+    switch (type) {
+      case ContentType.LINK:
+        return (
+          <a
+            href={text}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm truncate hover:underline flex items-center gap-1"
+          >
+            {text}
+            <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
+        )
+      case ContentType.EMAIL:
+        return (
+          <a
+            href={`mailto:${text}`}
+            className="text-sm truncate hover:underline flex items-center gap-1"
+          >
+            {text}
+            <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
+        )
+      case ContentType.PHONE:
+        return (
+          <a
+            href={`tel:${text}`}
+            className="text-sm truncate hover:underline flex items-center gap-1"
+          >
+            {text}
+            <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
+        )
+      default:
+        return <span className="text-sm text-muted-foreground">{text}</span>
+    }
+  }
 
   return (
-    <div className="flex items-center justify-between p-2 bg-muted rounded group">
-      <div className="flex items-center gap-2 min-w-0">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <a
-          href={href}
-          target={url.startsWith('mailto:') ? undefined : '_blank'}
-          rel={url.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-          className="text-sm truncate hover:underline flex items-center gap-1"
-        >
-          {displayUrl}
-          <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-        </a>
-      </div>
+    <div className="flex items-center justify-between">
+      {getContent()}
       <Button
-        variant="outline"
+        variant="ghost"
         size="icon"
         onClick={handleCopy}
         className="h-8 w-8"
@@ -242,14 +274,30 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
       )
     }
 
-    const { emails, socialLinks } = enrichment
-    const hasContent =
-      emails.length > 0 ||
-      Object.values(socialLinks).some((urls) => urls.length > 0)
+    // Get social links from social_networks
+    const socialLinks = enrichment.social_networks
+
+    const hasContent = Boolean(
+      (socialLinks && Object.values(socialLinks).some(Boolean)) ||
+        enrichment.sector ||
+        enrichment.tone ||
+        (enrichment.values && enrichment.values.length > 0) ||
+        enrichment.description ||
+        (enrichment.contact_info &&
+          (enrichment.contact_info.address ||
+            enrichment.contact_info.phone ||
+            enrichment.contact_info.website ||
+            enrichment.contact_info.contact_url ||
+            enrichment.contact_info.email)),
+    )
 
     const totalResults =
-      emails.length +
-      Object.values(socialLinks).reduce((sum, urls) => sum + urls.length, 0)
+      (socialLinks
+        ? Object.values(socialLinks).reduce(
+            (sum, url) => sum + (url ? 1 : 0),
+            0,
+          )
+        : 0) + (enrichment.contact_info?.email ? 1 : 0)
 
     return (
       <TextWrapper
@@ -282,58 +330,201 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>
-                Contact Information - {row.original.name}
+                Enrichment informations - {row.original.name}
               </DialogTitle>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                <span>
+                  This data has been automatically extracted from the business
+                  website. While we strive for accuracy, some details may be
+                  outdated or incorrect. Please verify critical information
+                  before use.
+                </span>
+              </div>
             </DialogHeader>
+
             <ScrollArea className="max-h-[80vh]">
               <div className="space-y-6">
-                {emails.length > 0 && (
+                {/* Business Information Section */}
+                {(enrichment.sector ||
+                  enrichment.tone ||
+                  enrichment.values ||
+                  enrichment.description) && (
                   <Card>
-                    <CardHeader className="pb-2">
+                    <CardHeader>
                       <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-md bg-muted">
-                          <Mail className="h-4 w-4" />
+                          <Building2 className="h-4 w-4" />
                         </div>
-                        <h2 className="font-medium">Emails</h2>
-                        <Badge>{emails.length}</Badge>
+                        <h2 className="font-medium">Business Information</h2>
                       </div>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 gap-2">
-                      {emails.map((email) => (
-                        <LinkItem
-                          key={email}
-                          url={`mailto:${email}`}
-                          domain=""
-                          icon={Mail}
-                        />
-                      ))}
+                    <CardContent className="space-y-4">
+                      {enrichment.sector && (
+                        <div className="flex items-start gap-2">
+                          <div className="p-1.5 rounded-md bg-muted">
+                            <Info className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-sm">Sector</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {enrichment.sector}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {enrichment.tone && (
+                        <div className="flex items-start gap-2">
+                          <div className="p-1.5 rounded-md bg-muted">
+                            <Heart className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-sm">Tone</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {enrichment.tone}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {enrichment.values && enrichment.values.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <div className="p-1.5 rounded-md bg-muted">
+                            <Heart className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-sm">Values</h3>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {enrichment.values.map((value) => (
+                                <Badge key={value} variant="secondary">
+                                  {value}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {enrichment.description && (
+                        <div className="flex items-start gap-2">
+                          <div className="p-1.5 rounded-md bg-muted">
+                            <Info className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-sm">Description</h3>
+                            <LinkItem
+                              text={enrichment.description}
+                              type={ContentType.TEXT}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
 
+                {/* Contact Information Section */}
+                {enrichment.contact_info &&
+                  (enrichment.contact_info.address ||
+                    enrichment.contact_info.email ||
+                    enrichment.contact_info.phone ||
+                    enrichment.contact_info.website ||
+                    enrichment.contact_info.contact_url) && (
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-md bg-muted">
+                            <Phone className="h-4 w-4" />
+                          </div>
+                          <h2 className="font-medium">Contact Information</h2>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {enrichment.contact_info.phone && (
+                          <div className="flex items-start gap-2">
+                            <div className="p-1.5 rounded-md bg-muted">
+                              <Phone className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-sm">Phone</h3>
+                              <LinkItem
+                                text={enrichment.contact_info.phone}
+                                type={ContentType.PHONE}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {enrichment.contact_info.website && (
+                          <div className="flex items-start gap-2">
+                            <div className="p-1.5 rounded-md bg-muted">
+                              <Globe className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-sm">Website</h3>
+                              <LinkItem
+                                text={enrichment.contact_info.website}
+                                type={ContentType.LINK}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {enrichment.contact_info.contact_url && (
+                          <div className="flex items-start gap-2">
+                            <div className="p-1.5 rounded-md bg-muted">
+                              <LinkIcon className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-sm">
+                                Contact Page
+                              </h3>
+                              <LinkItem
+                                text={enrichment.contact_info.contact_url}
+                                type={ContentType.LINK}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {enrichment.contact_info.email && (
+                          <div className="flex items-start gap-2">
+                            <div className="p-1.5 rounded-md bg-muted">
+                              <Mail className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-sm">Email</h3>
+                              <LinkItem
+                                text={enrichment.contact_info.email}
+                                type={ContentType.EMAIL}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                {/* Existing Social Media Section */}
                 <Card>
                   <CardHeader>
                     <h2 className="font-medium">Social Media</h2>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(socialLinks).map(([platform, urls]) => (
-                      <SocialCard
-                        key={platform}
-                        platform={platform as SocialMediaPlatform}
-                        links={urls}
-                      />
-                    ))}
+                    {socialLinks &&
+                      Object.entries(socialLinks).map(([platform, url]) => (
+                        <SocialCard
+                          key={platform}
+                          platform={platform as SocialMediaPlatform}
+                          links={typeof url === 'string' ? [url] : []}
+                        />
+                      ))}
                   </CardContent>
                 </Card>
+
+                {/* Last Updated Section */}
+                {enrichment.last_updated && (
+                  <div className="text-sm text-muted-foreground text-right">
+                    Last updated:{' '}
+                    {new Date(enrichment.last_updated).toLocaleDateString()}
+                  </div>
+                )}
               </div>
             </ScrollArea>
-            <DialogFooter className="sm:justify-start">
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  Close
-                </Button>
-              </DialogClose>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </TextWrapper>

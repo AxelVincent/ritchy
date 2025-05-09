@@ -10,6 +10,7 @@ TypeScript monorepo built with Turborepo, featuring a React frontend and Node.js
 - python 3.11
 - [pipx](https://pipx.pypa.io/stable/installation/) 
 - [poetry 1.8.4+](https://python-poetry.org/docs/)
+- [Playwright](https://playwright.dev/)
 - Docker and Docker Compose
 - Access to internal environment variables (ask a team member)
 

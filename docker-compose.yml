@@ -1,45 +1,12 @@
 version: '3.8'
 
 services:
-  api:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-    ports:
-      - "3031:3031"
-    environment:
-      - NODE_ENV=production
-      - PORT=3031
-      - DATABASE_URL=${DATABASE_URL}
-      - GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}
-      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
-      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - db
-      - redis
-
-  front:
-    build:
-      context: .
-      dockerfile: apps/front/Dockerfile
-      args:
-        - NODE_ENV=production
-        - VITE_API_WEB_BASE_URL=${VITE_API_WEB_BASE_URL}
-        - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
-        - VITE_MAPBOX_ACCESS_TOKEN=${VITE_MAPBOX_ACCESS_TOKEN}
-    ports:
-      - "80:80"
-    depends_on:
-      - api
-
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -66,6 +33,29 @@ services:
       timeout: 3s
       retries: 5
 
+  redis-website-analyzer:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data_website_analyzer:/data
+    command: >
+      redis-server
+      --requirepass ${REDISPASSWORD_WEBSITE_ANALYZER}
+      --user default off
+      --user ${REDISUSER_WEBSITE_ANALYZER} on '>${REDISPASSWORD_WEBSITE_ANALYZER}' allcommands allkeys
+      --appendonly yes
+      --loadmodule /opt/redis-stack/lib/rejson.so
+    environment:
+      - REDIS_USER=${REDISUSER_WEBSITE_ANALYZER}
+      - REDIS_PASSWORD=${REDISPASSWORD_WEBSITE_ANALYZER}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-u", "${REDISUSER_WEBSITE_ANALYZER}", "-a", "${REDISPASSWORD_WEBSITE_ANALYZER}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 volumes:
   postgres_data:
-  redis_data: 
+  redis_data:
+  redis_data_website_analyzer: 
