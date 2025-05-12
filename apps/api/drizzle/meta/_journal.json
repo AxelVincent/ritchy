@@ -232,6 +232,13 @@
       "when": 1744139533269,
       "tag": "0032_pink_zemo",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1746703561736,
+      "tag": "0033_wealthy_mole_man",
+      "breakpoints": true
     }
   ]
 }
