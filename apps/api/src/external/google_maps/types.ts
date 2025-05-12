@@ -44,7 +44,8 @@ const PhotoSchema = z.object({
   googleMapsUri: z.string(),
 })
 
-const FuelTypeEnum = z.enum([
+// First, define all known types as const arrays
+const KNOWN_FUEL_TYPES = [
   'FUEL_TYPE_UNSPECIFIED',
   'DIESEL',
   'REGULAR_UNLEADED',
@@ -64,15 +65,10 @@ const FuelTypeEnum = z.enum([
   'METHANE',
   'BIO_DIESEL',
   'TRUCK_DIESEL',
-])
+  'DIESEL_PLUS',
+] as const
 
-const FuelPriceSchema = z.object({
-  type: FuelTypeEnum,
-  price: MoneySchema,
-  updateTime: z.string().datetime(),
-})
-
-const EVConnectorTypeEnum = z.enum([
+const KNOWN_EV_CONNECTOR_TYPES = [
   'EV_CONNECTOR_TYPE_UNSPECIFIED',
   'EV_CONNECTOR_TYPE_OTHER',
   'EV_CONNECTOR_TYPE_J1772',
@@ -83,7 +79,80 @@ const EVConnectorTypeEnum = z.enum([
   'EV_CONNECTOR_TYPE_TESLA',
   'EV_CONNECTOR_TYPE_UNSPECIFIED_GB_T',
   'EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET',
+] as const
+
+const KNOWN_SPATIAL_RELATIONSHIPS = [
+  'NEAR',
+  'WITHIN',
+  'BESIDE',
+  'ACROSS_THE_ROAD',
+  'DOWN_THE_ROAD',
+  'AROUND_THE_CORNER',
+  'BEHIND',
+] as const
+
+const KNOWN_CONTAINMENT_TYPES = [
+  'CONTAINMENT_UNSPECIFIED',
+  'WITHIN',
+  'OUTSKIRTS',
+  'NEAR',
+] as const
+
+// Create types from the known values
+type KnownFuelType = (typeof KNOWN_FUEL_TYPES)[number]
+type KnownEVConnectorType = (typeof KNOWN_EV_CONNECTOR_TYPES)[number]
+type KnownSpatialRelationship = (typeof KNOWN_SPATIAL_RELATIONSHIPS)[number]
+type KnownContainmentType = (typeof KNOWN_CONTAINMENT_TYPES)[number]
+
+// Create the enums for validation, but allow unknown values
+const FuelTypeEnum = z.union([
+  z.enum(KNOWN_FUEL_TYPES),
+  z
+    .string()
+    .refine(
+      (val): val is string => !KNOWN_FUEL_TYPES.includes(val as KnownFuelType),
+      'Unknown fuel type. This might be a new type from Google Maps API.',
+    ),
 ])
+
+const EVConnectorTypeEnum = z.union([
+  z.enum(KNOWN_EV_CONNECTOR_TYPES),
+  z
+    .string()
+    .refine(
+      (val): val is string =>
+        !KNOWN_EV_CONNECTOR_TYPES.includes(val as KnownEVConnectorType),
+      'Unknown EV connector type. This might be a new type from Google Maps API.',
+    ),
+])
+
+const SpatialRelationshipEnum = z.union([
+  z.enum(KNOWN_SPATIAL_RELATIONSHIPS),
+  z
+    .string()
+    .refine(
+      (val): val is string =>
+        !KNOWN_SPATIAL_RELATIONSHIPS.includes(val as KnownSpatialRelationship),
+      'Unknown spatial relationship. This might be a new type from Google Maps API.',
+    ),
+])
+
+const ContainmentEnum = z.union([
+  z.enum(KNOWN_CONTAINMENT_TYPES),
+  z
+    .string()
+    .refine(
+      (val): val is string =>
+        !KNOWN_CONTAINMENT_TYPES.includes(val as KnownContainmentType),
+      'Unknown containment type. This might be a new type from Google Maps API.',
+    ),
+])
+
+const FuelPriceSchema = z.object({
+  type: FuelTypeEnum,
+  price: MoneySchema,
+  updateTime: z.string().datetime(),
+})
 
 const ConnectorAggregationSchema = z.object({
   type: EVConnectorTypeEnum,
@@ -102,23 +171,6 @@ const ContentBlockSchema = z.object({
     places: z.array(z.string()).optional(),
   }),
 })
-
-const SpatialRelationshipEnum = z.enum([
-  'NEAR',
-  'WITHIN',
-  'BESIDE',
-  'ACROSS_THE_ROAD',
-  'DOWN_THE_ROAD',
-  'AROUND_THE_CORNER',
-  'BEHIND',
-])
-
-const ContainmentEnum = z.enum([
-  'CONTAINMENT_UNSPECIFIED',
-  'WITHIN',
-  'OUTSKIRTS',
-  'NEAR',
-])
 
 const LandmarkSchema = z.object({
   name: z.string(),
