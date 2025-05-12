@@ -92,9 +92,6 @@ export const search = pgTable('search', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  latitude: numeric('latitude'),
-  longitude: numeric('longitude'),
-  radiusInMeters: integer('radius_in_meters'),
   placeName: text('place_name').notNull(),
   keyword: text('keyword').notNull(),
   model: searchModelEnum('model').notNull(),
