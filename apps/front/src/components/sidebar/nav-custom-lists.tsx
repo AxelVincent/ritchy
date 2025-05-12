@@ -34,29 +34,42 @@ import { useState } from 'react'
 const CreateListDialog = ({
   isOpen,
   onOpenChange,
+}: {
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+}) => (
+  <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <DialogTrigger asChild>
+      <SidebarMenuButton tooltip="Create new list">
+        <ListPlus size={16} />
+      </SidebarMenuButton>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Create new list</DialogTitle>
+      </DialogHeader>
+      <UpsertListForm onSuccess={() => onOpenChange(false)} />
+    </DialogContent>
+  </Dialog>
+)
+
+const EditListDialog = ({
+  isOpen,
+  onOpenChange,
   initialValues,
 }: {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  initialValues?: {
+  initialValues: {
     id: string
     name: string
     emoji: string
   }
 }) => (
   <Dialog open={isOpen} onOpenChange={onOpenChange}>
-    <DialogTrigger asChild>
-      <SidebarMenuButton
-        tooltip={initialValues ? 'Edit list' : 'Create new list'}
-      >
-        <ListPlus size={16} />
-      </SidebarMenuButton>
-    </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>
-          {initialValues ? 'Edit list' : 'Create new list'}
-        </DialogTitle>
+        <DialogTitle>Edit list</DialogTitle>
       </DialogHeader>
       <UpsertListForm
         onSuccess={() => onOpenChange(false)}
@@ -164,11 +177,13 @@ export function NavCustomLists() {
         ))}
       </SidebarMenu>
 
-      <CreateListDialog
-        isOpen={!!editingList}
-        onOpenChange={(open) => !open && setEditingList(null)}
-        initialValues={editingList ?? undefined}
-      />
+      {editingList && (
+        <EditListDialog
+          isOpen={!!editingList}
+          onOpenChange={(open) => !open && setEditingList(null)}
+          initialValues={editingList}
+        />
+      )}
     </SidebarGroup>
   )
 }
