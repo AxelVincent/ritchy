@@ -6,7 +6,6 @@ import type {
   WebsiteAnalyzerRequestParams,
   WebsiteAnalyzerResult,
 } from './types'
-import { websiteAnalyzerQueue } from './utils/website_analyzer_queue'
 
 export async function analyzeWebsite(
   params: WebsiteAnalyzerRequestParams,
@@ -34,16 +33,14 @@ export async function analyzeWebsite(
       },
     })
 
-    const response = await websiteAnalyzerQueue.addToQueue(async () =>
-      fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': WEBSITE_ANALYZER_CONFIG.API_KEY,
-        },
-        body: JSON.stringify({ url: params.url }),
-      }),
-    )
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': WEBSITE_ANALYZER_CONFIG.API_KEY,
+      },
+      body: JSON.stringify({ url: params.url }),
+    })
 
     if (!response.ok) {
       const responseBody = await response.text()
