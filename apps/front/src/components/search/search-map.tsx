@@ -1,20 +1,13 @@
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { useMapInitialization } from '@/components/map-display/hooks/useMapInitialization'
 import { MAP_SETTINGS } from '@/components/map-display/types'
-import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 
 import { Button } from '@/components/ui/button'
 import { debounce } from '@/lib/debounce'
 import type { Rectangle } from '@ritchy/types'
 import { Search } from 'lucide-react'
 import mapboxgl from 'mapbox-gl'
-import {
-  type FC,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { type FC, useCallback, useEffect, useMemo, useRef } from 'react'
 
 const DEBUG = false
 
