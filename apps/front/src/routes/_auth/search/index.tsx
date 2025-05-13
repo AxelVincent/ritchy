@@ -160,6 +160,7 @@ function RouteComponent() {
         userLocation={currentLocation}
         onSearchArea={debouncedTriggerSearch}
         searchInfo={searchInfo}
+        isLoading={createSearchMutation.isPending}
       />
     </div>
   )
