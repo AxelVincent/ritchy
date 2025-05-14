@@ -86,7 +86,7 @@ export const DemoCodeModal = ({
               Option 1: Schedule a demo & Get a free trial code
             </h3>
             <Button
-              data-cal-link="ryan-baissaut-799ndn/30min"
+              data-cal-link="ryan-baissaut-799ndn/ritchydemo"
               data-cal-config='{"theme":"light"}'
               type="button"
               size="sm"

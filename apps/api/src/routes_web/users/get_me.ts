@@ -24,11 +24,9 @@ export const getMe = async (
   }
 
   try {
-    // Fetch the user's subscription plan
     const plan = await getUserPlan(userId)
 
-    // Fetch the user's demo code validation status
-    let isDemoValidated = false // Default to false
+    let isDemoValidated = false
     const [demoCodeRecord] = await db
       .select({
         isValidated: userDemoCode.isValidated,
@@ -39,9 +37,8 @@ export const getMe = async (
     if (demoCodeRecord) {
       isDemoValidated = demoCodeRecord.isValidated
     } else {
-      // If no demo code record exists, assume not validated.
       logger.info({
-        msg: 'No demo code record found for user in getMeHandler. Assuming not validated.',
+        msg: 'No demo code record found for user in getMe. Assuming not validated.',
         event: 'get_me_no_demo_record',
         metadata: { userId },
       })
@@ -58,7 +55,7 @@ export const getMe = async (
     logger.error({
       msg: 'Error fetching user data for /me endpoint',
       event: 'get_me_error',
-      metadata: { error, userId: req.auth?.userId }, // Ensure userId is logged if available
+      metadata: { error, userId: req.auth?.userId },
     })
     res.status(500).json({
       error: 'internal_server_error',

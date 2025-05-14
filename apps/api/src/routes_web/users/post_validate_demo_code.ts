@@ -21,10 +21,9 @@ export const validateDemoCodeHandler = async (
   try {
     const parsedBody = ValidateDemoCodeRequestSchema.parse(req.body)
     const { code: submittedCode } = parsedBody
-    const userId = req.auth.userId // Assuming isAuthenticated middleware populates this
+    const userId = req.auth.userId
 
     if (!userId) {
-      // Should not happen if isAuthenticated middleware is applied
       logger.warn({
         msg: 'User ID missing in validateDemoCodeHandler',
         event: 'validate_demo_code_no_userid',
