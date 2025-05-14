@@ -141,6 +141,7 @@ export async function postTextSearchV1(
     for (const square of squares) {
       let nextPageToken = undefined
       let currentSquareQuantity = 0
+      let pageCount = 0
 
       do {
         const formattedRequest = {
@@ -170,8 +171,15 @@ export async function postTextSearchV1(
 
         nextPageToken = data.nextPageToken // Update nextPageToken with the new token
         apiRequestCount++
-        // Stop if we have enough results or no more pages
-      } while (nextPageToken && currentSquareQuantity < resultsQuantity)
+        pageCount++
+        // Stop if we have enough results, no more pages, or reached 3 pages
+        // There is a bug where the Google API continues to return nextPageToken even when there are no more pages
+        // So we need to stop when we have enough results to avoid infinite loop and extra requests
+      } while (
+        nextPageToken &&
+        currentSquareQuantity < resultsQuantity &&
+        pageCount < 3
+      )
     }
 
     // Track duplicates for logging
