@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { useMapInitialization } from '@/components/map-display/hooks/useMapInitialization'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 
@@ -41,6 +42,7 @@ interface MapBoxProps {
     placeName: string
     model: string
   }
+  isLoading?: boolean
 }
 
 const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
@@ -77,6 +79,7 @@ export const SearchMap: FC<MapBoxProps> = ({
   userLocation,
   onSearchArea,
   searchInfo,
+  isLoading: propIsLoading,
 }) => {
   debugLog('MapBox render:', { userLocation })
 
@@ -281,8 +284,13 @@ export const SearchMap: FC<MapBoxProps> = ({
             size="lg"
             onClick={onSearchArea}
             className="shadow-lg h-[40px]"
+            disabled={propIsLoading}
           >
-            <Search className="w-4 h-4 mr-2" />
+            {propIsLoading ? (
+              <LoadingSpinner className="w-4 h-4 mr-2" />
+            ) : (
+              <Search className="w-4 h-4 mr-2" />
+            )}
             Search in this area
           </Button>
         </div>

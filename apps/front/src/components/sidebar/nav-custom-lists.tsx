@@ -34,29 +34,42 @@ import { useState } from 'react'
 const CreateListDialog = ({
   isOpen,
   onOpenChange,
+}: {
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+}) => (
+  <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <DialogTrigger asChild>
+      <SidebarMenuButton tooltip="Create new list">
+        <ListPlus size={16} />
+      </SidebarMenuButton>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Create new list</DialogTitle>
+      </DialogHeader>
+      <UpsertListForm onSuccess={() => onOpenChange(false)} />
+    </DialogContent>
+  </Dialog>
+)
+
+const EditListDialog = ({
+  isOpen,
+  onOpenChange,
   initialValues,
 }: {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  initialValues?: {
+  initialValues: {
     id: string
     name: string
     emoji: string
   }
 }) => (
   <Dialog open={isOpen} onOpenChange={onOpenChange}>
-    <DialogTrigger asChild>
-      <SidebarMenuButton
-        tooltip={initialValues ? 'Edit list' : 'Create new list'}
-      >
-        <ListPlus size={16} />
-      </SidebarMenuButton>
-    </DialogTrigger>
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>
-          {initialValues ? 'Edit list' : 'Create new list'}
-        </DialogTitle>
+        <DialogTitle>Edit list</DialogTitle>
       </DialogHeader>
       <UpsertListForm
         onSuccess={() => onOpenChange(false)}
@@ -111,64 +124,67 @@ export function NavCustomLists() {
         />
       )}
       <SidebarMenu>
-        {lists?.map((list) => (
-          <SidebarMenuItem key={list.id}>
-            <SidebarMenuButton
-              asChild
-              tooltip={list.name}
-              isActive={match?.params.listId === list.id}
-              className={cn('justify-between')}
-            >
-              <Link to={`/lists/${list.id}`}>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm">{list.emoji}</p>
-                  <p
-                    className="pl-2 font-medium truncate max-w-[120px]"
-                    title={list.name}
-                  >
-                    {list.name}
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {list.itemCount}
-                </p>
-              </Link>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <p className="sr-only">More</p>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48 rounded-lg"
-                side={open ? 'bottom' : 'right'}
-                align={open ? 'end' : 'start'}
+        {Array.isArray(lists) &&
+          lists.map((list) => (
+            <SidebarMenuItem key={list.id}>
+              <SidebarMenuButton
+                asChild
+                tooltip={list.name}
+                isActive={match?.params.listId === list.id}
+                className={cn('justify-between')}
               >
-                <DropdownMenuItem onClick={() => setEditingList(list)}>
-                  <Pencil className="text-muted-foreground" />
-                  <p>Edit</p>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => deleteList.mutateAsync({ id: list.id })}
-                  disabled={deleteList.isPending}
-                  className="cursor-pointer"
+                <Link to={`/lists/${list.id}`}>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm">{list.emoji}</p>
+                    <p
+                      className="pl-2 font-medium truncate max-w-[120px]"
+                      title={list.name}
+                    >
+                      {list.name}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {list.itemCount}
+                  </p>
+                </Link>
+              </SidebarMenuButton>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction showOnHover>
+                    <MoreHorizontal />
+                    <p className="sr-only">More</p>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 rounded-lg"
+                  side={open ? 'bottom' : 'right'}
+                  align={open ? 'end' : 'start'}
                 >
-                  <Trash2 className="text-muted-foreground" />
-                  <p>Delete</p>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        ))}
+                  <DropdownMenuItem onClick={() => setEditingList(list)}>
+                    <Pencil className="text-muted-foreground" />
+                    <p>Edit</p>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => deleteList.mutateAsync({ id: list.id })}
+                    disabled={deleteList.isPending}
+                    className="cursor-pointer"
+                  >
+                    <Trash2 className="text-muted-foreground" />
+                    <p>Delete</p>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          ))}
       </SidebarMenu>
 
-      <CreateListDialog
-        isOpen={!!editingList}
-        onOpenChange={(open) => !open && setEditingList(null)}
-        initialValues={editingList ?? undefined}
-      />
+      {editingList && (
+        <EditListDialog
+          isOpen={!!editingList}
+          onOpenChange={(open) => !open && setEditingList(null)}
+          initialValues={editingList}
+        />
+      )}
     </SidebarGroup>
   )
 }

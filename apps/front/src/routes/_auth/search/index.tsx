@@ -80,7 +80,12 @@ function RouteComponent() {
     setSearchInfo(info)
   }
 
-  const triggerSearch = () => {
+  const [isSearching, setIsSearching] = useState(false)
+
+  const triggerSearch = useCallback(() => {
+    if (isSearching) return
+    setIsSearching(true)
+
     const search: CreateSearchRequestBody = {
       rectangle: currentLocation.bounds,
       placeName: searchInfo.placeName,
@@ -108,8 +113,29 @@ function RouteComponent() {
           ),
         })
       },
+      onSettled: () => {
+        setIsSearching(false)
+      },
     })
-  }
+  }, [
+    currentLocation.bounds,
+    searchInfo,
+    createSearchMutation,
+    navigate,
+    isSearching,
+  ])
+
+  const debouncedTriggerSearch = useMemo(
+    () => debounce(triggerSearch, 1000),
+    [triggerSearch],
+  )
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedTriggerSearch.cancel()
+    }
+  }, [debouncedTriggerSearch])
 
   // Update from geolocation only on initial load
   useEffect(() => {
@@ -132,8 +158,9 @@ function RouteComponent() {
       <SearchMap
         onLocationChange={handleLocationChange}
         userLocation={currentLocation}
-        onSearchArea={triggerSearch}
+        onSearchArea={debouncedTriggerSearch}
         searchInfo={searchInfo}
+        isLoading={createSearchMutation.isPending}
       />
     </div>
   )

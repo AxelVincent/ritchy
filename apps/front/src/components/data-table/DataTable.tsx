@@ -55,8 +55,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
   onFilteredDataChange,
   storageKey,
 }: DataTableProps<TData, TValue>) => {
-  // Get selectedPlaceId and setSelectedPlaceId from the store
-  const { selectedPlaceId, centerPlaceSpreadsheetId } = useMapStore()
+  // Get selectedPlaceId from the store
+  const { selectedPlaceId } = useMapStore()
   const isMobile = useIsMobile()
 
   const [sorting, setSorting] = useState<SortingState>([])
@@ -159,16 +159,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const rows = table.getRowModel().rows
   const visibleColumns = table.getVisibleLeafColumns()
 
-  // Column virtualizer
-  const columnVirtualizer = useVirtualizer({
-    count: visibleColumns.length,
-    estimateSize: () => 200,
-    measureElement: () => 200,
-    getScrollElement: () => tableContainerRef.current,
-    horizontal: true,
-    overscan: 8, // Increased for smoother horizontal scrolling
-  })
-
   // Row virtualizer
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
@@ -182,41 +172,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     overscan: 10,
   })
 
-  const virtualColumns = columnVirtualizer.getVirtualItems()
   const virtualRows = rowVirtualizer.getVirtualItems()
-
-  // Calculate padding for columns
-  let virtualPaddingLeft: number | undefined
-  let virtualPaddingRight: number | undefined
-
-  if (columnVirtualizer && virtualColumns?.length) {
-    virtualPaddingLeft = virtualColumns[0]?.start ?? 0
-    virtualPaddingRight =
-      columnVirtualizer.getTotalSize() -
-      (virtualColumns[virtualColumns.length - 1]?.end ?? 0)
-  }
-
-  // Add this effect to handle scrolling
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    // Find the index of the selected row in the full data set
-    const rowIndex = rows.findIndex(
-      (row) => row.original.id === centerPlaceSpreadsheetId,
-    )
-    if (rowIndex !== -1) {
-      // First scroll without smooth behavior to ensure correct positioning
-      rowVirtualizer.scrollToIndex(rowIndex, { align: 'center' })
-
-      // Use requestAnimationFrame to ensure the initial scroll is complete
-      requestAnimationFrame(() => {
-        // Then apply smooth scrolling for visual polish
-        rowVirtualizer.scrollToIndex(rowIndex, {
-          align: 'center',
-          behavior: 'smooth',
-        })
-      })
-    }
-  }, [centerPlaceSpreadsheetId])
 
   // Add effect to track filtered results
   // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
@@ -285,68 +241,42 @@ export const DataTable = <TData extends SearchResult, TValue>({
                 key={headerGroup.id}
                 style={{ display: 'flex', width: '100%' }}
               >
-                <th
-                  key={headerGroup.headers[0].id}
-                  style={{
-                    display: 'flex',
-                    width: headerGroup.headers[0].getSize(),
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 2,
-                  }}
-                  className="border-r border-border bg-background"
-                >
-                  {flexRender(
-                    headerGroup.headers[0].column.columnDef.header,
-                    headerGroup.headers[0].getContext(),
-                  )}
-                </th>
-                {virtualPaddingLeft ? (
-                  <th style={{ display: 'flex', width: virtualPaddingLeft }} />
-                ) : null}
-                {virtualColumns.map((vc) => {
-                  const header = headerGroup.headers[vc.index + 1]
-                  if (!header) return null
-                  return (
-                    <th
-                      key={header.id}
-                      style={{
-                        display: 'flex',
-                        width: header.getSize(),
-                        position: 'relative',
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    style={{
+                      display: 'flex',
+                      width: header.getSize(),
+                      position: header.index === 0 ? 'sticky' : 'relative',
+                      left: header.index === 0 ? 0 : undefined,
+                      zIndex: header.index === 0 ? 2 : 1,
+                    }}
+                    className={cn('border-r border-border bg-background')}
+                  >
+                    <div
+                      {...{
+                        className: header.column.getCanSort()
+                          ? 'w-full cursor-pointer select-none'
+                          : '',
+                        onClick: header.column.getToggleSortingHandler(),
                       }}
-                      className={cn('border-r border-border bg-background', {
-                        'bg-background': vc.index === 0,
-                      })}
                     >
-                      <div
-                        {...{
-                          className: header.column.getCanSort()
-                            ? 'w-full cursor-pointer select-none'
-                            : '',
-                          onClick: header.column.getToggleSortingHandler(),
-                        }}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                      </div>
-                      <div
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
-                        className={cn(
-                          'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none',
-                          'hover:bg-primary',
-                          header.column.getIsResizing() ? 'bg-primary' : '',
-                        )}
-                      />
-                    </th>
-                  )
-                })}
-                {virtualPaddingRight ? (
-                  <th style={{ display: 'flex', width: virtualPaddingRight }} />
-                ) : null}
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </div>
+                    <div
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      className={cn(
+                        'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none',
+                        'hover:bg-primary',
+                        header.column.getIsResizing() ? 'bg-primary' : '',
+                      )}
+                    />
+                  </th>
+                ))}
               </tr>
             ))}
           </thead>
@@ -375,60 +305,37 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   }}
                   className="border-b border-border"
                 >
-                  <td
-                    key={visibleCells[0].id}
-                    style={{
-                      display: 'flex',
-                      width: visibleCells[0].column.getSize(),
-                      position: 'sticky',
-                      left: 0,
-                      zIndex: 1,
-                      alignItems: 'center',
-                    }}
-                    className={cn('border-r border-border bg-background', {
-                      'bg-primary-foreground':
-                        selectedPlaceId === row.original.id,
-                    })}
-                  >
-                    {flexRender(
-                      visibleCells[0].column.columnDef.cell,
-                      visibleCells[0].getContext(),
-                    )}
-                  </td>
-                  {virtualPaddingLeft ? (
+                  {visibleCells.map((cell) => (
                     <td
-                      style={{ display: 'flex', width: virtualPaddingLeft }}
-                    />
-                  ) : null}
-                  {virtualColumns.map((vc) => {
-                    const cell = visibleCells[vc.index + 1]
-                    if (!cell) return null
-                    return (
-                      <td
-                        key={cell.id}
-                        style={{
-                          display: 'flex',
-                          width: cell.column.getSize(),
-                          alignItems: 'center',
-                        }}
-                        className={cn('border-r border-border', {
-                          'bg-background': vc.index === 0,
-                          'bg-primary-foreground':
-                            selectedPlaceId === row.original.id,
-                        })}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    )
-                  })}
-                  {virtualPaddingRight ? (
-                    <td
-                      style={{ display: 'flex', width: virtualPaddingRight }}
-                    />
-                  ) : null}
+                      key={cell.id}
+                      style={{
+                        display: 'flex',
+                        width: cell.column.getSize(),
+                        position:
+                          cell.column.id === visibleCells[0].column.id
+                            ? 'sticky'
+                            : 'relative',
+                        left:
+                          cell.column.id === visibleCells[0].column.id
+                            ? 0
+                            : undefined,
+                        zIndex:
+                          cell.column.id === visibleCells[0].column.id ? 1 : 0,
+                        alignItems: 'center',
+                      }}
+                      className={cn('border-r border-border', {
+                        'bg-background':
+                          cell.column.id === visibleCells[0].column.id,
+                        'bg-primary-foreground':
+                          selectedPlaceId === row.original.id,
+                      })}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
                 </tr>
               )
             })}

@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -92,9 +93,6 @@ export const search = pgTable('search', {
   userId: uuid('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  latitude: numeric('latitude'),
-  longitude: numeric('longitude'),
-  radiusInMeters: integer('radius_in_meters'),
   placeName: text('place_name').notNull(),
   keyword: text('keyword').notNull(),
   model: searchModelEnum('model').notNull(),
@@ -229,5 +227,24 @@ export const status = pgTable(
       table.placeId,
       table.userId,
     ),
+  }),
+)
+
+export const userDemoCode = pgTable(
+  'user_demo_code',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' })
+      .unique(),
+    code: text('code').notNull(),
+    isValidated: boolean('is_validated').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    validatedAt: timestamp('validated_at'),
+  },
+  (table) => ({
+    userIdx: index('idx_user_demo_code_user_id').on(table.userId),
+    codeIdx: index('idx_user_demo_code_code').on(table.code),
   }),
 )
