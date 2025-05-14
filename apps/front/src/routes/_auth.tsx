@@ -1,7 +1,4 @@
-import {
-  isMeSuccess as isUserMeSuccess,
-  useUserMe,
-} from '@/api/queries/users/useUserMe'
+import { useUserMe } from '@/api/queries/users/useUserMe'
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
@@ -90,7 +87,7 @@ function ClerkRedirect() {
   const { user, isLoaded } = useUser()
   const navigate = useNavigate()
   const { data: meData, isLoading: isLoadingMe } = useUserMe()
-  const userPlan = meData && isUserMeSuccess(meData) ? meData.plan : 'FREE'
+  const userPlan = meData?.plan || 'FREE'
   const isMobile = useIsMobile()
 
   useEffect(() => {
@@ -132,16 +129,15 @@ function AuthChecksAndRedirects({ children }: { children: React.ReactNode }) {
 
   const { data: meData, isLoading: isLoadingMe, error: meError } = useUserMe()
 
-  const userPlan = meData && isUserMeSuccess(meData) ? meData.plan : null
-  const isDemoValidated =
-    meData && isUserMeSuccess(meData) ? meData.isDemoValidated : false
+  const userPlan = meData?.plan || null
+  const isDemoValidated = meData?.isDemoValidated || false
 
   const isMobile = useIsMobile()
   const [showDemoCodeModal, setShowDemoCodeModal] = useState(false)
 
   // Effect to update localStorage based on API response for demo status
   useEffect(() => {
-    if (meData && isUserMeSuccess(meData)) {
+    if (meData) {
       if (meData.isDemoValidated) {
         localStorage.setItem('demoCodeValidated', 'true')
       } else {

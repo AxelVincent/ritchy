@@ -1,4 +1,4 @@
-import { isMeSuccess, useUserMe } from '@/api/queries/users/useUserMe'
+import { useUserMe } from '@/api/queries/users/useUserMe'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
@@ -98,7 +98,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
 
   const [isExporting, setIsExporting] = useState(false)
   const { data: me } = useUserMe()
-  const userPlan = me && isMeSuccess(me) ? me.plan : 'FREE'
+  const userPlan = me?.plan || 'FREE'
   const { user } = useUser()
   const navigate = useNavigate()
 

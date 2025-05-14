@@ -12,7 +12,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Search } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { isMeSuccess, useUserMe } from '@/api/queries/users/useUserMe'
+import { useUserMe } from '@/api/queries/users/useUserMe'
 import { LocationAutocomplete as SearchLocationAutocomplete } from '@/components/search/location-autocomplete'
 import type { Location } from '@/components/search/search-map'
 import { isModelAvailable } from '@/lib/subscription'
@@ -40,7 +40,7 @@ export const PlacesTextSearch = ({
   const [placeName, setPlaceName] = useState('')
   const [model, setModel] = useState<SearchModel>('ESSENTIALS')
   const currentLocationRef = useRef<Location>(location)
-  const userPlan = me && isMeSuccess(me) ? me.plan : 'FREE'
+  const userPlan = me?.plan || 'FREE'
   const [isOpen, setIsOpen] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [step, setStep] = useState(0)
@@ -156,7 +156,7 @@ export const PlacesTextSearch = ({
   )
 
   const handleModelChange = (value: typeof model) => {
-    const plan = me && isMeSuccess(me) ? me.plan : undefined
+    const plan = me?.plan || undefined
 
     if (!isModelAvailable(plan, value)) {
       navigate({ to: '/pricing' })

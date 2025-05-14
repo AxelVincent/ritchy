@@ -28,15 +28,8 @@ const userMeMock = vi.fn().mockReturnValue({
   data: { plan: 'NAVIGATOR' },
 })
 
-// Add the isSubscriptionSuccess mock function
-const isMeSuccessMock = vi.fn().mockImplementation((me) => {
-  // Check if the subscription has a plan property
-  return me && 'plan' in me
-})
-
 vi.mock('@/api/queries/users/useUserMe', () => ({
   useUserMe: () => userMeMock(),
-  isMeSuccess: (me: unknown) => isMeSuccessMock(me),
 }))
 
 // Mock for isModelAvailable
