@@ -239,6 +239,13 @@
       "when": 1746703561736,
       "tag": "0033_wealthy_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1747132533816,
+      "tag": "0034_sticky_stardust",
+      "breakpoints": true
     }
   ]
 }

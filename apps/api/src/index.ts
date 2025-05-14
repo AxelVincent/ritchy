@@ -13,6 +13,7 @@ import { user as userTable } from './db/schema'
 import { ensureIdempotency } from './middleware/idempotency'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
+import session from 'express-session'
 
 const app = express()
 
@@ -35,6 +36,18 @@ app.use(
 
 // Clerk middleware
 app.use(clerkMiddleware())
+
+// Add session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}))
 
 // Authentication middleware
 const isAuthenticated = async (
@@ -170,6 +183,7 @@ app.use('/web', isAuthenticated, webRoutes)
 
 // Webhook route
 app.use('/webhook', ensureIdempotency, webhookRoutes)
+
 
 // Monitor long running requests
 app.use((req, res, next) => {

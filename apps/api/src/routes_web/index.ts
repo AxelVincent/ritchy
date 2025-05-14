@@ -5,6 +5,7 @@ import paymentsRouter from './payments'
 import placesRouter from './places'
 import searchesRouter from './searches'
 import usersRouter from './users'
+import hubspotRouter from './hubspot'
 
 const router: Router = express.Router()
 
@@ -25,5 +26,8 @@ router.use('/places', placesRouter)
 
 // Users routes
 router.use('/users', usersRouter)
+
+// HubSpot routes
+router.use('/hubspot', hubspotRouter)
 
 export default router
