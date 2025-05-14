@@ -1,27 +1,27 @@
 import express, { type Router } from 'express'
+import { ensureDemoCodeValidated } from '../middleware/ensure_demo_code_validated'
 import { enrichWebsite } from './enrich'
 import listsRouter from './lists'
 import paymentsRouter from './payments'
 import placesRouter from './places'
 import searchesRouter from './searches'
 import usersRouter from './users'
-
 const router: Router = express.Router()
 
 // Places routes
-router.get('/enrich', enrichWebsite)
+router.get('/enrich', ensureDemoCodeValidated, enrichWebsite)
 
 // Lists routes
-router.use('/lists', listsRouter)
+router.use('/lists', ensureDemoCodeValidated, listsRouter)
 
 // Searches routes
-router.use('/searches', searchesRouter)
+router.use('/searches', ensureDemoCodeValidated, searchesRouter)
+
+// Places routes
+router.use('/places', ensureDemoCodeValidated, placesRouter)
 
 // Payments routes
 router.use('/payments', paymentsRouter)
-
-// Places routes
-router.use('/places', placesRouter)
 
 // Users routes
 router.use('/users', usersRouter)

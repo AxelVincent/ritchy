@@ -124,57 +124,58 @@ export function NavCustomLists() {
         />
       )}
       <SidebarMenu>
-        {lists?.map((list) => (
-          <SidebarMenuItem key={list.id}>
-            <SidebarMenuButton
-              asChild
-              tooltip={list.name}
-              isActive={match?.params.listId === list.id}
-              className={cn('justify-between')}
-            >
-              <Link to={`/lists/${list.id}`}>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm">{list.emoji}</p>
-                  <p
-                    className="pl-2 font-medium truncate max-w-[120px]"
-                    title={list.name}
-                  >
-                    {list.name}
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {list.itemCount}
-                </p>
-              </Link>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <p className="sr-only">More</p>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48 rounded-lg"
-                side={open ? 'bottom' : 'right'}
-                align={open ? 'end' : 'start'}
+        {Array.isArray(lists) &&
+          lists.map((list) => (
+            <SidebarMenuItem key={list.id}>
+              <SidebarMenuButton
+                asChild
+                tooltip={list.name}
+                isActive={match?.params.listId === list.id}
+                className={cn('justify-between')}
               >
-                <DropdownMenuItem onClick={() => setEditingList(list)}>
-                  <Pencil className="text-muted-foreground" />
-                  <p>Edit</p>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => deleteList.mutateAsync({ id: list.id })}
-                  disabled={deleteList.isPending}
-                  className="cursor-pointer"
+                <Link to={`/lists/${list.id}`}>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm">{list.emoji}</p>
+                    <p
+                      className="pl-2 font-medium truncate max-w-[120px]"
+                      title={list.name}
+                    >
+                      {list.name}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {list.itemCount}
+                  </p>
+                </Link>
+              </SidebarMenuButton>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction showOnHover>
+                    <MoreHorizontal />
+                    <p className="sr-only">More</p>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 rounded-lg"
+                  side={open ? 'bottom' : 'right'}
+                  align={open ? 'end' : 'start'}
                 >
-                  <Trash2 className="text-muted-foreground" />
-                  <p>Delete</p>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        ))}
+                  <DropdownMenuItem onClick={() => setEditingList(list)}>
+                    <Pencil className="text-muted-foreground" />
+                    <p>Edit</p>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => deleteList.mutateAsync({ id: list.id })}
+                    disabled={deleteList.isPending}
+                    className="cursor-pointer"
+                  >
+                    <Trash2 className="text-muted-foreground" />
+                    <p>Delete</p>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          ))}
       </SidebarMenu>
 
       {editingList && (
