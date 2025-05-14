@@ -23,21 +23,20 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
 }))
 
-// Mock for useUserSubscription with default NAVIGATOR plan
-const userSubscriptionMock = vi.fn().mockReturnValue({
+// Mock for useUserMe with default NAVIGATOR plan
+const userMeMock = vi.fn().mockReturnValue({
   data: { plan: 'NAVIGATOR' },
 })
 
 // Add the isSubscriptionSuccess mock function
-const isSubscriptionSuccessMock = vi.fn().mockImplementation((subscription) => {
+const isMeSuccessMock = vi.fn().mockImplementation((me) => {
   // Check if the subscription has a plan property
-  return subscription && 'plan' in subscription
+  return me && 'plan' in me
 })
 
-vi.mock('@/api/queries/users/useUserSubscription', () => ({
-  useUserSubscription: () => userSubscriptionMock(),
-  isSubscriptionSuccess: (subscription: unknown) =>
-    isSubscriptionSuccessMock(subscription),
+vi.mock('@/api/queries/users/useUserMe', () => ({
+  useUserMe: () => userMeMock(),
+  isMeSuccess: (me: unknown) => isMeSuccessMock(me),
 }))
 
 // Mock for isModelAvailable
@@ -83,7 +82,7 @@ vi.mock('@clerk/clerk-react', () => ({
 describe('DataExport', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    userSubscriptionMock.mockReturnValue({
+    userMeMock.mockReturnValue({
       data: { plan: 'ESSENTIALS' },
     })
   })
@@ -151,7 +150,7 @@ describe('DataExport', () => {
 
   it('shows toast notification for free users when trying to export', async () => {
     // Override the subscription mock for this test
-    userSubscriptionMock.mockReturnValue({
+    userMeMock.mockReturnValue({
       data: { plan: 'FREE' },
     })
 
