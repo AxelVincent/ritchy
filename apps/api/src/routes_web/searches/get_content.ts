@@ -41,7 +41,13 @@ export const getSearchContent = async (
       logger.info({
         msg: 'No cached search results, fetching from Google Maps and caching',
         event: 'no_cached_search_results',
-        metadata: { searchId },
+        metadata: {
+          searchId,
+          userId,
+          model: result.model,
+          keyword: result.keyword,
+          rectangle: result.rectangle,
+        },
       })
       results = await postTextSearchV1({
         model: result.model,
