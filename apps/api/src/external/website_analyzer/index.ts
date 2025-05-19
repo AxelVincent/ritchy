@@ -56,6 +56,7 @@ export async function analyzeWebsite(
         event: 'website_analyzer_error',
         metadata: {
           errorData,
+          analyzerUrl: WEBSITE_ANALYZER_CONFIG.ANALYZER_URL,
           url: params.url,
           statusCode: response.status,
           durationMs: Date.now() - startTime,
@@ -88,6 +89,7 @@ export async function analyzeWebsite(
       msg: 'Website analysis failed',
       event: 'website_analyzer_error',
       metadata: {
+        analyzerUrl: WEBSITE_ANALYZER_CONFIG.ANALYZER_URL,
         error:
           error instanceof Error
             ? {
