@@ -223,6 +223,73 @@ export class GoogleCalendarService {
       }),
     }
   }
+
+  /**
+   * List calendar events
+   */
+  async listEvents(
+    userId: string,
+    calendarId: string,
+    options: {
+      timeMin?: string
+      timeMax?: string
+      maxResults?: number
+      singleEvents?: boolean
+      orderBy?: 'startTime' | 'updated'
+      q?: string
+      updatedMin?: string
+    } = {},
+  ): Promise<GoogleCalendarEvent[]> {
+    const accessToken = await this.getValidAccessToken(userId)
+    this.oauth2Client.setCredentials({ access_token: accessToken })
+
+    const response = await this.calendar.events.list({
+      calendarId,
+      timeMin: options.timeMin,
+      timeMax: options.timeMax,
+      maxResults: options.maxResults,
+      singleEvents: options.singleEvents,
+      orderBy: options.orderBy,
+      q: options.q,
+      updatedMin: options.updatedMin,
+    })
+
+    return (response.data.items || []).map((event) => {
+      if (
+        !event.start?.dateTime ||
+        !event.start?.timeZone ||
+        !event.end?.dateTime ||
+        !event.end?.timeZone ||
+        !event.summary
+      ) {
+        throw new Error('Invalid event response from Google Calendar')
+      }
+      return {
+        id: event.id || undefined,
+        summary: event.summary,
+        description: event.description || undefined,
+        start: {
+          dateTime: event.start.dateTime,
+          timeZone: event.start.timeZone,
+        },
+        end: {
+          dateTime: event.end.dateTime,
+          timeZone: event.end.timeZone,
+        },
+        location: event.location || undefined,
+        attendees: event.attendees?.map((attendee) => {
+          if (!attendee.email) {
+            throw new Error('Invalid attendee response from Google Calendar')
+          }
+          return {
+            email: attendee.email,
+            displayName: attendee.displayName || undefined,
+          }
+        }),
+      }
+    })
+  }
+
   /**
    * Get a valid access token, refreshing if necessary
    */

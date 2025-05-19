@@ -248,3 +248,25 @@ export const userDemoCode = pgTable(
     codeIdx: index('idx_user_demo_code_code').on(table.code),
   }),
 )
+
+export const googleOauthTokens = pgTable(
+  'google_oauth_tokens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' })
+      .unique(),
+    accessToken: text('access_token').notNull(),
+    refreshToken: text('refresh_token').notNull(),
+    expiresIn: integer('expires_in').notNull(),
+    scope: text('scope').notNull(),
+    tokenType: text('token_type').notNull(),
+    idToken: text('id_token').notNull(),
+    createTime: timestamp('create_time').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index('idx_google_oauth_tokens_user_id').on(table.userId),
+  }),
+)
