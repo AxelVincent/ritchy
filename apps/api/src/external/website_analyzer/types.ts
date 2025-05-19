@@ -1,4 +1,12 @@
-import type { EnrichResponseData } from '@ritchy/types'
+import type {
+  BusinessInfo,
+  ContactInfo,
+  EnrichResponseData,
+  Metadata,
+  ProductsServices,
+  SocialNetworks,
+  TargetCustomers,
+} from '@ritchy/types'
 
 export interface WebsiteAnalyzerRequestParams {
   url: string
@@ -6,13 +14,15 @@ export interface WebsiteAnalyzerRequestParams {
 
 export type WebsiteAnalyzerResult = EnrichResponseData & {
   error?: string
-  _metadata?: {
-    crawled_urls: string[]
-    final_step: string
-    loop_cycles: number
-    token_reporting: string
-    tool_calls: number
-    total_cost: number
-    total_tokens: number
-  }
+  _metadata?: Metadata
+}
+
+// Export individual types for direct use
+export type {
+  BusinessInfo,
+  ProductsServices,
+  TargetCustomers,
+  ContactInfo,
+  SocialNetworks,
+  Metadata,
 }

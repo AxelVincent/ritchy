@@ -8,6 +8,7 @@ import {
   PlaceSchema,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
+  type SocialNetworks,
 } from '@ritchy/types'
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
@@ -132,17 +133,33 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           .map((row) => {
             // Ensure we always create a valid EnrichmentState object
             const baseEnrichmentState: EnrichmentWithStatus = {
-              sector: '',
-              tone: '',
-              values: [],
-              description: '',
+              business_info: {
+                languages: [],
+                name: '',
+                sector: '',
+                description: '',
+                registration_info: '',
+              },
               social_networks: {},
               contact_info: {
                 address: '',
                 email: '',
                 phone: '',
                 website: '',
-                contact_url: '',
+                contact_form_url: '',
+                visit_info: '',
+              },
+              products_services: {
+                specialties: [],
+                price_range: null,
+                service_area: null,
+              },
+              target_customers: {
+                b2b_focus: null,
+                b2c_focus: null,
+                primary_segments: [],
+                key_benefits: [],
+                needs_addressed: null,
               },
               last_updated: '',
             }
@@ -396,7 +413,10 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.social_networks?.[platform] || ''
+            return (
+              enrichData?.social_networks?.[platform as keyof SocialNetworks] ||
+              ''
+            )
           },
         })),
         {
@@ -405,25 +425,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.sector || ''
-          },
-        },
-        {
-          header: 'Tone',
-          accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
-              : null
-            return enrichData?.tone || ''
-          },
-        },
-        {
-          header: 'Values',
-          accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
-              : null
-            return enrichData?.values?.join(', ') || ''
+            return enrichData?.business_info?.sector || ''
           },
         },
         {
@@ -432,7 +434,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.description || ''
+            return enrichData?.business_info?.description || ''
           },
         },
         {
@@ -459,7 +461,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.contact_info?.contact_url || ''
+            return enrichData?.contact_info?.contact_form_url || ''
           },
         },
         {

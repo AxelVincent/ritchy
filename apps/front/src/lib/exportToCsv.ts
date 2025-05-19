@@ -26,17 +26,17 @@ export function validateAndExportToCsv<T>({
             ...item.enrichment,
             id: item.id,
             data: {
-              sector: item.enrichment.sector ?? '',
-              tone: item.enrichment.tone ?? '',
-              values: item.enrichment.values ?? [],
-              description: item.enrichment.description ?? '',
+              sector: item.enrichment.business_info?.sector ?? '',
+              description: item.enrichment.business_info?.description ?? '',
               social_networks: item.enrichment.social_networks ?? {},
               contact_info: {
                 address: item.enrichment.contact_info?.address ?? '',
                 email: item.enrichment.contact_info?.email ?? '',
                 phone: item.enrichment.contact_info?.phone ?? '',
                 website: item.enrichment.contact_info?.website ?? '',
-                contact_url: item.enrichment.contact_info?.contact_url ?? '',
+                contact_form_url:
+                  item.enrichment.contact_info?.contact_form_url ?? '',
+                visit_info: item.enrichment.contact_info?.visit_info ?? '',
               },
               last_updated: item.enrichment.last_updated ?? '',
             },
