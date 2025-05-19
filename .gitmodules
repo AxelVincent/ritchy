@@ -1,0 +1,3 @@
+[submodule "apps/website-analyzer"]
+	path = apps/website-analyzer
+	url = https://github.com/ritchy-engineering/website-analyzer.git

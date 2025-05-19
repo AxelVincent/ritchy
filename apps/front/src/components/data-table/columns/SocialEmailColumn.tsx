@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -13,124 +12,40 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { SOCIAL_MEDIA_CONFIG, type SocialMediaPlatform } from '@ritchy/types'
 import type { EnrichmentWithStatus, SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { format } from 'date-fns'
 import {
+  Award,
+  Building2,
+  Calendar,
   Check,
   Copy,
   ExternalLink,
+  Globe,
+  Info,
+  Link as LinkIcon,
   Loader2,
-  type LucideIcon,
   Mail,
+  MapPin,
+  Phone,
+  Star,
+  Tag,
+  Target,
+  Users,
 } from 'lucide-react'
 import { useState } from 'react'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
-const SocialCard = ({
-  platform,
-  links,
-}: {
-  platform: SocialMediaPlatform
-  links: string[]
-}) => {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const config = SOCIAL_MEDIA_CONFIG[platform]
-  const IconComponent = config.icon
-
-  return (
-    <Card className={cn(links.length === 0 && 'opacity-50')}>
-      <CardHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-md bg-muted">
-            <IconComponent className="h-4 w-4" />
-          </div>
-          <h3 className="font-medium capitalize">{platform}</h3>
-          <Badge variant={links.length > 0 ? 'default' : 'secondary'}>
-            {links.length}
-          </Badge>
-          {links.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? 'Hide' : 'Show'}
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      {isExpanded && (
-        <CardContent className="space-y-2">
-          {links.map((url) => (
-            <LinkItem
-              key={url}
-              url={url}
-              domain={config.domain}
-              icon={IconComponent}
-            />
-          ))}
-        </CardContent>
-      )}
-    </Card>
-  )
-}
-
-const LinkItem = ({
-  url,
-  domain,
-  icon: Icon,
-}: {
-  url: string
-  domain: string
-  icon: LucideIcon
-}) => {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(
-      url.startsWith('mailto:') ? url.slice(7) : url,
-    )
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const displayUrl = url.startsWith('mailto:')
-    ? url.slice(7)
-    : url.replace(`https://${domain}/`, '')
-
-  const href = url.startsWith('mailto:') ? url : url
-
-  return (
-    <div className="flex items-center justify-between p-2 bg-muted rounded group">
-      <div className="flex items-center gap-2 min-w-0">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <a
-          href={href}
-          target={url.startsWith('mailto:') ? undefined : '_blank'}
-          rel={url.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-          className="text-sm truncate hover:underline flex items-center gap-1"
-        >
-          {displayUrl}
-          <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-        </a>
-      </div>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={handleCopy}
-        className="h-8 w-8"
-      >
-        {copied ? (
-          <Check className="h-4 w-4 text-green-600" />
-        ) : (
-          <Copy className="h-4 w-4" />
-        )}
-      </Button>
-    </div>
-  )
-}
+type TabType = 'overview' | 'contact' | 'business' | 'customers'
 
 export const socialEmailColumn: ColumnDef<SearchResult> = {
   id: 'socialsAndEmails',
@@ -147,6 +62,14 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
       | EnrichmentWithStatus
       | undefined
     const website = row.original.website
+    const [activeTab, setActiveTab] = useState<TabType>('overview')
+    const [copied, setCopied] = useState<string | null>(null)
+
+    const handleCopy = async (text: string, type: string) => {
+      await navigator.clipboard.writeText(text)
+      setCopied(type)
+      setTimeout(() => setCopied(null), 2000)
+    }
 
     if (!website) {
       return (
@@ -168,7 +91,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
             variant="outline"
             size="sm"
             disabled
-            className="w-full pointer-events-none hover:bg-background hover:text-muted-foreground"
+            className="w-full pointer-events-none"
           >
             Unavailable
           </Button>
@@ -199,27 +122,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
       )
     }
 
-    if (!enrichment) {
-      return (
-        <TextWrapper
-          id={row.original.id}
-          actions={[
-            {
-              icon: 'MapPinned',
-              onClick: () => {
-                setSelectedPlaceId(row.original.id)
-              },
-              label: 'Pin to map',
-            },
-          ]}
-          disableContentTooltip
-        >
-          <div />
-        </TextWrapper>
-      )
-    }
-
-    if (enrichment.error) {
+    if (!enrichment || enrichment.error) {
       return (
         <TextWrapper
           id={row.original.id}
@@ -236,20 +139,21 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
           disableContentTooltip
         >
           <Button variant="outline" size="sm" disabled className="w-full">
-            No contacts
+            {enrichment?.error ? 'Error' : 'No data'}
           </Button>
         </TextWrapper>
       )
     }
 
-    const { emails, socialLinks } = enrichment
-    const hasContent =
-      emails.length > 0 ||
-      Object.values(socialLinks).some((urls) => urls.length > 0)
-
-    const totalResults =
-      emails.length +
-      Object.values(socialLinks).reduce((sum, urls) => sum + urls.length, 0)
+    const hasContent = Boolean(
+      (enrichment.social_networks &&
+        Object.values(enrichment.social_networks).some(Boolean)) ||
+        enrichment.contact_info?.email ||
+        enrichment.contact_info?.phone ||
+        enrichment.contact_info?.address ||
+        enrichment.business_info?.name ||
+        enrichment.business_info?.sector,
+    )
 
     return (
       <TextWrapper
@@ -276,63 +180,546 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
                 hasContent && 'text-green-600 hover:text-green-700',
               )}
             >
-              {hasContent ? `View (${totalResults})` : 'No contacts'}
+              {hasContent ? 'View Data' : 'No data'}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl">
+
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>
-                Contact Information - {row.original.name}
+              <DialogTitle className="flex items-center justify-between">
+                <span>{row.original.name}</span>
+                {enrichment.last_updated && (
+                  <span className="text-sm text-muted-foreground">
+                    Updated{' '}
+                    {format(new Date(enrichment.last_updated), 'MMM d, yyyy')}
+                  </span>
+                )}
               </DialogTitle>
             </DialogHeader>
-            <ScrollArea className="max-h-[80vh]">
-              <div className="space-y-6">
-                {emails.length > 0 && (
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-md bg-muted">
-                          <Mail className="h-4 w-4" />
-                        </div>
-                        <h2 className="font-medium">Emails</h2>
-                        <Badge>{emails.length}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 gap-2">
-                      {emails.map((email) => (
-                        <LinkItem
-                          key={email}
-                          url={`mailto:${email}`}
-                          domain=""
-                          icon={Mail}
-                        />
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
 
-                <Card>
-                  <CardHeader>
-                    <h2 className="font-medium">Social Media</h2>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(socialLinks).map(([platform, urls]) => (
-                      <SocialCard
-                        key={platform}
-                        platform={platform as SocialMediaPlatform}
-                        links={urls}
-                      />
-                    ))}
-                  </CardContent>
-                </Card>
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as TabType)}
+            >
+              <TabsList className="grid grid-cols-4 w-full">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="contact">Contact</TabsTrigger>
+                <TabsTrigger value="business">Business</TabsTrigger>
+                <TabsTrigger value="customers">Customers</TabsTrigger>
+              </TabsList>
+
+              <ScrollArea className="h-[400px] mt-4">
+                <TabsContent value="overview" className="space-y-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <Card>
+                      <CardHeader className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          <span className="font-medium">Contact Info</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="space-y-2">
+                          {enrichment.contact_info?.email && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <a
+                                href={`mailto:${enrichment.contact_info.email}`}
+                                className="hover:underline"
+                              >
+                                {enrichment.contact_info.email}
+                              </a>
+                            </div>
+                          )}
+                          {enrichment.contact_info?.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <a
+                                href={`tel:${enrichment.contact_info.phone}`}
+                                className="hover:underline"
+                              >
+                                {enrichment.contact_info.phone}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          <span className="font-medium">Business Info</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="space-y-2">
+                          {enrichment.business_info?.name && (
+                            <div className="text-sm font-medium">
+                              {enrichment.business_info.name}
+                            </div>
+                          )}
+                          {enrichment.business_info?.sector && (
+                            <div className="text-sm text-muted-foreground">
+                              {enrichment.business_info.sector}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <span className="font-medium">Target Market</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="flex flex-wrap gap-2">
+                          {enrichment.target_customers?.b2b_focus && (
+                            <Badge variant="secondary">B2B</Badge>
+                          )}
+                          {enrichment.target_customers?.b2c_focus && (
+                            <Badge variant="secondary">B2C</Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {enrichment.business_info?.description && (
+                    <Card>
+                      <CardHeader className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Info className="h-4 w-4" />
+                          <span className="font-medium">Description</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <span className="text-sm">
+                          {enrichment.business_info.description}
+                        </span>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {enrichment.social_networks &&
+                    Object.values(enrichment.social_networks).some(Boolean) && (
+                      <Card>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center gap-2">
+                            <LinkIcon className="h-4 w-4" />
+                            <span className="font-medium">Social Media</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="grid grid-cols-2 gap-4">
+                            {Object.entries(enrichment.social_networks).map(
+                              ([platform, url]) => {
+                                if (!url) return null
+                                const config =
+                                  SOCIAL_MEDIA_CONFIG[
+                                    platform as SocialMediaPlatform
+                                  ]
+                                if (!config) return null
+
+                                return (
+                                  <a
+                                    key={platform}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-sm hover:underline"
+                                  >
+                                    <config.icon className="h-4 w-4" />
+                                    <span className="capitalize">
+                                      {platform}
+                                    </span>
+                                  </a>
+                                )
+                              },
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                  {enrichment.products_services?.specialties &&
+                    enrichment.products_services.specialties.length > 0 && (
+                      <Card>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Star className="h-4 w-4" />
+                            <span className="font-medium">Key Services</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="flex flex-wrap gap-2">
+                            {enrichment.products_services.specialties.map(
+                              (specialty) => (
+                                <Badge key={specialty} variant="secondary">
+                                  {specialty}
+                                </Badge>
+                              ),
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="contact" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {enrichment.contact_info?.email && (
+                      <Card>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4" />
+                              <span className="font-medium">Email</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleCopy(
+                                  String(enrichment.contact_info?.email),
+                                  'email',
+                                )
+                              }
+                            >
+                              {copied === 'email' ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <a
+                            href={`mailto:${enrichment.contact_info.email}`}
+                            className="text-primary hover:underline flex items-center gap-2"
+                          >
+                            {enrichment.contact_info.email}
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {enrichment.contact_info?.phone && (
+                      <Card>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              <span className="font-medium">Phone</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleCopy(
+                                  String(enrichment.contact_info?.phone),
+                                  'phone',
+                                )
+                              }
+                            >
+                              {copied === 'phone' ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <a
+                            href={`tel:${enrichment.contact_info.phone}`}
+                            className="text-primary hover:underline flex items-center gap-2"
+                          >
+                            {enrichment.contact_info.phone}
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {enrichment.contact_info?.address && (
+                      <Card>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4" />
+                              <span className="font-medium">Address</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleCopy(
+                                  String(enrichment.contact_info?.address),
+                                  'address',
+                                )
+                              }
+                            >
+                              {copied === 'address' ? (
+                                <Check className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <span className="text-sm">
+                            {enrichment.contact_info.address}
+                          </span>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="business" className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Company Details
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {enrichment.business_info?.name && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4" />
+                              <span className="font-medium">Business Name</span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <span className="text-sm">
+                              {enrichment.business_info.name}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {enrichment.business_info?.sector && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Tag className="h-4 w-4" />
+                              <span className="font-medium">Sector</span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <span className="text-sm">
+                              {enrichment.business_info.sector}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {enrichment.business_info?.registration_info && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Award className="h-4 w-4" />
+                              <span className="font-medium">
+                                Registration Info
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <span className="text-sm">
+                              {enrichment.business_info.registration_info}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {enrichment.business_info?.structure && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-4 w-4" />
+                              <span className="font-medium">Structure</span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <span className="text-sm">
+                              {enrichment.business_info.structure}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {enrichment.business_info?.founded && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              <span className="font-medium">Founded</span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <span className="text-sm">
+                              {enrichment.business_info.founded}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {enrichment.business_info?.languages &&
+                        enrichment.business_info.languages.length > 0 && (
+                          <Card>
+                            <CardHeader className="p-4">
+                              <div className="flex items-center gap-2">
+                                <Globe className="h-4 w-4" />
+                                <span className="font-medium">Languages</span>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <div className="flex flex-wrap gap-2">
+                                {enrichment.business_info.languages.map(
+                                  (lang) => (
+                                    <Badge key={lang} variant="secondary">
+                                      {lang}
+                                    </Badge>
+                                  ),
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Products & Services
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {enrichment.products_services?.price_range && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Tag className="h-4 w-4" />
+                              <span className="font-medium">Price Range</span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <span className="text-sm">
+                              {enrichment.products_services.price_range}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {enrichment.products_services?.service_area && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4" />
+                              <span className="font-medium">Service Area</span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <span className="text-sm">
+                              {enrichment.products_services.service_area}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="customers" className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Target Market
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {enrichment.target_customers?.primary_segments && (
+                        <Card>
+                          <CardHeader className="p-4">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              <span className="font-medium">
+                                Customer Segments
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <div className="flex flex-wrap gap-2">
+                              {enrichment.target_customers.primary_segments.map(
+                                (segment) => (
+                                  <Badge key={segment} variant="secondary">
+                                    {segment}
+                                  </Badge>
+                                ),
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      <Card>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Target className="h-4 w-4" />
+                            <span className="font-medium">Business Focus</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="flex flex-wrap gap-2">
+                            {enrichment.target_customers?.b2b_focus && (
+                              <Badge variant="secondary">B2B</Badge>
+                            )}
+                            {enrichment.target_customers?.b2c_focus && (
+                              <Badge variant="secondary">B2C</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="col-span-2">
+                        <CardHeader className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Award className="h-4 w-4" />
+                            <span className="font-medium">Key Benefits</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="flex flex-wrap gap-2">
+                            {enrichment.target_customers?.key_benefits?.map(
+                              (benefit) => (
+                                <Badge key={benefit} variant="secondary">
+                                  {benefit}
+                                </Badge>
+                              ),
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
+
+            <DialogFooter className="border-t pt-4">
+              <div className="text-sm text-muted-foreground">
+                <Tooltip>
+                  <TooltipTrigger className="flex items-center gap-1">
+                    <Info className="h-4 w-4" />
+                    Data automatically extracted from website
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      This data has been automatically extracted from the
+                      business website. While we strive for accuracy, some
+                      details may be outdated or incorrect. Please verify
+                      critical information before use.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-            </ScrollArea>
-            <DialogFooter className="sm:justify-start">
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
-                  Close
-                </Button>
-              </DialogClose>
             </DialogFooter>
           </DialogContent>
         </Dialog>

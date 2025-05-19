@@ -1,4 +1,3 @@
-import { enrichKeys } from '@/api/queries/enrich/useEnrichWebsite'
 import { webApiClient } from '@/hooks/useApi'
 import { useAuth } from '@clerk/clerk-react'
 import type { EnrichApiResponse, SearchResult } from '@ritchy/types'
@@ -65,7 +64,7 @@ export function useEnrichment<TData extends SearchResult>({
       try {
         // Use the query client to fetch using the same key as useEnrichWebsite
         const response = await queryClient.fetchQuery({
-          queryKey: enrichKeys.website(id),
+          queryKey: ['enrich', id],
           queryFn: async () => {
             // Use the shared webApiClient from useApi.ts
             return webApiClient.fetchWithAuth<EnrichApiResponse>(

@@ -13,7 +13,7 @@ COPY . .
 # Prune the workspace
 RUN turbo prune api --docker
 
-# Installer Stage    
+# Installer Stage
 FROM base AS installer
 WORKDIR /app
 

@@ -8,6 +8,7 @@ import {
   PlaceSchema,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
+  type SocialNetworks,
 } from '@ritchy/types'
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
@@ -132,11 +133,35 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           .map((row) => {
             // Ensure we always create a valid EnrichmentState object
             const baseEnrichmentState: EnrichmentWithStatus = {
-              id: row.id,
-              emails: [],
-              socialLinks: {},
-              isLoading: false,
-              error: undefined,
+              business_info: {
+                languages: [],
+                name: '',
+                sector: '',
+                description: '',
+                registration_info: '',
+              },
+              social_networks: {},
+              contact_info: {
+                address: '',
+                email: '',
+                phone: '',
+                website: '',
+                contact_form_url: '',
+                visit_info: '',
+              },
+              products_services: {
+                specialties: [],
+                price_range: null,
+                service_area: null,
+              },
+              target_customers: {
+                b2b_focus: null,
+                b2c_focus: null,
+                primary_segments: [],
+                key_benefits: [],
+                needs_addressed: null,
+              },
+              last_updated: '',
             }
 
             const enrichData = row.enrichment as
@@ -153,8 +178,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
 
             const state = {
               ...baseEnrichmentState,
-              emails: enrichData.emails,
-              socialLinks: enrichData.socialLinks,
+              data: enrichData,
             }
             return [row.website, state] as [string, EnrichmentWithStatus]
           }),
@@ -380,7 +404,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.emails?.join(', ') || ''
+            return enrichData?.contact_info?.email || ''
           },
         },
         ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
@@ -389,9 +413,66 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.socialLinks[platform]?.join(', ') || ''
+            return (
+              enrichData?.social_networks?.[platform as keyof SocialNetworks] ||
+              ''
+            )
           },
         })),
+        {
+          header: 'Sector',
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.business_info?.sector || ''
+          },
+        },
+        {
+          header: 'Description',
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.business_info?.description || ''
+          },
+        },
+        {
+          header: 'Contact Address',
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.contact_info?.address || ''
+          },
+        },
+        {
+          header: 'Contact Phone',
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.contact_info?.phone || ''
+          },
+        },
+        {
+          header: 'Contact URL',
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.contact_info?.contact_form_url || ''
+          },
+        },
+        {
+          header: 'Last Updated',
+          accessor: (row: SearchResult): string => {
+            const enrichData = row.website
+              ? enrichmentMap.get(row.website)
+              : null
+            return enrichData?.last_updated || ''
+          },
+        },
       ]
 
       validateAllSearchResultFieldsHaveColumns(columns)
