@@ -243,8 +243,15 @@
     {
       "idx": 34,
       "version": "7",
-      "when": 1747132533816,
-      "tag": "0034_sticky_stardust",
+      "when": 1747219856254,
+      "tag": "0034_red_lord_tyger",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1747842174063,
+      "tag": "0035_lumpy_tarot",
       "breakpoints": true
     }
   ]

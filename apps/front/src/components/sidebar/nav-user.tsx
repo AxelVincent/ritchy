@@ -12,10 +12,7 @@ import {
 import { useState } from 'react'
 
 import { useCreatePortalSession } from '@/api/mutations/payments/useCreatePortalSession'
-import {
-  isSubscriptionSuccess,
-  useUserSubscription,
-} from '@/api/queries/users/useUserSubscription'
+import { useUserMe } from '@/api/queries/users/useUserMe'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
@@ -49,11 +46,8 @@ export function NavUser() {
 
   const createPortalSession = useCreatePortalSession()
 
-  const { data: subscription } = useUserSubscription()
-  const userPlan =
-    subscription && isSubscriptionSuccess(subscription)
-      ? subscription.plan
-      : 'FREE'
+  const { data: me } = useUserMe()
+  const userPlan = me?.plan || 'FREE'
   const hasActiveSubscription = userPlan !== 'FREE'
 
   return (

@@ -3,9 +3,10 @@ import type { Request, Response } from 'express'
 import { Webhook } from 'svix'
 import { CLERK_CONFIG } from '../config/clerk'
 
+import crypto from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { db } from '../db/db'
-import { user, webhookEvent } from '../db/schema'
+import { user, userDemoCode, webhookEvent } from '../db/schema'
 import { sendSlackNotification } from '../external/slack/slack'
 import { deleteUser } from '../services/user/deleteUser'
 
@@ -46,6 +47,15 @@ export type ClerkUserData = {
   firstName: string
   lastName: string
   phoneNumber: string
+}
+
+// Helper function to generate a simple random code
+function generateDemoCode(length = 8): string {
+  return crypto
+    .randomBytes(Math.ceil(length / 2))
+    .toString('hex')
+    .slice(0, length)
+    .toUpperCase()
 }
 
 export const clerkWebhook = async (
@@ -147,10 +157,36 @@ export const clerkWebhook = async (
                 },
               })
 
-              await db.insert(user).values(userData)
+              const [createdUser] = await db
+                .insert(user)
+                .values(userData)
+                .returning()
+
+              // Generate and store demo code
+              const demoCodeString = generateDemoCode()
+              if (createdUser) {
+                await db.insert(userDemoCode).values({
+                  userId: createdUser.id,
+                  code: demoCodeString,
+                })
+                logger.info({
+                  msg: 'Demo code generated and stored for new user',
+                  event: 'demo_code_generated',
+                  metadata: {
+                    userId: createdUser.id,
+                    demoCode: demoCodeString,
+                  },
+                })
+              } else {
+                logger.error({
+                  msg: 'Failed to retrieve created user ID for demo code generation',
+                  event: 'user_creation_no_id_for_demo_code',
+                  metadata: { clerkId: userData.clerkId },
+                })
+              }
 
               sendSlackNotification({
-                text: `🎉 New user registered!\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nPhone: ${userData.phoneNumber}`,
+                text: `🎉 New user registered!\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nPhone: ${userData.phoneNumber}\nDemo Code: ${demoCodeString}`,
                 channel: 'users',
               })
 

@@ -324,6 +324,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         alignItems: 'center',
                       }}
                       className={cn('border-r border-border', {
+                        'bg-background':
+                          cell.column.id === visibleCells[0].column.id,
                         'bg-primary-foreground':
                           selectedPlaceId === row.original.id,
                       })}
