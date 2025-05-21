@@ -26,7 +26,7 @@ import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
 import { selectColumn } from './columns/SelectColumn'
-import { socialEmailColumn } from './columns/SocialEmailColumn'
+import { companyMetadataColumn } from './columns/CompanyMetadataColumn'
 
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
@@ -39,7 +39,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   statusColumn,
   websiteColumn,
   phoneColumn,
-  socialEmailColumn,
+  companyMetadataColumn,
   notesColumn,
   associatedListsColumn,
   primaryTypeColumn,
