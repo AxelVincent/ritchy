@@ -1,4 +1,12 @@
+// External packages
+import type { ColumnDef } from '@tanstack/react-table'
+import { format } from 'date-fns'
+import { Info, Loader2 } from 'lucide-react'
+
+import { CompanyMetadataContent } from '@/components/common/CompanyMetadataContent'
 import { TextWrapper } from '@/components/common/TextWrapper'
+// Internal components
+import { DataExport } from '@/components/data-export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,17 +20,14 @@ import {
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import type { EnrichmentWithStatus, SearchResult } from '@ritchy/types'
-import type { ColumnDef } from '@tanstack/react-table'
-import { format } from 'date-fns'
-import { Info, Loader2 } from 'lucide-react'
 import { HeaderWrapper } from './utils/HeaderWrapper'
-import { DataExport } from '@/components/data-export/DataExport'
-import { CompanyMetadataContent } from '@/components/common/CompanyMetadataContent'
+
+// Types
+import type { EnrichmentWithStatus, SearchResult } from '@ritchy/types'
 
 export const companyMetadataColumn: ColumnDef<SearchResult> = {
   id: 'companyMetadata',

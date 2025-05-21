@@ -1,5 +1,6 @@
-import { CompanyMetadataContent } from '@/components/common/CompanyMetadataContent'
 import type { Place } from '@ritchy/types'
+
+import { CompanyMetadataContent } from '@/components/common/CompanyMetadataContent'
 
 export const PlaceMetadataTab = ({ place }: { place: Place }) => {
   const enrichment = place.enrichment

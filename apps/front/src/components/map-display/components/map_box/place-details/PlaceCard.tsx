@@ -18,9 +18,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
+import { PlaceMetadataTab } from './tabs/PlaceMetadataTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
 import { PlaceReviewsTab } from './tabs/PlaceReviewsTab'
-import { PlaceMetadataTab } from './tabs/PlaceMetadataTab'
 
 interface PlaceCardProps {
   places: Place[] | null
