@@ -1,8 +1,7 @@
 import { logger } from '@ritchy/logger'
-import type { EnrichResponse, Place, PlaceBase } from '@ritchy/types'
+import type { Place, PlaceBase } from '@ritchy/types'
 import { EnrichResponseSchema } from '@ritchy/types'
-import { z } from 'zod'
-import { getOrFetchEnrichmentData } from '../enrichment/getOrFetchEnrichmentData'
+import { analyzeWebsite } from '../../external/website_analyzer'
 import { getUserEnrichedPlaces } from '../enrichment/getUserEnrichedPlaces'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getNotesByPlaceIds } from '../places/notes/getNotesByPlaceIds'
@@ -100,21 +99,12 @@ export const aggregatePlaceData = async (
       const enrichmentResults = await Promise.all(
         enrichmentRequests.map(async ({ placeId, website }) => {
           try {
-            const enrichmentData = await getOrFetchEnrichmentData(
-              placeId,
-              website,
-            )
+            const enrichmentData = await analyzeWebsite({ url: website })
 
             if (enrichmentData) {
-              // Sanitize and validate the enrichment data
-              const sanitizedData = sanitizeEnrichmentData(
-                enrichmentData,
-                placeId,
-              )
-
               try {
                 const validatedEnrichment =
-                  EnrichResponseSchema.parse(sanitizedData)
+                  EnrichResponseSchema.parse(enrichmentData)
                 return { placeId, enrichment: validatedEnrichment }
               } catch (validationError) {
                 logger.warn({
@@ -123,7 +113,7 @@ export const aggregatePlaceData = async (
                   metadata: {
                     placeId,
                     error: validationError,
-                    enrichmentData: sanitizedData,
+                    enrichmentData: enrichmentData,
                   },
                 })
               }
@@ -163,88 +153,4 @@ export const aggregatePlaceData = async (
   }
 
   return initialAggregatedPlaces
-}
-
-/**
- * Sanitizes enrichment data to ensure it meets validation requirements
- *
- * @param data - Raw enrichment data to sanitize
- * @param placeId - ID of the place (for logging)
- * @returns Sanitized enrichment data
- */
-const sanitizeEnrichmentData = (
-  data: EnrichResponse,
-  placeId: string,
-): EnrichResponse => {
-  const sanitized = { ...data }
-
-  // Sanitize social links
-  if (sanitized.socialLinks) {
-    for (const [platform, links] of Object.entries(sanitized.socialLinks)) {
-      if (Array.isArray(links)) {
-        // Filter out invalid URLs
-        sanitized.socialLinks[platform] = links
-          .filter((link) => typeof link === 'string')
-          .filter((link) => {
-            try {
-              new URL(link)
-              return true
-            } catch {
-              logger.debug({
-                msg: 'Filtered out invalid URL from enrichment data',
-                event: 'enrichment_invalid_url_filtered',
-                metadata: { placeId, platform, invalidUrl: link },
-              })
-              return false
-            }
-          })
-      } else if (links === null || links === undefined) {
-        // Convert null/undefined to empty array
-        sanitized.socialLinks[platform] = []
-      } else if (typeof links === 'string') {
-        // Convert single string to array if it's a valid URL
-        try {
-          new URL(links)
-          sanitized.socialLinks[platform] = [links]
-        } catch {
-          sanitized.socialLinks[platform] = []
-        }
-      } else {
-        // Default to empty array for any other type
-        sanitized.socialLinks[platform] = []
-      }
-    }
-  }
-
-  // Sanitize emails
-  if (sanitized.emails) {
-    if (Array.isArray(sanitized.emails)) {
-      // Keep only valid email strings
-      sanitized.emails = sanitized.emails
-        .filter((email: string) => typeof email === 'string')
-        .filter((email: string) => {
-          // Basic email validation
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-          const isValid = emailRegex.test(email)
-          if (!isValid) {
-            logger.debug({
-              msg: 'Filtered out invalid email from enrichment data',
-              event: 'enrichment_invalid_email_filtered',
-              metadata: { placeId, invalidEmail: email },
-            })
-          }
-          return isValid
-        })
-    } else {
-      // Default to empty array if not an array
-      sanitized.emails = []
-    }
-  }
-
-  // Ensure id is present
-  if (!sanitized.id) {
-    sanitized.id = placeId
-  }
-
-  return sanitized
 }

@@ -10,7 +10,7 @@ import { z } from 'zod'
 
 import { db } from '../db/db'
 import { enrichment } from '../db/schema'
-import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
+import { analyzeWebsite } from '../external/website_analyzer'
 
 /**
  * Enriches website data with emails and social media links
@@ -38,7 +38,8 @@ export const enrichWebsite = async (
     })
 
     // Get or fetch enrichment data
-    const enrichedData = await getOrFetchEnrichmentData(id, website)
+    // const enrichedData = await getOrFetchEnrichmentData(id, website)
+    const enrichedData = await analyzeWebsite({ url: website })
 
     if (!enrichedData) {
       logger.warn({
@@ -78,10 +79,7 @@ export const enrichWebsite = async (
       metadata: {
         userId,
         placeId: id,
-        stats: {
-          emailsFound: enrichedData.emails.length,
-          socialPlatformsFound: Object.keys(enrichedData.socialLinks).length,
-        },
+        enrichedData,
       },
     })
 

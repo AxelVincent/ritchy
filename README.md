@@ -5,10 +5,22 @@ TypeScript monorepo built with Turborepo, featuring a React frontend and Node.js
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js >= 22.1.0
+- Node.js 22.1.0+
 - pnpm 9.13.2+
+- python 3.11
+- [pipx](https://pipx.pypa.io/stable/installation/) 
+- [poetry 1.8.4+](https://python-poetry.org/docs/)
+- [Playwright](https://playwright.dev/)
 - Docker and Docker Compose
 - Access to internal environment variables (ask a team member)
+
+```bash
+brew install python@3.11
+which python3.11
+# likely /opt/homebrew/bin/python3.11
+pipx install poetry --python /opt/homebrew/bin/python3.11
+pipx list
+```
 
 ### Quick Setup
 ```bash
