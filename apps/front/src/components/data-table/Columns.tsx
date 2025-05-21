@@ -16,6 +16,7 @@ import {
   sublocalityColumn,
 } from './columns/AddressColumns'
 import { associatedListsColumn } from './columns/AssociatedListsColumn'
+import { companyMetadataColumn } from './columns/CompanyMetadataColumn'
 import { nameColumn } from './columns/NameColumn'
 import { notesColumn } from './columns/NotesColumns'
 import { openingHoursColumn } from './columns/OpeningHoursColumn'
@@ -26,7 +27,6 @@ import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
 import { selectColumn } from './columns/SelectColumn'
-import { companyMetadataColumn } from './columns/CompanyMetadataColumn'
 
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
