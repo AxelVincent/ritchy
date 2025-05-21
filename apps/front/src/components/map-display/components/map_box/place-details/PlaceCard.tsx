@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
 import { PlaceReviewsTab } from './tabs/PlaceReviewsTab'
+import { PlaceMetadataTab } from './tabs/PlaceMetadataTab'
 
 interface PlaceCardProps {
   places: Place[] | null
@@ -218,6 +219,13 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     Informations
                   </TabsTrigger>
                   <TabsTrigger
+                    value="metadata"
+                    aria-label="Metadata"
+                    className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                  >
+                    Metadata
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="reviews"
                     aria-label="Reviews"
                     className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
@@ -239,6 +247,13 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     className="mt-0 p-4 h-full flex-1 overflow-auto"
                   >
                     <PlaceInfoTab place={currentPlace} />
+                  </TabsContent>
+
+                  <TabsContent
+                    value="metadata"
+                    className="mt-0 p-4 h-full flex-1 overflow-auto"
+                  >
+                    <PlaceMetadataTab place={currentPlace} />
                   </TabsContent>
 
                   <TabsContent
