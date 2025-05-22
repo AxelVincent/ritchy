@@ -1,3 +1,5 @@
+import { TextWrapper } from '@/components/common/TextWrapper'
+import { createColumnPinCopyActions } from '@/components/data-table/columns/utils/createColumnActions'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
@@ -7,8 +9,6 @@ import {
 } from '@/components/ui/collapsible'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { TextWrapper } from '@/components/common/TextWrapper'
-import { createColumnPinCopyActions } from '@/components/data-table/columns/utils/createColumnActions'
 import type { EnrichmentWithStatus, SocialMediaPlatform } from '@ritchy/types'
 import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import {
