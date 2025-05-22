@@ -1,5 +1,4 @@
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Collapsible,
@@ -8,20 +7,21 @@ import {
 } from '@/components/ui/collapsible'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TextWrapper } from '@/components/common/TextWrapper'
+import { createColumnPinCopyActions } from '@/components/data-table/columns/utils/createColumnActions'
+import type { EnrichmentWithStatus, SocialMediaPlatform } from '@ritchy/types'
+import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import {
   Award,
   Building2,
   Calendar,
-  Check,
   ChevronDown,
   ChevronUp,
-  Copy,
   ExternalLink,
   Eye,
   Globe,
   Info,
   Link as LinkIcon,
-  type LucideIcon,
   Mail,
   MapPin,
   Phone,
@@ -33,72 +33,13 @@ import {
 import { useState } from 'react'
 
 type TabType = 'overview' | 'contact' | 'business' | 'customers'
-type SocialMediaPlatform =
-  | 'facebook'
-  | 'twitter'
-  | 'instagram'
-  | 'linkedin'
-  | 'youtube'
-
-interface SocialMediaConfig {
-  icon: LucideIcon
-  label: string
-}
-
-const SOCIAL_MEDIA_CONFIG: Record<SocialMediaPlatform, SocialMediaConfig> = {
-  facebook: { icon: LinkIcon, label: 'Facebook' },
-  twitter: { icon: LinkIcon, label: 'Twitter' },
-  instagram: { icon: LinkIcon, label: 'Instagram' },
-  linkedin: { icon: LinkIcon, label: 'LinkedIn' },
-  youtube: { icon: LinkIcon, label: 'YouTube' },
-}
 
 export const CompanyMetadataContent = ({
   enrichment,
 }: {
-  enrichment: {
-    contact_info?: {
-      email?: string | null
-      phone?: string | null
-      website?: string | null
-      whatsapp?: string | null
-      address?: string | null
-      visit_info?: string | null
-    }
-    business_info?: {
-      name?: string | null
-      sector?: string | null
-      description?: string | null
-      registration_info?: string | null
-      structure?: string | null
-      founded?: string | null
-      languages?: string[] | null
-    }
-    products_services?: {
-      price_range?: string | null
-      service_area?: string | null
-      specialties?: string[] | null
-    }
-    target_customers?: {
-      primary_segments?: string[] | null
-      b2b_focus?: boolean | string | null
-      b2c_focus?: boolean | string | null
-      needs_addressed?: string[] | null
-      key_benefits?: string[] | null
-    }
-    social_networks?: {
-      facebook?: string | null
-      twitter?: string | null
-      instagram?: string | null
-      linkedin?: string | null
-      youtube?: string | null
-      source?: string | null
-    }
-    last_updated?: string | null
-  }
+  enrichment: EnrichmentWithStatus
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
-  const [copied, setCopied] = useState<string | null>(null)
   const [openSections, setOpenSections] = useState({
     description: true,
     socialMedia: true,
@@ -107,12 +48,6 @@ export const CompanyMetadataContent = ({
     productsServices: true,
     targetMarket: true,
   })
-
-  const handleCopy = (text: string, type: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(type)
-    setTimeout(() => setCopied(null), 2000)
-  }
 
   return (
     <div>
@@ -364,221 +299,158 @@ export const CompanyMetadataContent = ({
               {enrichment.contact_info?.email && (
                 <Card>
                   <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        <span className="font-medium">Email</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleCopy(
-                            String(enrichment.contact_info?.email),
-                            'email',
-                          )
-                        }
-                      >
-                        {copied === 'email' ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      <span className="font-medium">Email</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <a
-                      href={`mailto:${enrichment.contact_info.email}`}
-                      className="text-primary hover:underline flex items-center gap-2"
+                    <TextWrapper
+                      id="email"
+                      actions={createColumnPinCopyActions(
+                        'email',
+                        enrichment.contact_info.email,
+                      )}
                     >
-                      {enrichment.contact_info.email}
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                      <a
+                        href={`mailto:${enrichment.contact_info.email}`}
+                        className="text-primary hover:underline flex items-center gap-2"
+                      >
+                        {enrichment.contact_info.email}
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </TextWrapper>
                   </CardContent>
                 </Card>
               )}
               {enrichment.contact_info?.phone && (
                 <Card>
                   <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        <span className="font-medium">Phone</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleCopy(
-                            String(enrichment.contact_info?.phone),
-                            'phone',
-                          )
-                        }
-                      >
-                        {copied === 'phone' ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <span className="font-medium">Phone</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <a
-                      href={`tel:${enrichment.contact_info.phone}`}
-                      className="text-primary hover:underline flex items-center gap-2"
+                    <TextWrapper
+                      id="phone"
+                      actions={createColumnPinCopyActions(
+                        'phone',
+                        enrichment.contact_info.phone,
+                      )}
                     >
-                      {enrichment.contact_info.phone}
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                      <a
+                        href={`tel:${enrichment.contact_info.phone}`}
+                        className="text-primary hover:underline flex items-center gap-2"
+                      >
+                        {enrichment.contact_info.phone}
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </TextWrapper>
                   </CardContent>
                 </Card>
               )}
               {enrichment.contact_info?.website && (
                 <Card>
                   <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4" />
-                        <span className="font-medium">Website</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleCopy(
-                            String(enrichment.contact_info?.website),
-                            'website',
-                          )
-                        }
-                      >
-                        {copied === 'website' ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span className="font-medium">Website</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <a
-                      href={enrichment.contact_info.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline flex items-center gap-2"
+                    <TextWrapper
+                      id="website"
+                      actions={createColumnPinCopyActions(
+                        'website',
+                        enrichment.contact_info.website,
+                      )}
                     >
-                      {enrichment.contact_info.website}
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                      <a
+                        href={enrichment.contact_info.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-2"
+                      >
+                        {enrichment.contact_info.website}
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </TextWrapper>
                   </CardContent>
                 </Card>
               )}
               {enrichment.contact_info?.whatsapp && (
                 <Card>
                   <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        <span className="font-medium">WhatsApp</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleCopy(
-                            String(enrichment.contact_info?.whatsapp),
-                            'whatsapp',
-                          )
-                        }
-                      >
-                        {copied === 'whatsapp' ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      <span className="font-medium">WhatsApp</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <a
-                      href={`https://wa.me/${enrichment.contact_info.whatsapp.replace(
-                        /[^0-9]/g,
-                        '',
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline flex items-center gap-2"
+                    <TextWrapper
+                      id="whatsapp"
+                      actions={createColumnPinCopyActions(
+                        'whatsapp',
+                        enrichment.contact_info.whatsapp,
+                      )}
                     >
-                      {enrichment.contact_info.whatsapp}
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                      <a
+                        href={`https://wa.me/${enrichment.contact_info.whatsapp}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-2"
+                      >
+                        {enrichment.contact_info.whatsapp}
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </TextWrapper>
                   </CardContent>
                 </Card>
               )}
               {enrichment.contact_info?.address && (
                 <Card className="col-span-2">
                   <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span className="font-medium">Address</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleCopy(
-                            String(enrichment.contact_info?.address),
-                            'address',
-                          )
-                        }
-                      >
-                        {copied === 'address' ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span className="font-medium">Address</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <span className="text-sm">
-                      {enrichment.contact_info.address}
-                    </span>
+                    <TextWrapper
+                      id="address"
+                      actions={createColumnPinCopyActions(
+                        'address',
+                        enrichment.contact_info.address,
+                      )}
+                    >
+                      <span className="text-sm">
+                        {enrichment.contact_info.address}
+                      </span>
+                    </TextWrapper>
                   </CardContent>
                 </Card>
               )}
               {enrichment.contact_info?.visit_info && (
                 <Card className="col-span-2">
                   <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span className="font-medium">Opening Hours</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          handleCopy(
-                            String(enrichment.contact_info?.visit_info),
-                            'visit_info',
-                          )
-                        }
-                      >
-                        {copied === 'visit_info' ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span className="font-medium">Opening Hours</span>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
-                    <span className="text-sm">
-                      {enrichment.contact_info.visit_info}
-                    </span>
+                    <TextWrapper
+                      id="visit_info"
+                      actions={createColumnPinCopyActions(
+                        'visit_info',
+                        enrichment.contact_info.visit_info,
+                      )}
+                    >
+                      <span className="text-sm">
+                        {enrichment.contact_info.visit_info}
+                      </span>
+                    </TextWrapper>
                   </CardContent>
                 </Card>
               )}
