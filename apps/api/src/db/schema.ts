@@ -104,7 +104,7 @@ export const search = pgTable('search', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const webhookServiceEnum = pgEnum('webhook_service', ['clerk', 'stripe'])
+export const webhookServiceEnum = pgEnum('webhook_service', ['clerk', 'stripe', 'hubspot'])
 
 export const webhookEvent = pgTable(
   'webhook_event',
