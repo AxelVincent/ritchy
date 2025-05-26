@@ -2,25 +2,31 @@ import { logger } from '@ritchy/logger'
 import type { AddNoteApiResponse, AddNoteRequest } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { db } from '../../../db/db'
-import { note as noteTable } from '../../../db/schema'
+import { createVersionedDb } from '../../../db/client'
 
 export const addPlaceNote = async (
   req: Request<AddNoteRequest>,
   res: Response<AddNoteApiResponse>,
 ): Promise<void> => {
   try {
+    logger.info({
+      msg: 'Adding place note',
+      event: 'add_place_note',
+      metadata: {
+        userId: req.auth.userId,
+        placeId: req.params.placeId,
+        note: req.body.note,
+      },
+    })
     const { note } = req.body
     const { placeId } = req.params
 
-    const [result] = await db
-      .insert(noteTable)
-      .values({
-        placeId: placeId,
-        note: note,
-        userId: req.auth.userId,
-      })
-      .returning()
+    const db = createVersionedDb(req)
+    const result = await db.insert('note', {
+      placeId,
+      note,
+      userId: req.auth.userId,
+    })
 
     res.json({
       id: result.id,
@@ -29,6 +35,14 @@ export const addPlaceNote = async (
       userId: result.userId,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
+    })
+
+    logger.info({
+      msg: 'Place note added',
+      event: 'place_note_added',
+      metadata: {
+        placeId,
+      },
     })
     return
   } catch (error) {

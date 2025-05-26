@@ -8,6 +8,7 @@ import {
 import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
+import { createVersionedDb } from '../../db/client'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
 import { getUserPlan } from '../../services/subscription'
@@ -98,16 +99,14 @@ export const createSearch = async (
       }
     }
 
-    const [result] = await db
-      .insert(search)
-      .values({
-        userId: req.auth.userId,
-        placeName: parsedBody.placeName,
-        keyword: parsedBody.keyword,
-        model: parsedBody.model,
-        rectangle: parsedBody.rectangle,
-      })
-      .returning({ id: search.id })
+    const versionedDb = createVersionedDb(req)
+    const result = await versionedDb.insert('search', {
+      userId: req.auth.userId,
+      placeName: parsedBody.placeName,
+      keyword: parsedBody.keyword,
+      model: parsedBody.model,
+      rectangle: parsedBody.rectangle,
+    })
 
     logger.info({
       msg: 'Search created successfully',

@@ -11,6 +11,7 @@ import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
 import { ensureIdempotency } from './middleware/idempotency'
+import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
 
@@ -35,6 +36,9 @@ app.use(
 
 // Clerk middleware
 app.use(clerkMiddleware())
+
+// Request metadata middleware
+app.use(addRequestMetadata)
 
 // Authentication middleware
 const isAuthenticated = async (
