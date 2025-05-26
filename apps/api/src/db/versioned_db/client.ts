@@ -30,8 +30,7 @@
  * ```
  */
 
-import { type InferInsertModel, type Table, and, desc, eq } from 'drizzle-orm'
-import type { PgColumn, PgUpdateSetSource } from 'drizzle-orm/pg-core'
+import type { PgUpdateSetSource } from 'drizzle-orm/pg-core'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { Request } from 'express'
 import { db } from '../db'
