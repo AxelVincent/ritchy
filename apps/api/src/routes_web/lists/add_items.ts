@@ -9,10 +9,10 @@ import {
 import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { createVersionedDb } from '../../db/client'
 import { db } from '../../db/db'
 import { listPlace } from '../../db/schema'
 import { list } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const addItemsToList = async (
   req: Request<

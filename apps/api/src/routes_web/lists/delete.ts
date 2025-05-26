@@ -5,9 +5,9 @@ import type {
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
-import { createVersionedDb } from '../../db/client'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const deleteList = async (
   req: Request<DeleteListRequestParams>,

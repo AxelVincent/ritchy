@@ -138,17 +138,6 @@ const versionOperationSchema = z.discriminatedUnion('operation', [
     table: z.string(),
     recordId: z.string().uuid(),
   }),
-  // BULK
-  z.object({
-    operation: z.literal('BULK'),
-    currentState: versionStateSchema,
-    previousState: versionStateSchema.nullable(),
-    metadata: versionMetadataSchema.extend({
-      bulkOperationId: z.string().uuid(),
-    }),
-    table: z.string(),
-    recordId: z.string().uuid(),
-  }),
 ])
 ```
 

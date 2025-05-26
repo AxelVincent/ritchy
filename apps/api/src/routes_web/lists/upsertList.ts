@@ -7,9 +7,9 @@ import {
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { createVersionedDb } from '../../db/client'
 import { db } from '../../db/db'
 import { list } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const upsertList = async (
   req: Request<Record<string, never>, UpsertListApiResponse, UpsertListRequest>,

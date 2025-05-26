@@ -9,9 +9,9 @@ import {
 import { and, eq, inArray } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { createVersionedDb } from '../../db/client'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const deleteItemsFromList = async (
   req: Request<

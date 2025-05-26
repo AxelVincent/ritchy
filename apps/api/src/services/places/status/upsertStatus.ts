@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import type { Status, StatusType } from '@ritchy/types'
 import type { Request } from 'express'
-import { createVersionedDb } from '../../../db/client'
+import { createVersionedDb } from '../../../db/versioned_db/client'
 
 export const upsertPlaceStatus = async (
   req: Request,
