@@ -270,9 +270,6 @@ export type VersionMetadata = {
   rollbackFromVersion?: number
 }
 
-// Declare type first
-export type VersionHistoryTable = typeof versionHistory
-
 // Then define the table
 export const versionHistory = pgTable(
   'version_history',
