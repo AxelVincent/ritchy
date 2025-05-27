@@ -11,6 +11,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const deleteItemsFromList = async (
   req: Request<
@@ -21,8 +22,17 @@ export const deleteItemsFromList = async (
   res: Response<DeleteItemsFromListApiResponse>,
 ): Promise<void> => {
   try {
+    logger.info({
+      msg: 'Deleting items from list',
+      event: 'delete_items_from_list',
+      metadata: {
+        listId: req.params.id,
+        items: req.body.items,
+      },
+    })
+
     const listId = req.params.id
-    if (Number.isNaN(listId)) {
+    if (!listId) {
       res.status(400).json({
         error: 'Invalid list ID',
         message: 'Invalid list ID',
@@ -48,9 +58,12 @@ export const deleteItemsFromList = async (
       return
     }
 
-    // Delete the items
-    await db
-      .delete(listPlace)
+    const versionedDb = createVersionedDb(req)
+
+    // Get the listPlace records to delete
+    const listPlaces = await db
+      .select()
+      .from(listPlace)
       .where(
         and(
           eq(listPlace.listId, listId),
@@ -58,7 +71,36 @@ export const deleteItemsFromList = async (
         ),
       )
 
-    res.json({ success: true })
+    // Delete with version history
+    const { notFound } = await versionedDb.bulkDelete('listPlace', listPlaces, [
+      'listId',
+      'placeId',
+    ])
+
+    // Log any items that weren't found
+    if (notFound.length > 0) {
+      logger.info({
+        msg: 'Some items were not found in the list',
+        event: 'items_not_found',
+        metadata: {
+          listId,
+          notFound,
+        },
+      })
+    }
+
+    res.json({
+      success: true,
+    })
+    logger.info({
+      msg: 'Items deleted from list',
+      event: 'items_deleted_from_list',
+      metadata: {
+        listId,
+        items: parsedBody.items,
+      },
+    })
+    return
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({

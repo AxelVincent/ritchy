@@ -7,12 +7,20 @@ import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const deleteList = async (
   req: Request<DeleteListRequestParams>,
   res: Response<DeleteListApiResponse>,
 ): Promise<void> => {
   try {
+    logger.info({
+      msg: 'Deleting list',
+      event: 'delete_list',
+      metadata: {
+        listId: req.params.id,
+      },
+    })
     const listId = req.params.id
     if (Number.isNaN(listId)) {
       res.status(400).json({
@@ -39,16 +47,21 @@ export const deleteList = async (
       return
     }
 
-    // Delete in transaction to ensure both operations succeed or fail together
-    await db.transaction(async (tx) => {
-      // Delete all items in the list
-      await tx.delete(listPlace).where(eq(listPlace.listId, listId))
-
-      // Delete the list itself
-      await tx.delete(list).where(eq(list.id, listId))
+    const versionedDb = createVersionedDb(req)
+    await versionedDb.transaction(async (ops) => {
+      await ops.bulkDelete('listPlace', [{ listId }], ['listId'], ops.db)
+      await ops.delete('list', { id: listId }, ops.db)
     })
 
     res.json({ success: true })
+    logger.info({
+      msg: 'List deleted',
+      event: 'list_deleted',
+      metadata: {
+        listId,
+      },
+    })
+    return
   } catch (error) {
     logger.error({
       msg: 'Delete list error',

@@ -1,30 +1,25 @@
 import { logger } from '@ritchy/logger'
 import type { Status, StatusType } from '@ritchy/types'
-import { db } from '../../../db/db'
-import { status as statusTable } from '../../../db/schema'
+import type { Request } from 'express'
+import { createVersionedDb } from '../../../db/versioned_db/client'
 
 export const upsertPlaceStatus = async (
+  req: Request,
   placeId: string,
-  userId: string,
   status: StatusType,
 ): Promise<Status> => {
   try {
-    // Replace the separate SELECT + UPDATE/INSERT with a single upsert operation
-    const [result] = await db
-      .insert(statusTable)
-      .values({
+    const db = createVersionedDb(req)
+    const result = await db.upsert(
+      'status',
+      {
         placeId,
-        userId,
+        userId: req.auth.userId,
         status,
-      })
-      .onConflictDoUpdate({
-        target: [statusTable.placeId, statusTable.userId],
-        set: {
-          status,
-          updatedAt: new Date(),
-        },
-      })
-      .returning()
+        updatedAt: new Date(),
+      },
+      ['placeId', 'userId'],
+    )
 
     return {
       status: result.status,
@@ -38,7 +33,7 @@ export const upsertPlaceStatus = async (
       metadata: {
         error: error instanceof Error ? error : { error },
         placeId,
-        userId,
+        userId: req.auth.userId,
         status,
       },
     })

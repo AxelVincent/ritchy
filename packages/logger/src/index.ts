@@ -8,10 +8,32 @@ interface LogContext {
     firstName: string
     lastName: string
   }
+  // Add request metadata to context
+  request?: {
+    id: string
+    ipAddress: string
+    userAgent?: string
+    timestamp: Date
+  }
 }
 
 // Create AsyncLocalStorage to store context
 const asyncLocalStorage = new AsyncLocalStorage<LogContext>()
+
+// Add helper to merge contexts
+const mergeContext = (
+  existing: LogContext | undefined,
+  newContext: LogContext,
+): LogContext => {
+  if (!existing) return newContext
+
+  return {
+    // Preserve existing user context if new context doesn't provide one
+    user: newContext.user ?? existing.user,
+    // Preserve existing request context if new context doesn't provide one
+    request: newContext.request ?? existing.request,
+  }
+}
 
 interface LogPayload {
   msg: string
@@ -62,8 +84,13 @@ const logger = {
     const context = asyncLocalStorage.getStore()
     baseLogger.debug({ ...payload, ...(context || {}) })
   },
-  runWithContext: <T>(context: LogContext, fn: () => T): T => {
-    return asyncLocalStorage.run(context, fn)
+  runWithContext: <T>(newContext: LogContext, fn: () => T): T => {
+    const existingContext = asyncLocalStorage.getStore()
+    const mergedContext = mergeContext(existingContext, newContext)
+    return asyncLocalStorage.run(mergedContext, fn)
+  },
+  getContext: (): LogContext | undefined => {
+    return asyncLocalStorage.getStore()
   },
 }
 

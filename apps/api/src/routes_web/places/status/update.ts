@@ -11,13 +11,29 @@ export const updateStatus = async (
   req: Request<UpdateStatusRequest>,
   res: Response<UpdateStatusApiResponse>,
 ): Promise<void> => {
+  logger.info({
+    msg: 'Updating status',
+    event: 'update_status',
+    metadata: {
+      placeId: req.params.placeId,
+      status: req.body.status,
+    },
+  })
+
   try {
     const { status } = req.body
     const { placeId } = req.params
 
-    const result = await upsertPlaceStatus(placeId, req.auth.userId, status)
+    const result = await upsertPlaceStatus(req, placeId, status)
 
     res.json(result)
+    logger.info({
+      msg: 'Status updated',
+      event: 'status_updated',
+      metadata: {
+        placeId: req.params.placeId,
+      },
+    })
     return
   } catch (error) {
     if (error instanceof z.ZodError) {
