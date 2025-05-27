@@ -11,6 +11,7 @@ import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
 import { ensureIdempotency } from './middleware/idempotency'
+import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
 import session from 'express-session'
@@ -48,6 +49,9 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }))
+
+// Request metadata middleware
+app.use(addRequestMetadata)
 
 // Authentication middleware
 const isAuthenticated = async (

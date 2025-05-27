@@ -11,6 +11,12 @@ declare global {
         lastName: string
       }
       rawBody: Buffer
+      metadata: {
+        ipAddress: string
+        userAgent: string | undefined
+        requestId: string
+        timestamp: Date
+      }
     }
     interface Response {
       responseTime: number

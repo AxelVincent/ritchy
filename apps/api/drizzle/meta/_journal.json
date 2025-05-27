@@ -250,8 +250,36 @@
     {
       "idx": 35,
       "version": "7",
-      "when": 1747842174063,
-      "tag": "0035_lumpy_tarot",
+      "when": 1747995020113,
+      "tag": "0035_bouncy_gorilla_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1747998179473,
+      "tag": "0036_large_hawkeye",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1748275017107,
+      "tag": "0037_clean_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1748277429872,
+      "tag": "0038_big_sleeper",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1748297358593,
+      "tag": "0039_narrow_boom_boom",
       "breakpoints": true
     }
   ]

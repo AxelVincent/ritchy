@@ -1,0 +1,2 @@
+ALTER TABLE "version_history" ADD CONSTRAINT "version_positive" CHECK ("version_history"."version" > 0);--> statement-breakpoint
+ALTER TABLE "version_history" ADD CONSTRAINT "valid_operation" CHECK ("version_history"."operation" IN ('INSERT', 'UPDATE', 'UPSERT', 'DELETE', 'ROLLBACK', 'BULK'));

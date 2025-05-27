@@ -9,11 +9,19 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const upsertList = async (
   req: Request<Record<string, never>, UpsertListApiResponse, UpsertListRequest>,
   res: Response<UpsertListApiResponse>,
 ): Promise<void> => {
+  logger.info({
+    msg: 'Upserting list',
+    event: 'upsert_list',
+    metadata: {
+      listId: req.body.id,
+    },
+  })
   const userId = req.auth.userId
   try {
     const parsedBody = UpsertListRequestSchema.parse(req.body)
@@ -25,6 +33,7 @@ export const upsertList = async (
       updatedAt: Date
     }
 
+    const versionedDb = createVersionedDb(req)
     if (parsedBody.id) {
       const existingList = await db
         .select()
@@ -48,34 +57,17 @@ export const upsertList = async (
         ...(parsedBody.id && { id: parsedBody.id }),
       }
 
-      const [updateResult] = await db
-        .update(list)
-        .set(values)
-        .where(eq(list.id, parsedBody.id))
-        .returning({
-          id: list.id,
-          name: list.name,
-          emoji: list.emoji,
-          createdAt: list.createdAt,
-          updatedAt: list.updatedAt,
-        })
+      const updateResult = await versionedDb.update('list', values, {
+        id: parsedBody.id,
+      })
 
       result = updateResult
     } else {
-      const [createResult] = await db
-        .insert(list)
-        .values({
-          name: parsedBody.name,
-          emoji: parsedBody.emoji,
-          userId: userId,
-        })
-        .returning({
-          id: list.id,
-          name: list.name,
-          emoji: list.emoji,
-          createdAt: list.createdAt,
-          updatedAt: list.updatedAt,
-        })
+      const createResult = await versionedDb.insert('list', {
+        name: parsedBody.name,
+        emoji: parsedBody.emoji,
+        userId: userId,
+      })
 
       result = createResult
     }
@@ -86,6 +78,13 @@ export const upsertList = async (
       emoji: result.emoji,
       createdAt: result.createdAt.toISOString(),
       updatedAt: result.updatedAt.toISOString(),
+    })
+    logger.info({
+      msg: 'List upserted',
+      event: 'list_upserted',
+      metadata: {
+        listId: result.id,
+      },
     })
     return
   } catch (error) {

@@ -1,6 +1,6 @@
 {
-  "id": "a3ff53d3-8150-45dc-985a-67c69afbcac1",
-  "prevId": "36485227-e141-493e-9514-9d08245e1922",
+  "id": "8d19a292-077a-4cb2-8e19-3642e3dd7616",
+  "prevId": "e736fede-a6b9-42c3-89a3-2c48afee5759",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -76,8 +76,12 @@
           "name": "enrichment_user_id_user_id_fk",
           "tableFrom": "enrichment",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -138,8 +142,12 @@
           "name": "list_user_id_user_id_fk",
           "tableFrom": "list",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -237,8 +245,12 @@
           "name": "list_place_list_id_list_id_fk",
           "tableFrom": "list_place",
           "tableTo": "list",
-          "columnsFrom": ["list_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "list_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -246,8 +258,12 @@
           "name": "list_place_search_id_search_id_fk",
           "tableFrom": "list_place",
           "tableTo": "search",
-          "columnsFrom": ["search_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "search_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -360,8 +376,12 @@
           "name": "note_user_id_user_id_fk",
           "tableFrom": "note",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -435,8 +455,12 @@
           "name": "search_user_id_user_id_fk",
           "tableFrom": "search",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -541,8 +565,12 @@
           "name": "status_user_id_user_id_fk",
           "tableFrom": "status",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -671,8 +699,12 @@
           "name": "subscription_user_id_user_id_fk",
           "tableFrom": "subscription",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -682,12 +714,16 @@
         "subscription_user_id_unique": {
           "name": "subscription_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["user_id"]
+          "columns": [
+            "user_id"
+          ]
         },
         "subscription_stripe_subscription_id_unique": {
           "name": "subscription_stripe_subscription_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["stripe_subscription_id"]
+          "columns": [
+            "stripe_subscription_id"
+          ]
         }
       },
       "policies": {},
@@ -767,12 +803,16 @@
         "user_clerk_id_unique": {
           "name": "user_clerk_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["clerk_id"]
+          "columns": [
+            "clerk_id"
+          ]
         },
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -860,8 +900,12 @@
           "name": "user_demo_code_user_id_user_id_fk",
           "tableFrom": "user_demo_code",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -871,7 +915,9 @@
         "user_demo_code_user_id_unique": {
           "name": "user_demo_code_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["user_id"]
+          "columns": [
+            "user_id"
+          ]
         }
       },
       "policies": {},
@@ -901,17 +947,29 @@
           "primaryKey": false,
           "notNull": true
         },
-        "record_data": {
-          "name": "record_data",
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current_state": {
+          "name": "current_state",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
+        },
+        "previous_state": {
+          "name": "previous_state",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "operation": {
           "name": "operation",
@@ -934,6 +992,33 @@
         }
       },
       "indexes": {
+        "uniq_record_version": {
+          "name": "uniq_record_version",
+          "columns": [
+            {
+              "expression": "table_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "record_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "version",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "idx_version_history_table_record": {
           "name": "idx_version_history_table_record",
           "columns": [
@@ -991,8 +1076,12 @@
           "name": "version_history_user_id_user_id_fk",
           "tableFrom": "version_history",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1000,7 +1089,16 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "version_positive": {
+          "name": "version_positive",
+          "value": "\"version_history\".\"version\" > 0"
+        },
+        "valid_operation": {
+          "name": "valid_operation",
+          "value": "\"version_history\".\"operation\" IN ('INSERT', 'UPDATE', 'DELETE', 'ROLLBACK', 'BULK')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.webhook_event": {
@@ -1090,7 +1188,9 @@
         "webhook_event_idempotency_key_unique": {
           "name": "webhook_event_idempotency_key_unique",
           "nullsNotDistinct": false,
-          "columns": ["idempotency_key"]
+          "columns": [
+            "idempotency_key"
+          ]
         }
       },
       "policies": {},
@@ -1116,12 +1216,23 @@
     "public.search_model": {
       "name": "search_model",
       "schema": "public",
-      "values": ["ESSENTIALS", "NAVIGATOR", "EXPLORER", "PRO"]
+      "values": [
+        "ESSENTIALS",
+        "NAVIGATOR",
+        "EXPLORER",
+        "PRO"
+      ]
     },
     "public.subscription_plan": {
       "name": "subscription_plan",
       "schema": "public",
-      "values": ["FREE", "ESSENTIALS", "EXPLORER", "NAVIGATOR", "PRO"]
+      "values": [
+        "FREE",
+        "ESSENTIALS",
+        "EXPLORER",
+        "NAVIGATOR",
+        "PRO"
+      ]
     },
     "public.subscription_status": {
       "name": "subscription_status",
@@ -1140,7 +1251,10 @@
     "public.webhook_service": {
       "name": "webhook_service",
       "schema": "public",
-      "values": ["clerk", "stripe"]
+      "values": [
+        "clerk",
+        "stripe"
+      ]
     }
   },
   "schemas": {},

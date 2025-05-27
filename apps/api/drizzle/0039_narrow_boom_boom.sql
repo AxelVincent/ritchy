@@ -1,0 +1,2 @@
+ALTER TABLE "version_history" DROP CONSTRAINT "valid_operation";--> statement-breakpoint
+ALTER TABLE "version_history" ADD CONSTRAINT "valid_operation" CHECK ("version_history"."operation" IN ('INSERT', 'UPDATE', 'DELETE', 'ROLLBACK'));

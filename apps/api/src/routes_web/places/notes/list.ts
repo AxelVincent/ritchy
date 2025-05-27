@@ -14,6 +14,13 @@ export const getPlaceNotes = async (
   res: Response<NotesApiResponse>,
 ): Promise<void> => {
   try {
+    logger.info({
+      msg: 'Getting place notes',
+      event: 'get_place_notes',
+      metadata: {
+        placeId: req.params.placeId,
+      },
+    })
     const paramsParse = NotesParamsSchema.parse({ placeId: req.params.placeId })
 
     const notes = await db
@@ -32,6 +39,14 @@ export const getPlaceNotes = async (
         updatedAt: n.updatedAt.toISOString(),
       })),
     )
+
+    logger.info({
+      msg: 'Place notes retrieved',
+      event: 'place_notes_retrieved',
+      metadata: {
+        placeId: req.params.placeId,
+      },
+    })
     return
   } catch (error) {
     logger.error({

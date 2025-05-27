@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { listPlace } from '../../db/schema'
 import { list } from '../../db/schema'
+import { createVersionedDb } from '../../db/versioned_db/client'
 
 export const addItemsToList = async (
   req: Request<
@@ -22,6 +23,14 @@ export const addItemsToList = async (
   res: Response<AddItemsToListApiResponse>,
 ): Promise<void> => {
   try {
+    logger.info({
+      msg: 'Adding items to list',
+      event: 'add_items_to_list',
+      metadata: {
+        listId: req.params.id,
+        items: req.body.items,
+      },
+    })
     const listId = req.params.id
     if (!listId) {
       res.status(400).json({
@@ -50,43 +59,38 @@ export const addItemsToList = async (
       return
     }
 
-    // Use a single upsert operation with returning clause
-    const upsertResult = await db
-      .insert(listPlace)
-      .values(
-        items.map((item) => ({
-          listId: listId,
-          placeId: item.placeId,
-          searchId: item.searchId,
-        })),
-      )
-      .onConflictDoUpdate({
-        target: [listPlace.listId, listPlace.placeId],
-        set: {
-          searchId: sql`EXCLUDED.search_id`,
-          updatedAt: new Date(),
-        },
-      })
-      .returning({
-        placeId: listPlace.placeId,
-        // Add a column to indicate if this was an insert or update
-        // This is PostgreSQL-specific syntax
-        operation: sql`CASE WHEN xmax = 0 THEN 'insert' ELSE 'update' END`,
-      })
+    const versionedDb = createVersionedDb(req)
+    const { records, operations } = await versionedDb.bulkUpsert(
+      'listPlace',
+      items.map((item) => ({
+        listId: listId,
+        placeId: item.placeId,
+        searchId: item.searchId,
+      })),
+      ['listId', 'placeId'],
+    )
 
-    // Separate the results into new and duplicate items
-    const newPlaceIds = upsertResult
-      .filter((row) => row.operation === 'insert')
-      .map((row) => row.placeId)
+    const newPlaceIds = records
+      .filter((record) => operations[record.id] === 'insert')
+      .map((record) => record.placeId)
 
-    const duplicatePlaceIds = upsertResult
-      .filter((row) => row.operation === 'update')
-      .map((row) => row.placeId)
+    const duplicatePlaceIds = records
+      .filter((record) => operations[record.id] === 'update')
+      .map((record) => record.placeId)
 
     res.json({
       success: true,
       duplicates: duplicatePlaceIds.map(Number),
       added: newPlaceIds.map(Number),
+    })
+    logger.info({
+      msg: 'Items added to list',
+      event: 'items_added_to_list',
+      metadata: {
+        listId,
+        added: newPlaceIds,
+        duplicates: duplicatePlaceIds,
+      },
     })
     return
   } catch (error) {
