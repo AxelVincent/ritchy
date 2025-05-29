@@ -14,11 +14,13 @@ import type {
 } from './types'
 import {
   calculateChangedFields,
+  chunkArray,
   createConflictWhereClause,
   createVersionEntry,
   prepareVersionMetadata,
 } from './utils/helpers'
 import { getLatestVersion, getRecordById } from './utils/helpers'
+import { processBulkOperationInChunks } from './utils/helpers'
 import { validateVersionOperation } from './utils/validation'
 
 const createOperations = (context: VersionContext) => ({
@@ -172,98 +174,108 @@ const createOperations = (context: VersionContext) => ({
     db: PostgresJsDatabase<typeof schema>,
   ): Promise<BulkUpsertResult<T>> => {
     const bulkOperationId = crypto.randomUUID()
+    const CHUNK_SIZE = 50
 
     return db.transaction(async (tx) => {
-      const previousStates = await Promise.all(
-        data.map(async (originalData) => {
-          const whereClause = createConflictWhereClause(
-            table,
-            conflictTarget,
-            originalData,
-          )
-          const [previousState] = await tx
-            .select()
-            .from(schema[table])
-            .where(whereClause)
-            .limit(1)
-          return { originalData, previousState }
-        }),
-      )
+      const chunks = chunkArray(data, CHUNK_SIZE)
+      const allResults: InferSelect<T>[] = []
 
-      const results = await tx
-        .insert(schema[table])
-        .values(data as unknown as InferInsertModel<(typeof schema)[T]>[])
-        .onConflictDoUpdate({
-          target: conflictTarget.map(
-            (col) =>
-              (schema[table] as { [K in keyof InferTable<T>]: PgColumn })[col],
-          ),
-          set: {
-            ...data[0],
-            updatedAt: new Date(),
-          } as unknown as PgUpdateSetSource<(typeof schema)[T]>,
-        })
-        .returning()
+      for (const chunk of chunks) {
+        const previousStates = await Promise.all(
+          chunk.map(async (originalData) => {
+            const whereClause = createConflictWhereClause(
+              table,
+              conflictTarget,
+              originalData,
+            )
+            const [previousState] = await tx
+              .select()
+              .from(schema[table])
+              .where(whereClause)
+              .limit(1)
+            return { originalData, previousState }
+          }),
+        )
 
-      // Record version history for each result
-      for (const result of results) {
-        const { originalData, previousState } = previousStates.find((item) =>
-          conflictTarget.every(
-            (col) =>
-              item.originalData[col as keyof typeof item.originalData] ===
-              result[col as keyof typeof result],
-          ),
-        ) || { originalData: null, previousState: null }
-
-        if (!originalData) continue
-
-        const [latest] = await tx
-          .select({ version: versionHistory.version })
-          .from(versionHistory)
-          .where(
-            and(
-              eq(versionHistory.tableName, table),
-              eq(versionHistory.recordId, result.id),
+        const results = await tx
+          .insert(schema[table])
+          .values(chunk as unknown as InferInsertModel<(typeof schema)[T]>[])
+          .onConflictDoUpdate({
+            target: conflictTarget.map(
+              (col) =>
+                (schema[table] as { [K in keyof InferTable<T>]: PgColumn })[
+                  col
+                ],
             ),
-          )
-          .orderBy(desc(versionHistory.version))
-          .limit(1)
-          .for('update')
+            set: {
+              ...chunk[0],
+              updatedAt: new Date(),
+            } as unknown as PgUpdateSetSource<(typeof schema)[T]>,
+          })
+          .returning()
 
-        const currentState = result
-        const metadata = {
-          changedFields: Object.keys(originalData).filter(
-            (key) => !conflictTarget.includes(key as keyof InferTable<T>),
-          ),
-          bulkOperationId,
+        // Record version history for each result
+        for (const result of results) {
+          const { originalData, previousState } = previousStates.find((item) =>
+            conflictTarget.every(
+              (col) =>
+                item.originalData[col as keyof typeof item.originalData] ===
+                result[col as keyof typeof result],
+            ),
+          ) || { originalData: null, previousState: null }
+
+          if (!originalData) continue
+
+          const [latest] = await tx
+            .select({ version: versionHistory.version })
+            .from(versionHistory)
+            .where(
+              and(
+                eq(versionHistory.tableName, table),
+                eq(versionHistory.recordId, result.id),
+              ),
+            )
+            .orderBy(desc(versionHistory.version))
+            .limit(1)
+            .for('update')
+
+          const currentState = result
+          const metadata = {
+            changedFields: Object.keys(originalData).filter(
+              (key) => !conflictTarget.includes(key as keyof InferTable<T>),
+            ),
+            bulkOperationId,
+          }
+
+          const operation = previousState ? 'UPDATE' : 'INSERT'
+
+          validateVersionOperation({
+            operation,
+            currentState,
+            previousState: previousState || null,
+            metadata,
+            table,
+            recordId: result.id,
+          })
+
+          await tx.insert(versionHistory).values({
+            tableName: table,
+            recordId: result.id,
+            version: (latest?.version ?? 0) + 1,
+            currentState,
+            previousState: previousState || null,
+            userId: context.userId ?? '',
+            operation,
+            metadata,
+          })
         }
 
-        const operation = previousState ? 'UPDATE' : 'INSERT'
-
-        validateVersionOperation({
-          operation,
-          currentState,
-          previousState: previousState || null,
-          metadata,
-          table,
-          recordId: result.id,
-        })
-
-        await tx.insert(versionHistory).values({
-          tableName: table,
-          recordId: result.id,
-          version: (latest?.version ?? 0) + 1,
-          currentState,
-          previousState: previousState || null,
-          userId: context.userId ?? '',
-          operation,
-          metadata,
-        })
+        allResults.push(...results)
       }
 
       return {
-        records: results,
-        operations: results.reduce(
+        records: allResults,
+        operations: allResults.reduce(
           (acc, result) => {
             const originalData = data.find((item) => item.id === result.id)
             acc[result.id] = originalData?.id ? 'update' : 'insert'
