@@ -133,11 +133,13 @@ export const HubspotConnectionStatus = () => {
           </Alert>
         ) : (
           <Alert variant="default">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Not connected to HubSpot. Connect your account to enable
-              integration features.
-            </AlertDescription>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Not connected to HubSpot. Connect your account to enable
+                integration features.
+              </AlertDescription>
+            </div>
           </Alert>
         )}
       </div>

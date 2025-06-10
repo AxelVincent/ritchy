@@ -20,13 +20,24 @@ import { AlertCircle, RefreshCw } from 'lucide-react'
 import { FieldMapping } from './shared/OptimizedSelect'
 
 export const CompanyMapping = () => {
-  const { data: mappings, isLoading, error } = useCompanyMappings()
-  const { data: properties } = useCompanyProperties()
+  const {
+    data: mappings,
+    isLoading: isMappingsLoading,
+    error,
+  } = useCompanyMappings()
+  const { data: properties, isLoading: isPropertiesLoading } =
+    useCompanyProperties()
   const updateMapping = useUpdateCompanyMapping()
   const resetMappings = useResetCompanyMappings()
 
   const mappingArray = Array.isArray(mappings) ? mappings : []
   const fields = Object.entries(FIELD_CONFIGS.company)
+  const expectedFields = fields.map(([field]) => `company.${field}`)
+  const allFieldsPresent =
+    mappingArray.length > 0 &&
+    expectedFields.every((field) =>
+      mappingArray.some((m) => m.internalField === field),
+    )
 
   if (error) {
     return (
@@ -35,6 +46,10 @@ export const CompanyMapping = () => {
         <AlertDescription>Failed to load company mappings</AlertDescription>
       </Alert>
     )
+  }
+
+  if (isMappingsLoading || isPropertiesLoading || !allFieldsPresent) {
+    return <div>Loading company mappings...</div>
   }
 
   return (
@@ -66,7 +81,7 @@ export const CompanyMapping = () => {
             mapping={mappingArray.find(
               (m) => m.internalField === `company.${field}`,
             )}
-            isLoading={isLoading}
+            isLoading={isMappingsLoading}
             onMappingChange={(field, value) =>
               updateMapping.mutate({
                 internalField: field as CompanyField,

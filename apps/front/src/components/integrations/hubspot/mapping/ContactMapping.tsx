@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   type ContactField,
   FIELD_CONFIGS,
@@ -27,14 +26,30 @@ import { AlertCircle, RefreshCw } from 'lucide-react'
 import { FieldMapping } from './shared/OptimizedSelect'
 
 export const ContactMapping = () => {
-  const { data: mappings, isLoading, error } = useContactMappings()
-  const { data: properties } = useContactProperties()
+  const {
+    data: mappings,
+    isLoading: isMappingsLoading,
+    error,
+  } = useContactMappings()
+  const { data: properties, isLoading: isPropertiesLoading } =
+    useContactProperties()
   const updateMapping = useUpdateContactMapping()
   const resetMappings = useResetContactMappings()
 
   const mappingArray = Array.isArray(mappings) ? mappings : []
   const contactFields = Object.entries(FIELD_CONFIGS.contact)
   const statusFields = Object.entries(FIELD_CONFIGS.status)
+
+  // Compute expected fields for both contact and status
+  const expectedFields = [
+    ...contactFields.map(([field]) => `contact.${field}`),
+    ...statusFields.map(([field]) => `status.${field}`),
+  ]
+  const allFieldsPresent =
+    mappingArray.length > 0 &&
+    expectedFields.every((field) =>
+      mappingArray.some((m) => m.internalField === field),
+    )
 
   const statusOptions = Object.values(HubspotLeadStatusEnum.enum).map(
     (status) => ({
@@ -50,6 +65,10 @@ export const ContactMapping = () => {
         <AlertDescription>Failed to load contact mappings</AlertDescription>
       </Alert>
     )
+  }
+
+  if (isMappingsLoading || isPropertiesLoading || !allFieldsPresent) {
+    return <div>Loading contact mappings...</div>
   }
 
   return (
@@ -74,80 +93,49 @@ export const ContactMapping = () => {
       <CardContent className="space-y-8">
         <div className="space-y-4">
           <h3 className="text-sm font-medium">Contact Information</h3>
-          {isLoading || !properties
-            ? contactFields.map(([field, config]) => (
-                <div key={field} className="flex items-center gap-4 w-full">
-                  <div className="w-1/3 flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{config.displayName}</span>
-                      {config.description && (
-                        <span className="text-muted-foreground">?</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="w-2/3">
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </div>
-              ))
-            : contactFields.map(([field, config]) => (
-                <FieldMapping
-                  key={field}
-                  field={`contact.${field}`}
-                  config={config}
-                  defaultField={config.defaultHubspotField}
-                  mapping={mappingArray.find(
-                    (m) => m.internalField === `contact.${field}`,
-                  )}
-                  isLoading={isLoading}
-                  onMappingChange={(field, value) =>
-                    updateMapping.mutate({
-                      internalField: field as ContactField,
-                      hubspotField: value,
-                    })
-                  }
-                  properties={properties}
-                />
-              ))}
+          {contactFields.map(([field, config]) => (
+            <FieldMapping
+              key={field}
+              field={`contact.${field}`}
+              config={config}
+              defaultField={config.defaultHubspotField}
+              mapping={mappingArray.find(
+                (m) => m.internalField === `contact.${field}`,
+              )}
+              isLoading={isMappingsLoading}
+              onMappingChange={(field, value) =>
+                updateMapping.mutate({
+                  internalField: field as ContactField,
+                  hubspotField: value,
+                })
+              }
+              properties={properties}
+            />
+          ))}
         </div>
         <div className="space-y-4">
           <h3 className="text-sm font-medium">Lead Status Mappings</h3>
-          {isLoading
-            ? statusFields.map(([field, config]) => (
-                <div key={field} className="flex items-center gap-4 w-full">
-                  <div className="w-1/3 flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{config.displayName}</span>
-                      {config.description && (
-                        <span className="text-muted-foreground">?</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="w-2/3">
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </div>
-              ))
-            : statusFields.map(([field, config]) => (
-                <FieldMapping
-                  key={field}
-                  field={`status.${field}`}
-                  config={config}
-                  defaultField={config.defaultHubspotField}
-                  mapping={mappingArray.find(
-                    (m) => m.internalField === `status.${field}`,
-                  )}
-                  isLoading={isLoading}
-                  onMappingChange={(field, value) =>
-                    updateMapping.mutate({
-                      internalField: field as StatusField,
-                      hubspotField: value,
-                    })
-                  }
-                  isStatusField
-                  statusOptions={statusOptions}
-                />
-              ))}
+          {statusFields.map(([field, config]) => (
+            <FieldMapping
+              key={field}
+              field={`status.${field}`}
+              config={config}
+              defaultField={config.defaultHubspotField}
+              mapping={mappingArray.find(
+                (m) => m.internalField === `status.${field}`,
+              )}
+              isLoading={isMappingsLoading}
+              onMappingChange={(field, value) =>
+                updateMapping.mutate({
+                  internalField: field as StatusField,
+                  hubspotField: value,
+                })
+              }
+              isStatusField
+              statusOptions={statusOptions}
+              properties={properties}
+            />
+          ))}
         </div>
       </CardContent>
     </Card>

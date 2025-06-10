@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import {
   type CompanyField,
   CompanyFieldEnum,
-  DEFAULT_COMPANY_FIELDS,
+  type DEFAULT_COMPANY_FIELDS,
   FIELD_CONFIGS,
   type GetCompanyMappingsResponse,
   type GetCompanyPropertiesResponse,
@@ -102,27 +102,25 @@ export const getCompanyMappings = async (
     // If no mappings exist, create default ones
     if (mappings.length === 0) {
       const defaultMappings = createDefaultMappings(token.id)
-      logger.info({
-        msg: 'Creating default company mappings',
-        event: 'hubspot_company_mappings_create_default',
-        metadata: { defaultMappings, userId: req.auth?.userId },
-      })
-
-      const createdMappings = await db
-        .insert(hubspotFieldMapping)
-        .values(defaultMappings)
-        .returning()
-
-      // Filter to only company fields before returning
-      const companyMappings = createdMappings
-        .filter((m) =>
-          Object.keys(DEFAULT_COMPANY_FIELDS).includes(m.internalField),
+      await db.insert(hubspotFieldMapping).values(defaultMappings)
+      // Now select again
+      const newMappings = await db
+        .select()
+        .from(hubspotFieldMapping)
+        .where(
+          and(
+            eq(hubspotFieldMapping.tokenId, token.id),
+            inArray(
+              hubspotFieldMapping.internalField,
+              CompanyFieldEnum.options,
+            ),
+          ),
         )
-        .map((m) => ({
-          ...m,
-          internalField: m.internalField as keyof typeof DEFAULT_COMPANY_FIELDS,
-        }))
-      res.json(companyMappings)
+      const companyOnlyMappings = newMappings.map((m) => ({
+        ...m,
+        internalField: m.internalField as keyof typeof DEFAULT_COMPANY_FIELDS,
+      }))
+      res.json(companyOnlyMappings)
       return
     }
 

@@ -48,7 +48,7 @@ export const useCompanyMappings = () => {
   return useApiQuery<GetCompanyMappingsResponse>(
     '/hubspot/mappings/company',
     hubspotMappingKeys.company.mappings(),
-    defaultQueryOptions,
+    { staleTime: 0 },
   )
 }
 
@@ -56,6 +56,6 @@ export const useContactMappings = () => {
   return useApiQuery<GetContactMappingsResponse>(
     '/hubspot/mappings/contact',
     hubspotMappingKeys.contact.mappings(),
-    defaultQueryOptions,
+    { staleTime: 0 },
   )
 }

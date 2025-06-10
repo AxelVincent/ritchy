@@ -1,3 +1,4 @@
+import { hubspotMappingKeys } from '@/api/queries/integrations/hubspot/mappings'
 import { useHubspotStatus } from '@/api/queries/integrations/hubspot/oauth'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { HubspotConnectionStatus } from '@/components/integrations/hubspot/HubspotConnectionStatus'
@@ -31,10 +32,18 @@ function HubspotRoute() {
         title: 'Successfully connected to HubSpot',
         variant: 'default',
       })
-      // Invalidate mappings to trigger default creation
-      utils.invalidateQueries({ queryKey: ['hubspot', 'mappings', 'company'] })
-      utils.invalidateQueries({ queryKey: ['hubspot', 'mappings', 'contact'] })
-      // Clean up the URL
+      utils.invalidateQueries({
+        queryKey: hubspotMappingKeys.company.mappings(),
+      })
+      utils.invalidateQueries({
+        queryKey: hubspotMappingKeys.company.properties(),
+      })
+      utils.invalidateQueries({
+        queryKey: hubspotMappingKeys.contact.mappings(),
+      })
+      utils.invalidateQueries({
+        queryKey: hubspotMappingKeys.contact.properties(),
+      })
       navigate({ to: '/integrations/hubspot', replace: true })
     } else if (search.error) {
       const errorMessages: Record<string, string> = {

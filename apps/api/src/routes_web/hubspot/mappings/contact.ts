@@ -123,10 +123,20 @@ export const getContactMappings = async (
     // If no mappings exist, create default ones
     if (mappings.length === 0) {
       const defaultMappings = createDefaultMappings(token.id)
+      await db.insert(hubspotFieldMapping).values(defaultMappings).returning()
       const createdMappings = (await db
-        .insert(hubspotFieldMapping)
-        .values(defaultMappings)
-        .returning()) as ContactMapping[]
+        .select()
+        .from(hubspotFieldMapping)
+        .where(
+          and(
+            eq(hubspotFieldMapping.tokenId, token.id),
+            inArray(hubspotFieldMapping.internalField, [
+              ...ContactFieldEnum.options,
+              ...StatusFieldEnum.options,
+            ]),
+          ),
+        )) as ContactMapping[]
+
       res.json(createdMappings)
       return
     }
