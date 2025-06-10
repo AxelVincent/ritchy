@@ -24,16 +24,6 @@ declare global {
   }
 }
 
-declare module 'express-session' {
-  interface SessionData {
-    hubspotOAuthState?: {
-      state: string
-      userId: string
-      expiresAt: number
-    }
-  }
-}
-
 export interface AuthUser {
   userId: string
   sessionId: string
