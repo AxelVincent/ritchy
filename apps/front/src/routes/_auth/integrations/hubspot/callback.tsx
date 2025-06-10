@@ -1,12 +1,14 @@
-import { useEffect } from 'react'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { hubspotMappingKeys } from '@/api/queries/integrations/hubspot/mappings'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
-import { createFileRoute } from '@tanstack/react-router'
 import { toast } from '@/hooks/use-toast'
 import { useApiMutation } from '@/hooks/useApi'
+import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { z } from 'zod'
 
-export const Route = createFileRoute('/_auth/hubspot/callback')({
+export const Route = createFileRoute('/_auth/integrations/hubspot/callback')({
   validateSearch: z.object({
     code: z.string().optional(),
     state: z.string(),
@@ -16,14 +18,20 @@ export const Route = createFileRoute('/_auth/hubspot/callback')({
 })
 
 function CallbackRoute() {
-  const navigate = useNavigate({ from: '/hubspot/callback' })
-  const search = useSearch({ from: '/_auth/hubspot/callback' })
+  const navigate = useNavigate({ from: '/integrations/hubspot/callback' })
+  const search = useSearch({ from: '/_auth/integrations/hubspot/callback' })
+  const queryClient = useQueryClient()
   const { mutate: exchangeCode } = useApiMutation<
     void,
     { code: string; state: string }
-  >('/hubspot/callback', {
+  >('/hubspot/oauth/callback', {
     method: 'POST',
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate all HubSpot related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: hubspotMappingKeys.all }),
+      ])
+
       toast({
         title: 'Successfully connected to HubSpot',
         variant: 'default',
@@ -33,7 +41,7 @@ function CallbackRoute() {
         window.close()
       } else {
         // Redirect to main page if opened directly
-        navigate({ to: '/hubspot', replace: true })
+        navigate({ to: '/integrations/hubspot', replace: true })
       }
     },
     onError: (error) => {
@@ -47,7 +55,7 @@ function CallbackRoute() {
         window.close()
       } else {
         // Redirect to main page if opened directly
-        navigate({ to: '/hubspot', replace: true })
+        navigate({ to: '/integrations/hubspot', replace: true })
       }
     },
   })
@@ -62,7 +70,7 @@ function CallbackRoute() {
       if (window.opener) {
         window.close()
       } else {
-        navigate({ to: '/hubspot', replace: true })
+        navigate({ to: '/integrations/hubspot', replace: true })
       }
       return
     }

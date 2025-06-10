@@ -1,41 +1,41 @@
-import express, { type Router } from 'express'
-import { z } from 'zod'
-import { HubspotOAuthConfigSchema, createHubspotOAuthService } from '../external/hubspot/oauth'
 import { logger } from '@ritchy/logger'
+import type {
+  OAuthCallbackBody,
+  OAuthConnectUrlResponse,
+  OAuthDisconnectResponse,
+  OAuthStatusResponse,
+} from '@ritchy/types'
 import { eq } from 'drizzle-orm'
-import { db } from '../db/db'
-import { hubspotToken } from '../db/schema'
+import type { Request, Response } from 'express'
+import { db } from '../../../db/db'
+import { hubspotToken } from '../../../db/schema'
+import {
+  exchangeCodeForToken,
+  getAuthUrl,
+} from '../../../external/hubspot/oauth'
+import {
+  clearTokenCache,
+  getValidToken,
+  tokenCache,
+} from '../../../external/hubspot/token_manager'
 
-const hubspotRouter: Router = express.Router()
-
-// Validate environment variables
-const config = HubspotOAuthConfigSchema.parse({
-  CLIENT_ID: process.env.HUBSPOT_CLIENT_ID,
-  CLIENT_SECRET: process.env.HUBSPOT_CLIENT_SECRET,
-  SCOPES: process.env.HUBSPOT_SCOPES?.split(/ |, ?|%20/) ?? ['crm.objects.contacts.read'],
-  REDIRECT_URI: new URL(`${process.env.FRONTEND_BASE_URL}/hubspot/callback`).toString(),
-})
-
-const oauthService = createHubspotOAuthService(config)
-
-// Update the redirect URLs to use FRONTEND_BASE_URL
 const frontendBaseUrl = process.env.FRONTEND_BASE_URL
 
-// Get connection URL
-hubspotRouter.get('/connect-url', (req, res) => {
+export const getConnectUrl = async (
+  req: Request,
+  res: Response<OAuthConnectUrlResponse>,
+): Promise<void> => {
   try {
     const state = crypto.randomUUID()
-    
-    // Store state in session for verification
+
     req.session.hubspotOAuthState = {
       state,
       userId: req.auth.userId,
       expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
     }
 
-    // Pass state parameter to getAuthUrl
-    const authUrl = oauthService.getAuthUrl(state)
-    
+    const authUrl = getAuthUrl(state)
+
     logger.info({
       msg: 'Generated HubSpot connection URL',
       event: 'hubspot_connect_url_generated',
@@ -47,31 +47,33 @@ hubspotRouter.get('/connect-url', (req, res) => {
     logger.error({
       msg: 'Failed to generate HubSpot connection URL',
       event: 'hubspot_connect_url_error',
-      metadata: { error: error instanceof Error ? error.message : String(error), userId: req.auth.userId },
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+        userId: req.auth.userId,
+      },
     })
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to generate connection URL',
-      message: 'Please try again later'
+      message: 'Please try again later',
     })
   }
-})
+}
 
-// OAuth callback - this is called by HubSpot
-hubspotRouter.post('/callback', async (req, res) => {
-  const { code, state, error } = z
-    .object({
-      code: z.string().optional(),
-      state: z.string(),
-      error: z.string().optional(),
-    })
-    .parse(req.body)
+export const handleCallback = async (
+  req: Request<Record<string, never>, Record<string, never>, OAuthCallbackBody>,
+  res: Response,
+): Promise<void> => {
+  const { code, state, error } = req.body
 
-  // Verify state parameter
   const storedState = req.session.hubspotOAuthState
-  if (!storedState || 
-      storedState.state !== state || 
-      storedState.userId !== req.auth.userId ||
-      storedState.expiresAt < Date.now()) {
+  if (
+    !storedState ||
+    storedState.state !== state ||
+    storedState.userId !== req.auth.userId ||
+    storedState.expiresAt < Date.now()
+  ) {
+    clearTokenCache(req.auth.userId)
+
     logger.error({
       msg: 'Invalid or expired state parameter',
       event: 'hubspot_oauth_state_error',
@@ -80,7 +82,6 @@ hubspotRouter.post('/callback', async (req, res) => {
     return res.redirect(`${frontendBaseUrl}/hubspot?error=invalid_state`)
   }
 
-  // Clear the state from session
   req.session.hubspotOAuthState = undefined
 
   if (error) {
@@ -97,7 +98,7 @@ hubspotRouter.post('/callback', async (req, res) => {
   }
 
   try {
-    await oauthService.exchangeCodeForToken(code, req.auth.userId)
+    await exchangeCodeForToken(code, req.auth.userId)
     logger.info({
       msg: 'Successfully completed HubSpot OAuth flow',
       event: 'hubspot_oauth_success',
@@ -112,35 +113,57 @@ hubspotRouter.post('/callback', async (req, res) => {
     })
     res.redirect(`${frontendBaseUrl}/hubspot?error=exchange_failed`)
   }
-})
+}
 
-// Get HubSpot token status
-hubspotRouter.get('/status', async (req, res) => {
+export const getStatus = async (
+  req: Request,
+  res: Response<OAuthStatusResponse>,
+): Promise<void> => {
   try {
-    const token = await oauthService.getValidToken(req.auth.userId)
-    res.json({ connected: true, token })
+    const token = await getValidToken(req.auth.userId)
+    if (!token) {
+      logger.info({
+        msg: 'No HubSpot token found',
+        event: 'hubspot_status_no_token',
+        metadata: { userId: req.auth.userId },
+      })
+      res.json({ connected: false })
+      return
+    }
+
+    logger.info({
+      msg: 'HubSpot token found',
+      event: 'hubspot_status_token_found',
+      metadata: { userId: req.auth.userId },
+    })
+    res.json({ connected: true })
   } catch (error) {
     logger.error({
-      msg: 'Failed to get HubSpot token status',
+      msg: 'Error checking HubSpot connection status',
       event: 'hubspot_status_error',
       metadata: { error, userId: req.auth.userId },
     })
     res.json({ connected: false })
   }
-})
+}
 
-// Add disconnect endpoint
-hubspotRouter.post('/disconnect', async (req, res) => {
+export const disconnect = async (
+  req: Request,
+  res: Response<OAuthDisconnectResponse>,
+): Promise<void> => {
   try {
-    // Delete the token from the database
-    await db.delete(hubspotToken).where(eq(hubspotToken.userId, req.auth.userId))
-    
+    await db
+      .delete(hubspotToken)
+      .where(eq(hubspotToken.userId, req.auth.userId))
+
+    tokenCache.delete(req.auth.userId)
+
     logger.info({
       msg: 'Successfully disconnected HubSpot integration',
       event: 'hubspot_disconnect_success',
       metadata: { userId: req.auth.userId },
     })
-    
+
     res.json({ success: true })
   } catch (error) {
     logger.error({
@@ -148,11 +171,9 @@ hubspotRouter.post('/disconnect', async (req, res) => {
       event: 'hubspot_disconnect_error',
       metadata: { error, userId: req.auth.userId },
     })
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to disconnect',
-      message: 'Please try again later'
+      message: 'Please try again later',
     })
   }
-})
-
-export default hubspotRouter
+}

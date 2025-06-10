@@ -1,11 +1,10 @@
-import { logger } from '@ritchy/logger'
-import type { Request, Response } from 'express'
 import crypto from 'node:crypto'
+import { logger } from '@ritchy/logger'
 import { eq } from 'drizzle-orm'
+import type { Request, Response } from 'express'
+import { HUBSPOT_CONFIG } from '../config/hubspot'
 import { db } from '../db/db'
 import { webhookEvent } from '../db/schema'
-import { HUBSPOT_CONFIG } from '../config/hubspot'
-
 
 type WebhookResponse = {
   received?: boolean
@@ -43,7 +42,7 @@ const verifyHubSpotSignature = (
   const MAX_ALLOWED_TIMESTAMP = 300000 // 5 minutes in milliseconds
   const timestamp = req.headers['x-hubspot-request-timestamp'] as string
   const currentTime = Date.now()
-  
+
   // Validate timestamp
   if (currentTime - Number.parseInt(timestamp) > MAX_ALLOWED_TIMESTAMP) {
     logger.error({
@@ -98,7 +97,11 @@ export const hubspotWebhook = async (
   }
 
   try {
-    const isValid = verifyHubSpotSignature(req, signature, HUBSPOT_CONFIG.API_KEYS.CLIENT_SECRET)
+    const isValid = verifyHubSpotSignature(
+      req,
+      signature,
+      HUBSPOT_CONFIG.CLIENT_SECRET,
+    )
 
     if (!isValid) {
       logger.error({

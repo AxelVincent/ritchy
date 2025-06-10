@@ -1,0 +1,4 @@
+ALTER TABLE "public"."hubspot_field_mapping" ALTER COLUMN "internal_field" SET DATA TYPE text;--> statement-breakpoint
+DROP TYPE "public"."internal_field";--> statement-breakpoint
+CREATE TYPE "public"."internal_field" AS ENUM('company.name', 'company.website', 'company.country', 'company.postalCode', 'company.street', 'company.locality', 'company.region', 'company.phone', 'contact.firstname', 'contact.lastname', 'contact.email', 'contact.phone', 'status.NEW', 'status.NO_ANSWER', 'status.CONTACTED', 'status.FOLLOW_UP', 'status.MEETING', 'status.INTERESTED', 'status.WON', 'status.LOST');--> statement-breakpoint
+ALTER TABLE "public"."hubspot_field_mapping" ALTER COLUMN "internal_field" SET DATA TYPE "public"."internal_field" USING "internal_field"::"public"."internal_field";

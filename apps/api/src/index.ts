@@ -6,6 +6,7 @@ import cors from 'cors'
 import { eq } from 'drizzle-orm'
 import express, { type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
+import session from 'express-session'
 import helmet from 'helmet'
 import pinoHttp from 'pino-http'
 import { db } from './db/db'
@@ -14,7 +15,6 @@ import { ensureIdempotency } from './middleware/idempotency'
 import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
-import session from 'express-session'
 
 const app = express()
 
@@ -39,16 +39,18 @@ app.use(
 app.use(clerkMiddleware())
 
 // Add session middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}))
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  }),
+)
 
 // Request metadata middleware
 app.use(addRequestMetadata)
@@ -187,7 +189,6 @@ app.use('/web', isAuthenticated, webRoutes)
 
 // Webhook route
 app.use('/webhook', ensureIdempotency, webhookRoutes)
-
 
 // Monitor long running requests
 app.use((req, res, next) => {

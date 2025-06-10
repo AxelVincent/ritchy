@@ -281,6 +281,20 @@
       "when": 1748297358593,
       "tag": "0039_narrow_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1749124350751,
+      "tag": "0040_goofy_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1749133304533,
+      "tag": "0041_cultured_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

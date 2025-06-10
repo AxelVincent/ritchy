@@ -1,8 +1,8 @@
 import express, { type Router } from 'express'
 
 import { clerkWebhook } from './clerk'
-import { stripeWebhook } from './stripe'
 import { hubspotWebhook } from './hubspot'
+import { stripeWebhook } from './stripe'
 
 const webhookRoutes: Router = express.Router()
 
