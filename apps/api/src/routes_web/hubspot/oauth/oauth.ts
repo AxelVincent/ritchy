@@ -5,7 +5,7 @@ import type {
   OAuthDisconnectResponse,
   OAuthStatusResponse,
 } from '@ritchy/types'
-import { eq } from 'drizzle-orm'
+import { and, eq, gt, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../../db/db'
 import { hubspotToken } from '../../../db/schema'
@@ -27,12 +27,18 @@ export const getConnectUrl = async (
 ): Promise<void> => {
   try {
     const state = crypto.randomUUID()
+    const sessionId = req.auth.sessionId
 
-    req.session.hubspotOAuthState = {
-      state,
-      userId: req.auth.userId,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+    if (!sessionId) {
+      throw new Error('No session ID available')
     }
+
+    await db.insert(hubspotToken).values({
+      userId: req.auth.userId,
+      accessToken: `oauth_state:${state}`,
+      refreshToken: sessionId,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    })
 
     const authUrl = getAuthUrl(state)
 
@@ -64,14 +70,30 @@ export const handleCallback = async (
   res: Response,
 ): Promise<void> => {
   const { code, state, error } = req.body
+  const sessionId = req.auth.sessionId
 
-  const storedState = req.session.hubspotOAuthState
-  if (
-    !storedState ||
-    storedState.state !== state ||
-    storedState.userId !== req.auth.userId ||
-    storedState.expiresAt < Date.now()
-  ) {
+  if (!sessionId) {
+    logger.error({
+      msg: 'No session ID available',
+      event: 'hubspot_oauth_session_error',
+      metadata: { userId: req.auth.userId },
+    })
+    return res.redirect(`${frontendBaseUrl}/hubspot?error=no_session`)
+  }
+
+  const [storedState] = await db
+    .select()
+    .from(hubspotToken)
+    .where(
+      and(
+        eq(hubspotToken.userId, req.auth.userId),
+        eq(hubspotToken.refreshToken, sessionId),
+        sql`${hubspotToken.accessToken} LIKE 'oauth_state:%'`,
+        gt(hubspotToken.expiresAt, new Date()),
+      ),
+    )
+
+  if (!storedState || storedState.accessToken !== `oauth_state:${state}`) {
     clearTokenCache(req.auth.userId)
 
     logger.error({
@@ -82,7 +104,7 @@ export const handleCallback = async (
     return res.redirect(`${frontendBaseUrl}/hubspot?error=invalid_state`)
   }
 
-  req.session.hubspotOAuthState = undefined
+  await db.delete(hubspotToken).where(eq(hubspotToken.id, storedState.id))
 
   if (error) {
     logger.error({
