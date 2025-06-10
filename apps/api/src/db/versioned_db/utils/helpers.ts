@@ -1,5 +1,3 @@
-// apps/api/src/db/utils/version-history.ts
-
 import { and, desc, eq } from 'drizzle-orm'
 import type { PgColumn } from 'drizzle-orm/pg-core'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'

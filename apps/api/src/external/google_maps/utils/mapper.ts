@@ -53,6 +53,10 @@ const objectMapper = (place: PreferredPlace) => {
         place.addressComponents?.find((component) =>
           component.types.includes('route'),
         )?.longText || '',
+      streetNumber:
+        place.addressComponents?.find((component) =>
+          component.types.includes('street_number'),
+        )?.longText || '',
       neighborhood:
         place.addressComponents?.find((component) =>
           component.types.includes('neighborhood'),

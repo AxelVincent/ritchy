@@ -76,12 +76,8 @@
           "name": "enrichment_user_id_user_id_fk",
           "tableFrom": "enrichment",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -142,12 +138,8 @@
           "name": "list_user_id_user_id_fk",
           "tableFrom": "list",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -245,12 +237,8 @@
           "name": "list_place_list_id_list_id_fk",
           "tableFrom": "list_place",
           "tableTo": "list",
-          "columnsFrom": [
-            "list_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["list_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -258,12 +246,8 @@
           "name": "list_place_search_id_search_id_fk",
           "tableFrom": "list_place",
           "tableTo": "search",
-          "columnsFrom": [
-            "search_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["search_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -376,12 +360,8 @@
           "name": "note_user_id_user_id_fk",
           "tableFrom": "note",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -455,12 +435,8 @@
           "name": "search_user_id_user_id_fk",
           "tableFrom": "search",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -565,12 +541,8 @@
           "name": "status_user_id_user_id_fk",
           "tableFrom": "status",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -699,12 +671,8 @@
           "name": "subscription_user_id_user_id_fk",
           "tableFrom": "subscription",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -714,16 +682,12 @@
         "subscription_user_id_unique": {
           "name": "subscription_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         },
         "subscription_stripe_subscription_id_unique": {
           "name": "subscription_stripe_subscription_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "stripe_subscription_id"
-          ]
+          "columns": ["stripe_subscription_id"]
         }
       },
       "policies": {},
@@ -803,16 +767,12 @@
         "user_clerk_id_unique": {
           "name": "user_clerk_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "clerk_id"
-          ]
+          "columns": ["clerk_id"]
         },
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -900,12 +860,8 @@
           "name": "user_demo_code_user_id_user_id_fk",
           "tableFrom": "user_demo_code",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -915,9 +871,7 @@
         "user_demo_code_user_id_unique": {
           "name": "user_demo_code_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},
@@ -1037,12 +991,8 @@
           "name": "version_history_user_id_user_id_fk",
           "tableFrom": "version_history",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1140,9 +1090,7 @@
         "webhook_event_idempotency_key_unique": {
           "name": "webhook_event_idempotency_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "idempotency_key"
-          ]
+          "columns": ["idempotency_key"]
         }
       },
       "policies": {},
@@ -1168,23 +1116,12 @@
     "public.search_model": {
       "name": "search_model",
       "schema": "public",
-      "values": [
-        "ESSENTIALS",
-        "NAVIGATOR",
-        "EXPLORER",
-        "PRO"
-      ]
+      "values": ["ESSENTIALS", "NAVIGATOR", "EXPLORER", "PRO"]
     },
     "public.subscription_plan": {
       "name": "subscription_plan",
       "schema": "public",
-      "values": [
-        "FREE",
-        "ESSENTIALS",
-        "EXPLORER",
-        "NAVIGATOR",
-        "PRO"
-      ]
+      "values": ["FREE", "ESSENTIALS", "EXPLORER", "NAVIGATOR", "PRO"]
     },
     "public.subscription_status": {
       "name": "subscription_status",
@@ -1203,10 +1140,7 @@
     "public.webhook_service": {
       "name": "webhook_service",
       "schema": "public",
-      "values": [
-        "clerk",
-        "stripe"
-      ]
+      "values": ["clerk", "stripe"]
     }
   },
   "schemas": {},

@@ -5,7 +5,7 @@ import type {
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { upsertPlaceStatus } from '../../../services/places/status/upsertStatus'
+import { upsertStatus } from '../../../services/places/status/upsert_status'
 
 export const updateStatus = async (
   req: Request<UpdateStatusRequest>,
@@ -24,7 +24,7 @@ export const updateStatus = async (
     const { status } = req.body
     const { placeId } = req.params
 
-    const result = await upsertPlaceStatus(req, placeId, status)
+    const result = await upsertStatus(req, placeId, status)
 
     res.json(result)
     logger.info({

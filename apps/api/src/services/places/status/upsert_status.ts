@@ -2,8 +2,9 @@ import { logger } from '@ritchy/logger'
 import type { Status, StatusType } from '@ritchy/types'
 import type { Request } from 'express'
 import { createVersionedDb } from '../../../db/versioned_db/client'
+import { updateHubspotContactStatus } from '../../hubspot/update_hubspot_contact_status'
 
-export const upsertPlaceStatus = async (
+export const upsertStatus = async (
   req: Request,
   placeId: string,
   status: StatusType,
@@ -20,6 +21,7 @@ export const upsertPlaceStatus = async (
       },
       ['placeId', 'userId'],
     )
+    updateHubspotContactStatus(req, placeId, status)
 
     return {
       status: result.status,

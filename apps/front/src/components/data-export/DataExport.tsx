@@ -290,6 +290,12 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.address.street || '',
         },
         {
+          header: 'Street Number',
+          field: 'address.streetNumber',
+          accessor: (row: SearchResult): string =>
+            row.address.streetNumber || '',
+        },
+        {
           header: 'Neighborhood',
           field: 'address.neighborhood',
           accessor: (row: SearchResult): string =>

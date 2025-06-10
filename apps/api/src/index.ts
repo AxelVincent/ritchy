@@ -6,6 +6,7 @@ import cors from 'cors'
 import { eq } from 'drizzle-orm'
 import express, { type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
+import session from 'express-session'
 import helmet from 'helmet'
 import pinoHttp from 'pino-http'
 import { db } from './db/db'
@@ -36,6 +37,20 @@ app.use(
 
 // Clerk middleware
 app.use(clerkMiddleware())
+
+// Add session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  }),
+)
 
 // Request metadata middleware
 app.use(addRequestMetadata)

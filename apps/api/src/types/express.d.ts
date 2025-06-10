@@ -1,3 +1,5 @@
+import 'express-session'
+
 declare global {
   namespace Express {
     interface Request {
@@ -18,6 +20,16 @@ declare global {
     }
     interface Response {
       responseTime: number
+    }
+  }
+}
+
+declare module 'express-session' {
+  interface SessionData {
+    hubspotOAuthState?: {
+      state: string
+      userId: string
+      expiresAt: number
     }
   }
 }
