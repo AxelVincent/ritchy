@@ -31,6 +31,9 @@ function HubspotRoute() {
         title: 'Successfully connected to HubSpot',
         variant: 'default',
       })
+      // Invalidate mappings to trigger default creation
+      utils.invalidateQueries({ queryKey: ['hubspot', 'mappings', 'company'] })
+      utils.invalidateQueries({ queryKey: ['hubspot', 'mappings', 'contact'] })
       // Clean up the URL
       navigate({ to: '/integrations/hubspot', replace: true })
     } else if (search.error) {
@@ -49,7 +52,7 @@ function HubspotRoute() {
       // Clean up the URL
       navigate({ to: '/integrations/hubspot', replace: true })
     }
-  }, [search, navigate])
+  }, [search, navigate, utils])
 
   // Handle subscription updates
   useEffect(() => {
