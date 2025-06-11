@@ -33,12 +33,24 @@ export const getConnectUrl = async (
       throw new Error('No session ID available')
     }
 
-    await db.insert(hubspotToken).values({
-      userId: req.auth.userId,
+    const values = {
       accessToken: `oauth_state:${state}`,
       refreshToken: sessionId,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    })
+    }
+
+    await db
+      .insert(hubspotToken)
+      .values({
+        userId: req.auth.userId,
+        ...values,
+      })
+      .onConflictDoUpdate({
+        target: hubspotToken.userId,
+        set: {
+          ...values,
+        },
+      })
 
     const authUrl = getAuthUrl(state)
 

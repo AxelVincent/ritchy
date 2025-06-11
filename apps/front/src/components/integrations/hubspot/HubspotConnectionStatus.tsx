@@ -22,7 +22,9 @@ export const HubspotConnectionStatus = () => {
     data: authUrl,
     isLoading: isUrlLoading,
     refetch: refetchConnectUrl,
-  } = useHubspotConnectUrl()
+  } = useHubspotConnectUrl({
+    enabled: status === 'disconnected',
+  })
   const { mutate: disconnect, isPending: isDisconnecting } =
     useHubspotDisconnect()
 

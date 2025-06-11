@@ -37,13 +37,14 @@ export const useHubspotStatus = () => {
   )
 }
 
-export const useHubspotConnectUrl = () => {
+export const useHubspotConnectUrl = (options?: { enabled?: boolean }) => {
   return useApiQuery<OAuthConnectUrlResponse, string | null>(
     '/hubspot/oauth/connect-url',
     hubspotKeys.connectUrl(),
     {
       staleTime: 0,
       zodSchema: HubspotConnectUrlDisplaySchema,
+      enabled: options?.enabled,
     },
   )
 }
