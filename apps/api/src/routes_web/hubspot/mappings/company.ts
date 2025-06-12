@@ -7,13 +7,13 @@ import {
   type GetCompanyMappingsResponse,
   type GetCompanyPropertiesResponse,
 } from '@ritchy/types'
-import { getHubspotProperties } from 'apps/api/src/external/hubspot/properties'
-import { withHubspotClient } from 'apps/api/src/external/hubspot/token_manager'
-import { getHubspotToken } from 'apps/api/src/services/hubspot/get_hubspot_token'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../../db/db'
 import { hubspotFieldMapping } from '../../../db/schema'
+import { getHubspotProperties } from '../../../external/hubspot/properties'
+import { withHubspotClient } from '../../../external/hubspot/token_manager'
+import { getHubspotToken } from '../../../services/hubspot/get_hubspot_token'
 
 type CompanyMapping = {
   tokenId: string
