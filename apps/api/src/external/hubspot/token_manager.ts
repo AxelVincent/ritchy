@@ -8,17 +8,6 @@ import { createApiQueue } from '../utils/api_queue'
 import { hubspotRateLimiter } from '../utils/rate_limiter/config'
 import type { HubspotToken } from './oauth'
 
-// Types
-type TokenCache = {
-  token: HubspotToken
-  expiresAt: number
-}
-
-type TokenCacheStore = Map<string, TokenCache>
-
-// State
-export const tokenCache: TokenCacheStore = new Map()
-
 // Create API queue for HubSpot operations
 const hubspotQueue = createApiQueue(hubspotRateLimiter, {
   maxRetries: 3,
@@ -39,40 +28,32 @@ const getHubspotClient = async (userId: string): Promise<Client> => {
 }
 
 export const getValidToken = async (userId: string): Promise<HubspotToken> => {
-  // Try cache first
-  const cachedToken = getTokenCache(userId)
-  if (cachedToken) {
-    // If cached token is still valid, use it
-    if (
-      cachedToken.expiresAt >
-      Date.now() + HUBSPOT_CONFIG.CACHE.REFRESH_THRESHOLD
-    ) {
-      return cachedToken.token
-    }
-    // If cached token is stale, try to refresh it
-    try {
-      const newToken = await refreshToken(userId)
-      updateTokenCache(userId, newToken)
-      return newToken
-    } catch {
-      // If refresh fails, clear cache and fall back to database
-      clearTokenCache(userId)
-    }
-  }
-
-  // Fall back to database
   const [token] = await db
     .select()
     .from(hubspotToken)
     .where(eq(hubspotToken.userId, userId))
 
   if (!token) {
-    clearTokenCache(userId)
     throw new Error('No HubSpot token found for user')
   }
 
-  // Update cache with database token
-  updateTokenCache(userId, token)
+  // Check if token needs refresh
+  if (
+    token.expiresAt.getTime() <=
+    Date.now() + HUBSPOT_CONFIG.CACHE.REFRESH_THRESHOLD
+  ) {
+    try {
+      return await refreshToken(userId)
+    } catch (error) {
+      logger.error({
+        msg: 'Failed to refresh token during validation',
+        event: 'hubspot_token_refresh_error',
+        metadata: { error, userId },
+      })
+      throw error
+    }
+  }
+
   return token
 }
 
@@ -127,8 +108,6 @@ export const refreshToken = async (userId: string): Promise<HubspotToken> => {
       })
       .where(eq(hubspotToken.userId, userId))
 
-    // Update cache
-    updateTokenCache(userId, newToken)
     return newToken
   } catch (error) {
     logger.error({
@@ -147,22 +126,6 @@ export const refreshToken = async (userId: string): Promise<HubspotToken> => {
   }
 }
 
-// Cache Management Functions
-const updateTokenCache = (userId: string, token: HubspotToken): void => {
-  tokenCache.set(userId, {
-    token,
-    expiresAt: token.expiresAt.getTime(),
-  })
-}
-
-export const clearTokenCache = (userId: string): void => {
-  tokenCache.delete(userId)
-}
-
-const getTokenCache = (userId: string): TokenCache | undefined => {
-  return tokenCache.get(userId)
-}
-
 // Updated API Operation Wrapper with queue integration
 export const withHubspotClient = async <T>(
   userId: string,
@@ -170,7 +133,7 @@ export const withHubspotClient = async <T>(
   options: {
     retries?: number
     onRetry?: (error: unknown, attempt: number) => void
-    priority?: number // Added priority option for queue
+    priority?: number
   } = {},
 ): Promise<T> => {
   const { retries = 2, onRetry, priority = 0 } = options
@@ -191,8 +154,6 @@ export const withHubspotClient = async <T>(
         const hasRetriesLeft = attempt < retries
 
         if (isAuthError && hasRetriesLeft) {
-          // Clear cache and try to refresh token
-          clearTokenCache(userId)
           try {
             await refreshToken(userId)
             onRetry?.(error, attempt + 1)
@@ -208,7 +169,6 @@ export const withHubspotClient = async <T>(
                 attempt,
               },
             })
-            // If refresh fails, throw the original error
             throw error
           }
         }

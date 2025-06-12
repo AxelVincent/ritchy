@@ -17,11 +17,7 @@ import {
   createCustomHubspotProperties,
   deleteCustomHubspotProperties,
 } from '../../../external/hubspot/properties'
-import {
-  clearTokenCache,
-  getValidToken,
-  tokenCache,
-} from '../../../external/hubspot/token_manager'
+import { getValidToken } from '../../../external/hubspot/token_manager'
 
 const frontendBaseUrl = process.env.FRONTEND_BASE_URL
 
@@ -110,8 +106,6 @@ export const handleCallback = async (
     )
 
   if (!storedState || storedState.accessToken !== `oauth_state:${state}`) {
-    clearTokenCache(req.auth.userId)
-
     logger.error({
       msg: 'Invalid or expired state parameter',
       event: 'hubspot_oauth_state_error',
@@ -200,8 +194,6 @@ export const disconnect = async (
     await db
       .delete(hubspotToken)
       .where(eq(hubspotToken.userId, req.auth.userId))
-
-    tokenCache.delete(req.auth.userId)
 
     logger.info({
       msg: 'Successfully disconnected HubSpot integration and removed property',

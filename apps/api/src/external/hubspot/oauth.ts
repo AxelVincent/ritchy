@@ -6,7 +6,6 @@ import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
 import { createAllHubspotFieldMappings } from '../../services/hubspot/manage_hubspot_field_mapping'
-import { clearTokenCache, getValidToken, refreshToken } from './token_manager'
 
 // Types
 export type HubspotToken = InferSelectModel<typeof hubspotToken>
@@ -79,9 +78,6 @@ export const exchangeCodeForToken = async (
         },
       })
       .returning()
-
-    // Clear any existing cache for this user
-    clearTokenCache(userId)
 
     // Create all field mappings using the actual token ID
     await createAllHubspotFieldMappings(insertedToken.id)
