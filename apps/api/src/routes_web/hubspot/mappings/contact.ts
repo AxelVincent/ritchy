@@ -34,9 +34,7 @@ type ContactMappingInput = {
   updatedAt: Date
 }
 
-export const createDefaultMappings = (
-  tokenId: string,
-): ContactMappingInput[] => [
+const createDefaultMappings = (tokenId: string): ContactMappingInput[] => [
   // Contact fields
   ...Object.entries(FIELD_CONFIGS.contact).map(([field, config]) => ({
     tokenId,

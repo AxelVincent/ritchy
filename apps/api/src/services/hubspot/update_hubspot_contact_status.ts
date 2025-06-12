@@ -6,7 +6,7 @@ import {
   withHubspotClient,
 } from '../../external/hubspot/token_manager'
 import { createHubspotProperties } from './create_hubspot_properties'
-import { getHubspotContactMapping } from './get_hubspot_contact_mapping'
+import { getHubspotLeadMapping } from './sync/get_hubspot_lead_mapping'
 
 /**
  * Updates the status of a HubSpot contact
@@ -20,9 +20,9 @@ export const updateHubspotContactStatus = async (
   statusValue: InternalLeadStatus,
 ): Promise<void> => {
   const token = await getValidToken(req.auth.userId)
-  const [contactMapping] = await getHubspotContactMapping(placeId, token.id)
+  const [contactMapping] = await getHubspotLeadMapping(placeId, token.id)
 
-  if (!contactMapping) {
+  if (!contactMapping || !contactMapping.hubspotContactId) {
     logger.error({
       msg: 'Hubspot contact mapping not found',
       event: 'hubspot_contact_mapping_not_found',
@@ -44,8 +44,11 @@ export const updateHubspotContactStatus = async (
     metadata: { properties },
   })
   await withHubspotClient(req.auth.userId, async (client) => {
-    await client.crm.contacts.basicApi.update(contactMapping.hubspotContactId, {
-      properties,
-    })
+    await client.crm.contacts.basicApi.update(
+      String(contactMapping.hubspotContactId),
+      {
+        properties,
+      },
+    )
   })
 }

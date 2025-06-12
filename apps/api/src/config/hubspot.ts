@@ -28,5 +28,7 @@ export const HUBSPOT_CONFIG = {
     'crm.schemas.custom.read',
     'crm.objects.contacts.read',
     'crm.objects.contacts.write',
+    'crm.schemas.companies.write',
+    'crm.schemas.contacts.write',
   ],
 } as const

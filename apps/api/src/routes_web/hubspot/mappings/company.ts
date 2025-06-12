@@ -13,7 +13,7 @@ import { getHubspotToken } from 'apps/api/src/services/hubspot/get_hubspot_token
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../../db/db'
-import { hubspotCompanyMapping, hubspotFieldMapping } from '../../../db/schema'
+import { hubspotFieldMapping } from '../../../db/schema'
 
 type CompanyMapping = {
   tokenId: string

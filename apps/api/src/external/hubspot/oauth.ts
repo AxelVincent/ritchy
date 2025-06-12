@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
+import { createAllHubspotFieldMappings } from '../../services/hubspot/manage_hubspot_field_mapping'
 import { clearTokenCache, getValidToken, refreshToken } from './token_manager'
 
 // Types
@@ -59,8 +60,8 @@ export const exchangeCodeForToken = async (
       updatedAt: new Date(data.updated_at),
     }
 
-    // Use upsert instead of insert
-    await db
+    // Use upsert instead of insert and capture the returned token
+    const [insertedToken] = await db
       .insert(hubspotToken)
       .values({
         userId,
@@ -77,9 +78,13 @@ export const exchangeCodeForToken = async (
           updatedAt: new Date(),
         },
       })
+      .returning()
 
     // Clear any existing cache for this user
     clearTokenCache(userId)
+
+    // Create all field mappings using the actual token ID
+    await createAllHubspotFieldMappings(insertedToken.id)
 
     return mappedToken
   } catch (error) {
