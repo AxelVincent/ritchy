@@ -14,6 +14,10 @@ import {
   getAuthUrl,
 } from '../../../external/hubspot/oauth'
 import {
+  createCustomHubspotProperties,
+  deleteCustomHubspotProperties,
+} from '../../../external/hubspot/properties'
+import {
   clearTokenCache,
   getValidToken,
   tokenCache,
@@ -133,8 +137,12 @@ export const handleCallback = async (
 
   try {
     await exchangeCodeForToken(code, req.auth.userId)
+
+    // Create HubSpot client and property after successful token exchange
+    await createCustomHubspotProperties(req.auth.userId)
+
     logger.info({
-      msg: 'Successfully completed HubSpot OAuth flow',
+      msg: 'Successfully completed HubSpot OAuth flow and created property',
       event: 'hubspot_oauth_success',
       metadata: { userId: req.auth.userId },
     })
@@ -186,6 +194,9 @@ export const disconnect = async (
   res: Response<OAuthDisconnectResponse>,
 ): Promise<void> => {
   try {
+    // Delete property before removing token
+    await deleteCustomHubspotProperties(req.auth.userId)
+
     await db
       .delete(hubspotToken)
       .where(eq(hubspotToken.userId, req.auth.userId))
@@ -193,7 +204,7 @@ export const disconnect = async (
     tokenCache.delete(req.auth.userId)
 
     logger.info({
-      msg: 'Successfully disconnected HubSpot integration',
+      msg: 'Successfully disconnected HubSpot integration and removed property',
       event: 'hubspot_disconnect_success',
       metadata: { userId: req.auth.userId },
     })
