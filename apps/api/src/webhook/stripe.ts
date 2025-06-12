@@ -286,9 +286,11 @@ export const stripeWebhook = async (
                   plan: planType,
                 })
                 .onConflictDoUpdate({
-                  target: subscription.stripeSubscriptionId,
+                  target: subscription.userId,
                   set: {
+                    stripeSubscriptionId,
                     stripePriceId,
+                    stripeCustomerId,
                     status,
                     plan: planType,
                     updatedAt: new Date(),
