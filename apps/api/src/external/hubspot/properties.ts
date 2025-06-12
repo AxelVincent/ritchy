@@ -2,7 +2,7 @@ import type { Client } from '@hubspot/api-client'
 import {
   PropertyCreateFieldTypeEnum,
   PropertyCreateTypeEnum,
-} from '@hubspot/api-client/lib/codegen/crm/properties'
+} from '@hubspot/api-client/lib/codegen/crm/properties/index.js'
 import { logger } from '@ritchy/logger'
 import { z } from 'zod'
 import { withHubspotClient } from './token_manager'
