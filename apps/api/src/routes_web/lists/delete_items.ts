@@ -11,7 +11,9 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
-import { createVersionedDb } from '../../db/versioned_db/client'
+import {
+  createVersionedDbFromRequest,
+} from '../../db/versioned_db/client'
 
 export const deleteItemsFromList = async (
   req: Request<
@@ -58,7 +60,7 @@ export const deleteItemsFromList = async (
       return
     }
 
-    const versionedDb = createVersionedDb(req)
+    const versionedDb = createVersionedDbFromRequest(req)
 
     // Get the listPlace records to delete
     const listPlaces = await db

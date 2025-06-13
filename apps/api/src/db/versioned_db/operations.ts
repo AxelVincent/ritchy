@@ -20,7 +20,6 @@ import {
   prepareVersionMetadata,
 } from './utils/helpers'
 import { getLatestVersion, getRecordById } from './utils/helpers'
-import { processBulkOperationInChunks } from './utils/helpers'
 import { validateVersionOperation } from './utils/validation'
 
 const createOperations = (context: VersionContext) => ({

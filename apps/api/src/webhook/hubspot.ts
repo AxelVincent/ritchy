@@ -5,6 +5,9 @@ import type { Request, Response } from 'express'
 import { HUBSPOT_CONFIG } from '../config/hubspot'
 import { db } from '../db/db'
 import { webhookEvent } from '../db/schema'
+import { upsertStatus } from '../services/places/status/upsert_status'
+import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
+import { LEAD_STATUS_MAPPING, type HubspotLeadStatus, type InternalLeadStatus } from '@ritchy/types'
 
 type WebhookResponse = {
   received?: boolean
@@ -30,16 +33,15 @@ type HubSpotWebhookEvent = {
 /**
  * Verifies the HubSpot webhook signature
  * @param req - The request object
- * @param signature - The signature from the X-HubSpot-Signature-v3 header
  * @param clientSecret - The HubSpot client secret
  * @returns boolean indicating if the signature is valid
  */
 const verifyHubSpotSignature = (
   req: Request,
-  signature: string,
   clientSecret: string,
 ): boolean => {
   const MAX_ALLOWED_TIMESTAMP = 300000 // 5 minutes in milliseconds
+  const signature = req.headers['x-hubspot-signature-v3'] as string
   const timestamp = req.headers['x-hubspot-request-timestamp'] as string
   const currentTime = Date.now()
 
@@ -53,9 +55,28 @@ const verifyHubSpotSignature = (
     return false
   }
 
-  // Concatenate request method, URI, body, and header timestamp
-  const uri = `https://${req.hostname}${req.url}`
-  const rawString = `${req.method}${uri}${JSON.stringify(req.body)}${timestamp}`
+  // Get the raw body as string - handle both Buffer and parsed JSON
+  const bodyString = Buffer.isBuffer(req.body)
+    ? req.body.toString('utf8')
+    : JSON.stringify(req.body)
+
+  // Use the full path including /webhook/
+  const uri = HUBSPOT_CONFIG.WEBHOOK_URL
+  const rawString = `${req.method}${uri}${bodyString}${timestamp}`
+
+  // Log the exact string we're using for verification
+  logger.debug({
+    msg: 'HubSpot signature verification details',
+    event: 'webhook_signature_debug',
+    metadata: {
+      method: req.method,
+      uri,
+      timestamp,
+      bodyString,
+      rawString,
+      signature,
+    },
+  })
 
   // Create HMAC SHA-256 hash
   const hashedString = crypto
@@ -63,21 +84,56 @@ const verifyHubSpotSignature = (
     .update(rawString)
     .digest('base64')
 
-  return crypto.timingSafeEqual(
+  const isValid = crypto.timingSafeEqual(
     Buffer.from(hashedString),
     Buffer.from(signature),
   )
+
+  if (!isValid) {
+    logger.error({
+      msg: 'HubSpot signature verification failed',
+      event: 'webhook_signature_mismatch',
+      metadata: {
+        expectedSignature: signature,
+        calculatedSignature: hashedString,
+        rawString,
+        config: HUBSPOT_CONFIG,
+        headers: req.headers,
+        components: {
+          method: req.method,
+          uri,
+          bodyString,
+          timestamp,
+          rawString,
+        },
+      },
+    })
+  }
+
+  return isValid
 }
 
 export const hubspotWebhook = async (
   req: Request,
   res: Response<WebhookResponse>,
 ): Promise<void> => {
+  // Parse the raw body to JSON
+  const body = Buffer.isBuffer(req.body)
+    ? JSON.parse(req.body.toString('utf8'))
+    : req.body
+
+  // Handle batch of events
+  const events = Array.isArray(body) ? body : ([body] as HubSpotWebhookEvent[])
+
+  const batchId = crypto.randomUUID()
+
   logger.info({
     msg: 'HubSpot webhook received',
     event: 'webhook_received',
     metadata: {
-      eventType: req.body?.subscriptionType,
+      events,
+      eventCount: events.length,
+      eventTypes: events.map((e) => e.subscriptionType),
       webhookKey: res.locals.webhookKey,
     },
   })
@@ -97,11 +153,7 @@ export const hubspotWebhook = async (
   }
 
   try {
-    const isValid = verifyHubSpotSignature(
-      req,
-      signature,
-      HUBSPOT_CONFIG.CLIENT_SECRET,
-    )
+    const isValid = verifyHubSpotSignature(req, HUBSPOT_CONFIG.CLIENT_SECRET)
 
     if (!isValid) {
       logger.error({
@@ -118,138 +170,178 @@ export const hubspotWebhook = async (
       return
     }
 
+    // Process each event individually
+    const results = await Promise.all(
+      events.map(async (event) => {
+        const { record, isDuplicate } = await validateWebhookIdempotency(
+          req.headers,
+          event,
+          event.subscriptionType,
+        )
+
+        if (isDuplicate) {
+          return {
+            status: 'already_processed',
+            eventId: event.eventId,
+            webhookId: record.id,
+          }
+        }
+
+        try {
+          // Process the event
+          switch (event.subscriptionType) {
+            case 'object.propertyChange':
+              if (event.propertyName === 'hs_lead_status') {
+                // Find the lead mapping record
+                const leadMapping = await db.query.hubspotLeadMapping.findFirst(
+                  {
+                    where: (mapping, { or, eq }) =>
+                      or(
+                        eq(mapping.hubspotCompanyId, event.objectId.toString()),
+                        eq(mapping.hubspotContactId, event.objectId.toString()),
+                      ),
+                  },
+                )
+
+                if (!leadMapping) {
+                  logger.warn({
+                    msg: 'No lead mapping found for HubSpot object',
+                    event: 'hubspot_lead_mapping_not_found',
+                    metadata: {
+                      objectId: event.objectId,
+                      propertyName: event.propertyName,
+                      propertyValue: event.propertyValue,
+                    },
+                  })
+                  break
+                }
+
+                // Get the token to find the userId
+                const token = await db.query.hubspotToken.findFirst({
+                  where: (token, { eq }) => eq(token.id, leadMapping.tokenId),
+                })
+
+                if (!token) {
+                  logger.error({
+                    msg: 'No HubSpot token found for lead mapping',
+                    event: 'hubspot_token_not_found',
+                    metadata: {
+                      leadMappingId: leadMapping.id,
+                      tokenId: leadMapping.tokenId,
+                    },
+                  })
+                  break
+                }
+
+                // Get the user from the token
+                const user = await db.query.user.findFirst({
+                  where: (user, { eq }) => eq(user.id, token.userId),
+                })
+
+                if (!user) {
+                  logger.error({
+                    msg: 'No user found for HubSpot token',
+                    event: 'hubspot_user_not_found',
+                    metadata: {
+                      tokenId: token.id,
+                      userId: token.userId,
+                    },
+                  })
+                  break
+                }
+
+                // Create reverse mapping from HubSpot to internal status
+                const reverseStatusMapping = Object.fromEntries(
+                  Object.entries(LEAD_STATUS_MAPPING).map(([internal, hubspot]) => [hubspot, internal])
+                ) as Record<HubspotLeadStatus, InternalLeadStatus>
+
+                const newStatus = reverseStatusMapping[event.propertyValue as HubspotLeadStatus] ?? 'NEW'
+
+                // Update the status using the existing upsertStatus function
+                await upsertStatus(
+                  {
+                    userId: user.id,
+                    sessionId: req.auth.sessionId,
+                    changeSource: 'integration',
+                    metadata: {
+                      ...req.metadata,
+                    },
+                    additionalContext: {
+                      hubspotEvent: event,
+                    },
+                    bulkOperationId: batchId,
+                  },
+                  leadMapping.placeId,
+                  newStatus,
+                )
+
+                logger.info({
+                  msg: 'Updated place status from HubSpot webhook',
+                  event: 'hubspot_status_update',
+                  metadata: {
+                    placeId: leadMapping.placeId,
+                    userId: user.id,
+                    oldStatus: event.propertyValue,
+                    newStatus,
+                  },
+                })
+              }
+              logger.info({
+                msg: 'Processing object property change event',
+                event: 'object_property_change_event_processing',
+                metadata: {
+                  event,
+                },
+              })
+              break
+            default:
+              logger.info({
+                msg: `Unsupported event type: ${event.subscriptionType}`,
+                event: 'unsupported_event_type',
+                metadata: {
+                  event,
+                },
+              })
+              break
+          }
+          return {
+            status: 'processed',
+            eventId: event.eventId,
+            webhookId: record.id,
+          }
+        } catch (error) {
+          // Update webhook record if processing failed
+          await db
+            .update(webhookEvent)
+            .set({
+              status: 'failed',
+              error: error instanceof Error ? error.message : String(error),
+            })
+            .where(eq(webhookEvent.id, record.id))
+
+          throw error
+        }
+      }),
+    )
+
     logger.info({
-      msg: 'Webhook signature verified successfully',
-      event: 'webhook_signature_verified',
+      msg: 'HubSpot webhook processed',
+      event: 'webhook_processed',
       metadata: {
-        eventType: req.body?.subscriptionType,
+        eventCount: events.length,
+        eventTypes: events.map((e) => e.subscriptionType),
         webhookKey: res.locals.webhookKey,
+        results: results.map((r) => ({
+          eventId: r.eventId,
+          status: r.status,
+          webhookId: r.webhookId,
+        })),
       },
     })
 
-    const [webhookRecord] = await db
-      .insert(webhookEvent)
-      .values({
-        type: req.body?.subscriptionType,
-        service: 'hubspot',
-        payload: req.body,
-        idempotencyKey: res.locals.webhookKey,
-        status: 'processed',
-        processedAt: new Date(),
-      })
-      .returning()
-
-    logger.info({
-      msg: 'Webhook record created',
-      event: 'webhook_record_created',
-      metadata: {
-        webhookId: webhookRecord.id,
-        eventType: req.body?.subscriptionType,
-        webhookKey: res.locals.webhookKey,
-      },
+    res.json({
+      received: true,
     })
-
-    try {
-      const event = req.body as HubSpotWebhookEvent
-
-      // Process different types of HubSpot webhook events
-      switch (event.subscriptionType) {
-        case 'contact.creation':
-        case 'contact.propertyChange':
-        case 'contact.deletion': {
-          logger.info({
-            msg: 'Processing contact event',
-            event: 'contact_event_processing',
-            metadata: {
-              eventType: event.subscriptionType,
-              objectId: event.objectId,
-              propertyName: event.propertyName,
-              propertyValue: event.propertyValue,
-            },
-          })
-          // TODO: Implement contact event handling
-          // This could include:
-          // - Syncing contact data with your database
-          // - Triggering notifications
-          // - Updating related records
-          break
-        }
-
-        case 'company.creation':
-        case 'company.propertyChange':
-        case 'company.deletion': {
-          logger.info({
-            msg: 'Processing company event',
-            event: 'company_event_processing',
-            metadata: {
-              eventType: event.subscriptionType,
-              objectId: event.objectId,
-              propertyName: event.propertyName,
-              propertyValue: event.propertyValue,
-            },
-          })
-          // TODO: Implement company event handling
-          // This could include:
-          // - Syncing company data with your database
-          // - Updating related contacts
-          // - Triggering notifications
-          break
-        }
-
-        case 'deal.creation':
-        case 'deal.propertyChange':
-        case 'deal.deletion': {
-          logger.info({
-            msg: 'Processing deal event',
-            event: 'deal_event_processing',
-            metadata: {
-              eventType: event.subscriptionType,
-              objectId: event.objectId,
-              propertyName: event.propertyName,
-              propertyValue: event.propertyValue,
-            },
-          })
-          // TODO: Implement deal event handling
-          // This could include:
-          // - Syncing deal data with your database
-          // - Updating related contacts/companies
-          // - Triggering notifications
-          break
-        }
-
-        default: {
-          logger.warn({
-            msg: 'Unhandled HubSpot webhook event',
-            event: 'webhook_unhandled_event',
-            metadata: { eventType: event.subscriptionType },
-          })
-        }
-      }
-
-      logger.info({
-        msg: 'Webhook processed successfully',
-        event: 'webhook_processed',
-        metadata: {
-          eventType: event.subscriptionType,
-          webhookKey: res.locals.webhookKey,
-        },
-      })
-
-      res.json({ received: true })
-    } catch (processingError) {
-      await db
-        .update(webhookEvent)
-        .set({
-          status: 'failed',
-          error:
-            processingError instanceof Error
-              ? processingError.message
-              : String(processingError),
-        })
-        .where(eq(webhookEvent.id, webhookRecord.id))
-
-      throw processingError
-    }
   } catch (err) {
     logger.error({
       msg: 'Error processing webhook',

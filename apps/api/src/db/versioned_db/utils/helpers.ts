@@ -15,18 +15,18 @@ import type {
   VersionContext,
 } from '../types'
 
-export const getContextFromRequest = (req?: Request): VersionContext =>
-  req
-    ? {
-        userId: req.auth?.userId,
-        sessionId: req.auth?.sessionId,
-        ipAddress: req.metadata?.ipAddress,
-        userAgent: req.metadata?.userAgent,
-        requestId: req.metadata?.requestId,
-        changeSource: 'user',
-        bulkOperationId: req.body?.bulkOperationId,
-      }
-    : { changeSource: 'system' }
+export const getContextFromRequest = (req: Request): VersionContext => ({
+  userId: req.auth.userId,
+  sessionId: req.auth.sessionId,
+  changeSource: 'user',
+  metadata: {
+    ipAddress: req.metadata.ipAddress,
+    userAgent: req.metadata.userAgent,
+    requestId: req.metadata.requestId,
+    timestamp: req.metadata.timestamp,
+  },
+  bulkOperationId: req.body?.bulkOperationId,
+})
 
 /**
  * Gets the latest version number for a record

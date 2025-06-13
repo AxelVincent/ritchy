@@ -1,18 +1,22 @@
 import { z } from 'zod'
 
 const envSchema = z.object({
+  HUBSPOT_APP_ID: z.string().min(1),
   HUBSPOT_CLIENT_ID: z.string().min(1),
   HUBSPOT_CLIENT_SECRET: z.string().min(1),
+  HUBSPOT_WEBHOOK_URL: z.string().min(1),
 })
 
 const env = envSchema.parse(process.env)
 
 export const HUBSPOT_CONFIG = {
+  APP_ID: env.HUBSPOT_APP_ID,
   CLIENT_ID: env.HUBSPOT_CLIENT_ID,
   CLIENT_SECRET: env.HUBSPOT_CLIENT_SECRET,
   REDIRECT_URI: new URL(
     `${process.env.FRONTEND_BASE_URL}/integrations/hubspot/callback`,
   ).toString(),
+  WEBHOOK_URL: env.HUBSPOT_WEBHOOK_URL,
   API: {
     BASE_URL: 'https://api.hubapi.com',
     AUTH_URL: 'https://app.hubspot.com/oauth/authorize',

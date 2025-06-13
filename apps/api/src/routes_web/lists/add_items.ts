@@ -6,13 +6,14 @@ import {
   type AddItemsToListRequestParams,
   type AddItemsToListResponse,
 } from '@ritchy/types'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
-import { listPlace } from '../../db/schema'
 import { list } from '../../db/schema'
-import { createVersionedDb } from '../../db/versioned_db/client'
+import {
+  createVersionedDbFromRequest,
+} from '../../db/versioned_db/client'
 
 export const addItemsToList = async (
   req: Request<
@@ -59,7 +60,7 @@ export const addItemsToList = async (
       return
     }
 
-    const versionedDb = createVersionedDb(req)
+    const versionedDb = createVersionedDbFromRequest(req)
     const { records, operations } = await versionedDb.bulkUpsert(
       'listPlace',
       items.map((item) => ({

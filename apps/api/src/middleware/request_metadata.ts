@@ -19,7 +19,7 @@ export const addRequestMetadata = (
     // Add metadata to request object
     req.metadata = {
       ipAddress: req.ip ?? 'unknown',
-      userAgent: req.headers['user-agent'],
+      userAgent: req.headers['user-agent'] ?? 'unknown',
       requestId,
       timestamp,
     }
