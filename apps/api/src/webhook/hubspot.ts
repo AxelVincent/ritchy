@@ -1,5 +1,10 @@
 import crypto from 'node:crypto'
 import { logger } from '@ritchy/logger'
+import {
+  type HubspotLeadStatus,
+  type InternalLeadStatus,
+  LEAD_STATUS_MAPPING,
+} from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { HUBSPOT_CONFIG } from '../config/hubspot'
@@ -7,7 +12,6 @@ import { db } from '../db/db'
 import { webhookEvent } from '../db/schema'
 import { upsertStatus } from '../services/places/status/upsert_status'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
-import { LEAD_STATUS_MAPPING, type HubspotLeadStatus, type InternalLeadStatus } from '@ritchy/types'
 
 type WebhookResponse = {
   received?: boolean
@@ -252,10 +256,15 @@ export const hubspotWebhook = async (
 
                 // Create reverse mapping from HubSpot to internal status
                 const reverseStatusMapping = Object.fromEntries(
-                  Object.entries(LEAD_STATUS_MAPPING).map(([internal, hubspot]) => [hubspot, internal])
+                  Object.entries(LEAD_STATUS_MAPPING).map(
+                    ([internal, hubspot]) => [hubspot, internal],
+                  ),
                 ) as Record<HubspotLeadStatus, InternalLeadStatus>
 
-                const newStatus = reverseStatusMapping[event.propertyValue as HubspotLeadStatus] ?? 'NEW'
+                const newStatus =
+                  reverseStatusMapping[
+                    event.propertyValue as HubspotLeadStatus
+                  ] ?? 'NEW'
 
                 // Update the status using the existing upsertStatus function
                 await upsertStatus(

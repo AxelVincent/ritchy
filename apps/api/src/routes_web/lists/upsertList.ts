@@ -9,9 +9,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list } from '../../db/schema'
-import {
-  createVersionedDbFromRequest,
-} from '../../db/versioned_db/client'
+import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 
 export const upsertList = async (
   req: Request<Record<string, never>, UpsertListApiResponse, UpsertListRequest>,

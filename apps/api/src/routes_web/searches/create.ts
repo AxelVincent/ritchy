@@ -10,9 +10,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
-import {
-  createVersionedDbFromRequest,
-} from '../../db/versioned_db/client'
+import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 import { getUserPlan } from '../../services/subscription'
 import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
 import { type PlanType, hasModelAccess } from '../../utils/plan-access'

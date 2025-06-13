@@ -30,7 +30,9 @@ const getHubspotClient = async (userId: string): Promise<Client> => {
   return new Client({ accessToken: token.accessToken })
 }
 
-export const getValidToken = async (userId: string): Promise<HubspotToken | null> => {
+export const getValidToken = async (
+  userId: string,
+): Promise<HubspotToken | null> => {
   const [token] = await db
     .select()
     .from(hubspotToken)
@@ -42,7 +44,7 @@ export const getValidToken = async (userId: string): Promise<HubspotToken | null
       event: 'hubspot_token_not_found',
       metadata: { userId },
     })
-    throw new Error('No HubSpot token found for user')
+    return null
   }
 
   // Check if token needs refresh
@@ -58,7 +60,7 @@ export const getValidToken = async (userId: string): Promise<HubspotToken | null
         event: 'hubspot_token_refresh_error',
         metadata: { error, userId },
       })
-      throw error
+      return null
     }
   }
 

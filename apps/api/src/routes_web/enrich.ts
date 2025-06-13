@@ -8,9 +8,7 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
-import {
-  createVersionedDbFromRequest,
-} from '../db/versioned_db/client'
+import { createVersionedDbFromRequest } from '../db/versioned_db/client'
 import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
 
 /**

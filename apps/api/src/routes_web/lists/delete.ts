@@ -7,9 +7,7 @@ import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { list } from '../../db/schema'
-import {
-  createVersionedDbFromRequest,
-} from '../../db/versioned_db/client'
+import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 
 export const deleteList = async (
   req: Request<DeleteListRequestParams>,
