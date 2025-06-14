@@ -1,6 +1,6 @@
 import { Client } from '@hubspot/api-client'
 import { logger } from '@ritchy/logger'
-import { eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
@@ -36,11 +36,17 @@ export const getValidToken = async (
   const [token] = await db
     .select()
     .from(hubspotToken)
-    .where(eq(hubspotToken.userId, userId))
+    .where(
+      and(
+        eq(hubspotToken.userId, userId),
+        // Exclude state tokens
+        sql`${hubspotToken.accessToken} NOT LIKE 'oauth_state:%'`,
+      ),
+    )
 
   if (!token) {
     logger.error({
-      msg: 'No HubSpot token found for user',
+      msg: 'No valid HubSpot token found for user',
       event: 'hubspot_token_not_found',
       metadata: { userId },
     })

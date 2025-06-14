@@ -38,13 +38,15 @@ export const useHubspotStatus = () => {
 }
 
 export const useHubspotConnectUrl = (options?: { enabled?: boolean }) => {
+  const { data: status } = useHubspotStatus()
+
   return useApiQuery<OAuthConnectUrlResponse, string | null>(
     '/hubspot/oauth/connect-url',
     hubspotKeys.connectUrl(),
     {
       staleTime: 0,
       zodSchema: HubspotConnectUrlDisplaySchema,
-      enabled: options?.enabled,
+      enabled: options?.enabled && status === 'disconnected',
     },
   )
 }

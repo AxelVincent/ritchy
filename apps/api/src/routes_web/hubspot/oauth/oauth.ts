@@ -26,6 +26,22 @@ export const getConnectUrl = async (
   res: Response<OAuthConnectUrlResponse>,
 ): Promise<void> => {
   try {
+    // First check if there's a valid token
+    const existingToken = await getValidToken(req.auth.userId)
+    if (existingToken) {
+      // If there's a valid token, return an error
+      logger.info({
+        msg: 'Attempted to get connect URL while already connected',
+        event: 'hubspot_connect_url_already_connected',
+        metadata: { userId: req.auth.userId },
+      })
+      res.status(400).json({
+        error: 'Already connected',
+        message: 'Please disconnect before connecting again',
+      })
+      return
+    }
+
     const state = crypto.randomUUID()
     const sessionId = req.auth.sessionId
 
@@ -39,6 +55,7 @@ export const getConnectUrl = async (
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     }
 
+    // Now we can safely upsert since we know there's no valid token
     await db
       .insert(hubspotToken)
       .values({
