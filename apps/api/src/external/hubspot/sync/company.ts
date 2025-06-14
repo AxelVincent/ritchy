@@ -17,6 +17,9 @@ export const createOrUpdateCompaniesBatch = async (
   client: Client,
 ): Promise<HubspotBase[]> => {
   const token = await getValidToken(userId)
+  if (!token) {
+    throw new Error('No HubSpot token found for user')
+  }
   const batchId = crypto.randomUUID()
 
   logger.info({

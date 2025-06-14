@@ -24,17 +24,27 @@ const hubspotQueue = createApiQueue(hubspotRateLimiter, {
 // Token Management Functions
 const getHubspotClient = async (userId: string): Promise<Client> => {
   const token = await getValidToken(userId)
+  if (!token) {
+    throw new Error('No HubSpot token found for user')
+  }
   return new Client({ accessToken: token.accessToken })
 }
 
-export const getValidToken = async (userId: string): Promise<HubspotToken> => {
+export const getValidToken = async (
+  userId: string,
+): Promise<HubspotToken | null> => {
   const [token] = await db
     .select()
     .from(hubspotToken)
     .where(eq(hubspotToken.userId, userId))
 
   if (!token) {
-    throw new Error('No HubSpot token found for user')
+    logger.error({
+      msg: 'No HubSpot token found for user',
+      event: 'hubspot_token_not_found',
+      metadata: { userId },
+    })
+    return null
   }
 
   // Check if token needs refresh
@@ -50,14 +60,14 @@ export const getValidToken = async (userId: string): Promise<HubspotToken> => {
         event: 'hubspot_token_refresh_error',
         metadata: { error, userId },
       })
-      throw error
+      return null
     }
   }
 
   return token
 }
 
-export const refreshToken = async (userId: string): Promise<HubspotToken> => {
+const refreshToken = async (userId: string): Promise<HubspotToken> => {
   try {
     const [currentToken] = await db
       .select()

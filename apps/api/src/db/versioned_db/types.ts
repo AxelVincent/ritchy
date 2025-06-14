@@ -18,14 +18,17 @@ export type BulkUpsertResult<T extends TableName> = {
 }
 
 export interface VersionContext {
-  userId?: string
-  sessionId?: string
-  ipAddress?: string
-  userAgent?: string
-  changeSource?: ChangeSource
-  requestId?: string
-  additionalContext?: Record<string, unknown>
+  userId: string
+  sessionId: string
+  changeSource: ChangeSource
   bulkOperationId?: string
+  metadata: {
+    timestamp: Date
+    ipAddress: string
+    userAgent: string
+    requestId: string
+  }
+  additionalContext?: Record<string, unknown>
 }
 
 export type InferTable<T extends TableName> = (typeof schema)[T]

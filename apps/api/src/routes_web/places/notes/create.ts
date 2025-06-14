@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import type { AddNoteApiResponse, AddNoteRequest } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { createVersionedDb } from '../../../db/versioned_db/client'
+import { createVersionedDbFromRequest } from '../../../db/versioned_db/client'
 
 export const addPlaceNote = async (
   req: Request<AddNoteRequest>,
@@ -21,7 +21,7 @@ export const addPlaceNote = async (
     const { note } = req.body
     const { placeId } = req.params
 
-    const db = createVersionedDb(req)
+    const db = createVersionedDbFromRequest(req)
     const result = await db.insert('note', {
       placeId,
       note,

@@ -36,7 +36,12 @@ import type { Request } from 'express'
 import { db } from '../db'
 import type * as schema from '../schema'
 import createOperations from './operations'
-import type { InferInsert, InferTable, TableName } from './types'
+import type {
+  InferInsert,
+  InferTable,
+  TableName,
+  VersionContext,
+} from './types'
 import { getContextFromRequest } from './utils/helpers'
 
 // Transaction wrapper
@@ -54,12 +59,10 @@ const withTransaction = async <T>(
  * For detailed documentation about the version history system and its operations,
  * see: docs/version-history.md
  *
- * @param req - Express request object (optional). If provided, request metadata
- *             (IP, user agent, etc.) will be included in version history.
+ * @param context - Version context containing metadata about the operation
  * @returns A versioned database client with methods for tracked operations
  */
-export const createVersionedDb = (req?: Request) => {
-  const context = getContextFromRequest(req)
+export const createVersionedDb = (context: VersionContext) => {
   const operations = createOperations(context)
 
   return {
@@ -111,4 +114,10 @@ export const createVersionedDb = (req?: Request) => {
       ) => Promise<T>,
     ) => withTransaction(async (db) => fn({ ...operations, db })),
   }
+}
+
+// Helper function to create versioned DB from request (for HTTP routes)
+export const createVersionedDbFromRequest = (req: Request) => {
+  const context = getContextFromRequest(req)
+  return createVersionedDb(context)
 }

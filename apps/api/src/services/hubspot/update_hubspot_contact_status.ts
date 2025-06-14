@@ -1,6 +1,5 @@
 import { logger } from '@ritchy/logger'
-import { type InternalLeadStatus, StatusFieldEnum } from '@ritchy/types'
-import type { Request } from 'express'
+import type { InternalLeadStatus } from '@ritchy/types'
 import {
   getValidToken,
   withHubspotClient,
@@ -10,16 +9,24 @@ import { getHubspotLeadMapping } from './sync/get_hubspot_lead_mapping'
 
 /**
  * Updates the status of a HubSpot contact
- * @param req - Express request object containing user authentication
+ * @param userId - The user ID associated with the contact
  * @param placeId - The place ID associated with the contact
  * @param statusValue - The new status value (e.g., 'NEW', 'INTERESTED', etc.)
  */
 export const updateHubspotContactStatus = async (
-  req: Request,
+  userId: string,
   placeId: string,
   statusValue: InternalLeadStatus,
 ): Promise<void> => {
-  const token = await getValidToken(req.auth.userId)
+  const token = await getValidToken(userId)
+  if (!token) {
+    logger.info({
+      msg: 'No HubSpot token found for user',
+      event: 'hubspot_token_not_found',
+      metadata: { userId },
+    })
+    return
+  }
   const [contactMapping] = await getHubspotLeadMapping(placeId, token.id)
 
   if (!contactMapping || !contactMapping.hubspotContactId) {
@@ -43,7 +50,7 @@ export const updateHubspotContactStatus = async (
     event: 'hubspot_properties',
     metadata: { properties },
   })
-  await withHubspotClient(req.auth.userId, async (client) => {
+  await withHubspotClient(userId, async (client) => {
     await client.crm.contacts.basicApi.update(
       String(contactMapping.hubspotContactId),
       {

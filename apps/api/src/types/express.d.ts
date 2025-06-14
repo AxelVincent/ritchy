@@ -13,7 +13,7 @@ declare global {
       rawBody: Buffer
       metadata: {
         ipAddress: string
-        userAgent: string | undefined
+        userAgent: string
         requestId: string
         timestamp: Date
       }

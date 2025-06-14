@@ -10,7 +10,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
-import { createVersionedDb } from '../../db/versioned_db/client'
+import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 import { getUserPlan } from '../../services/subscription'
 import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
 import { type PlanType, hasModelAccess } from '../../utils/plan-access'
@@ -99,7 +99,7 @@ export const createSearch = async (
       }
     }
 
-    const versionedDb = createVersionedDb(req)
+    const versionedDb = createVersionedDbFromRequest(req)
     const result = await versionedDb.insert('search', {
       userId: req.auth.userId,
       placeName: parsedBody.placeName,
