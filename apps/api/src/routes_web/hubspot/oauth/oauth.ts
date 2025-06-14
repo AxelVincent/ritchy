@@ -57,7 +57,7 @@ export const getConnectUrl = async (
     logger.info({
       msg: 'Generated HubSpot connection URL',
       event: 'hubspot_connect_url_generated',
-      metadata: { userId: req.auth.userId, state },
+      metadata: { userId: req.auth.userId, state, authUrl },
     })
 
     res.json({ authUrl })
