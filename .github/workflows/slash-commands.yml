@@ -10,4 +10,18 @@ jobs:
       - uses: wow-actions/slash-commands@v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG_FILE: .github/slash-commands.yml 
+          COMMANDS: |
+            pulls:
+              review:
+                dispatch: true
+                comment: |
+                  🤖 **Claude PR Assistant** is analyzing your PR...
+
+                  This will:
+                  - Review code quality and best practices
+                  - Generate PR description (if needed)
+                  - Provide detailed feedback
+                  - Show cost analysis
+
+                  Please wait while Claude processes your changes.
+                reactions: ['robot', 'eyes']
