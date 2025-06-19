@@ -3,7 +3,7 @@ pulls:
   review:
     # Trigger the Claude PR Assistant workflow
     dispatch: true
-    # Post a comment to acknowledge the command
+    # Post a comment to acknowledge the command and trigger the workflow
     comment: |
       🤖 **Claude PR Assistant** is analyzing your PR...
       
