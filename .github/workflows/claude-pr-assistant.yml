@@ -178,49 +178,43 @@ jobs:
           if [ -f "/home/runner/work/_temp/claude-execution-output.json" ]; then
             echo "Debug: Found execution output file"
             
-            # Show file structure for debugging
-            echo "Debug: File structure (first 3 lines):"
-            head -3 "/home/runner/work/_temp/claude-execution-output.json"
-            
             if command -v jq >/dev/null 2>&1; then
               echo "Debug: jq is available"
               
-              # The file contains an array, so we need to look for the result object
-              # Find the object with "type": "result" and extract cost info
-              RESULT_OBJECT=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq '.[] | select(.type == "result")' 2>/dev/null)
+              # Extract all result objects and sum their costs
+              RESULT_OBJECTS=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq '[.[] | select(.type == "result")]' 2>/dev/null)
               
-              if [ ! -z "$RESULT_OBJECT" ] && [ "$RESULT_OBJECT" != "null" ]; then
-                echo "Debug: Found result object"
+              if [ ! -z "$RESULT_OBJECTS" ] && [ "$RESULT_OBJECTS" != "null" ] && [ "$RESULT_OBJECTS" != "[]" ]; then
+                echo "Debug: Found result objects"
                 
-                # Extract total cost from result object
-                COST=$(echo "$RESULT_OBJECT" | jq -r '.total_cost_usd // empty' 2>/dev/null)
-                echo "Debug: Extracted cost: '$COST'"
+                # Sum all costs
+                TOTAL_COST=$(echo "$RESULT_OBJECTS" | jq 'map(.total_cost_usd // 0) | add' 2>/dev/null || echo "0")
+                echo "Debug: Total cost from all results: $TOTAL_COST"
                 
-                if [ ! -z "$COST" ] && [ "$COST" != "null" ] && [ "$COST" != "empty" ]; then
-                  ACTUAL_COST="$COST"
+                if [ ! -z "$TOTAL_COST" ] && [ "$TOTAL_COST" != "null" ] && [ "$TOTAL_COST" != "0" ]; then
+                  ACTUAL_COST="$TOTAL_COST"
                   echo "Debug: Set actual cost to $ACTUAL_COST"
                 fi
                 
-                # Extract usage from result object
-                USAGE=$(echo "$RESULT_OBJECT" | jq -r '.usage // empty' 2>/dev/null)
-                echo "Debug: Extracted usage: '$USAGE'"
+                # Sum all token usage
+                TOTAL_INPUT_TOKENS=$(echo "$RESULT_OBJECTS" | jq 'map(.usage.input_tokens // 0) | add' 2>/dev/null || echo "0")
+                TOTAL_OUTPUT_TOKENS=$(echo "$RESULT_OBJECTS" | jq 'map(.usage.output_tokens // 0) | add' 2>/dev/null || echo "0")
                 
-                if [ ! -z "$USAGE" ] && [ "$USAGE" != "null" ] && [ "$USAGE" != "empty" ]; then
-                  INPUT_TOKENS=$(echo "$USAGE" | jq -r '.input_tokens // 0' 2>/dev/null || echo "0")
-                  OUTPUT_TOKENS=$(echo "$USAGE" | jq -r '.output_tokens // 0' 2>/dev/null || echo "0")
-                  echo "Debug: Set tokens to $INPUT_TOKENS/$OUTPUT_TOKENS"
+                echo "Debug: Total input tokens: $TOTAL_INPUT_TOKENS"
+                echo "Debug: Total output tokens: $TOTAL_OUTPUT_TOKENS"
+                
+                if [ ! -z "$TOTAL_INPUT_TOKENS" ] && [ "$TOTAL_INPUT_TOKENS" != "null" ]; then
+                  INPUT_TOKENS="$TOTAL_INPUT_TOKENS"
+                fi
+                
+                if [ ! -z "$TOTAL_OUTPUT_TOKENS" ] && [ "$TOTAL_OUTPUT_TOKENS" != "null" ]; then
+                  OUTPUT_TOKENS="$TOTAL_OUTPUT_TOKENS"
                 fi
               else
-                echo "Debug: No result object found"
+                echo "Debug: No result objects found"
               fi
             else
-              echo "Debug: jq not available, using grep fallback"
-              
-              # Fallback to grep if jq is not available
-              COST=$(grep -A 10 -B 10 '"type": "result"' "/home/runner/work/_temp/claude-execution-output.json" | grep '"total_cost_usd"' | cut -d':' -f2 | tr -d '",' || echo "0")
-              if [ ! -z "$COST" ] && [ "$COST" != "null" ]; then
-                ACTUAL_COST="$COST"
-              fi
+              echo "Debug: jq not available"
             fi
           else
             echo "Debug: Execution output file not found"
@@ -233,16 +227,47 @@ jobs:
           echo "output_tokens=$OUTPUT_TOKENS" >> $GITHUB_OUTPUT
           echo "execution_status=$EXECUTION_STATUS" >> $GITHUB_OUTPUT
 
-      - name: Debug Comment Creation
+      - name: Clean Previous Reviews
         if: always()
-        run: |
-          echo "Debug: About to create cost report comment"
-          echo "PR Number: ${{ github.event.pull_request.number }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Execution Status: ${{ steps.actual_costs.outputs.execution_status }}"
-          echo "Actual Cost: ${{ steps.actual_costs.outputs.actual_cost }}"
-          echo "Input Tokens: ${{ steps.actual_costs.outputs.input_tokens }}"
-          echo "Output Tokens: ${{ steps.actual_costs.outputs.output_tokens }}"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('Cleaning previous Claude reviews...');
+            
+            try {
+              // Get all reviews for this PR
+              const { data: reviews } = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number
+              });
+              
+              console.log(`Found ${reviews.length} existing reviews`);
+              
+              // Find and dismiss previous Claude reviews
+              for (const review of reviews) {
+                if (review.user.type === 'Bot' && 
+                    review.user.login.includes('github-actions') &&
+                    review.body && 
+                    review.body.includes('Claude PR Assistant')) {
+                  
+                  console.log(`Dismissing previous Claude review: ${review.id}`);
+                  
+                  await github.rest.pulls.dismissReview({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: context.issue.number,
+                    review_id: review.id,
+                    message: 'Superseded by new Claude review'
+                  });
+                }
+              }
+              
+              console.log('Finished cleaning previous reviews');
+            } catch (error) {
+              console.error('Error cleaning previous reviews:', error);
+              // Don't fail the workflow for this
+            }
 
       - name: Post Cost Report to PR
         if: always()
