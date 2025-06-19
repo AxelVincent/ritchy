@@ -2,7 +2,7 @@ name: Claude PR Assistant
 
 on:
   repository_dispatch:
-    types: [claude-review]
+    types: [review]
 
 jobs:
   pr-assistant:

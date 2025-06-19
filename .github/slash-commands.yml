@@ -1,6 +1,6 @@
 # Claude PR Assistant slash commands
 pulls:
-  claude-review:
+  review:
     # Trigger the Claude PR Assistant workflow
     dispatch: true
     # Post a comment to acknowledge the command
