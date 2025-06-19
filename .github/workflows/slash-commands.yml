@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: wow-actions/slash-commands@v1
         with:
-          GITHUB_TOKEN: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMANDS: |
             pulls:
               review:
