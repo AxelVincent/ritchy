@@ -53,19 +53,23 @@ jobs:
           SONNET_INPUT_PRICE=3.00
           SONNET_OUTPUT_PRICE=15.00
           
-          # Estimate token usage
+          # Get PR metrics
           FILES_CHANGED=${{ github.event.pull_request.changed_files }}
           ADDITIONS=${{ github.event.pull_request.additions }}
+          COMPLEXITY_SCORE=${{ steps.analysis.outputs.complexity_score }}
+          IS_CRITICAL="${{ steps.analysis.outputs.is_critical }}"
+          
+          # Estimate token usage
           ESTIMATED_INPUT_TOKENS=$((FILES_CHANGED * 200 + ADDITIONS * 2 + 1000))
           ESTIMATED_OUTPUT_TOKENS=$((FILES_CHANGED * 50 + 500))
           
           # Select model based on complexity and criticality
-          if [[ ${{ steps.analysis.outputs.is_critical }} == "true" ]] || [[ ${{ steps.analysis.outputs.complexity_score }} -gt 75 ]]; then
+          if [[ "$IS_CRITICAL" == "true" ]] || [[ $COMPLEXITY_SCORE -gt 75 ]]; then
             MODEL="claude-3-sonnet-20240229"
             INPUT_PRICE=$SONNET_INPUT_PRICE
             OUTPUT_PRICE=$SONNET_OUTPUT_PRICE
             TIMEOUT=30
-          elif [[ ${{ steps.analysis.outputs.complexity_score }} -gt 50 ]]; then
+          elif [[ $COMPLEXITY_SCORE -gt 50 ]]; then
             MODEL="claude-3-sonnet-20240229"
             INPUT_PRICE=$SONNET_INPUT_PRICE
             OUTPUT_PRICE=$SONNET_OUTPUT_PRICE
