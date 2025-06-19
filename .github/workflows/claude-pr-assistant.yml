@@ -79,10 +79,10 @@ jobs:
           echo "estimated_input_tokens=$ESTIMATED_INPUT_TOKENS" >> $GITHUB_OUTPUT
           echo "estimated_output_tokens=$ESTIMATED_OUTPUT_TOKENS" >> $GITHUB_OUTPUT
 
-      - name: Log Cost & Context
+      - name: Log Estimated Cost & Context
         run: |
-          echo "💰 Claude PR Assistant - Cost & Context"
-          echo "======================================"
+          echo "💰 Claude PR Assistant - Estimated Cost & Context"
+          echo "================================================"
           echo "PR: #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}"
           echo "Author: ${{ github.event.pull_request.user.login }}"
           echo "Branch: ${{ github.head_ref }}"
@@ -102,7 +102,7 @@ jobs:
           echo "📝 Tasks:"
           echo "  Description: ${{ steps.analysis.outputs.needs_description && 'Generate' || 'Skip' }}"
           echo "  Review: Required"
-          echo "======================================"
+          echo "================================================"
 
       - name: Alert High Cost PRs
         if: steps.cost.outputs.total_cost > 0.20
@@ -112,6 +112,7 @@ jobs:
           echo "Consider manual review for cost optimization"
 
       - name: PR Assistant
+        id: claude
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -158,4 +159,118 @@ jobs:
             Linear Ticket: ${{ steps.analysis.outputs.ticket_id || 'Not found in branch name' }}
             Critical PR: ${{ steps.analysis.outputs.is_critical }}
             ${{ steps.analysis.outputs.needs_description == 'true' && 'MUST update description.' || 'Do NOT update description.' }}
-          allowed_tools: "mcp__github__update_pull_request,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff,mcp__linear__*" 
+          allowed_tools: "mcp__github__update_pull_request,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff,mcp__linear__*"
+
+      - name: Extract Actual Costs
+        id: actual_costs
+        if: always()
+        run: |
+          # Initialize variables
+          ACTUAL_COST="0"
+          INPUT_TOKENS="0"
+          OUTPUT_TOKENS="0"
+          EXECUTION_STATUS="${{ steps.claude.outcome }}"
+          
+          # Try to extract actual costs from the execution output
+          if [ -f "/home/runner/work/_temp/claude-execution-output.json" ]; then
+            # Extract total cost
+            COST=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.total_cost_usd // empty' 2>/dev/null)
+            if [ ! -z "$COST" ] && [ "$COST" != "null" ]; then
+              ACTUAL_COST="$COST"
+            fi
+            
+            # Extract token usage
+            USAGE=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.usage // empty' 2>/dev/null)
+            if [ ! -z "$USAGE" ] && [ "$USAGE" != "null" ]; then
+              INPUT_TOKENS=$(echo "$USAGE" | jq -r '.input_tokens // 0' 2>/dev/null || echo "0")
+              OUTPUT_TOKENS=$(echo "$USAGE" | jq -r '.output_tokens // 0' 2>/dev/null || echo "0")
+            fi
+          fi
+          
+          echo "actual_cost=$ACTUAL_COST" >> $GITHUB_OUTPUT
+          echo "input_tokens=$INPUT_TOKENS" >> $GITHUB_OUTPUT
+          echo "output_tokens=$OUTPUT_TOKENS" >> $GITHUB_OUTPUT
+          echo "execution_status=$EXECUTION_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Post Cost Report to PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            // Check if we already posted a cost report
+            const existingComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('💰 Claude PR Assistant Cost Report')
+            );
+            
+            if (existingComment) {
+              console.log('Cost report comment already exists, updating...');
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: generateCostReport()
+              });
+            } else {
+              console.log('Posting new cost report comment...');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: generateCostReport()
+              });
+            }
+            
+            function generateCostReport() {
+              const executionStatus = '${{ steps.actual_costs.outputs.execution_status }}';
+              const actualCost = '${{ steps.actual_costs.outputs.actual_cost }}';
+              const inputTokens = '${{ steps.actual_costs.outputs.input_tokens }}';
+              const outputTokens = '${{ steps.actual_costs.outputs.output_tokens }}';
+              const estimatedCost = '${{ steps.cost.outputs.total_cost }}';
+              const model = '${{ steps.cost.outputs.model }}';
+              const complexity = '${{ steps.analysis.outputs.complexity_score }}';
+              const filesChanged = '${{ github.event.pull_request.changed_files }}';
+              const additions = '${{ github.event.pull_request.additions }}';
+              const linearTicket = '${{ steps.analysis.outputs.ticket_id }}';
+              
+              let statusIcon = '✅';
+              let statusText = 'Success';
+              if (executionStatus !== 'success') {
+                statusIcon = '❌';
+                statusText = 'Failed';
+              }
+              
+              const costDifference = parseFloat(actualCost) - parseFloat(estimatedCost);
+              const costDiffIcon = costDifference > 0 ? '📈' : costDifference < 0 ? '📉' : '📊';
+              const costDiffText = costDifference > 0 ? `+$${costDifference.toFixed(4)}` : costDifference < 0 ? `-$${Math.abs(costDifference).toFixed(4)}` : '$0.0000';
+              
+              return `## 💰 Claude PR Assistant Cost Report
+
+                    ${statusIcon} **Status**: ${statusText}
+
+                    ### 📊 Usage Details
+                    - **Model**: ${model}
+                    - **Input Tokens**: ${inputTokens}
+                    - **Output Tokens**: ${outputTokens}
+                    - **Total Tokens**: ${parseInt(inputTokens) + parseInt(outputTokens)}
+
+                    ### 💵 Cost Breakdown
+                    - **Actual Cost**: $${actualCost}
+                    - **Estimated Cost**: $${estimatedCost}
+                    - **Difference**: ${costDiffIcon} ${costDiffText}
+
+                    ### 📈 PR Metrics
+                    - **Files Changed**: ${filesChanged}
+                    - **Lines Added**: ${additions}
+                    - **Complexity Score**: ${complexity}
+                    - **Linear Ticket**: ${linearTicket || 'None'}
+
+                    ---
+                    *Generated by Claude PR Assistant*`;
+            }
