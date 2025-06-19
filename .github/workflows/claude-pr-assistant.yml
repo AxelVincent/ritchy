@@ -12,6 +12,8 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
+    env:
+      GH_TOKEN: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
