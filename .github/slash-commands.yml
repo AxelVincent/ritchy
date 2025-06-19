@@ -12,3 +12,5 @@ pulls:
 
       Please wait while Claude processes your changes.
     reactions: ['robot', 'eyes']
+  hi:
+    comment: "Hi! Slash command works."
