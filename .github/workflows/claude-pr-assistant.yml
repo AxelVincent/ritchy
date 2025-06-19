@@ -6,12 +6,6 @@ on:
 
 jobs:
   pr-assistant:
-    if: |
-      github.event.pull_request.changed_files < 100 &&
-      github.event.pull_request.additions < 1000 &&
-      (contains(github.event.pull_request.files.*.name, '.ts') ||
-       contains(github.event.pull_request.files.*.name, '.tsx') ||
-       contains(github.event.pull_request.files.*.name, '.js'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
