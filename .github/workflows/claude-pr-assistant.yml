@@ -15,7 +15,7 @@ jobs:
       issues: write
       id-token: write
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
         id: pr
         run: |
           # Get PR number from the issue_comment event (PR comment)
-          PR_NUMBER="${{ github.event.issue.number }}"
+          PR_NUMBER="${{ github.event.client_payload.issue.number }}"
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           if [ -z "$PR_NUMBER" ]; then
             echo "PR_NUMBER is empty! Exiting."
