@@ -9,5 +9,5 @@ jobs:
     steps:
       - uses: wow-actions/slash-commands@v1
         with:
-          GITHUB_TOKEN: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONFIG_FILE: .github/slash-commands.yml 
