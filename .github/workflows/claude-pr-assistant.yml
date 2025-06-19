@@ -73,7 +73,7 @@ jobs:
           OUTPUT_COST=$(echo "scale=4; $ESTIMATED_OUTPUT_TOKENS * $SONNET_OUTPUT_PRICE / 1000000" | bc -l)
           TOTAL_COST=$(echo "scale=4; $INPUT_COST + $OUTPUT_COST" | bc -l)
           
-          echo "model=claude-3-sonnet-20240229" >> $GITHUB_OUTPUT
+          echo "model=claude-sonnet-4-20250514" >> $GITHUB_OUTPUT
           echo "timeout=$TIMEOUT" >> $GITHUB_OUTPUT
           echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
           echo "estimated_input_tokens=$ESTIMATED_INPUT_TOKENS" >> $GITHUB_OUTPUT
@@ -95,7 +95,7 @@ jobs:
           echo "  Critical: ${{ steps.analysis.outputs.is_critical }}"
           echo ""
           echo "🤖 Configuration:"
-          echo "  Model: claude-3-sonnet-20240229"
+          echo "  Model: claude-sonnet-4-20250514"
           echo "  Timeout: ${{ steps.cost.outputs.timeout }} minutes"
           echo "  Estimated Cost: ~$${{ steps.cost.outputs.total_cost }}"
           echo ""
@@ -116,7 +116,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
-          model: "claude-3-sonnet-20240229"
+          model: "claude-sonnet-4-20250514"
           timeout_minutes: ${{ steps.cost.outputs.timeout }}
           mcp_servers: |
             {
