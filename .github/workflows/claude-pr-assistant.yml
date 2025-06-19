@@ -165,27 +165,58 @@ jobs:
         id: actual_costs
         if: always()
         run: |
-          # Initialize variables
-          ACTUAL_COST="0"
+          # Initialize variables with defaults
+          ACTUAL_COST="0.0000"
           INPUT_TOKENS="0"
           OUTPUT_TOKENS="0"
           EXECUTION_STATUS="${{ steps.claude.outcome }}"
           
-          # Try to extract actual costs from the execution output
+          echo "Debug: Execution status is $EXECUTION_STATUS"
+          
+          # Check if execution output file exists
           if [ -f "/home/runner/work/_temp/claude-execution-output.json" ]; then
-            # Extract total cost
-            COST=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.total_cost_usd // empty' 2>/dev/null)
-            if [ ! -z "$COST" ] && [ "$COST" != "null" ]; then
-              ACTUAL_COST="$COST"
-            fi
+            echo "Debug: Found execution output file"
             
-            # Extract token usage
-            USAGE=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.usage // empty' 2>/dev/null)
-            if [ ! -z "$USAGE" ] && [ "$USAGE" != "null" ]; then
-              INPUT_TOKENS=$(echo "$USAGE" | jq -r '.input_tokens // 0' 2>/dev/null || echo "0")
-              OUTPUT_TOKENS=$(echo "$USAGE" | jq -r '.output_tokens // 0' 2>/dev/null || echo "0")
+            # Show file contents for debugging
+            echo "Debug: File contents:"
+            cat "/home/runner/work/_temp/claude-execution-output.json" | head -20
+            
+            # Try to extract total cost with better error handling
+            if command -v jq >/dev/null 2>&1; then
+              echo "Debug: jq is available"
+              
+              # Extract total cost
+              COST=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.total_cost_usd // empty' 2>/dev/null)
+              echo "Debug: Extracted cost: '$COST'"
+              
+              if [ ! -z "$COST" ] && [ "$COST" != "null" ] && [ "$COST" != "empty" ]; then
+                ACTUAL_COST="$COST"
+                echo "Debug: Set actual cost to $ACTUAL_COST"
+              fi
+              
+              # Extract token usage
+              USAGE=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.usage // empty' 2>/dev/null)
+              echo "Debug: Extracted usage: '$USAGE'"
+              
+              if [ ! -z "$USAGE" ] && [ "$USAGE" != "null" ] && [ "$USAGE" != "empty" ]; then
+                INPUT_TOKENS=$(echo "$USAGE" | jq -r '.input_tokens // 0' 2>/dev/null || echo "0")
+                OUTPUT_TOKENS=$(echo "$USAGE" | jq -r '.output_tokens // 0' 2>/dev/null || echo "0")
+                echo "Debug: Set tokens to $INPUT_TOKENS/$OUTPUT_TOKENS"
+              fi
+            else
+              echo "Debug: jq not available, using grep fallback"
+              
+              # Fallback to grep if jq is not available
+              COST=$(grep -o '"total_cost_usd":[^,}]*' "/home/runner/work/_temp/claude-execution-output.json" | cut -d':' -f2 | tr -d '"' || echo "0")
+              if [ ! -z "$COST" ] && [ "$COST" != "null" ]; then
+                ACTUAL_COST="$COST"
+              fi
             fi
+          else
+            echo "Debug: Execution output file not found"
           fi
+          
+          echo "Debug: Final values - Cost: $ACTUAL_COST, Input: $INPUT_TOKENS, Output: $OUTPUT_TOKENS"
           
           echo "actual_cost=$ACTUAL_COST" >> $GITHUB_OUTPUT
           echo "input_tokens=$INPUT_TOKENS" >> $GITHUB_OUTPUT
@@ -229,15 +260,15 @@ jobs:
             
             function generateCostReport() {
               const executionStatus = '${{ steps.actual_costs.outputs.execution_status }}';
-              const actualCost = '${{ steps.actual_costs.outputs.actual_cost }}';
-              const inputTokens = '${{ steps.actual_costs.outputs.input_tokens }}';
-              const outputTokens = '${{ steps.actual_costs.outputs.output_tokens }}';
-              const estimatedCost = '${{ steps.cost.outputs.total_cost }}';
-              const model = '${{ steps.cost.outputs.model }}';
-              const complexity = '${{ steps.analysis.outputs.complexity_score }}';
-              const filesChanged = '${{ github.event.pull_request.changed_files }}';
-              const additions = '${{ github.event.pull_request.additions }}';
-              const linearTicket = '${{ steps.analysis.outputs.ticket_id }}';
+              const actualCost = '${{ steps.actual_costs.outputs.actual_cost }}' || '0.0000';
+              const inputTokens = '${{ steps.actual_costs.outputs.input_tokens }}' || '0';
+              const outputTokens = '${{ steps.actual_costs.outputs.output_tokens }}' || '0';
+              const estimatedCost = '${{ steps.cost.outputs.total_cost }}' || '0.0000';
+              const model = '${{ steps.cost.outputs.model }}' || 'claude-sonnet-4-20250514';
+              const complexity = '${{ steps.analysis.outputs.complexity_score }}' || '0';
+              const filesChanged = '${{ github.event.pull_request.changed_files }}' || '0';
+              const additions = '${{ github.event.pull_request.additions }}' || '0';
+              const linearTicket = '${{ steps.analysis.outputs.ticket_id }}' || 'None';
               
               let statusIcon = '✅';
               let statusText = 'Success';
@@ -246,9 +277,15 @@ jobs:
                 statusText = 'Failed';
               }
               
-              const costDifference = parseFloat(actualCost) - parseFloat(estimatedCost);
+              const actualCostNum = parseFloat(actualCost) || 0;
+              const estimatedCostNum = parseFloat(estimatedCost) || 0;
+              const costDifference = actualCostNum - estimatedCostNum;
               const costDiffIcon = costDifference > 0 ? '📈' : costDifference < 0 ? '📉' : '📊';
               const costDiffText = costDifference > 0 ? `+$${costDifference.toFixed(4)}` : costDifference < 0 ? `-$${Math.abs(costDifference).toFixed(4)}` : '$0.0000';
+              
+              const inputTokensNum = parseInt(inputTokens) || 0;
+              const outputTokensNum = parseInt(outputTokens) || 0;
+              const totalTokens = inputTokensNum + outputTokensNum;
               
               return `## 💰 Claude PR Assistant Cost Report
 
@@ -256,21 +293,21 @@ jobs:
 
                     ### 📊 Usage Details
                     - **Model**: ${model}
-                    - **Input Tokens**: ${inputTokens}
-                    - **Output Tokens**: ${outputTokens}
-                    - **Total Tokens**: ${parseInt(inputTokens) + parseInt(outputTokens)}
+                    - **Input Tokens**: ${inputTokensNum.toLocaleString()}
+                    - **Output Tokens**: ${outputTokensNum.toLocaleString()}
+                    - **Total Tokens**: ${totalTokens.toLocaleString()}
 
                     ### 💵 Cost Breakdown
-                    - **Actual Cost**: $${actualCost}
-                    - **Estimated Cost**: $${estimatedCost}
+                    - **Actual Cost**: $${actualCostNum.toFixed(4)}
+                    - **Estimated Cost**: $${estimatedCostNum.toFixed(4)}
                     - **Difference**: ${costDiffIcon} ${costDiffText}
 
                     ### 📈 PR Metrics
                     - **Files Changed**: ${filesChanged}
                     - **Lines Added**: ${additions}
                     - **Complexity Score**: ${complexity}
-                    - **Linear Ticket**: ${linearTicket || 'None'}
+                    - **Linear Ticket**: ${linearTicket}
 
-                    ---
+
                     *Generated by Claude PR Assistant*`;
             }
