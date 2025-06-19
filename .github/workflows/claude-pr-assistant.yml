@@ -1,13 +1,11 @@
 name: Claude PR Assistant
 
 on:
-    pull_request:
-      types: [opened, synchronize, edited]
+  repository_dispatch:
+    types: [review]
 
 jobs:
   pr-assistant:
-    if: |
-      contains(github.event.pull_request.title, '--review')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,13 +23,10 @@ jobs:
       - name: Get PR Details
         id: pr
         run: |
-          # Get PR number from the issue_comment event (PR comment)
+          # Get PR number from the repository dispatch event
           PR_NUMBER="${{ github.event.client_payload.issue.number }}"
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          if [ -z "$PR_NUMBER" ]; then
-            echo "PR_NUMBER is empty! Exiting."
-            exit 1
-          fi
+          
           # Get PR details
           PR_DATA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
           echo "pr_title=$(echo "$PR_DATA" | jq -r '.title')" >> $GITHUB_OUTPUT
