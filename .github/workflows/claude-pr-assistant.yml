@@ -25,363 +25,208 @@ jobs:
           BRANCH_NAME="${{ github.head_ref }}"
           TICKET_ID=$(echo "$BRANCH_NAME" | grep -o '[A-Z]\{2,4\}-[0-9]\{1,4\}' | head -1)
           
-          # Determine if description is needed
-          NEEDS_DESCRIPTION="false"
-          if [[ "${{ github.event.pull_request.body }}" == "" ]] || [[ "${{ github.event.pull_request.body }}" == *"<!-- auto-generate-description -->"* ]]; then
-            NEEDS_DESCRIPTION="true"
-          fi
-          
-          # Calculate complexity score
-          COMPLEXITY_SCORE=$((github.event.pull_request.changed_files + github.event.pull_request.additions / 10))
-          
-          # Determine if this is a critical PR
-          IS_CRITICAL="false"
-          if [[ "${{ github.event.pull_request.title }}" == *"security"* ]] || [[ "${{ github.event.pull_request.title }}" == *"breaking"* ]] || [[ "${{ github.event.pull_request.title }}" == *"critical"* ]]; then
-            IS_CRITICAL="true"
-          fi
+          # Determine complexity score
+          FILES_CHANGED="${{ github.event.pull_request.changed_files }}"
+          ADDITIONS="${{ github.event.pull_request.additions }}"
+          COMPLEXITY_SCORE=$((FILES_CHANGED * 10 + ADDITIONS / 10))
           
           echo "ticket_id=$TICKET_ID" >> $GITHUB_OUTPUT
-          echo "needs_description=$NEEDS_DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "additions=$ADDITIONS" >> $GITHUB_OUTPUT
           echo "complexity_score=$COMPLEXITY_SCORE" >> $GITHUB_OUTPUT
-          echo "is_critical=$IS_CRITICAL" >> $GITHUB_OUTPUT
 
-      - name: Estimate Cost
-        id: cost
+      - name: Find Previous Cost Comment
+        id: find_cost
         run: |
-          # Sonnet pricing (per 1M tokens)
-          SONNET_INPUT_PRICE=3.00
-          SONNET_OUTPUT_PRICE=15.00
+          # Find existing cost report comment
+          COST_COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --jq '.[] | select(.body | contains("💵 Cost Breakdown")) | .id' 2>/dev/null | head -1 || echo "")
+          echo "cost_comment_id=$COST_COMMENT_ID" >> $GITHUB_OUTPUT
+
+      - name: Find Previous Review Comment
+        id: find_review
+        run: |
+          # Find existing automated review comment
+          REVIEW_COMMENT_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --jq '.[] | select(.body | contains("🤖 Automated Code Review")) | .id' 2>/dev/null | head -1 || echo "")
+          echo "review_comment_id=$REVIEW_COMMENT_ID" >> $GITHUB_OUTPUT
+
+      - name: Extract Previous Total Cost
+        id: extract_cost
+        run: |
+          PREVIOUS_TOTAL_COST="0"
           
-          # Get PR metrics
-          FILES_CHANGED=${{ github.event.pull_request.changed_files }}
-          ADDITIONS=${{ github.event.pull_request.additions }}
-          COMPLEXITY_SCORE=${{ steps.analysis.outputs.complexity_score }}
-          IS_CRITICAL="${{ steps.analysis.outputs.is_critical }}"
-          
-          # Estimate token usage
-          ESTIMATED_INPUT_TOKENS=$((FILES_CHANGED * 200 + ADDITIONS * 2 + 1000))
-          ESTIMATED_OUTPUT_TOKENS=$((FILES_CHANGED * 50 + 500))
-          
-          # Determine timeout based on complexity
-          if [[ "$IS_CRITICAL" == "true" ]] || [[ $COMPLEXITY_SCORE -gt 75 ]]; then
-            TIMEOUT=30
-          else
-            TIMEOUT=20
+          if [ ! -z "${{ steps.find_cost.outputs.cost_comment_id }}" ]; then
+            # Extract previous total cost from existing comment
+            PREVIOUS_TOTAL=$(gh api repos/${{ github.repository }}/issues/comments/${{ steps.find_cost.outputs.cost_comment_id }} --jq '.body' | grep -o '\*\*Total Cost\*\*: \$[0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | head -1 || echo "0")
+            PREVIOUS_TOTAL_COST="$PREVIOUS_TOTAL"
           fi
           
-          # Calculate costs
-          INPUT_COST=$(echo "scale=4; $ESTIMATED_INPUT_TOKENS * $SONNET_INPUT_PRICE / 1000000" | bc -l)
-          OUTPUT_COST=$(echo "scale=4; $ESTIMATED_OUTPUT_TOKENS * $SONNET_OUTPUT_PRICE / 1000000" | bc -l)
-          TOTAL_COST=$(echo "scale=4; $INPUT_COST + $OUTPUT_COST" | bc -l)
-          
-          echo "model=claude-sonnet-4-20250514" >> $GITHUB_OUTPUT
-          echo "timeout=$TIMEOUT" >> $GITHUB_OUTPUT
-          echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
-          echo "estimated_input_tokens=$ESTIMATED_INPUT_TOKENS" >> $GITHUB_OUTPUT
-          echo "estimated_output_tokens=$ESTIMATED_OUTPUT_TOKENS" >> $GITHUB_OUTPUT
+          echo "previous_total_cost=$PREVIOUS_TOTAL_COST" >> $GITHUB_OUTPUT
 
-      - name: Log Estimated Cost & Context
-        run: |
-          echo "💰 Claude PR Assistant - Estimated Cost & Context"
-          echo "================================================"
-          echo "PR: #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}"
-          echo "Author: ${{ github.event.pull_request.user.login }}"
-          echo "Branch: ${{ github.head_ref }}"
-          echo "Linear Ticket: ${{ steps.analysis.outputs.ticket_id || 'None' }}"
-          echo ""
-          echo "📊 Analysis:"
-          echo "  Files: ${{ github.event.pull_request.changed_files }}"
-          echo "  Lines: +${{ github.event.pull_request.additions }}/-${{ github.event.pull_request.deletions }}"
-          echo "  Complexity: ${{ steps.analysis.outputs.complexity_score }}"
-          echo "  Critical: ${{ steps.analysis.outputs.is_critical }}"
-          echo ""
-          echo "🤖 Configuration:"
-          echo "  Model: claude-sonnet-4-20250514"
-          echo "  Timeout: ${{ steps.cost.outputs.timeout }} minutes"
-          echo "  Estimated Cost: ~$${{ steps.cost.outputs.total_cost }}"
-          echo ""
-          echo "📝 Tasks:"
-          echo "  Description: ${{ steps.analysis.outputs.needs_description && 'Generate' || 'Skip' }}"
-          echo "  Review: Required"
-          echo "================================================"
-
-      - name: Alert High Cost PRs
-        if: steps.cost.outputs.total_cost > 0.20
-        run: |
-          echo "⚠️ HIGH COST PR ALERT ⚠️"
-          echo "Cost: ${{ steps.cost.outputs.total_cost }}"
-          echo "Consider manual review for cost optimization"
-
-      - name: PR Assistant
+      - name: Run Claude PR Assistant
         id: claude
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-base-action@bb2ef1d9768b9e94083d377778120f8f27958a72
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
           model: "claude-sonnet-4-20250514"
-          timeout_minutes: ${{ steps.cost.outputs.timeout }}
-          mcp_servers: |
-            {
-              "mcpServers": {
-                "linear": {
-                  "command": "npx",
-                  "args": ["-y", "@modelcontextprotocol/server-linear"],
-                  "env": {
-                    "LINEAR_API_KEY": "${{ secrets.LINEAR_API_KEY }}"
-                  }
-                }
-              }
-            }
           direct_prompt: |
-            Analyze this PR following the monorepo guidelines:
+            Analyze this PR and perform two tasks:
 
-            TASK 1: Description ${{ steps.analysis.outputs.needs_description == 'true' && '(REQUIRED)' || '(SKIP)' }}
-            ${{ steps.analysis.outputs.needs_description == 'true' && 'Generate PR description with:
-            - Summary of changes
-            - Linear ticket details (if found via MCP)
-            - Change type (🐛✨♻️📝🚀🔧🧪)
-            - Testing instructions
-            - Breaking changes (if any)
-            
-            Use mcp__github__update_pull_request to update.' || 'Skip description.' }}
+            1. **Generate PR Description** (if missing or contains <!-- auto-generate-description -->):
+               - Create comprehensive description with summary, changes, testing notes
+               - Include Linear ticket context if available (TICKET_ID: ${{ steps.analysis.outputs.ticket_id }})
+               - Use clear markdown formatting
 
-            TASK 2: Code Review (REQUIRED)
-            Follow monorepo guidelines:
-            - Functional programming approach (no classes)
-            - TypeScript strict mode compliance
-            - Feature-based organization
-            - Shared types between frontend/backend
-            - Code quality & best practices
-            - Linear ticket alignment (if found)
-            - Bugs, performance, security issues
-            - Test coverage & documentation needs
-            - Use inline comments for specific issues
+            2. **Code Review**:
+               - Review code quality, security, performance
+               - Check for bugs, best practices, type safety
+               - Provide actionable feedback
+               - Use GitHub review tools to add comments
 
-            Linear Ticket: ${{ steps.analysis.outputs.ticket_id || 'Not found in branch name' }}
-            Critical PR: ${{ steps.analysis.outputs.is_critical }}
-            ${{ steps.analysis.outputs.needs_description == 'true' && 'MUST update description.' || 'Do NOT update description.' }}
-          allowed_tools: "mcp__github__update_pull_request,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff,mcp__linear__*"
+            **Context:**
+            - Files: ${{ steps.analysis.outputs.files_changed }}
+            - Additions: ${{ steps.analysis.outputs.additions }}
+            - Linear Ticket: ${{ steps.analysis.outputs.ticket_id }}
+
+            **Tools Available:**
+            - Update PR description: mcp__github__update_pull_request
+            - Create/update review: mcp__github__create_pending_pull_request_review, mcp__github__add_pull_request_review_comment_to_pending_review, mcp__github__submit_pending_pull_request_review
+            - Linear integration: mcp__linear__*
+            - File operations: Read, Edit, MultiEdit, Write
+
+            **Important:** Use the exact tools provided. Do not use any other tools.
+          allowed_tools: "Edit,MultiEdit,Glob,Grep,LS,Read,Write,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files,mcp__github_file_ops__update_claude_comment,mcp__github__update_pull_request,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff,mcp__linear__*"
+          disallowed_tools: "WebSearch,WebFetch"
+          timeout_minutes: "30"
+          max_iterations: "10"
+          enable_all_project_mcp_servers: true
+          mcp_servers: "linear"
 
       - name: Extract Actual Costs
-        id: actual_costs
-        if: always()
+        id: extract_costs
         run: |
           # Initialize variables with defaults
-          ACTUAL_COST="0.0000"
+          ACTUAL_COST="0"
           INPUT_TOKENS="0"
           OUTPUT_TOKENS="0"
-          EXECUTION_STATUS="${{ steps.claude.outcome }}"
+          EXECUTION_STATUS="success"
           
-          echo "Debug: Execution status is $EXECUTION_STATUS"
-          
-          # Check if execution output file exists
+          # Try to extract actual costs from the execution output
           if [ -f "/home/runner/work/_temp/claude-execution-output.json" ]; then
             echo "Debug: Found execution output file"
             
-            if command -v jq >/dev/null 2>&1; then
+            # Check if jq is available
+            if command -v jq &> /dev/null; then
               echo "Debug: jq is available"
               
-              # Extract all result objects and sum their costs
-              RESULT_OBJECTS=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq '[.[] | select(.type == "result")]' 2>/dev/null)
+              # Extract total cost from the last entry in the array
+              COST=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.[-1].total_cost_usd // empty' 2>/dev/null)
+              if [ ! -z "$COST" ] && [ "$COST" != "null" ]; then
+                ACTUAL_COST="$COST"
+                echo "Debug: Extracted cost: $COST"
+              fi
               
-              if [ ! -z "$RESULT_OBJECTS" ] && [ "$RESULT_OBJECTS" != "null" ] && [ "$RESULT_OBJECTS" != "[]" ]; then
-                echo "Debug: Found result objects"
-                
-                # Sum all costs
-                TOTAL_COST=$(echo "$RESULT_OBJECTS" | jq 'map(.total_cost_usd // 0) | add' 2>/dev/null || echo "0")
-                echo "Debug: Total cost from all results: $TOTAL_COST"
-                
-                if [ ! -z "$TOTAL_COST" ] && [ "$TOTAL_COST" != "null" ] && [ "$TOTAL_COST" != "0" ]; then
-                  ACTUAL_COST="$TOTAL_COST"
-                  echo "Debug: Set actual cost to $ACTUAL_COST"
-                fi
-                
-                # Sum all token usage
-                TOTAL_INPUT_TOKENS=$(echo "$RESULT_OBJECTS" | jq 'map(.usage.input_tokens // 0) | add' 2>/dev/null || echo "0")
-                TOTAL_OUTPUT_TOKENS=$(echo "$RESULT_OBJECTS" | jq 'map(.usage.output_tokens // 0) | add' 2>/dev/null || echo "0")
-                
-                echo "Debug: Total input tokens: $TOTAL_INPUT_TOKENS"
-                echo "Debug: Total output tokens: $TOTAL_OUTPUT_TOKENS"
-                
-                if [ ! -z "$TOTAL_INPUT_TOKENS" ] && [ "$TOTAL_INPUT_TOKENS" != "null" ]; then
-                  INPUT_TOKENS="$TOTAL_INPUT_TOKENS"
-                fi
-                
-                if [ ! -z "$TOTAL_OUTPUT_TOKENS" ] && [ "$TOTAL_OUTPUT_TOKENS" != "null" ]; then
-                  OUTPUT_TOKENS="$TOTAL_OUTPUT_TOKENS"
-                fi
-              else
-                echo "Debug: No result objects found"
+              # Extract token usage from the last entry
+              USAGE=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq -r '.[-1].usage // empty' 2>/dev/null)
+              if [ ! -z "$USAGE" ] && [ "$USAGE" != "null" ]; then
+                INPUT_TOKENS=$(echo "$USAGE" | jq -r '.input_tokens // 0' 2>/dev/null || echo "0")
+                OUTPUT_TOKENS=$(echo "$USAGE" | jq -r '.output_tokens // 0' 2>/dev/null || echo "0")
+                echo "Debug: Extracted tokens - Input: $INPUT_TOKENS, Output: $OUTPUT_TOKENS"
               fi
             else
-              echo "Debug: jq not available"
+              echo "Debug: jq not available, using grep fallback"
+              # Fallback to grep if jq is not available
+              COST=$(grep -o '"total_cost_usd":[0-9]*\.[0-9]*' "/home/runner/work/_temp/claude-execution-output.json" | tail -1 | cut -d':' -f2 || echo "0")
+              ACTUAL_COST="$COST"
             fi
           else
-            echo "Debug: Execution output file not found"
+            echo "Debug: No execution output file found"
           fi
-          
-          echo "Debug: Final values - Cost: $ACTUAL_COST, Input: $INPUT_TOKENS, Output: $OUTPUT_TOKENS"
           
           echo "actual_cost=$ACTUAL_COST" >> $GITHUB_OUTPUT
           echo "input_tokens=$INPUT_TOKENS" >> $GITHUB_OUTPUT
           echo "output_tokens=$OUTPUT_TOKENS" >> $GITHUB_OUTPUT
           echo "execution_status=$EXECUTION_STATUS" >> $GITHUB_OUTPUT
 
-      - name: Clean Previous Reviews
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            console.log('Cleaning previous Claude reviews...');
-            
-            try {
-              // Get all reviews for this PR
-              const { data: reviews } = await github.rest.pulls.listReviews({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: context.issue.number
-              });
-              
-              console.log(`Found ${reviews.length} existing reviews`);
-              
-              // Find and dismiss previous Claude reviews
-              for (const review of reviews) {
-                if (review.user.type === 'Bot' && 
-                    review.user.login.includes('github-actions') &&
-                    review.body && 
-                    review.body.includes('Claude PR Assistant')) {
-                  
-                  console.log(`Dismissing previous Claude review: ${review.id}`);
-                  
-                  await github.rest.pulls.dismissReview({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    pull_number: context.issue.number,
-                    review_id: review.id,
-                    message: 'Superseded by new Claude review'
-                  });
-                }
-              }
-              
-              console.log('Finished cleaning previous reviews');
-            } catch (error) {
-              console.error('Error cleaning previous reviews:', error);
-              // Don't fail the workflow for this
-            }
+      - name: Post Cost Report
+        run: |
+          # Calculate new total cost
+          PREVIOUS_TOTAL="${{ steps.extract_cost.outputs.previous_total_cost }}"
+          NEW_COST="${{ steps.extract_costs.outputs.actual_cost }}"
+          TOTAL_COST=$(echo "scale=4; $PREVIOUS_TOTAL + $NEW_COST" | bc -l)
+          
+          # Calculate estimated cost
+          FILES="${{ steps.analysis.outputs.files_changed }}"
+          ADDITIONS="${{ steps.analysis.outputs.additions }}"
+          ESTIMATED_INPUT_TOKENS=$((FILES * 200 + ADDITIONS * 2 + 1000))
+          ESTIMATED_OUTPUT_TOKENS=$((FILES * 50 + 500))
+          ESTIMATED_COST=$(echo "scale=4; $ESTIMATED_INPUT_TOKENS * 3.00 / 1000000 + $ESTIMATED_OUTPUT_TOKENS * 15.00 / 1000000" | bc -l)
+          
+          # Calculate difference
+          DIFFERENCE=$(echo "scale=4; $NEW_COST - $ESTIMATED_COST" | bc -l)
+          
+          # Format the cost report
+          COST_REPORT="## 💰 Claude Cost Report
 
-      - name: Post Cost Report to PR
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            console.log('Starting cost report comment creation...');
-            
-            try {
-              // Get PR comments
-              const { data: comments } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number
-              });
-              
-              console.log(`Found ${comments.length} existing comments`);
-              
-              // Check if we already posted a cost report
-              const existingComment = comments.find(comment => 
-                comment.user.type === 'Bot' && 
-                comment.body.includes('💰 Claude PR Assistant Cost Report')
-              );
-              
-              const costReportBody = generateCostReport(existingComment);
-              console.log('Generated cost report body');
-              
-              if (existingComment) {
-                console.log('Updating existing cost report comment...');
-                await github.rest.issues.updateComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: existingComment.id,
-                  body: costReportBody
-                });
-                console.log('Successfully updated cost report comment');
-              } else {
-                console.log('Creating new cost report comment...');
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: context.issue.number,
-                  body: costReportBody
-                });
-                console.log('Successfully created cost report comment');
-              }
-            } catch (error) {
-              console.error('Error creating cost report comment:', error);
-              throw error;
-            }
-            
-            function generateCostReport(existingComment) {
-              const executionStatus = '${{ steps.actual_costs.outputs.execution_status }}';
-              const newCost = '${{ steps.actual_costs.outputs.actual_cost }}' || '0.0000';
-              const inputTokens = '${{ steps.actual_costs.outputs.input_tokens }}' || '0';
-              const outputTokens = '${{ steps.actual_costs.outputs.output_tokens }}' || '0';
-              const estimatedCost = '${{ steps.cost.outputs.total_cost }}' || '0.0000';
-              const model = '${{ steps.cost.outputs.model }}' || 'claude-sonnet-4-20250514';
-              const complexity = '${{ steps.analysis.outputs.complexity_score }}' || '0';
-              const filesChanged = '${{ github.event.pull_request.changed_files }}' || '0';
-              const additions = '${{ github.event.pull_request.additions }}' || '0';
-              const linearTicket = '${{ steps.analysis.outputs.ticket_id }}' || 'None';
-              
-              let statusIcon = '✅';
-              let statusText = 'Success';
-              if (executionStatus !== 'success') {
-                statusIcon = '❌';
-                statusText = 'Failed';
-              }
-              
-              // Extract previous total cost from existing comment
-              let previousTotalCost = 0;
-              if (existingComment) {
-                const totalCostMatch = existingComment.body.match(/Total Cost.*?\$([0-9.]+)/);
-                if (totalCostMatch) {
-                  previousTotalCost = parseFloat(totalCostMatch[1]) || 0;
-                }
-              }
-              
-              const newCostNum = parseFloat(newCost) || 0;
-              const estimatedCostNum = parseFloat(estimatedCost) || 0;
-              const totalCostNum = previousTotalCost + newCostNum;
-              
-              const costDifference = newCostNum - estimatedCostNum;
-              const costDiffIcon = costDifference > 0 ? '📈' : costDifference < 0 ? '📉' : '📊';
-              const costDiffText = costDifference > 0 ? `+$${costDifference.toFixed(4)}` : costDifference < 0 ? `-$${Math.abs(costDifference).toFixed(4)}` : '$0.0000';
-              
-              const inputTokensNum = parseInt(inputTokens) || 0;
-              const outputTokensNum = parseInt(outputTokens) || 0;
-              const totalTokens = inputTokensNum + outputTokensNum;
-              
-              return `## 💰 Claude PR Assistant Cost Report
+          **Status**: ✅ Success
 
-                    ${statusIcon} **Status**: ${statusText}
+          ### 📊 Usage Details
+          - **Model**: claude-sonnet-4-20250514
+          - **Input Tokens**: ${{ steps.extract_costs.outputs.input_tokens }}
+          - **Output Tokens**: ${{ steps.extract_costs.outputs.output_tokens }}
+          - **Total Tokens**: $(( ${{ steps.extract_costs.outputs.input_tokens }} + ${{ steps.extract_costs.outputs.output_tokens }} ))
 
-                    ### 📊 Usage Details
-                    - **Model**: ${model}
-                    - **Input Tokens**: ${inputTokensNum.toLocaleString()}
-                    - **Output Tokens**: ${outputTokensNum.toLocaleString()}
-                    - **Total Tokens**: ${totalTokens.toLocaleString()}
+          ### 💵 Cost Breakdown
+          - **Previous Total Cost**: \$$PREVIOUS_TOTAL
+          - **New Cost**: \$$NEW_COST
+          - **Total Cost**: \$$TOTAL_COST
+          - **Estimated Cost**: \$$ESTIMATED_COST
+          - **Difference**: 📈 +\$$DIFFERENCE
 
-                    ### 💵 Cost Breakdown
-                    - **Previous Total Cost**: $${previousTotalCost.toFixed(4)}
-                    - **New Cost**: $${newCostNum.toFixed(4)}
-                    - **Total Cost**: $${totalCostNum.toFixed(4)}
-                    - **Estimated Cost**: $${estimatedCostNum.toFixed(4)}
-                    - **Difference**: ${costDiffIcon} ${costDiffText}
+          ### 📈 PR Metrics
+          - **Files Changed**: ${{ steps.analysis.outputs.files_changed }}
+          - **Lines Added**: ${{ steps.analysis.outputs.additions }}
+          - **Complexity Score**: ${{ steps.analysis.outputs.complexity_score }}
+          - **Linear Ticket**: ${{ steps.analysis.outputs.ticket_id }}
 
-                    ### 📈 PR Metrics
-                    - **Files Changed**: ${filesChanged}
-                    - **Lines Added**: ${additions}
-                    - **Complexity Score**: ${complexity}
-                    - **Linear Ticket**: ${linearTicket}
+          ---
+          *Generated by Claude PR Assistant*"
+          
+          # Post or update cost report
+          if [ ! -z "${{ steps.find_cost.outputs.cost_comment_id }}" ]; then
+            # Update existing comment
+            gh api repos/${{ github.repository }}/issues/comments/${{ steps.find_cost.outputs.cost_comment_id }} --method PATCH --field body="$COST_REPORT"
+            echo "Updated existing cost comment"
+          else
+            # Create new comment
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --field body="$COST_REPORT"
+            echo "Created new cost comment"
+          fi
 
-                    ---
-                    *Generated by Claude PR Assistant*`;
-            }
+      - name: Post Automated Review Summary
+        run: |
+          # Create review summary comment
+          REVIEW_SUMMARY="## 🤖 Automated Code Review
+
+          **Status**: ✅ Completed
+
+          ### 📋 Review Summary
+          - **Files Reviewed**: ${{ steps.analysis.outputs.files_changed }}
+          - **Lines Analyzed**: ${{ steps.analysis.outputs.additions }}
+          - **Linear Ticket**: ${{ steps.analysis.outputs.ticket_id }}
+          - **Review Cost**: \$${{ steps.extract_costs.outputs.actual_cost }}
+
+          ### 🔍 Review Details
+          This automated review has been completed using Claude AI. Check the PR review tab for detailed comments and suggestions.
+
+          ---
+          *Generated by Claude PR Assistant*"
+          
+          # Post or update review summary
+          if [ ! -z "${{ steps.find_review.outputs.review_comment_id }}" ]; then
+            # Update existing comment
+            gh api repos/${{ github.repository }}/issues/comments/${{ steps.find_review.outputs.review_comment_id }} --method PATCH --field body="$REVIEW_SUMMARY"
+            echo "Updated existing review comment"
+          else
+            # Create new comment
+            gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --field body="$REVIEW_SUMMARY"
+            echo "Created new review comment"
+          fi
