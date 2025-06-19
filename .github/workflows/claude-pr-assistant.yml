@@ -1,15 +1,11 @@
 name: Claude PR Assistant
 
 on:
-  issue_comment:
-    types: [created]
+  repository_dispatch:
+    types: [claude-review]
 
 jobs:
   pr-assistant:
-    # Only run when someone comments with the trigger phrase on a PR
-    if: |
-      github.event.issue.pull_request &&
-      contains(github.event.comment.body, '/claude-review')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,8 +23,8 @@ jobs:
       - name: Get PR Details
         id: pr
         run: |
-          # Get PR number from the issue
-          PR_NUMBER="${{ github.event.issue.number }}"
+          # Get PR number from the repository dispatch event
+          PR_NUMBER="${{ github.event.client_payload.issue.number }}"
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           
           # Get PR details
@@ -111,7 +107,7 @@ jobs:
           echo "💰 Claude PR Assistant - Estimated Cost & Context"
           echo "================================================"
           echo "PR: #${{ steps.pr.outputs.pr_number }} - ${{ steps.pr.outputs.pr_title }}"
-          echo "Triggered by: ${{ github.event.comment.user.login }}"
+          echo "Triggered by: ${{ github.event.client_payload.sender.login }}"
           echo "Branch: ${{ steps.pr.outputs.head_ref }}"
           echo "Linear Ticket: ${{ steps.analysis.outputs.ticket_id || 'None' }}"
           echo ""
