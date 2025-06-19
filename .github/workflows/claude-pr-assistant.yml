@@ -292,7 +292,7 @@ jobs:
                 comment.body.includes('💰 Claude PR Assistant Cost Report')
               );
               
-              const costReportBody = generateCostReport();
+              const costReportBody = generateCostReport(existingComment);
               console.log('Generated cost report body');
               
               if (existingComment) {
@@ -319,9 +319,9 @@ jobs:
               throw error;
             }
             
-            function generateCostReport() {
+            function generateCostReport(existingComment) {
               const executionStatus = '${{ steps.actual_costs.outputs.execution_status }}';
-              const actualCost = '${{ steps.actual_costs.outputs.actual_cost }}' || '0.0000';
+              const newCost = '${{ steps.actual_costs.outputs.actual_cost }}' || '0.0000';
               const inputTokens = '${{ steps.actual_costs.outputs.input_tokens }}' || '0';
               const outputTokens = '${{ steps.actual_costs.outputs.output_tokens }}' || '0';
               const estimatedCost = '${{ steps.cost.outputs.total_cost }}' || '0.0000';
@@ -338,9 +338,20 @@ jobs:
                 statusText = 'Failed';
               }
               
-              const actualCostNum = parseFloat(actualCost) || 0;
+              // Extract previous total cost from existing comment
+              let previousTotalCost = 0;
+              if (existingComment) {
+                const totalCostMatch = existingComment.body.match(/Total Cost.*?\$([0-9.]+)/);
+                if (totalCostMatch) {
+                  previousTotalCost = parseFloat(totalCostMatch[1]) || 0;
+                }
+              }
+              
+              const newCostNum = parseFloat(newCost) || 0;
               const estimatedCostNum = parseFloat(estimatedCost) || 0;
-              const costDifference = actualCostNum - estimatedCostNum;
+              const totalCostNum = previousTotalCost + newCostNum;
+              
+              const costDifference = newCostNum - estimatedCostNum;
               const costDiffIcon = costDifference > 0 ? '📈' : costDifference < 0 ? '📉' : '📊';
               const costDiffText = costDifference > 0 ? `+$${costDifference.toFixed(4)}` : costDifference < 0 ? `-$${Math.abs(costDifference).toFixed(4)}` : '$0.0000';
               
@@ -359,7 +370,9 @@ jobs:
                     - **Total Tokens**: ${totalTokens.toLocaleString()}
 
                     ### 💵 Cost Breakdown
-                    - **Actual Cost**: $${actualCostNum.toFixed(4)}
+                    - **Previous Total Cost**: $${previousTotalCost.toFixed(4)}
+                    - **New Cost**: $${newCostNum.toFixed(4)}
+                    - **Total Cost**: $${totalCostNum.toFixed(4)}
                     - **Estimated Cost**: $${estimatedCostNum.toFixed(4)}
                     - **Difference**: ${costDiffIcon} ${costDiffText}
 
