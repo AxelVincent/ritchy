@@ -7,8 +7,12 @@ on:
 jobs:
   pr-assistant:
     runs-on: ubuntu-latest
-    # Only run if PR title contains '--review'
-    if: contains(github.event.pull_request.title, '--review')
+    # Only run if PR title contains '--review' AND it's a title change or new PR
+    if: |
+      contains(github.event.pull_request.title, '--review') &&
+      (github.event.action == 'opened' || 
+       github.event.action == 'synchronize' || 
+       (github.event.action == 'edited' && github.event.changes.title))
     permissions:
       contents: read
       pull-requests: write
