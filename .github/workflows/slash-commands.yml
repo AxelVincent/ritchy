@@ -15,7 +15,7 @@ jobs:
               review:
                 dispatch: true
                 comment: |
-                  🤖 **Claude PR Assistant** is analyzing your PR..
+                  🤖 **Claude PR Assistant** is analyzing your PR...
 
                   This will:
                   - Review code quality and best practices
