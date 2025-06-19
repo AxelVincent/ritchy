@@ -57,44 +57,9 @@ jobs:
           echo "complexity_score=$COMPLEXITY_SCORE" >> $GITHUB_OUTPUT
           echo "is_critical=$IS_CRITICAL" >> $GITHUB_OUTPUT
 
-      - name: Estimate Cost
-        id: cost
+      - name: Log Context
         run: |
-          # Sonnet pricing (per 1M tokens)
-          SONNET_INPUT_PRICE=3.00
-          SONNET_OUTPUT_PRICE=15.00
-          
-          # Get PR metrics
-          FILES_CHANGED="${{ steps.analysis.outputs.files_changed }}"
-          ADDITIONS="${{ steps.analysis.outputs.additions }}"
-          COMPLEXITY_SCORE="${{ steps.analysis.outputs.complexity_score }}"
-          IS_CRITICAL="${{ steps.analysis.outputs.is_critical }}"
-          
-          # Estimate token usage
-          ESTIMATED_INPUT_TOKENS=$((FILES_CHANGED * 200 + ADDITIONS * 2 + 1000))
-          ESTIMATED_OUTPUT_TOKENS=$((FILES_CHANGED * 50 + 500))
-          
-          # Determine timeout based on complexity
-          if [[ "$IS_CRITICAL" == "true" ]] || [[ $COMPLEXITY_SCORE -gt 75 ]]; then
-            TIMEOUT=30
-          else
-            TIMEOUT=20
-          fi
-          
-          # Calculate costs
-          INPUT_COST=$(echo "scale=4; $ESTIMATED_INPUT_TOKENS * $SONNET_INPUT_PRICE / 1000000" | bc -l)
-          OUTPUT_COST=$(echo "scale=4; $ESTIMATED_OUTPUT_TOKENS * $SONNET_OUTPUT_PRICE / 1000000" | bc -l)
-          TOTAL_COST=$(echo "scale=4; $INPUT_COST + $OUTPUT_COST" | bc -l)
-          
-          echo "model=claude-sonnet-4-20250514" >> $GITHUB_OUTPUT
-          echo "timeout=$TIMEOUT" >> $GITHUB_OUTPUT
-          echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
-          echo "estimated_input_tokens=$ESTIMATED_INPUT_TOKENS" >> $GITHUB_OUTPUT
-          echo "estimated_output_tokens=$ESTIMATED_OUTPUT_TOKENS" >> $GITHUB_OUTPUT
-
-      - name: Log Estimated Cost & Context
-        run: |
-          echo "💰 Claude PR Assistant - Estimated Cost & Context"
+          echo "💰 Claude PR Assistant - Context"
           echo "================================================"
           echo "PR: #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}"
           echo "Author: ${{ github.event.pull_request.user.login }}"
@@ -107,22 +72,10 @@ jobs:
           echo "  Complexity: ${{ steps.analysis.outputs.complexity_score }}"
           echo "  Critical: ${{ steps.analysis.outputs.is_critical }}"
           echo ""
-          echo "🤖 Configuration:"
-          echo "  Model: claude-sonnet-4-20250514"
-          echo "  Timeout: ${{ steps.cost.outputs.timeout }} minutes"
-          echo "  Estimated Cost: ~$${{ steps.cost.outputs.total_cost }}"
-          echo ""
           echo "📝 Tasks:"
           echo "  Description: ${{ steps.analysis.outputs.needs_description == 'true' && 'Generate' || 'Skip' }}"
           echo "  Review: Required"
           echo "================================================"
-
-      - name: Alert High Cost PRs
-        if: steps.cost.outputs.total_cost > 0.20
-        run: |
-          echo "⚠️ HIGH COST PR ALERT ⚠️"
-          echo "Cost: ${{ steps.cost.outputs.total_cost }}"
-          echo "Consider manual review for cost optimization"
 
       - name: Run Claude PR Assistant
         id: claude
@@ -131,7 +84,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
           model: "claude-sonnet-4-20250514"
-          timeout_minutes: ${{ steps.cost.outputs.timeout }}
+          timeout_minutes: 20
           mcp_servers: |
             {
               "mcpServers": {
@@ -224,11 +177,10 @@ jobs:
         with:
           script: |
             const executionStatus = '${{ steps.actual_costs.outputs.execution_status }}';
-            const newCost = '${{ steps.actual_costs.outputs.actual_cost }}' || '0.0000';
+            const actualCost = '${{ steps.actual_costs.outputs.actual_cost }}' || '0.0000';
             const inputTokens = '${{ steps.actual_costs.outputs.input_tokens }}' || '0';
             const outputTokens = '${{ steps.actual_costs.outputs.output_tokens }}' || '0';
-            const estimatedCost = '${{ steps.cost.outputs.total_cost }}' || '0.0000';
-            const model = '${{ steps.cost.outputs.model }}' || 'claude-sonnet-4-20250514';
+            const model = 'claude-sonnet-4-20250514';
             const complexity = '${{ steps.analysis.outputs.complexity_score }}' || '0';
             const filesChanged = '${{ steps.analysis.outputs.files_changed }}' || '0';
             const additions = '${{ steps.analysis.outputs.additions }}' || '0';
@@ -241,13 +193,7 @@ jobs:
               statusText = 'Failed';
             }
             
-            const newCostNum = parseFloat(newCost) || 0;
-            const estimatedCostNum = parseFloat(estimatedCost) || 0;
-            
-            const costDifference = newCostNum - estimatedCostNum;
-            const costDiffIcon = costDifference > 0 ? '📈' : costDifference < 0 ? '📉' : '📊';
-            const costDiffText = costDifference > 0 ? `+$${costDifference.toFixed(4)}` : costDifference < 0 ? `-$${Math.abs(costDifference).toFixed(4)}` : '$0.0000';
-            
+            const actualCostNum = parseFloat(actualCost) || 0;
             const inputTokensNum = parseInt(inputTokens) || 0;
             const outputTokensNum = parseInt(outputTokens) || 0;
             const totalTokens = inputTokensNum + outputTokensNum;
@@ -256,16 +202,12 @@ jobs:
 
             ${statusIcon} **Status**: ${statusText}
 
-            ### 📊 Usage Details
+            ### 📊 LLM Usage
             - **Model**: ${model}
             - **Input Tokens**: ${inputTokensNum.toLocaleString()}
             - **Output Tokens**: ${outputTokensNum.toLocaleString()}
             - **Total Tokens**: ${totalTokens.toLocaleString()}
-
-            ### 💵 Cost Breakdown
-            - **New Cost**: $${newCostNum.toFixed(4)}
-            - **Estimated Cost**: $${estimatedCostNum.toFixed(4)}
-            - **Difference**: ${costDiffIcon} ${costDiffText}
+            - **Cost**: $${actualCostNum.toFixed(4)}
 
             ### 📈 PR Metrics
             - **Files Changed**: ${filesChanged}
