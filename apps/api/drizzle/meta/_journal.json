@@ -246,6 +246,62 @@
       "when": 1747219856254,
       "tag": "0034_red_lord_tyger",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1747995020113,
+      "tag": "0035_bouncy_gorilla_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1747998179473,
+      "tag": "0036_large_hawkeye",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1748275017107,
+      "tag": "0037_clean_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1748277429872,
+      "tag": "0038_big_sleeper",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1748297358593,
+      "tag": "0039_narrow_boom_boom",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1749124350751,
+      "tag": "0040_goofy_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1749133304533,
+      "tag": "0041_cultured_nico_minoru",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1749663468783,
+      "tag": "0042_worthless_mongu",
+      "breakpoints": true
     }
   ]
 }

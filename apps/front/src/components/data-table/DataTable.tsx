@@ -21,10 +21,11 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef, useState } from 'react'
+import { HubspotSyncManagementButtons } from '../integrations/hubspot/HubspotSyncManagementButtons'
+import { ListManagementButtons } from '../lists/ListManagementButtons'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
 import { EnrichmentButtons } from './EnrichmentButtons'
-import { ListManagementButtons } from './ListManagementButtons'
 import { useEnrichment } from './hooks/useEnrichment'
 
 interface DataTableProps<TData, TValue> {
@@ -199,22 +200,31 @@ export const DataTable = <TData extends SearchResult, TValue>({
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
         <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto md:pl-2 pl-16 md:mt-0 mt-2">
-          <ListManagementButtons table={table} listId={listId} />
-          <EnrichmentButtons
-            table={table}
-            pendingFetches={pendingFetches}
-            handleFetchEnrichment={handleFetchEnrichment}
-          />
-          {!isMobile && (
-            <DataExport
-              selectedRows={
-                table.getSelectedRowModel().rows.length > 0
-                  ? table.getSelectedRowModel().rows.map((row) => row.original)
-                  : table.getFilteredRowModel().rows.map((row) => row.original)
-              }
+          <div className="flex gap-2">
+            <ListManagementButtons table={table} listId={listId} />
+            <HubspotSyncManagementButtons table={table} />
+          </div>
+          <div className="flex gap-2">
+            <EnrichmentButtons
+              table={table}
+              pendingFetches={pendingFetches}
+              handleFetchEnrichment={handleFetchEnrichment}
             />
-          )}
-          <ColumnsSelection table={table} />
+            {!isMobile && (
+              <DataExport
+                selectedRows={
+                  table.getSelectedRowModel().rows.length > 0
+                    ? table
+                        .getSelectedRowModel()
+                        .rows.map((row) => row.original)
+                    : table
+                        .getFilteredRowModel()
+                        .rows.map((row) => row.original)
+                }
+              />
+            )}
+            <ColumnsSelection table={table} />
+          </div>
         </div>
       </div>
       <div

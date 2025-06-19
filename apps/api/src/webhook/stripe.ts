@@ -6,6 +6,7 @@ import { STRIPE_CONFIG, getPlanFromProductId } from '../config/stripe'
 import { db } from '../db/db'
 import { subscription, user as userTable, webhookEvent } from '../db/schema'
 import { sendSlackNotification } from '../external/slack/slack'
+import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
   apiVersion: '2025-01-27.acacia',
@@ -52,6 +53,17 @@ export const stripeWebhook = async (
       signature,
       STRIPE_CONFIG.API_KEYS.WEBHOOK_SECRET,
     )
+
+    const { isDuplicate } = await validateWebhookIdempotency(
+      req.headers,
+      event,
+      event.type,
+    )
+
+    if (isDuplicate) {
+      res.status(200).json({ received: true, message: 'Already processed' })
+      return
+    }
 
     logger.info({
       msg: 'Webhook signature verified successfully',
@@ -286,9 +298,11 @@ export const stripeWebhook = async (
                   plan: planType,
                 })
                 .onConflictDoUpdate({
-                  target: subscription.stripeSubscriptionId,
+                  target: subscription.userId,
                   set: {
+                    stripeSubscriptionId,
                     stripePriceId,
+                    stripeCustomerId,
                     status,
                     plan: planType,
                     updatedAt: new Date(),

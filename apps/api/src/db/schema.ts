@@ -1,9 +1,15 @@
 import {
+  CompanyFieldEnum,
+  ContactFieldEnum,
+  StatusFieldEnum,
+} from '@ritchy/types'
+import { type InferSelectModel, sql } from 'drizzle-orm'
+import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
-  numeric,
   pgEnum,
   pgTable,
   text,
@@ -104,7 +110,11 @@ export const search = pgTable('search', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const webhookServiceEnum = pgEnum('webhook_service', ['clerk', 'stripe'])
+export const webhookServiceEnum = pgEnum('webhook_service', [
+  'clerk',
+  'stripe',
+  'hubspot',
+])
 
 export const webhookEvent = pgTable(
   'webhook_event',
@@ -230,6 +240,31 @@ export const status = pgTable(
   }),
 )
 
+export const contact = pgTable(
+  'contact',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    placeId: text('place_id').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    firstname: text('firstname'),
+    lastname: text('lastname'),
+    email: text('email'),
+    phone: text('phone'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqUserPlace: uniqueIndex('uniq_user_place_contact').on(
+      table.userId,
+      table.placeId,
+    ),
+  }),
+)
+
+export type Contact = InferSelectModel<typeof contact>
+
 export const userDemoCode = pgTable(
   'user_demo_code',
   {
@@ -246,5 +281,130 @@ export const userDemoCode = pgTable(
   (table) => ({
     userIdx: index('idx_user_demo_code_user_id').on(table.userId),
     codeIdx: index('idx_user_demo_code_code').on(table.code),
+  }),
+)
+
+export const hubspotToken = pgTable('hubspot_token', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' })
+    .unique(),
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+// Update the enum to include status fields
+export const internalFieldEnum = pgEnum('internal_field', [
+  ...CompanyFieldEnum.options,
+  ...ContactFieldEnum.options,
+  ...StatusFieldEnum.options,
+])
+
+export const hubspotFieldMapping = pgTable(
+  'hubspot_field_mapping',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tokenId: uuid('token_id')
+      .notNull()
+      .references(() => hubspotToken.id, { onDelete: 'cascade' }),
+    internalField: internalFieldEnum('internal_field').notNull(),
+    hubspotField: text('hubspot_field').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqTokenField: uniqueIndex('uniq_token_field_mapping').on(
+      table.tokenId,
+      table.internalField,
+    ),
+    tokenIdIdx: index('idx_hubspot_field_mapping_token_id').on(table.tokenId),
+  }),
+)
+
+export const hubspotLeadMapping = pgTable(
+  'hubspot_lead_mapping',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    placeId: text('place_id').notNull(),
+    hubspotCompanyId: text('hubspot_company_id').notNull(),
+    hubspotContactId: text('hubspot_contact_id'),
+    tokenId: uuid('token_id')
+      .notNull()
+      .references(() => hubspotToken.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqPlaceLead: uniqueIndex('uniq_place_lead').on(
+      table.placeId,
+      table.tokenId,
+    ),
+    placeIdIdx: index('idx_hubspot_lead_place_id').on(table.placeId),
+    companyIdIdx: index('idx_hubspot_lead_company_id').on(
+      table.hubspotCompanyId,
+    ),
+    contactIdIdx: index('idx_hubspot_lead_contact_id').on(
+      table.hubspotContactId,
+    ),
+    tokenIdIdx: index('idx_hubspot_lead_token_id').on(table.tokenId),
+  }),
+)
+
+export type VersionOperation = 'INSERT' | 'UPDATE' | 'DELETE' | 'ROLLBACK'
+
+export type VersionMetadata = {
+  // Request context
+  ipAddress?: string
+  userAgent?: string
+  requestId?: string
+  // Operation context
+  reason?: string
+  changedFields?: string[]
+  deletedAt?: Date
+  // Bulk operation context
+  bulkOperationId?: string
+  bulkOperationType?: 'INSERT' | 'UPDATE' | 'DELETE'
+  affectedRecords?: string[]
+  // Rollback context
+  rollbackFromVersion?: number
+}
+
+// Then define the table
+export const versionHistory = pgTable(
+  'version_history',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tableName: text('table_name').notNull(),
+    recordId: uuid('record_id').notNull(),
+    version: integer('version').notNull(),
+    currentState: jsonb('current_state').notNull(),
+    previousState: jsonb('previous_state'),
+    userId: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
+    operation: text('operation').notNull().$type<VersionOperation>(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    metadata: jsonb('metadata').$type<VersionMetadata>(),
+  },
+  (table) => ({
+    // Existing indexes
+    uniqRecordVersion: uniqueIndex('uniq_record_version').on(
+      table.tableName,
+      table.recordId,
+      table.version,
+    ),
+    tableRecordIdx: index('idx_version_history_table_record').on(
+      table.tableName,
+      table.recordId,
+    ),
+    userIdIdx: index('idx_version_history_user_id').on(table.userId),
+    createdAtIdx: index('idx_version_history_created_at').on(table.createdAt),
+    versionCheck: check('version_positive', sql`${table.version} > 0`),
+    operationCheck: check(
+      'valid_operation',
+      sql`${table.operation} IN ('INSERT', 'UPDATE', 'DELETE', 'ROLLBACK')`,
+    ),
   }),
 )

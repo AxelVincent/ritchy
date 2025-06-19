@@ -160,6 +160,7 @@ export const PlaceSchemaBase = z.object({
     postalCodeSuffix: z.string().optional(),
     plusCode: z.string().optional(),
     street: z.string().optional(),
+    streetNumber: z.string().optional(),
     neighborhood: z.string().optional(),
     administrativeAreaLevel1: z.string().optional(),
     administrativeAreaLevel2: z.string().optional(),

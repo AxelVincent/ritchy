@@ -9,9 +9,9 @@ export const useAddItemsToList = () => {
   const queryClient = useQueryClient()
 
   return useApiMutation<AddItemsToListApiResponse, AddItemsToListRequest>(
-    '/lists/:id/items', // Template endpoint
+    '/lists/:id/items',
     {
-      getEndpoint: ({ id }) => `/lists/${id}/items`, // Dynamic endpoint
+      getEndpoint: ({ id }) => `/lists/${id}/items`,
       onSuccess: (_, { id }) => {
         queryClient.invalidateQueries({
           queryKey: ['lists'],

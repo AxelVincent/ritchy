@@ -8,8 +8,7 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
-import { db } from '../db/db'
-import { enrichment } from '../db/schema'
+import { createVersionedDbFromRequest } from '../db/versioned_db/client'
 import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
 
 /**
@@ -53,21 +52,16 @@ export const enrichWebsite = async (
       return
     }
 
-    // Record that this user has enriched this place
-    await db
-      .insert(enrichment)
-      .values({
+    const versionedDb = createVersionedDbFromRequest(req)
+    await versionedDb.upsert(
+      'enrichment',
+      {
         userId,
         placeId: id,
         website,
-      })
-      .onConflictDoUpdate({
-        target: [enrichment.userId, enrichment.placeId],
-        set: {
-          website,
-          updatedAt: new Date(),
-        },
-      })
+      },
+      ['userId', 'placeId'],
+    )
 
     // Validate response
     const validatedData = EnrichResponseSchema.parse(enrichedData)

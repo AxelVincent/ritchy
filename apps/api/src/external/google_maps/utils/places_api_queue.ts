@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
 import { createApiQueue } from '../../utils/api_queue'
-import { googlePlacesRateLimiter } from '../../utils/rate_limiter'
+import { googlePlacesRateLimiter } from '../../utils/rate_limiter/config'
 
 /**
  * Shared API queue for all Google Places API requests

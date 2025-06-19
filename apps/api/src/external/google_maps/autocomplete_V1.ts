@@ -2,7 +2,6 @@ import { logger } from '@ritchy/logger'
 import type {
   AutocompletePrediction,
   AutocompleteRequestBody,
-  AutocompleteResponse,
 } from '@ritchy/types'
 import { z } from 'zod'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'

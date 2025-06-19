@@ -1,3 +1,5 @@
+import 'express-session'
+
 declare global {
   namespace Express {
     interface Request {
@@ -9,6 +11,12 @@ declare global {
         lastName: string
       }
       rawBody: Buffer
+      metadata: {
+        ipAddress: string
+        userAgent: string
+        requestId: string
+        timestamp: Date
+      }
     }
     interface Response {
       responseTime: number

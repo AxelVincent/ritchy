@@ -9,6 +9,7 @@ import { db } from '../db/db'
 import { user, userDemoCode, webhookEvent } from '../db/schema'
 import { sendSlackNotification } from '../external/slack/slack'
 import { deleteUser } from '../services/user/deleteUser'
+import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
 type WebhookResponse = {
   received?: boolean
@@ -92,26 +93,16 @@ export const clerkWebhook = async (
       },
     })
 
-    const [webhookRecord] = await db
-      .insert(webhookEvent)
-      .values({
-        type: msg.type,
-        service: 'clerk',
-        payload: msg.data,
-        idempotencyKey: res.locals.webhookKey,
-        status: 'processed',
-      })
-      .returning()
+    const { record, isDuplicate } = await validateWebhookIdempotency(
+      req.headers,
+      msg.data,
+      msg.type,
+    )
 
-    logger.info({
-      msg: 'Webhook record created',
-      event: 'webhook_record_created',
-      metadata: {
-        webhookId: webhookRecord.id,
-        eventType: msg.type,
-        webhookKey: res.locals.webhookKey,
-      },
-    })
+    if (isDuplicate) {
+      res.status(200).json({ received: true, message: 'Already processed' })
+      return
+    }
 
     try {
       if (!msg.data) {
@@ -267,7 +258,7 @@ export const clerkWebhook = async (
               ? processingError.message
               : String(processingError),
         })
-        .where(eq(webhookEvent.id, webhookRecord.id))
+        .where(eq(webhookEvent.id, record.id))
 
       throw processingError
     }

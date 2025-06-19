@@ -10,7 +10,7 @@ import helmet from 'helmet'
 import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
-import { ensureIdempotency } from './middleware/idempotency'
+import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
 
@@ -33,8 +33,11 @@ app.use(
   }),
 )
 
-// Clerk middleware
+// Clerk middleware - this handles session management
 app.use(clerkMiddleware())
+
+// Request metadata middleware
+app.use(addRequestMetadata)
 
 // Authentication middleware
 const isAuthenticated = async (
@@ -169,7 +172,7 @@ app.get('/health', (_, res) => {
 app.use('/web', isAuthenticated, webRoutes)
 
 // Webhook route
-app.use('/webhook', ensureIdempotency, webhookRoutes)
+app.use('/webhook', webhookRoutes)
 
 // Monitor long running requests
 app.use((req, res, next) => {

@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  Blocks,
   ChevronsUpDown,
   CreditCard,
   LogOut,
@@ -117,6 +118,15 @@ export function NavUser() {
                 />
                 <Label className="sr-only">Toggle theme</Label>
                 {theme === 'dark' ? 'Light' : 'Dark'} mode
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => {
+                  navigate({ to: '/integrations' })
+                }}
+              >
+                <Blocks />
+                Integrations
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

@@ -1,0 +1,291 @@
+name: Claude PR Assistant
+
+on:
+  repository_dispatch:
+    types: [review]
+
+jobs:
+  pr-assistant:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Get PR Details
+        id: pr
+        run: |
+          # Get PR number from the repository dispatch event
+          PR_NUMBER="${{ github.event.client_payload.issue.number }}"
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          
+          # Get PR details
+          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
+          echo "pr_title=$(echo "$PR_DATA" | jq -r '.title')" >> $GITHUB_OUTPUT
+          echo "pr_body=$(echo "$PR_DATA" | jq -r '.body // ""')" >> $GITHUB_OUTPUT
+          echo "head_ref=$(echo "$PR_DATA" | jq -r '.head.ref')" >> $GITHUB_OUTPUT
+          echo "changed_files=$(echo "$PR_DATA" | jq -r '.changed_files')" >> $GITHUB_OUTPUT
+          echo "additions=$(echo "$PR_DATA" | jq -r '.additions')" >> $GITHUB_OUTPUT
+          echo "deletions=$(echo "$PR_DATA" | jq -r '.deletions')" >> $GITHUB_OUTPUT
+
+      - name: Analyze PR & Extract Context
+        id: analysis
+        run: |
+          # Extract Linear ticket from branch name
+          BRANCH_NAME="${{ steps.pr.outputs.head_ref }}"
+          TICKET_ID=$(echo "$BRANCH_NAME" | grep -o '[A-Z]\{2,4\}-[0-9]\{1,4\}' | head -1)
+          
+          # Determine if description is needed
+          NEEDS_DESCRIPTION="false"
+          if [[ "${{ steps.pr.outputs.pr_body }}" == "" ]] || [[ "${{ steps.pr.outputs.pr_body }}" == *"<!-- auto-generate-description -->"* ]]; then
+            NEEDS_DESCRIPTION="true"
+          fi
+          
+          # Calculate complexity score
+          FILES_CHANGED="${{ steps.pr.outputs.changed_files }}"
+          ADDITIONS="${{ steps.pr.outputs.additions }}"
+          COMPLEXITY_SCORE=$((FILES_CHANGED * 10 + ADDITIONS / 10))
+          
+          # Determine if this is a critical PR
+          IS_CRITICAL="false"
+          if [[ "${{ steps.pr.outputs.pr_title }}" == *"security"* ]] || [[ "${{ steps.pr.outputs.pr_title }}" == *"breaking"* ]] || [[ "${{ steps.pr.outputs.pr_title }}" == *"critical"* ]]; then
+            IS_CRITICAL="true"
+          fi
+          
+          echo "ticket_id=$TICKET_ID" >> $GITHUB_OUTPUT
+          echo "needs_description=$NEEDS_DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "additions=$ADDITIONS" >> $GITHUB_OUTPUT
+          echo "complexity_score=$COMPLEXITY_SCORE" >> $GITHUB_OUTPUT
+          echo "is_critical=$IS_CRITICAL" >> $GITHUB_OUTPUT
+
+      - name: Estimate Cost
+        id: cost
+        run: |
+          # Sonnet pricing (per 1M tokens)
+          SONNET_INPUT_PRICE=3.00
+          SONNET_OUTPUT_PRICE=15.00
+          
+          # Get PR metrics
+          FILES_CHANGED="${{ steps.analysis.outputs.files_changed }}"
+          ADDITIONS="${{ steps.analysis.outputs.additions }}"
+          COMPLEXITY_SCORE="${{ steps.analysis.outputs.complexity_score }}"
+          IS_CRITICAL="${{ steps.analysis.outputs.is_critical }}"
+          
+          # Estimate token usage
+          ESTIMATED_INPUT_TOKENS=$((FILES_CHANGED * 200 + ADDITIONS * 2 + 1000))
+          ESTIMATED_OUTPUT_TOKENS=$((FILES_CHANGED * 50 + 500))
+          
+          # Determine timeout based on complexity
+          if [[ "$IS_CRITICAL" == "true" ]] || [[ $COMPLEXITY_SCORE -gt 75 ]]; then
+            TIMEOUT=30
+          else
+            TIMEOUT=20
+          fi
+          
+          # Calculate costs
+          INPUT_COST=$(echo "scale=4; $ESTIMATED_INPUT_TOKENS * $SONNET_INPUT_PRICE / 1000000" | bc -l)
+          OUTPUT_COST=$(echo "scale=4; $ESTIMATED_OUTPUT_TOKENS * $SONNET_OUTPUT_PRICE / 1000000" | bc -l)
+          TOTAL_COST=$(echo "scale=4; $INPUT_COST + $OUTPUT_COST" | bc -l)
+          
+          echo "model=claude-sonnet-4-20250514" >> $GITHUB_OUTPUT
+          echo "timeout=$TIMEOUT" >> $GITHUB_OUTPUT
+          echo "total_cost=$TOTAL_COST" >> $GITHUB_OUTPUT
+          echo "estimated_input_tokens=$ESTIMATED_INPUT_TOKENS" >> $GITHUB_OUTPUT
+          echo "estimated_output_tokens=$ESTIMATED_OUTPUT_TOKENS" >> $GITHUB_OUTPUT
+
+      - name: Log Estimated Cost & Context
+        run: |
+          echo "💰 Claude PR Assistant - Estimated Cost & Context"
+          echo "================================================"
+          echo "PR: #${{ steps.pr.outputs.pr_number }} - ${{ steps.pr.outputs.pr_title }}"
+          echo "Triggered by: ${{ github.event.client_payload.sender.login }}"
+          echo "Branch: ${{ steps.pr.outputs.head_ref }}"
+          echo "Linear Ticket: ${{ steps.analysis.outputs.ticket_id || 'None' }}"
+          echo ""
+          echo "📊 Analysis:"
+          echo "  Files: ${{ steps.analysis.outputs.files_changed }}"
+          echo "  Lines: +${{ steps.analysis.outputs.additions }}/-${{ steps.pr.outputs.deletions }}"
+          echo "  Complexity: ${{ steps.analysis.outputs.complexity_score }}"
+          echo "  Critical: ${{ steps.analysis.outputs.is_critical }}"
+          echo ""
+          echo "🤖 Configuration:"
+          echo "  Model: claude-sonnet-4-20250514"
+          echo "  Timeout: ${{ steps.cost.outputs.timeout }} minutes"
+          echo "  Estimated Cost: ~$${{ steps.cost.outputs.total_cost }}"
+          echo ""
+          echo "📝 Tasks:"
+          echo "  Description: ${{ steps.analysis.outputs.needs_description == 'true' && 'Generate' || 'Skip' }}"
+          echo "  Review: Required"
+          echo "================================================"
+
+      - name: Alert High Cost PRs
+        if: steps.cost.outputs.total_cost > 0.20
+        run: |
+          echo "⚠️ HIGH COST PR ALERT ⚠️"
+          echo "Cost: ${{ steps.cost.outputs.total_cost }}"
+          echo "Consider manual review for cost optimization"
+
+      - name: Run Claude PR Assistant
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
+          model: "claude-sonnet-4-20250514"
+          timeout_minutes: ${{ steps.cost.outputs.timeout }}
+          mcp_servers: |
+            {
+              "mcpServers": {
+                "linear": {
+                  "command": "npx",
+                  "args": ["-y", "@modelcontextprotocol/server-linear"],
+                  "env": {
+                    "LINEAR_API_KEY": "${{ secrets.LINEAR_API_KEY }}"
+                  }
+                }
+              }
+            }
+          direct_prompt: |
+            Analyze this PR following the monorepo guidelines:
+
+            TASK 1: Description ${{ steps.analysis.outputs.needs_description == 'true' && '(REQUIRED)' || '(SKIP)' }}
+            ${{ steps.analysis.outputs.needs_description == 'true' && 'Generate PR description with:
+            - Summary of changes
+            - Linear ticket details (if found via MCP)
+            - Change type (🐛✨♻️📝🚀🔧🧪)
+            - Testing instructions
+            - Breaking changes (if any)
+            
+            Use mcp__github__update_pull_request to update.' || 'Skip description.' }}
+
+            TASK 2: Code Review (REQUIRED)
+            Follow monorepo guidelines:
+            - Functional programming approach (no classes)
+            - TypeScript strict mode compliance
+            - Feature-based organization
+            - Shared types between frontend/backend
+            - Code quality & best practices
+            - Linear ticket alignment (if found)
+            - Bugs, performance, security issues
+            - Test coverage & documentation needs
+            - Use inline comments for specific issues
+
+            TASK 3: Create Review Summary Comment (REQUIRED)
+            Create a NEW comment with title "🤖 Automated Code Review" containing:
+            - Status (✅ Completed / ❌ Failed)
+            - Review summary (files reviewed: ${{ steps.analysis.outputs.files_changed }}, lines analyzed: ${{ steps.analysis.outputs.additions }}, Linear ticket: ${{ steps.analysis.outputs.ticket_id }})
+            - Review cost (will be filled later)
+            - Instructions to check PR review tab for details
+
+            Use mcp__github__add_issue_comment to create a new comment.
+
+            Linear Ticket: ${{ steps.analysis.outputs.ticket_id || 'Not found in branch name' }}
+            Critical PR: ${{ steps.analysis.outputs.is_critical }}
+            ${{ steps.analysis.outputs.needs_description == 'true' && 'MUST update description.' || 'Do NOT update description.' }}
+          allowed_tools: "mcp__github__update_pull_request,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff,mcp__linear__*,mcp__github__add_issue_comment"
+
+      - name: Extract Actual Costs
+        id: actual_costs
+        if: always()
+        run: |
+          # Initialize variables with defaults
+          ACTUAL_COST="0.0000"
+          INPUT_TOKENS="0"
+          OUTPUT_TOKENS="0"
+          EXECUTION_STATUS="${{ steps.claude.outcome }}"
+          
+          echo "Debug: Execution status is $EXECUTION_STATUS"
+          
+          # Check if execution output file exists
+          if [ -f "/home/runner/work/_temp/claude-execution-output.json" ]; then
+            echo "Debug: Found execution output file"
+            
+            if command -v jq >/dev/null 2>&1; then
+              echo "Debug: jq is available"
+              
+              # Extract all result objects and sum their costs
+              RESULT_OBJECTS=$(cat "/home/runner/work/_temp/claude-execution-output.json" | jq '[.[] | select(.type == "result")]' 2>/dev/null)
+              
+              if [ ! -z "$RESULT_OBJECTS" ] && [ "$RESULT_OBJECTS" != "null" ] && [ "$RESULT_OBJECTS" != "[]" ]; then
+                echo "Debug: Found result objects"
+                
+                # Sum all costs
+                TOTAL_COST=$(echo "$RESULT_OBJECTS" | jq 'map(.total_cost_usd // 0) | add' 2>/dev/null || echo "0")
+                echo "Debug: Total cost from all results: $TOTAL_COST"
+                
+                if [ ! -z "$TOTAL_COST" ] && [ "$TOTAL_COST" != "null" ] && [ "$TOTAL_COST" != "0" ]; then
+                  ACTUAL_COST="$TOTAL_COST"
+                  echo "Debug: Set actual cost to $ACTUAL_COST"
+                fi
+                
+                # Sum all token usage
+                TOTAL_INPUT_TOKENS=$(echo "$RESULT_OBJECTS" | jq 'map(.usage.input_tokens // 0) | add' 2>/dev/null || echo "0")
+                TOTAL_OUTPUT_TOKENS=$(echo "$RESULT_OBJECTS" | jq 'map(.usage.output_tokens // 0) | add' 2>/dev/null || echo "0")
+                
+                echo "Debug: Total input tokens: $TOTAL_INPUT_TOKENS"
+                echo "Debug: Total output tokens: $TOTAL_OUTPUT_TOKENS"
+                
+                if [ ! -z "$TOTAL_INPUT_TOKENS" ] && [ "$TOTAL_INPUT_TOKENS" != "null" ]; then
+                  INPUT_TOKENS="$TOTAL_INPUT_TOKENS"
+                fi
+                
+                if [ ! -z "$TOTAL_OUTPUT_TOKENS" ] && [ "$TOTAL_OUTPUT_TOKENS" != "null" ]; then
+                  OUTPUT_TOKENS="$TOTAL_OUTPUT_TOKENS"
+                fi
+              else
+                echo "Debug: No result objects found"
+              fi
+            else
+              echo "Debug: jq not available"
+            fi
+          else
+            echo "Debug: Execution output file not found"
+          fi
+          
+          echo "Debug: Final values - Cost: $ACTUAL_COST, Input: $INPUT_TOKENS, Output: $OUTPUT_TOKENS"
+          
+          echo "actual_cost=$ACTUAL_COST" >> $GITHUB_OUTPUT
+          echo "input_tokens=$INPUT_TOKENS" >> $GITHUB_OUTPUT
+          echo "output_tokens=$OUTPUT_TOKENS" >> $GITHUB_OUTPUT
+          echo "execution_status=$EXECUTION_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Post Cost Report to PR
+        if: always()
+        run: |
+          # Create cost report comment
+          COST_REPORT="## 💰 Claude PR Assistant Cost Report
+
+          **Status**: ${{ steps.actual_costs.outputs.execution_status == 'success' && '✅ Success' || '❌ Failed' }}
+
+          ### 📊 Usage Details
+          - **Model**: claude-sonnet-4-20250514
+          - **Input Tokens**: ${{ steps.actual_costs.outputs.input_tokens }}
+          - **Output Tokens**: ${{ steps.actual_costs.outputs.output_tokens }}
+          - **Total Tokens**: $(( ${{ steps.actual_costs.outputs.input_tokens }} + ${{ steps.actual_costs.outputs.output_tokens }} ))
+
+          ### 💵 Cost Breakdown
+          - **New Cost**: \$${{ steps.actual_costs.outputs.actual_cost }}
+          - **Estimated Cost**: \$${{ steps.cost.outputs.total_cost }}
+          - **Difference**: 📈 +\$$(echo "scale=4; ${{ steps.actual_costs.outputs.actual_cost }} - ${{ steps.cost.outputs.total_cost }}" | bc -l)
+
+          ### 📈 PR Metrics
+          - **Files Changed**: ${{ steps.analysis.outputs.files_changed }}
+          - **Lines Added**: ${{ steps.analysis.outputs.additions }}
+          - **Complexity Score**: ${{ steps.analysis.outputs.complexity_score }}
+          - **Linear Ticket**: ${{ steps.analysis.outputs.ticket_id }}
+
+          ---
+          *Generated by Claude PR Assistant*"
+          
+          # Create new cost report comment
+          gh api repos/${{ github.repository }}/issues/${{ steps.pr.outputs.pr_number }}/comments --field body="$COST_REPORT"
+          echo "Created new cost report comment"
