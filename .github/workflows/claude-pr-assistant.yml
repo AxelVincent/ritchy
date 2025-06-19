@@ -26,8 +26,8 @@ jobs:
       - name: Get PR Details
         id: pr
         run: |
-          # Get PR number from the repository dispatch event
-          PR_NUMBER="${{ github.event.client_payload.issue.number }}"
+          # Get PR number from the issue_comment event
+          PR_NUMBER="${{ github.event.issue.number }}"
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           
           # Get PR details
