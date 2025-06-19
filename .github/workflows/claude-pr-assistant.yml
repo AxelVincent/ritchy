@@ -1,11 +1,14 @@
 name: Claude PR Assistant
 
 on:
-  repository_dispatch:
-    types: [review]
+  issue_comment:
+    types: [created]
 
 jobs:
   pr-assistant:
+    if: |
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/review')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -289,3 +292,6 @@ jobs:
           # Create new cost report comment
           gh api repos/${{ github.repository }}/issues/${{ steps.pr.outputs.pr_number }}/comments --field body="$COST_REPORT"
           echo "Created new cost report comment"
+
+      - name: Echo
+        run: echo "Claude PR Assistant triggered by /review"
