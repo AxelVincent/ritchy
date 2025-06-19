@@ -1,0 +1,17 @@
+# Claude PR Assistant slash commands
+pulls:
+  review:
+    # Trigger the Claude PR Assistant workflow
+    dispatch: true
+    # Post a comment to acknowledge the command
+    comment: |
+      🤖 **Claude PR Assistant** is analyzing your PR...
+      
+      This will:
+      - Review code quality and best practices
+      - Generate PR description (if needed)
+      - Provide detailed feedback
+      - Show cost analysis
+      
+      Please wait while Claude processes your changes.
+    reactions: ['robot', 'eyes'] 
