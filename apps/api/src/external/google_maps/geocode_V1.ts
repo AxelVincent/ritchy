@@ -24,7 +24,7 @@ export async function getGeocodeV1(
       event: 'geocode_cache_hit',
       metadata: { placeId: params.placeId },
     })
-    return cachedResult
+    return cachedResult.data
   }
 
   try {

@@ -17,15 +17,15 @@ export const getOrFetchEnrichmentData = async (
   maxRetries = 5,
 ): Promise<EnrichResponse | null> => {
   const cacheKey = REDIS_KEYS.enrich(website)
-  let enrichmentData = await redisClient.get<EnrichResponse>(cacheKey)
+  const cachedData = await redisClient.get<EnrichResponse>(cacheKey)
 
-  if (enrichmentData) {
+  if (cachedData) {
     logger.debug({
       msg: 'Retrieved enrichment data from cache',
       event: 'enrichment_cache_hit',
       metadata: { placeId, website },
     })
-    return enrichmentData
+    return cachedData.data
   }
 
   logger.info({
@@ -35,7 +35,11 @@ export const getOrFetchEnrichmentData = async (
   })
 
   try {
-    enrichmentData = await scrapeFromOptimizedUrls(placeId, website, maxRetries)
+    const enrichmentData = await scrapeFromOptimizedUrls(
+      placeId,
+      website,
+      maxRetries,
+    )
 
     if (enrichmentData) {
       await redisClient.set(cacheKey, enrichmentData)

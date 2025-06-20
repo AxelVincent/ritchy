@@ -17,7 +17,7 @@ export const getPlaceReviews = async (
       REDIS_KEYS.place(placeId),
     )
 
-    const place = cachedPlace
+    const place = cachedPlace?.data
 
     if (!place) {
       logger.error({
