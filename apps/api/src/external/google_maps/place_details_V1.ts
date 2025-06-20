@@ -1,8 +1,8 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
 import type { Place, PlaceBase } from '@ritchy/types'
-import { CACHE_THRESHOLDS } from '../../config/redis'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
+import { CACHE_THRESHOLDS } from '../../config/redis'
 
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
@@ -16,7 +16,7 @@ import { mapToPlaceDetails } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
 
 // Cache update thresholds imported from config
-const { PLACE_UPDATE_THRESHOLD, DELETED_PLACE_UPDATE_THRESHOLD } = CACHE_THRESHOLDS
+const { PLACE_UPDATE_THRESHOLD } = CACHE_THRESHOLDS
 
 /**
  * Checks if cache needs to be updated based on updated_at timestamp
@@ -127,13 +127,39 @@ export async function getPlaceDetailsV1(
   const cachedData = await redisClient.get<PreferredPlace>(key)
 
   if (cachedData) {
-    // Determine update threshold based on deletion status
-    const updateThreshold = cachedData.is_deleted
-      ? DELETED_PLACE_UPDATE_THRESHOLD
-      : PLACE_UPDATE_THRESHOLD
+    // If place is marked as deleted, never refresh it
+    if (cachedData.is_deleted) {
+      const result = mapToPlaceDetails(cachedData.data)
 
-    // Check if cache needs update using local function (no Redis call)
-    const shouldUpdate = needsUpdate(cachedData.updated_at, updateThreshold)
+      // Recalculate openNow property for cached places
+      if (result.openingHours) {
+        result.openingHours.openNow = calculateOpenNow(
+          result.openingHours,
+          result.utcOffsetMinutes,
+        )
+      }
+
+      logger.info({
+        msg: 'Returning cached deleted place data (no refresh needed)',
+        event: 'place_details_deleted_cache_hit',
+        metadata: {
+          placeId,
+          age: getAge(cachedData.updated_at),
+        },
+      })
+
+      return {
+        ...result,
+        fromCache: true,
+        is_deleted: true,
+      }
+    }
+
+    // For non-deleted places, check if cache needs update
+    const shouldUpdate = needsUpdate(
+      cachedData.updated_at,
+      PLACE_UPDATE_THRESHOLD,
+    )
 
     // If cache is fresh, return cached data
     if (!shouldUpdate) {
@@ -152,7 +178,6 @@ export async function getPlaceDetailsV1(
         event: 'place_details_cache_hit',
         metadata: {
           placeId,
-          is_deleted: cachedData.is_deleted,
           age: getAge(cachedData.updated_at),
         },
       })
@@ -160,17 +185,16 @@ export async function getPlaceDetailsV1(
       return {
         ...result,
         fromCache: true,
-        is_deleted: cachedData.is_deleted,
+        is_deleted: false,
       }
     }
 
-    // If cache needs update but we have data, try to fetch fresh data
+    // If cache needs update, try to fetch fresh data
     logger.info({
       msg: 'Cache needs update, attempting to fetch fresh data',
       event: 'place_details_cache_stale',
       metadata: {
         placeId,
-        is_deleted: cachedData.is_deleted,
         age: getAge(cachedData.updated_at),
       },
     })

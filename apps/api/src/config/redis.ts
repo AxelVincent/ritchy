@@ -18,6 +18,5 @@ export const REDIS_CONFIG = {
 
 // Cache update thresholds (in seconds)
 export const CACHE_THRESHOLDS = {
-  PLACE_UPDATE_THRESHOLD: 24 * 60 * 60, // 24 hours
-  DELETED_PLACE_UPDATE_THRESHOLD: 7 * 24 * 60 * 60, // 7 days
+  PLACE_UPDATE_THRESHOLD: 24 * 60 * 60 * 90, // 90 days
 } as const

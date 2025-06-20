@@ -65,9 +65,9 @@ export const getSearchContent = async (
       logger.error({
         msg: 'No cached results found after fetch',
         event: 'no_cached_results_found',
-        metadata: { 
-          searchId, 
-          userId, 
+        metadata: {
+          searchId,
+          userId,
           cacheKey: key,
           retryAttempt: 'second_attempt_after_fetch',
           searchModel: result.model,
