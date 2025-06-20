@@ -302,6 +302,13 @@
       "when": 1749663468783,
       "tag": "0042_worthless_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1750431783073,
+      "tag": "0043_illegal_naoko",
+      "breakpoints": true
     }
   ]
 }

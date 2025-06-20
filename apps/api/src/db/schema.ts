@@ -408,3 +408,74 @@ export const versionHistory = pgTable(
     ),
   }),
 )
+
+export const contactEmails = pgTable(
+  'contact_emails',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    contactId: uuid('contact_id')
+      .notNull()
+      .references(() => contact.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    emailType: text('email_type'),
+    source: text('source'), // 'enrichment', 'manual', 'third_party'
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    // Unique primary email per contact
+    primaryContactEmail: uniqueIndex('idx_contact_emails_primary')
+      .on(table.contactId)
+      .where(sql`${table.isPrimary} = true`),
+
+    // Index for queries by contact_id
+    contactIdx: index('idx_contact_emails_contact_id').on(table.contactId),
+
+    // Index for email lookups
+    emailIdx: index('idx_contact_emails_email').on(table.email),
+
+    // Composite index for contact_id and email
+    contactEmailIdx: index('idx_contact_emails_contact_id_email').on(
+      table.contactId,
+      table.email,
+    ),
+  }),
+)
+
+export const contactSocials = pgTable(
+  'contact_socials',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    contactId: uuid('contact_id')
+      .notNull()
+      .references(() => contact.id, { onDelete: 'cascade' }),
+    platform: text('platform').notNull(), // ex facebook, instagram, twitter, linkedin, etc.
+    profileUrl: text('profile_url').notNull(),
+    username: text('username'), // extracted from profileUrl
+    isPrimary: boolean('is_primary').notNull().default(false),
+    source: text('source'), // 'enrichment', 'manual', 'third_party'
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    // Unique primary social per contact
+    primaryContactSocial: uniqueIndex('idx_contact_socials_primary')
+      .on(table.contactId)
+      .where(sql`${table.isPrimary} = true`),
+
+    // Index for queries by contact_id
+    contactIdx: index('idx_contact_socials_contact_id').on(table.contactId),
+
+    // Index for platform lookups
+    platformIdx: index('idx_contact_socials_platform').on(table.platform),
+
+    // Composite index for contact_id and platform
+    contactPlatformIdx: index('idx_contact_socials_contact_id_platform').on(
+      table.contactId,
+      table.platform,
+    ),
+
+    urlIdx: index('idx_contact_socials_url').on(table.profileUrl),
+  }),
+)
