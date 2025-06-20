@@ -409,8 +409,8 @@ export const versionHistory = pgTable(
   }),
 )
 
-export const contactEmails = pgTable(
-  'contact_emails',
+export const contactEmail = pgTable(
+  'contact_email',
   {
     id: uuid('id').defaultRandom().primaryKey(),
     contactId: uuid('contact_id')
@@ -425,26 +425,26 @@ export const contactEmails = pgTable(
   },
   (table) => ({
     // Unique primary email per contact
-    primaryContactEmail: uniqueIndex('idx_contact_emails_primary')
+    primaryContactEmail: uniqueIndex('idx_contact_email_primary')
       .on(table.contactId)
       .where(sql`${table.isPrimary} = true`),
 
     // Index for queries by contact_id
-    contactIdx: index('idx_contact_emails_contact_id').on(table.contactId),
+    contactIdx: index('idx_contact_email_contact_id').on(table.contactId),
 
     // Index for email lookups
-    emailIdx: index('idx_contact_emails_email').on(table.email),
+    emailIdx: index('idx_contact_email_email').on(table.email),
 
     // Composite index for contact_id and email
-    contactEmailIdx: index('idx_contact_emails_contact_id_email').on(
+    contactEmailIdx: index('idx_contact_email_contact_id_email').on(
       table.contactId,
       table.email,
     ),
   }),
 )
 
-export const contactSocials = pgTable(
-  'contact_socials',
+export const contactSocial = pgTable(
+  'contact_social',
   {
     id: uuid('id').defaultRandom().primaryKey(),
     contactId: uuid('contact_id')
@@ -460,22 +460,22 @@ export const contactSocials = pgTable(
   },
   (table) => ({
     // Unique primary social per contact
-    primaryContactSocial: uniqueIndex('idx_contact_socials_primary')
+    primaryContactSocial: uniqueIndex('idx_contact_social_primary')
       .on(table.contactId)
       .where(sql`${table.isPrimary} = true`),
 
     // Index for queries by contact_id
-    contactIdx: index('idx_contact_socials_contact_id').on(table.contactId),
+    contactIdx: index('idx_contact_social_contact_id').on(table.contactId),
 
     // Index for platform lookups
-    platformIdx: index('idx_contact_socials_platform').on(table.platform),
+    platformIdx: index('idx_contact_social_platform').on(table.platform),
 
     // Composite index for contact_id and platform
-    contactPlatformIdx: index('idx_contact_socials_contact_id_platform').on(
+    contactPlatformIdx: index('idx_contact_social_contact_id_platform').on(
       table.contactId,
       table.platform,
     ),
 
-    urlIdx: index('idx_contact_socials_url').on(table.profileUrl),
+    urlIdx: index('idx_contact_social_url').on(table.profileUrl),
   }),
 )
