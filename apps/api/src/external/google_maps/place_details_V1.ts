@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
 import type { Place, PlaceBase } from '@ritchy/types'
+import { CACHE_THRESHOLDS } from '../../config/redis'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 
 import { REDIS_KEYS } from '../../lib/redis/keys'
@@ -14,9 +15,8 @@ import { calculateOpenNow } from './utils/calculateOpenNow'
 import { mapToPlaceDetails } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
 
-// Cache update thresholds
-const PLACE_CACHE_UPDATE_THRESHOLD = 24 * 60 * 60 // 24 hours
-const DELETED_PLACE_CACHE_UPDATE_THRESHOLD = 7 * 24 * 60 * 60 // 7 days
+// Cache update thresholds imported from config
+const { PLACE_UPDATE_THRESHOLD, DELETED_PLACE_UPDATE_THRESHOLD } = CACHE_THRESHOLDS
 
 /**
  * Checks if cache needs to be updated based on updated_at timestamp
@@ -129,8 +129,8 @@ export async function getPlaceDetailsV1(
   if (cachedData) {
     // Determine update threshold based on deletion status
     const updateThreshold = cachedData.is_deleted
-      ? DELETED_PLACE_CACHE_UPDATE_THRESHOLD
-      : PLACE_CACHE_UPDATE_THRESHOLD
+      ? DELETED_PLACE_UPDATE_THRESHOLD
+      : PLACE_UPDATE_THRESHOLD
 
     // Check if cache needs update using local function (no Redis call)
     const shouldUpdate = needsUpdate(cachedData.updated_at, updateThreshold)

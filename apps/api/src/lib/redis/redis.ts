@@ -83,7 +83,10 @@ const createRedisClient = () => {
 
     try {
       // Use JSON.GET command from Redis JSON module
-      const data = (await redis.call('JSON.GET', fullKey)) as string | null
+      const data = await redis.call('JSON.GET', fullKey)
+      if (typeof data !== 'string' && data !== null) {
+        throw new Error('Unexpected Redis JSON.GET response type')
+      }
       if (!data) return null
 
       const parsedData = JSON.parse(data) as CacheData<T>
