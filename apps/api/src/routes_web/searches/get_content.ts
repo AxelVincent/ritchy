@@ -1,9 +1,5 @@
 import { logger } from '@ritchy/logger'
-import {
-  type GetSearchContentApiResponse,
-  type PlaceBase,
-  PlaceSchema,
-} from '@ritchy/types'
+import type { GetSearchContentApiResponse } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -12,7 +8,7 @@ import { search } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
 import { REDIS_KEYS } from '../../lib/redis/keys'
 import { redisClient } from '../../lib/redis/redis'
-import { aggregatePlaceData } from '../../services/places/aggregatePlaceData'
+import { getPlacesWithDetails } from '../../services/places/getPlacesWithDetails'
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
@@ -35,9 +31,13 @@ export const getSearchContent = async (
     }
 
     const key = REDIS_KEYS.search(searchId)
-    let results = await redisClient.get<PlaceBase[]>(key)
+    let cachedResults = await redisClient.get<string[]>(key)
 
-    if (!results || results.length === 0) {
+    if (
+      !cachedResults ||
+      !cachedResults.data ||
+      cachedResults.data.length === 0
+    ) {
       logger.info({
         msg: 'No cached search results, fetching from Google Maps and caching',
         event: 'no_cached_search_results',
@@ -49,59 +49,49 @@ export const getSearchContent = async (
           rectangle: result.rectangle,
         },
       })
-      results = await postTextSearchV1({
+      const freshResults = await postTextSearchV1({
         model: result.model,
         textQuery: result.keyword,
         rectangle: result.rectangle,
       })
-      await redisClient.set(key, results)
+
+      // Store only the place IDs in the search cache
+      const placeIds = freshResults.map((place) => place.id)
+      await redisClient.set(key, placeIds)
     }
 
-    // Add searchId to each place in the results
-    const resultsWithSearchId = results.map((place) => ({
-      ...place,
-      searchId, // Add the searchId from the request parameters
-    }))
-
-    // Aggregate data for the search results
-    const aggregatedResults = await aggregatePlaceData(resultsWithSearchId, {
-      userId,
-      includeEnrichment: true,
-    })
-
-    // Validate individual places and collect validation errors
-    const validationErrors: Array<{ place: unknown; error: z.ZodError }> = []
-    for (const result of aggregatedResults) {
-      try {
-        PlaceSchema.parse(result)
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          validationErrors.push({ place: result, error })
-        }
-      }
-    }
-
-    // Log validation errors if any were found
-    if (validationErrors.length > 0) {
-      logger.warn({
-        msg: 'Some places failed schema validation',
-        event: 'place_validation_errors',
+    cachedResults = await redisClient.get<string[]>(key)
+    if (!cachedResults || !cachedResults.data) {
+      logger.error({
+        msg: 'No cached results found after fetch',
+        event: 'no_cached_results_found',
         metadata: {
-          errorCount: validationErrors.length,
-          errors: validationErrors.map(({ error, place }) => ({
-            placeId:
-              typeof place === 'object' && place !== null
-                ? (place as { id: string }).id
-                : 'unknown',
-            errors: error.errors.map((e) => ({
-              path: e.path.join('.'),
-              message: e.message,
-              code: e.code,
-            })),
-          })),
+          searchId,
+          userId,
+          cacheKey: key,
+          retryAttempt: 'second_attempt_after_fetch',
+          searchModel: result.model,
+          searchKeyword: result.keyword,
         },
       })
+      res.status(500).json({ error: 'Failed to get search content' })
+      return
     }
+
+    // Convert place IDs to the format expected by the shared utility
+    const placesWithSearchIds = cachedResults.data.map((placeId) => ({
+      placeId,
+      searchId,
+    }))
+
+    // Use shared utility to get place details and aggregate data
+    const { places: aggregatedResults } = await getPlacesWithDetails(
+      placesWithSearchIds,
+      {
+        userId,
+        includeEnrichment: true,
+      },
+    )
 
     logger.info({
       msg: 'Get search content',
@@ -129,7 +119,14 @@ export const getSearchContent = async (
     logger.error({
       msg: 'Get search content error',
       event: 'get_search_content_error',
-      metadata: { error },
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        searchId: req.params.id,
+        userId: req.auth.userId,
+        errorType: error?.constructor?.name,
+        errorKeys: error ? Object.keys(error) : [],
+      },
     })
     res.status(500).json({ error: 'Failed to get search content' })
     return
