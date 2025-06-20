@@ -13,17 +13,18 @@ services:
       - "5432:5432"
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:7.2.0-v17
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     command: >
-      redis-server 
+      redis-server
       --requirepass ${REDISPASSWORD}
       --user default off
-      --user ${REDISUSER} on >${REDISPASSWORD} ~* &* +@all
+      --user ${REDISUSER} on '>${REDISPASSWORD}' allcommands allkeys
       --appendonly yes
+      --loadmodule /opt/redis-stack/lib/rejson.so
     environment:
       - REDIS_USER=${REDISUSER}
       - REDIS_PASSWORD=${REDISPASSWORD}

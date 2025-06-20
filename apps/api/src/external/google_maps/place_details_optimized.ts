@@ -52,7 +52,7 @@ export async function getPlaceDetailsOptimized(
   if (cachedPlace) {
     scenario = 'cache_hit'
     // Only log cache hits in summary statistics, not individually
-    const place = mapToPlaceDetails(cachedPlace)
+    const place = mapToPlaceDetails(cachedPlace.data)
     return { ...place, fromCache: true }
   }
 
@@ -111,7 +111,7 @@ export async function getPlaceDetailsOptimized(
             // Check if our place is now in cache after the search refresh
             const refreshedPlace = await redisClient.get<PreferredPlace>(key)
             if (refreshedPlace) {
-              const place = mapToPlaceDetails(refreshedPlace)
+              const place = mapToPlaceDetails(refreshedPlace.data)
               return { ...place, fromCache: true }
             }
           } else {
@@ -183,7 +183,7 @@ export async function getPlaceDetailsOptimized(
             // Check if our place is now in cache
             const refreshedPlace = await redisClient.get<Place>(key)
             if (refreshedPlace) {
-              const place = mapToPlaceDetails(refreshedPlace)
+              const place = mapToPlaceDetails(refreshedPlace.data)
               return { ...place, fromCache: true }
             }
           }

@@ -1,16 +1,11 @@
 import { logger } from '@ritchy/logger'
-import {
-  type GetListContentApiResponse,
-  type Place,
-  PlaceSchema,
-} from '@ritchy/types'
+import type { GetListContentApiResponse } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
-import { getPlaceDetailsOptimized } from '../../external/google_maps/place_details_optimized'
-import { aggregatePlaceData } from '../../services/places/aggregatePlaceData'
+import { getPlacesWithDetails } from '../../services/places/getPlacesWithDetails'
 
 export const getListContent = async (
   req: Request<{ id: string }>,
@@ -44,98 +39,22 @@ export const getListContent = async (
       .from(listPlace)
       .where(eq(listPlace.listId, listId))
 
-    // Create a map of placeId to searchId for easy lookup
-    const placeSearchMap = new Map(
-      places.map((place) => [place.placeId, place.searchId || null]),
-    )
+    // Convert to the format expected by the shared utility
+    const placesWithSearchIds = places.map((place) => ({
+      placeId: place.placeId,
+      searchId: place.searchId || null,
+    }))
 
-    // Get place details with rate limiting and optimization
-    const placeDetailsResults = await Promise.allSettled(
-      places.map(async (place) =>
-        getPlaceDetailsOptimized(place.placeId, place.searchId || null),
-      ),
-    )
-
-    // Analyze results
-    const cacheHits = placeDetailsResults.filter(
-      (result) => result.status === 'fulfilled' && result.value.fromCache,
-    ).length
-    const cacheMisses = placeDetailsResults.filter(
-      (result) => result.status === 'fulfilled' && !result.value.fromCache,
-    ).length
-    const errors = placeDetailsResults.filter(
-      (result) => result.status === 'rejected',
-    ).length
-
-    logger.info({
-      msg: 'Place details retrieval summary',
-      event: 'place_details_summary',
-      metadata: {
-        totalPlaces: places.length,
-        cacheHits,
-        cacheMisses,
-        errors,
+    // Use shared utility to get place details and aggregate data
+    const { places: aggregatedPlaceDetails } = await getPlacesWithDetails(
+      placesWithSearchIds,
+      {
+        userId,
+        excludeListId: listId,
+        includeEnrichment: true,
         listId,
       },
-    })
-
-    const placeDetails = placeDetailsResults
-      .filter(
-        (
-          result,
-        ): result is PromiseFulfilledResult<Place & { fromCache: boolean }> =>
-          result.status === 'fulfilled',
-      )
-      .map((result) => {
-        const { fromCache, ...place } = result.value
-        // Add searchId to the place data
-        return {
-          ...place,
-          searchId: placeSearchMap.get(place.id) || null,
-        }
-      })
-
-    // Aggregate data for the place details
-    const aggregatedPlaceDetails = await aggregatePlaceData(placeDetails, {
-      userId,
-      excludeListId: listId,
-      includeEnrichment: true,
-      listId,
-    })
-
-    // Validate individual places and collect validation errors
-    const validationErrors: Array<{ place: unknown; error: z.ZodError }> = []
-    for (const result of aggregatedPlaceDetails) {
-      try {
-        PlaceSchema.parse(result)
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          validationErrors.push({ place: result, error })
-        }
-      }
-    }
-
-    // Log validation errors if any were found
-    if (validationErrors.length > 0) {
-      logger.warn({
-        msg: 'Some places failed schema validation',
-        event: 'place_validation_errors',
-        metadata: {
-          errorCount: validationErrors.length,
-          errors: validationErrors.map(({ error, place }) => ({
-            placeId:
-              typeof place === 'object' && place !== null
-                ? (place as { id: string }).id
-                : 'unknown',
-            errors: error.errors.map((e) => ({
-              path: e.path.join('.'),
-              message: e.message,
-              code: e.code,
-            })),
-          })),
-        },
-      })
-    }
+    )
 
     res.json({
       id: String(result[0].id),

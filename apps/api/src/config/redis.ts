@@ -15,3 +15,8 @@ export const REDIS_CONFIG = {
   USER: env.REDISUSER,
   PASSWORD: env.REDISPASSWORD,
 } as const
+
+// Cache update thresholds (in seconds)
+export const CACHE_THRESHOLDS = {
+  PLACE_UPDATE_THRESHOLD: 24 * 60 * 60 * 90, // 90 days
+} as const
