@@ -1,7 +1,6 @@
 import express, { type Router } from 'express'
 
 import { clerkWebhook } from './clerk'
-import { enrichmentWebhook } from './enrichment'
 import { hubspotWebhook } from './hubspot'
 import { stripeWebhook } from './stripe'
 
@@ -13,6 +12,5 @@ webhookRoutes.use(express.raw({ type: 'application/json' }))
 webhookRoutes.post('/stripe', stripeWebhook)
 webhookRoutes.post('/clerk', clerkWebhook)
 webhookRoutes.post('/hubspot', hubspotWebhook)
-webhookRoutes.post('/enrichment', enrichmentWebhook)
 
 export default webhookRoutes
