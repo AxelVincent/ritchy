@@ -5,11 +5,15 @@ import {
   EnrichRequestSchema,
   EnrichResponseSchema,
 } from '@ritchy/types'
+import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
+import { db } from '../db/db'
+import { contact } from '../db/schema'
 import { createVersionedDbFromRequest } from '../db/versioned_db/client'
 import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
+import { saveEnrichmentData } from '../services/enrichment/saveEnrichmentData'
 
 /**
  * Enriches website data with emails and social media links
@@ -62,6 +66,58 @@ export const enrichWebsite = async (
       },
       ['userId', 'placeId'],
     )
+
+    // Save enrichment data to PostgreSQL for contact metadata
+    try {
+      // Get existing contact for this place and user
+      const [existingContact] = await db
+        .select()
+        .from(contact)
+        .where(and(eq(contact.placeId, id), eq(contact.userId, userId)))
+
+      if (existingContact) {
+        await saveEnrichmentData({
+          contactId: existingContact.id,
+          enrichmentData: enrichedData,
+          source: 'enrichment',
+        })
+
+        logger.info({
+          msg: 'Enrichment data saved to database',
+          event: 'enrichment_data_saved',
+          metadata: {
+            userId,
+            placeId: id,
+            contactId: existingContact.id,
+            stats: {
+              emailsFound: enrichedData.emails.length,
+              socialPlatformsFound: Object.keys(enrichedData.socialLinks)
+                .length,
+            },
+          },
+        })
+      } else {
+        logger.warn({
+          msg: 'No contact found for enrichment',
+          event: 'enrichment_no_contact',
+          metadata: { userId, placeId: id },
+        })
+        // Don't fail the request - user still gets enrichment results
+      }
+    } catch (saveError) {
+      logger.error({
+        msg: 'Failed to save enrichment data to database',
+        event: 'enrichment_save_error',
+        metadata: {
+          userId,
+          placeId: id,
+          error:
+            saveError instanceof Error ? saveError.message : String(saveError),
+        },
+      })
+      // Don't fail the entire request if database save fails
+      // User still gets the enrichment results from cache
+    }
 
     // Validate response
     const validatedData = EnrichResponseSchema.parse(enrichedData)
