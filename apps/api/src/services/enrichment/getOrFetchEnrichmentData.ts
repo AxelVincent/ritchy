@@ -1,15 +1,16 @@
 import { logger } from '@ritchy/logger'
-import type { EnrichResponse } from '@ritchy/types'
+import type { DomainRegistration, EnrichResponse } from '@ritchy/types'
 import { REDIS_KEYS } from '../../external/redis/keys'
 import { redisClient } from '../../external/redis/redis'
+import {
+  extractDomainFromUrl,
+  performWhoisLookup,
+} from '../../external/whois/whoisLookup'
 import { scrapeFromOptimizedUrls } from '../scraperEmailsAndSocials'
 
 /**
- * Gets enrichment data from cache or fetches it if not available
- * @param placeId - The Google Maps place ID
- * @param website - The website URL to scrape
- * @param maxRetries - Maximum number of retries for scraping
- * @returns The enrichment data or null if fetching fails
+ * Gets enrichment data from cache or fetches it if not available.
+ * WHOIS/domainRegistration is always part of the enrichment object.
  */
 export const getOrFetchEnrichmentData = async (
   placeId: string,
@@ -17,58 +18,48 @@ export const getOrFetchEnrichmentData = async (
   maxRetries = 5,
 ): Promise<EnrichResponse | null> => {
   const cacheKey = REDIS_KEYS.enrich(website)
-  const cachedData = await redisClient.get<EnrichResponse>(cacheKey)
+  const cached = await redisClient.get<EnrichResponse>(cacheKey)
+  let enrichmentData: EnrichResponse | null = cached?.data ?? null
+  let cacheUpdated = false
 
-  if (cachedData) {
-    logger.debug({
-      msg: 'Retrieved enrichment data from cache',
-      event: 'enrichment_cache_hit',
-      metadata: { placeId, website },
-    })
-    return cachedData.data
+  // If cache miss, fetch/scrape as needed
+  if (!enrichmentData) {
+    enrichmentData = await scrapeFromOptimizedUrls(placeId, website, maxRetries)
+    if (!enrichmentData) return null
+    cacheUpdated = true
   }
-
-  logger.info({
-    msg: 'Beginning enrichment process',
-    event: 'enrichment_process_start',
-    metadata: { placeId, website },
-  })
 
   try {
-    const enrichmentData = await scrapeFromOptimizedUrls(
-      placeId,
-      website,
-      maxRetries,
-    )
+    const domain = extractDomainFromUrl(website)
+    const whois = await performWhoisLookup(domain)
+    enrichmentData.domainRegistration = whois ?? undefined
+    cacheUpdated = true
 
-    if (enrichmentData) {
-      await redisClient.set(cacheKey, enrichmentData)
-      logger.info({
-        msg: 'Enrichment completed successfully',
-        event: 'enrichment_complete',
-        metadata: {
-          placeId,
-          website,
-          stats: {
-            emailsFound: enrichmentData.emails.length,
-            socialPlatformsFound: Object.keys(enrichmentData.socialLinks)
-              .length,
-          },
-        },
-      })
-    }
-
-    return enrichmentData
-  } catch (error) {
-    logger.error({
-      msg: 'Enrichment process failed',
-      event: 'enrichment_process_error',
+    logger.info({
+      msg: 'WHOIS data updated successfully',
+      event: 'whois_data_updated',
       metadata: {
         placeId,
-        website,
-        error: error instanceof Error ? error.message : String(error),
+        domain,
+        registrationDate: whois?.registrationDate,
+        registrar: whois?.registrar,
+        domainAge: whois?.domainAge,
       },
     })
-    return null
+  } catch (error) {
+    enrichmentData.domainRegistration = undefined
+    cacheUpdated = true
+    logger.warn({
+      msg: 'WHOIS lookup failed, setting domainRegistration to null',
+      event: 'whois_lookup_failed',
+      metadata: { placeId, website, error },
+    })
   }
+
+  // Update cache if data was fetched or WHOIS was updated
+  if (cacheUpdated) {
+    await redisClient.set(cacheKey, enrichmentData)
+  }
+
+  return enrichmentData
 }

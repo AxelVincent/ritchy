@@ -27,16 +27,12 @@ export const aggregatePlaceData = async (
   const placeIds = places.map((place) => place.id)
 
   // Create a map to store searchIds for each place
-  const searchIdMap = new Map<string, string | null>()
-  const listIdMap = new Map<string, string | null>()
-  for (const place of places) {
-    if (place.searchId) {
-      searchIdMap.set(place.id, place.searchId)
-    }
-    if (listId) {
-      listIdMap.set(place.id, listId)
-    }
-  }
+  const searchIdMap = new Map(
+    places.filter((p) => p.searchId).map((p) => [p.id, p.searchId]),
+  )
+  const listIdMap = listId
+    ? new Map(places.map((p) => [p.id, listId]))
+    : new Map()
 
   // Get associations, notes, and lead statuses for each place
   const associations = await getListAssociationsByPlaceIds(
@@ -58,10 +54,9 @@ export const aggregatePlaceData = async (
     })
   }
 
-  // Create a function to build a Place object from a PlaceBase
-  const buildPlaceObject = (basePlace: PlaceBase): Place => {
-    // Create a new object with all the required properties of Place
-    const placeObject: Place = {
+  // Aggregate data from different sources for each place
+  const initialAggregatedPlaces = places.map(
+    (basePlace): Place => ({
       ...basePlace,
       lists: associations.get(basePlace.id) || [],
       notes: notes.get(basePlace.id) || [],
@@ -69,97 +64,56 @@ export const aggregatePlaceData = async (
       enrichment: null,
       searchId: searchIdMap.get(basePlace.id) || null,
       listId: listIdMap.get(basePlace.id) || null,
-    }
-    return placeObject
-  }
-
-  // Aggregate data from different sources for each place
-  const initialAggregatedPlaces = places.map(buildPlaceObject)
+    }),
+  )
 
   // Process enrichment data in parallel if needed
-  if (includeEnrichment) {
-    // Collect all places that need enrichment
-    const placesToEnrich = initialAggregatedPlaces.filter(
-      (place) => enrichedPlaces.has(place.id) && enrichedPlaces.get(place.id),
+  if (includeEnrichment && enrichedPlaces.size > 0) {
+    const enrichmentResults = await Promise.allSettled(
+      places
+        .filter((place) => enrichedPlaces.has(place.id))
+        .map(async (place) => {
+          const website = enrichedPlaces.get(place.id)
+          if (!website) {
+            return { placeId: place.id, enrichment: null }
+          }
+          const enrichmentData = await getOrFetchEnrichmentData(
+            place.id,
+            website,
+          )
+          if (!enrichmentData) return { placeId: place.id, enrichment: null }
+
+          const sanitizedData = sanitizeEnrichmentData(enrichmentData, place.id)
+          const validatedEnrichment = EnrichResponseSchema.parse(sanitizedData)
+          return { placeId: place.id, enrichment: validatedEnrichment }
+        }),
     )
 
-    if (placesToEnrich.length > 0) {
-      // Create a map of place IDs to their websites
-      const enrichmentRequests = placesToEnrich.map((place) => ({
-        placeId: place.id,
-        website: enrichedPlaces.get(place.id) as string,
-      }))
+    const enrichmentMap = new Map(
+      enrichmentResults
+        .filter(
+          (
+            result,
+          ): result is PromiseFulfilledResult<{
+            placeId: string
+            enrichment: EnrichResponse | null
+          }> =>
+            result.status === 'fulfilled' && result.value.enrichment !== null,
+        )
+        .map((result) => [
+          result.value.placeId,
+          result.value.enrichment as EnrichResponse,
+        ]),
+    )
 
-      logger.info({
-        msg: 'Processing enrichment data in parallel',
-        event: 'enrichment_parallel_processing',
-        metadata: { count: enrichmentRequests.length },
-      })
-
-      // Process all enrichment requests in parallel
-      const enrichmentResults = await Promise.all(
-        enrichmentRequests.map(async ({ placeId, website }) => {
-          try {
-            const enrichmentData = await getOrFetchEnrichmentData(
-              placeId,
-              website,
-            )
-
-            if (enrichmentData) {
-              // Sanitize and validate the enrichment data
-              const sanitizedData = sanitizeEnrichmentData(
-                enrichmentData,
-                placeId,
-              )
-
-              try {
-                const validatedEnrichment =
-                  EnrichResponseSchema.parse(sanitizedData)
-                return { placeId, enrichment: validatedEnrichment }
-              } catch (validationError) {
-                logger.warn({
-                  msg: 'Enrichment data validation failed',
-                  event: 'enrichment_validation_failed',
-                  metadata: {
-                    placeId,
-                    error: validationError,
-                    enrichmentData: sanitizedData,
-                  },
-                })
-              }
-            }
-          } catch (error) {
-            logger.warn({
-              msg: 'Failed to fetch or process enrichment data',
-              event: 'enrichment_processing_failed',
-              metadata: { placeId, error },
-            })
-          }
-
-          return { placeId, enrichment: null }
-        }),
-      )
-
-      // Create a map of place IDs to their enrichment data
-      const enrichmentMap = new Map(
-        enrichmentResults
-          .filter((result) => result.enrichment !== null)
-          .map((result) => [result.placeId, result.enrichment]),
-      )
-
-      // Merge enrichment data back into the aggregated places
-      return initialAggregatedPlaces.map((place) => {
-        if (enrichmentMap.has(place.id)) {
-          // Create a new Place object with enrichment data
-          const enrichedPlace: Place = {
+    return initialAggregatedPlaces.map((place) =>
+      enrichmentMap.has(place.id)
+        ? {
             ...place,
-            enrichment: enrichmentMap.get(place.id) || null,
+            enrichment: enrichmentMap.get(place.id) as EnrichResponse,
           }
-          return enrichedPlace
-        }
-        return place
-      })
-    }
+        : place,
+    )
   }
 
   return initialAggregatedPlaces
@@ -180,71 +134,76 @@ const sanitizeEnrichmentData = (
 
   // Sanitize social links
   if (sanitized.socialLinks) {
-    for (const [platform, links] of Object.entries(sanitized.socialLinks)) {
-      if (Array.isArray(links)) {
-        // Filter out invalid URLs
-        sanitized.socialLinks[platform] = links
-          .filter((link) => typeof link === 'string')
-          .filter((link) => {
-            try {
-              new URL(link)
-              return true
-            } catch {
-              logger.debug({
-                msg: 'Filtered out invalid URL from enrichment data',
-                event: 'enrichment_invalid_url_filtered',
-                metadata: { placeId, platform, invalidUrl: link },
-              })
-              return false
-            }
-          })
-      } else if (links === null || links === undefined) {
-        // Convert null/undefined to empty array
-        sanitized.socialLinks[platform] = []
-      } else if (typeof links === 'string') {
-        // Convert single string to array if it's a valid URL
-        try {
-          new URL(links)
-          sanitized.socialLinks[platform] = [links]
-        } catch {
-          sanitized.socialLinks[platform] = []
-        }
-      } else {
-        // Default to empty array for any other type
-        sanitized.socialLinks[platform] = []
-      }
+    for (const platform of Object.keys(sanitized.socialLinks)) {
+      const links = sanitized.socialLinks[platform]
+      sanitized.socialLinks[platform] = Array.isArray(links)
+        ? links.filter((link) => typeof link === 'string' && isValidUrl(link))
+        : typeof links === 'string' && isValidUrl(links)
+          ? [links]
+          : []
     }
   }
 
   // Sanitize emails
-  if (sanitized.emails) {
-    if (Array.isArray(sanitized.emails)) {
-      // Keep only valid email strings
-      sanitized.emails = sanitized.emails
-        .filter((email: string) => typeof email === 'string')
-        .filter((email: string) => {
-          // Basic email validation
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-          const isValid = emailRegex.test(email)
-          if (!isValid) {
-            logger.debug({
-              msg: 'Filtered out invalid email from enrichment data',
-              event: 'enrichment_invalid_email_filtered',
-              metadata: { placeId, invalidEmail: email },
-            })
-          }
-          return isValid
-        })
-    } else {
-      // Default to empty array if not an array
-      sanitized.emails = []
+  sanitized.emails = Array.isArray(sanitized.emails)
+    ? sanitized.emails.filter(
+        (email) =>
+          typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+      )
+    : []
+
+  // Sanitize domain registration
+  if (sanitized.domainRegistration) {
+    const { registrationDate, registrar, domainAge } =
+      sanitized.domainRegistration
+
+    // Validate and fix registration date
+    if (registrationDate && typeof registrationDate === 'string') {
+      const date = new Date(registrationDate)
+      sanitized.domainRegistration.registrationDate = !Number.isNaN(
+        date.getTime(),
+      )
+        ? registrationDate
+        : null
+    }
+
+    // Validate registrar
+    sanitized.domainRegistration.registrar =
+      typeof registrar === 'string' ? registrar : null
+
+    // Validate domain age
+    sanitized.domainRegistration.domainAge =
+      typeof domainAge === 'number' ? domainAge : null
+
+    // Recalculate domain age if needed
+    if (
+      sanitized.domainRegistration.registrationDate &&
+      sanitized.domainRegistration.domainAge === null
+    ) {
+      try {
+        const regDate = new Date(sanitized.domainRegistration.registrationDate)
+        const now = new Date()
+        sanitized.domainRegistration.domainAge = Math.floor(
+          (now.getTime() - regDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25),
+        )
+      } catch {
+        sanitized.domainRegistration.domainAge = null
+      }
     }
   }
 
   // Ensure id is present
-  if (!sanitized.id) {
-    sanitized.id = placeId
-  }
+  sanitized.id = sanitized.id || placeId
 
   return sanitized
+}
+
+// Helper function
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url)
+    return true
+  } catch {
+    return false
+  }
 }
