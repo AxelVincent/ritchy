@@ -4,8 +4,8 @@ import type { Place, PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { CACHE_THRESHOLDS } from '../../config/redis'
 
-import { REDIS_KEYS } from '../../lib/redis/keys'
-import { redisClient } from '../../lib/redis/redis'
+import { REDIS_KEYS } from '../redis/keys'
+import { redisClient } from '../redis/redis'
 import {
   AdvancedPlaceSchema,
   PREFERRED_PLACE_KEYS,
