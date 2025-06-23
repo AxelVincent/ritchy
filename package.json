@@ -9,6 +9,8 @@
     "check": "turbo run check",
     "check:fix": "turbo run check:fix",
     "format:fix": "turbo run format:fix",
+    "db:migrate": "turbo run db:migrate",
+    "db:generate": "turbo run db:generate",
     "test": "turbo run test",
     "clean": "turbo run clean",
     "coverage": "pnpm typecheck && pnpm check:fix && pnpm format:fix && pnpm unused",
