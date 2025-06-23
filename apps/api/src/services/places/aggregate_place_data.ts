@@ -2,11 +2,11 @@ import { logger } from '@ritchy/logger'
 import type { EnrichResponse, Place, PlaceBase } from '@ritchy/types'
 import { EnrichResponseSchema } from '@ritchy/types'
 import { z } from 'zod'
-import { getOrFetchEnrichmentData } from '../enrichment/getOrFetchEnrichmentData'
 import { getUserEnrichedPlaces } from '../enrichment/getUserEnrichedPlaces'
+import { getOrFetchEnrichmentData } from '../enrichment/get_or_fetch_enrichment_data'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
-import { getNotesByPlaceIds } from '../places/notes/getNotesByPlaceIds'
-import { getStatusByPlaceIds } from '../places/status/getStatusByPlaceIds'
+import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
+import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
 
 interface AggregatePlaceDataOptions {
   userId: string

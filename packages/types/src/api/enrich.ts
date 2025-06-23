@@ -41,6 +41,7 @@ export const DomainRegistrationSchema = z.object({
   registrationDate: z.string().nullable(),
   registrar: z.string().nullable(),
   domainAge: z.number().nullable(),
+  lastUpdated: z.string(),
 })
 
 // API Request/Response Schemas

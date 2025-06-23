@@ -3,7 +3,7 @@ import type { Place, PlaceBase } from '@ritchy/types'
 import { PlaceSchema } from '@ritchy/types'
 import { z } from 'zod'
 import { getPlaceDetailsOptimized } from '../../external/google_maps/place_details_optimized'
-import { aggregatePlaceData } from './aggregatePlaceData'
+import { aggregatePlaceData } from './aggregate_place_data'
 
 interface PlaceWithSearchId {
   placeId: string

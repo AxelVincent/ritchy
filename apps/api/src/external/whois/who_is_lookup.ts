@@ -1,60 +1,22 @@
 import { logger } from '@ritchy/logger'
 import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
 import whois from 'whois-json'
+import { z } from 'zod'
+import { isSocialMediaDomain } from '../../services/enrichment/utils/is_social_media_domain'
 import { createTokenBucket } from '../utils/rate_limiter/rate_limiter'
+import { parseRegistrationDate } from './utils/parse_registration_date'
+import { WhoisResponseSchema } from './validators/who_is_response_schema'
 
-// WHOIS rate limiter: 10 requests per minute
-export const whoisRateLimiter = createTokenBucket(10 / 60, 10)
+// Burst allowed (10 requests quickly, then 1 per 6 seconds)
+const whoisRateLimiter = createTokenBucket(10 / 60, 10)
 
 // WHOIS response parser types
 export interface WhoisData {
   registrationDate: string | null
   registrar: string | null
   domainAge: number | null
+  lastUpdated: string
   error?: string
-}
-
-/**
- * Checks if a domain is a social media domain
- * @param domain - Domain to check
- * @returns True if it's a social media domain
- */
-const isSocialMediaDomain = (domain: string): boolean => {
-  const socialMediaDomains = Object.values(SOCIAL_MEDIA_CONFIG).map(
-    (config) => config.domain,
-  )
-  return socialMediaDomains.some(
-    (socialDomain) =>
-      domain === socialDomain || domain.endsWith(`.${socialDomain}`),
-  )
-}
-
-/**
- * Extracts domain from URL, handling subdomains and protocols
- * @param url - The website URL
- * @returns The extracted domain
- */
-export const extractDomainFromUrl = (url: string): string => {
-  try {
-    return url
-      .replace(/^https?:\/\//, '')
-      .replace(/^www\./, '')
-      .split('/')[0]
-      .split('?')[0]
-      .split('#')[0]
-      .split(':')[0]
-      .toLowerCase()
-  } catch (error) {
-    logger.error({
-      msg: 'Failed to extract domain from URL',
-      event: 'domain_extraction_error',
-      metadata: {
-        url,
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-    throw new Error(`Invalid URL format: ${url}`)
-  }
 }
 
 /**
@@ -67,10 +29,26 @@ const parseWhoisResponse = (whoisResponse: unknown): WhoisData => {
     registrationDate: null,
     registrar: null,
     domainAge: null,
+    lastUpdated: new Date().toISOString(),
   }
 
   try {
-    const response = whoisResponse as Record<string, unknown>
+    // Validate and parse the WHOIS response using Zod
+    const validationResult = WhoisResponseSchema.safeParse(whoisResponse)
+
+    if (!validationResult.success) {
+      logger.warn({
+        msg: 'WHOIS response validation failed',
+        event: 'whois_validation_failed',
+        metadata: {
+          errors: validationResult.error.errors,
+          receivedData: whoisResponse,
+        },
+      })
+      return { ...data, error: 'Invalid WHOIS response format' }
+    }
+
+    const response = validationResult.data
 
     // Extract registration date
     const creationDate =
@@ -80,19 +58,8 @@ const parseWhoisResponse = (whoisResponse: unknown): WhoisData => {
       response.registrationDate
 
     if (creationDate && typeof creationDate === 'string') {
-      // Handle DD/MM/YYYY format
-      const dateStr = creationDate.includes('/')
-        ? creationDate
-            .split(' ')[0]
-            .split('/')
-            .reverse()
-            .join('-') // Convert DD/MM/YYYY to YYYY-MM-DD
-        : creationDate
-
-      const date = new Date(dateStr)
-      if (!Number.isNaN(date.getTime())) {
-        data.registrationDate = date.toISOString().split('T')[0]
-      }
+      // Use robust date parsing function
+      data.registrationDate = parseRegistrationDate(creationDate)
     }
 
     // Extract registrar

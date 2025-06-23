@@ -1,11 +1,9 @@
 import { logger } from '@ritchy/logger'
-import type { DomainRegistration, EnrichResponse } from '@ritchy/types'
+import type { EnrichResponse } from '@ritchy/types'
 import { REDIS_KEYS } from '../../external/redis/keys'
 import { redisClient } from '../../external/redis/redis'
-import {
-  extractDomainFromUrl,
-  performWhoisLookup,
-} from '../../external/whois/whoisLookup'
+import { extractDomainFromUrl } from '../../external/whois/utils/extract_domain_from_url'
+import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { scrapeFromOptimizedUrls } from '../scraperEmailsAndSocials'
 
 /**

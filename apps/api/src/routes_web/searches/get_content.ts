@@ -8,7 +8,7 @@ import { search } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
 import { REDIS_KEYS } from '../../external/redis/keys'
 import { redisClient } from '../../external/redis/redis'
-import { getPlacesWithDetails } from '../../services/places/getPlacesWithDetails'
+import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
