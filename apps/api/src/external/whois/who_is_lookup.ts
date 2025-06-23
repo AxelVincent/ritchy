@@ -4,6 +4,7 @@ import whois from 'whois-json'
 import { z } from 'zod'
 import { isSocialMediaDomain } from '../../services/enrichment/utils/is_social_media_domain'
 import { createTokenBucket } from '../utils/rate_limiter/rate_limiter'
+import { calculateDomainAge } from './utils/calculate_domain_age'
 import { parseRegistrationDate } from './utils/parse_registration_date'
 import { WhoisResponseSchema } from './validators/who_is_response_schema'
 
@@ -72,15 +73,8 @@ const parseWhoisResponse = (whoisResponse: unknown): WhoisData => {
       data.registrar = registrar.trim()
     }
 
-    // Calculate domain age
-    if (data.registrationDate) {
-      const registrationDate = new Date(data.registrationDate)
-      const now = new Date()
-      data.domainAge = Math.floor(
-        (now.getTime() - registrationDate.getTime()) /
-          (1000 * 60 * 60 * 24 * 365.25),
-      )
-    }
+    // Calculate domain age using centralized utility
+    data.domainAge = calculateDomainAge(data.registrationDate)
 
     return data
   } catch (error) {

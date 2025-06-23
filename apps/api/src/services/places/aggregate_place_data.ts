@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import type { EnrichResponse, Place, PlaceBase } from '@ritchy/types'
 import { EnrichResponseSchema } from '@ritchy/types'
 import { z } from 'zod'
+import { calculateDomainAge } from '../../external/whois/utils/calculate_domain_age'
 import { getUserEnrichedPlaces } from '../enrichment/getUserEnrichedPlaces'
 import { getOrFetchEnrichmentData } from '../enrichment/get_or_fetch_enrichment_data'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
@@ -154,8 +155,7 @@ const sanitizeEnrichmentData = (
 
   // Sanitize domain registration
   if (sanitized.domainRegistration) {
-    const { registrationDate, registrar, domainAge } =
-      sanitized.domainRegistration
+    const { registrationDate, registrar } = sanitized.domainRegistration
 
     // Validate and fix registration date
     if (registrationDate && typeof registrationDate === 'string') {
@@ -171,25 +171,10 @@ const sanitizeEnrichmentData = (
     sanitized.domainRegistration.registrar =
       typeof registrar === 'string' ? registrar : null
 
-    // Validate domain age
-    sanitized.domainRegistration.domainAge =
-      typeof domainAge === 'number' ? domainAge : null
-
-    // Recalculate domain age if needed
-    if (
-      sanitized.domainRegistration.registrationDate &&
-      sanitized.domainRegistration.domainAge === null
-    ) {
-      try {
-        const regDate = new Date(sanitized.domainRegistration.registrationDate)
-        const now = new Date()
-        sanitized.domainRegistration.domainAge = Math.floor(
-          (now.getTime() - regDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25),
-        )
-      } catch {
-        sanitized.domainRegistration.domainAge = null
-      }
-    }
+    // Use centralized domain age calculation
+    sanitized.domainRegistration.domainAge = calculateDomainAge(
+      sanitized.domainRegistration.registrationDate,
+    )
   }
 
   // Ensure id is present
