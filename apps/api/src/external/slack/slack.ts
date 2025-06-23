@@ -4,6 +4,7 @@ import { SLACK_CONFIG } from '../../config/slack'
 export const SLACK_CHANNEL_IDS = {
   users: 'C08KJF8GATU',
   subscriptions: 'C08L3RX4NL8',
+  tech_monitoring: 'C09300H6YQH',
 } as const
 
 export const sendSlackNotification = ({

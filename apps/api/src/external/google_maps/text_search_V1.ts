@@ -4,8 +4,8 @@ import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
-import { REDIS_KEYS } from '../../lib/redis/keys'
-import { redisClient } from '../../lib/redis/redis'
+import { REDIS_KEYS } from '../redis/keys'
+import { redisClient } from '../redis/redis'
 import {
   type GooglePlacesTextSearchRequestBody,
   GooglePlacesTextSearchRequestBodySchema,

@@ -2,8 +2,8 @@ import { logger } from '@ritchy/logger'
 import type { GetReviewsApiResponse, GetReviewsRequest } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import type { PreferredPlace } from '../../../external/google_maps/types'
-import { REDIS_KEYS } from '../../../lib/redis/keys'
-import { redisClient } from '../../../lib/redis/redis'
+import { REDIS_KEYS } from '../../../external/redis/keys'
+import { redisClient } from '../../../external/redis/redis'
 
 export const getPlaceReviews = async (
   req: Request<GetReviewsRequest>,
