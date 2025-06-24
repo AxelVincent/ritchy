@@ -43,7 +43,7 @@ Example:
 git commit -m "[core] Update readme with onboarding process"
 ```
 
-### Pull Request Process 
+### Pull Request Process
 1. **Creation**
    - Create PR from your feature branch to `staging`
    - Fill out the PR template completely

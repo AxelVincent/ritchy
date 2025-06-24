@@ -152,7 +152,7 @@ const createRedisClient = () => {
       // Set TTL using EXPIRE command
       await redis.expire(fullKey, ttl)
 
-      logger.info({
+      logger.debug({
         msg: 'Data cached successfully',
         event: 'redis_data_cached',
         metadata: { key: fullKey, ttl },
