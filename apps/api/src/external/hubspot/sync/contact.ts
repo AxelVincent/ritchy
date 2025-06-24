@@ -9,8 +9,8 @@ import { getFieldMappings } from '../../../services/hubspot/sync/get_field_mappi
 import { getLeadMappings } from '../../../services/hubspot/sync/get_lead_mappings'
 import { upsertLeadMapping } from '../../../services/hubspot/sync/upsert_lead_mapping'
 
-import type { BatchOperation, HubspotBase } from '../types'
 import { getValidToken } from '../token_manager'
+import type { BatchOperation, HubspotBase } from '../types'
 import { processHubspotBatch } from './helpers/batch'
 import { fetchStatusData } from './helpers/fetch'
 import { transformContactData } from './helpers/transformers'

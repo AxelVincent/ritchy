@@ -9,8 +9,8 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 
 import { createVersionedDbFromRequest } from '../db/versioned_db/client'
-import { fetchOrCreateContact } from '../services/contact/queries/fetch_or_create_contact'
-import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
+import { fetchOrCreateContact } from '../services/contact'
+import { getOrFetchEnrichmentData } from '../services/enrichment/get_or_fetch_enrichment_data'
 import { saveEnrichmentData } from '../services/enrichment/save_enrichment_data'
 
 /**
