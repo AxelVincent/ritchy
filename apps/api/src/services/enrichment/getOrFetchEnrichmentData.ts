@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import type { EnrichResponse } from '@ritchy/types'
-import { REDIS_KEYS } from '../../lib/redis/keys'
-import { redisClient } from '../../lib/redis/redis'
+import { REDIS_KEYS } from '../../external/redis/keys'
+import { redisClient } from '../../external/redis/redis'
 import { scrapeFromOptimizedUrls } from '../scraperEmailsAndSocials'
 
 /**

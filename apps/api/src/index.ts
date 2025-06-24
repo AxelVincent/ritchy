@@ -10,6 +10,7 @@ import helmet from 'helmet'
 import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
+import { redisHealthMonitor } from './external/redis/health-monitor'
 import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
@@ -234,7 +235,9 @@ setInterval(() => {
   lastHeapUsed = heapUsedMB
 }, 900000) // Check every 15 minutes
 
-// Start server
+redisHealthMonitor.start(1000 * 60 * 15) // Check every 15 minutes
+
+// Then start the server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
 
 const limiter = rateLimit({
@@ -277,4 +280,21 @@ process.on('unhandledRejection', (reason, promise) => {
     event: 'unhandled_rejection',
     metadata: { reason, promise },
   })
+})
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info({
+    msg: 'Shutting down Redis health monitor',
+    event: 'redis_health_monitor_shutdown',
+  })
+  redisHealthMonitor.stop()
+})
+
+process.on('SIGINT', () => {
+  logger.info({
+    msg: 'Shutting down Redis health monitor',
+    event: 'redis_health_monitor_shutdown',
+  })
+  redisHealthMonitor.stop()
 })

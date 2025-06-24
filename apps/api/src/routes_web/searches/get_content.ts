@@ -6,8 +6,8 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
-import { REDIS_KEYS } from '../../lib/redis/keys'
-import { redisClient } from '../../lib/redis/redis'
+import { REDIS_KEYS } from '../../external/redis/keys'
+import { redisClient } from '../../external/redis/redis'
 import { getPlacesWithDetails } from '../../services/places/getPlacesWithDetails'
 
 export const getSearchContent = async (

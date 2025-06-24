@@ -33,6 +33,7 @@ export const stripeWebhook = async (
   })
 
   let event: Stripe.Event
+
   try {
     const signature = req.headers['stripe-signature']
 
@@ -70,7 +71,6 @@ export const stripeWebhook = async (
       event: 'webhook_signature_verified',
       metadata: {
         eventType: event.type,
-        webhookKey: res.locals.webhookKey,
       },
     })
   } catch (err) {
@@ -177,213 +177,186 @@ export const stripeWebhook = async (
         },
       },
       async () => {
-        const [webhookRecord] = await db
-          .insert(webhookEvent)
-          .values({
-            type: event.type,
-            service: 'stripe',
-            payload: event.data,
-            idempotencyKey: res.locals.webhookKey,
-            status: 'processed',
-          })
-          .returning()
-
         logger.info({
-          msg: 'Webhook record created',
-          event: 'webhook_record_created',
+          msg: 'Processing webhook event',
+          event: 'webhook_event_processing',
           metadata: {
-            webhookId: webhookRecord.id,
             eventType: event.type,
-            webhookKey: res.locals.webhookKey,
           },
         })
 
-        try {
-          switch (eventType) {
-            case 'customer.subscription.trial_will_end': {
-              logger.info({
-                msg: 'Trial ending for subscription',
-                event: 'subscription_trial_ending',
+        // Remove the try-catch block entirely
+        switch (eventType) {
+          case 'customer.subscription.trial_will_end': {
+            logger.info({
+              msg: 'Trial ending for subscription',
+              event: 'subscription_trial_ending',
+              metadata: {
+                subscriptionId: stripeEvent.id,
+                trialEnd: stripeEvent.trial_end,
+                daysUntilTrialEnd: stripeEvent.trial_end
+                  ? Math.floor(
+                      (stripeEvent.trial_end - Date.now() / 1000) / 86400,
+                    )
+                  : null,
+              },
+            })
+            break
+          }
+
+          case 'customer.subscription.deleted': {
+            logger.info({
+              msg: 'Processing subscription deletion',
+              event: 'subscription_deletion_started',
+              metadata: {
+                subscriptionId: stripeEvent.id,
+                currentStatus: stripeEvent.status,
+                cancelReason: stripeEvent.cancellation_details?.reason,
+              },
+            })
+
+            await db
+              .update(subscription)
+              .set({
+                status: stripeEvent.status,
+                plan: 'FREE',
+                updatedAt: new Date(),
+              })
+              .where(eq(subscription.stripeSubscriptionId, stripeEvent.id))
+            logger.info({
+              msg: 'Subscription deleted',
+              event: 'subscription_deleted',
+              metadata: { subscriptionId: stripeEvent.id },
+            })
+            break
+          }
+
+          case 'customer.subscription.updated': {
+            // First log what we received
+            logger.info({
+              msg: 'Processing subscription update',
+              event: 'subscription_update_started',
+              metadata: {
+                subscriptionId: stripeEvent.id,
+                eventData: stripeEvent,
+              },
+            })
+
+            // Safely extract the required data
+            const stripeCustomerId = stripeEvent.customer as string
+            const stripeSubscriptionId = stripeEvent.id
+            const items = stripeEvent.items?.data
+
+            if (
+              !items ||
+              items.length === 0 ||
+              !items[0]?.price?.id ||
+              !items[0]?.plan?.product
+            ) {
+              logger.warn({
+                msg: 'Missing required subscription data',
+                event: 'subscription_update_invalid_data',
                 metadata: {
-                  subscriptionId: stripeEvent.id,
-                  trialEnd: stripeEvent.trial_end,
-                  daysUntilTrialEnd: stripeEvent.trial_end
-                    ? Math.floor(
-                        (stripeEvent.trial_end - Date.now() / 1000) / 86400,
-                      )
-                    : null,
+                  subscriptionId: stripeSubscriptionId,
+                  items: stripeEvent.items,
                 },
               })
-              break
+              res.status(400).json({
+                error: 'Invalid subscription data',
+                message: 'Missing required subscription fields',
+              })
+              return
             }
 
-            case 'customer.subscription.deleted': {
-              logger.info({
-                msg: 'Processing subscription deletion',
-                event: 'subscription_deletion_started',
-                metadata: {
-                  subscriptionId: stripeEvent.id,
-                  currentStatus: stripeEvent.status,
-                  cancelReason: stripeEvent.cancellation_details?.reason,
-                },
+            const stripePriceId = items[0].price.id
+            const productId = items[0].plan.product as string
+            const planType = getPlanFromProductId(productId)
+            const status = stripeEvent.status
+
+            // Now perform the database operation with validated data
+            const result = await db
+              .insert(subscription)
+              .values({
+                userId,
+                stripeSubscriptionId,
+                stripePriceId,
+                stripeCustomerId,
+                status,
+                plan: planType,
               })
-
-              await db
-                .update(subscription)
-                .set({
-                  status: stripeEvent.status,
-                  plan: 'FREE',
-                  updatedAt: new Date(),
-                })
-                .where(eq(subscription.stripeSubscriptionId, stripeEvent.id))
-              logger.info({
-                msg: 'Subscription deleted',
-                event: 'subscription_deleted',
-                metadata: { subscriptionId: stripeEvent.id },
-              })
-              break
-            }
-
-            case 'customer.subscription.updated': {
-              // First log what we received
-              logger.info({
-                msg: 'Processing subscription update',
-                event: 'subscription_update_started',
-                metadata: {
-                  subscriptionId: stripeEvent.id,
-                  eventData: stripeEvent,
-                },
-              })
-
-              // Safely extract the required data
-              const stripeCustomerId = stripeEvent.customer as string
-              const stripeSubscriptionId = stripeEvent.id
-              const items = stripeEvent.items?.data
-
-              if (
-                !items ||
-                items.length === 0 ||
-                !items[0]?.price?.id ||
-                !items[0]?.plan?.product
-              ) {
-                logger.warn({
-                  msg: 'Missing required subscription data',
-                  event: 'subscription_update_invalid_data',
-                  metadata: {
-                    subscriptionId: stripeSubscriptionId,
-                    items: stripeEvent.items,
-                  },
-                })
-                res.status(400).json({
-                  error: 'Invalid subscription data',
-                  message: 'Missing required subscription fields',
-                })
-                return
-              }
-
-              const stripePriceId = items[0].price.id
-              const productId = items[0].plan.product as string
-              const planType = getPlanFromProductId(productId)
-              const status = stripeEvent.status
-
-              // Now perform the database operation with validated data
-              const result = await db
-                .insert(subscription)
-                .values({
-                  userId,
+              .onConflictDoUpdate({
+                target: subscription.userId,
+                set: {
                   stripeSubscriptionId,
                   stripePriceId,
                   stripeCustomerId,
                   status,
                   plan: planType,
-                })
-                .onConflictDoUpdate({
-                  target: subscription.userId,
-                  set: {
-                    stripeSubscriptionId,
-                    stripePriceId,
-                    stripeCustomerId,
-                    status,
-                    plan: planType,
-                    updatedAt: new Date(),
-                  },
-                })
-                .returning()
-
-              const isNewSubscription =
-                result[0].createdAt.getTime() === result[0].updatedAt.getTime()
-
-              let notificationText = ''
-              if (stripeEvent.cancel_at_period_end && stripeEvent.cancel_at) {
-                const cancelDate = new Date(stripeEvent.cancel_at * 1000)
-                notificationText = `❌ Subscription Cancellation Scheduled\nUser: ${user.email}\nPlan: ${planType}\nWill cancel on: ${cancelDate.toLocaleDateString()}\nReason: ${stripeEvent.cancellation_details?.reason || 'Not specified'}`
-              } else {
-                notificationText = isNewSubscription
-                  ? `🎉 New subscription!\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
-                  : `📝 Subscription updated\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
-              }
-
-              sendSlackNotification({
-                text: notificationText,
-                channel: 'subscriptions',
-              })
-              logger.info({
-                msg: stripeEvent.cancel_at_period_end
-                  ? 'Subscription scheduled for cancellation'
-                  : isNewSubscription
-                    ? 'New subscription created'
-                    : 'Subscription updated',
-                event: stripeEvent.cancel_at_period_end
-                  ? 'subscription_cancellation_scheduled'
-                  : isNewSubscription
-                    ? 'subscription_created'
-                    : 'subscription_updated',
-                metadata: {
-                  subscriptionId: stripeSubscriptionId,
-                  plan: planType,
-                  status,
-                  cancelAt: stripeEvent.cancel_at
-                    ? new Date(stripeEvent.cancel_at * 1000)
-                    : undefined,
-                  cancellationReason: stripeEvent.cancellation_details?.reason,
+                  updatedAt: new Date(),
                 },
               })
-              break
+              .returning()
+
+            const isNewSubscription =
+              result[0].createdAt.getTime() === result[0].updatedAt.getTime()
+
+            let notificationText = ''
+            if (stripeEvent.cancel_at_period_end && stripeEvent.cancel_at) {
+              const cancelDate = new Date(stripeEvent.cancel_at * 1000)
+              notificationText = `❌ Subscription Cancellation Scheduled\nUser: ${user.email}\nPlan: ${planType}\nWill cancel on: ${cancelDate.toLocaleDateString()}\nReason: ${stripeEvent.cancellation_details?.reason || 'Not specified'}`
+            } else {
+              notificationText = isNewSubscription
+                ? `🎉 New subscription!\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
+                : `📝 Subscription updated\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
             }
 
-            default: {
-              logger.warn({
-                msg: 'Unhandled webhook event',
-                event: 'webhook_unhandled_event',
-                metadata: { eventType },
-              })
-            }
+            sendSlackNotification({
+              text: notificationText,
+              channel: 'subscriptions',
+            })
+            logger.info({
+              msg: stripeEvent.cancel_at_period_end
+                ? 'Subscription scheduled for cancellation'
+                : isNewSubscription
+                  ? 'New subscription created'
+                  : 'Subscription updated',
+              event: stripeEvent.cancel_at_period_end
+                ? 'subscription_cancellation_scheduled'
+                : isNewSubscription
+                  ? 'subscription_created'
+                  : 'subscription_updated',
+              metadata: {
+                subscriptionId: stripeSubscriptionId,
+                plan: planType,
+                status,
+                cancelAt: stripeEvent.cancel_at
+                  ? new Date(stripeEvent.cancel_at * 1000)
+                  : undefined,
+                cancellationReason: stripeEvent.cancellation_details?.reason,
+              },
+            })
+            break
           }
 
-          logger.info({
-            msg: 'Webhook processed successfully',
-            event: 'webhook_processed',
-            metadata: {
-              eventType,
-              webhookKey: res.locals.webhookKey,
-            },
-          })
-
-          res.json({ received: true })
-        } catch (processingError) {
-          await db
-            .update(webhookEvent)
-            .set({
-              status: 'failed',
-              error:
-                processingError instanceof Error
-                  ? processingError.message
-                  : String(processingError),
+          default: {
+            logger.warn({
+              msg: 'Unhandled webhook event',
+              event: 'webhook_unhandled_event',
+              metadata: { eventType },
             })
-            .where(eq(webhookEvent.id, webhookRecord.id))
-
-          throw processingError
+          }
         }
+
+        logger.info({
+          msg: 'Webhook processed successfully',
+          event: 'webhook_processed',
+          metadata: {
+            eventType,
+            webhookKey: res.locals.webhookKey,
+          },
+        })
+
+        res.json({ received: true })
       },
     )
   } catch (err) {
