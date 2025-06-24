@@ -1,4 +1,5 @@
 import { logger } from '@ritchy/logger'
+import type { DomainRegistration } from '@ritchy/types'
 import { WHOIS_CONFIG } from '../../config/whois'
 import { createApiQueue } from '../utils/api_queue'
 import { createTokenBucket } from '../utils/rate_limiter/rate_limiter'
@@ -28,13 +29,6 @@ const whoisApiQueue = createApiQueue(whoisRateLimiter, {
   },
 })
 
-// Parsed WHOIS data interface
-export interface WhoisData {
-  registrationDate: string | null
-  registrar: string | null
-  lastUpdated: string
-}
-
 /**
  * Performs WHOIS lookup using the WHOIS API
  * @param domain - Domain to lookup
@@ -44,7 +38,7 @@ export interface WhoisData {
 export const performWhoisLookup = async (
   domain: string,
   timeoutMs = 10000,
-): Promise<WhoisData | null> => {
+): Promise<DomainRegistration | null> => {
   const startTime = Date.now()
 
   try {
@@ -111,9 +105,8 @@ export const performWhoisLookup = async (
     })
 
     // Safe data extraction with validated response
-    const whoisData: WhoisData = {
+    const whoisData: DomainRegistration = {
       registrationDate: response.domain.created_date_in_time || null,
-      registrar: response.registrar?.name || null,
       lastUpdated: new Date().toISOString(),
     }
 
@@ -125,7 +118,6 @@ export const performWhoisLookup = async (
         registrationDate: whoisData.registrationDate
           ? new Date(whoisData.registrationDate).toISOString()
           : null,
-        registrar: whoisData.registrar,
         durationMs: Date.now() - startTime,
       },
     })

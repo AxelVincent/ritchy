@@ -1,8 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { EnrichResponse, Place, PlaceBase } from '@ritchy/types'
 import { EnrichResponseSchema } from '@ritchy/types'
-import { z } from 'zod'
-import { calculateDomainAge } from '../../external/whois/utils/calculate_domain_age'
 import { getUserEnrichedPlaces } from '../enrichment/getUserEnrichedPlaces'
 import { getOrFetchEnrichmentData } from '../enrichment/get_or_fetch_enrichment_data'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'

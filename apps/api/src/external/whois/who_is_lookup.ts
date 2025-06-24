@@ -1,22 +1,18 @@
 import { logger } from '@ritchy/logger'
+import type { DomainRegistration } from '@ritchy/types'
 import { isSocialMediaDomain } from '../../services/enrichment/utils/is_social_media_domain'
-import {
-  type WhoisData,
-  performWhoisLookup as performWhoisApiLookup,
-} from './whois_api'
+import { performWhoisLookup as performWhoisApiLookup } from './whois_api'
 
 /**
- * Performs WHOIS lookup with retry logic and exponential backoff
+ * Performs WHOIS lookup using external API
  * @param domain - Domain to lookup
- * @param maxRetries - Maximum number of retries
  * @param timeoutMs - Timeout in milliseconds (default: 10000ms)
  * @returns WHOIS data or null if lookup fails
  */
 export const performWhoisLookup = async (
   domain: string,
-  maxRetries = 3,
   timeoutMs = 10000,
-): Promise<WhoisData | null> => {
+): Promise<DomainRegistration | null> => {
   // Skip social media domains
   if (isSocialMediaDomain(domain)) {
     logger.debug({
@@ -27,47 +23,28 @@ export const performWhoisLookup = async (
     return null
   }
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const whoisData = await performWhoisApiLookup(domain, timeoutMs)
+  try {
+    const whoisData = await performWhoisApiLookup(domain, timeoutMs)
 
-      logger.debug({
-        event: 'whois_lookup_success',
-        msg: 'WHOIS lookup completed successfully',
-        metadata: {
-          domain,
-          registrationDate: whoisData?.registrationDate,
-          registrar: whoisData?.registrar,
-        },
-      })
+    logger.debug({
+      event: 'whois_lookup_success',
+      msg: 'WHOIS lookup completed successfully',
+      metadata: {
+        domain,
+        registrationDate: whoisData?.registrationDate,
+      },
+    })
 
-      return whoisData
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error)
+    return whoisData
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
 
-      if (attempt === maxRetries) {
-        logger.error({
-          event: 'whois_lookup_failed_after_all_retries',
-          msg: 'WHOIS lookup failed after all retries',
-          metadata: { domain, error: errorMessage },
-        })
-        return null
-      }
+    logger.error({
+      event: 'whois_lookup_failed',
+      msg: 'WHOIS lookup failed',
+      metadata: { domain, error: errorMessage },
+    })
 
-      logger.warn({
-        event: 'whois_lookup_attempt_failed',
-        msg: 'WHOIS lookup attempt failed',
-        metadata: { domain, attempt, error: errorMessage },
-      })
-
-      // Exponential backoff: 2^attempt seconds
-      await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000))
-    }
+    return null
   }
-
-  return null
 }
-
-// Re-export the WhoisData type for convenience
-export type { WhoisData } from './whois_api'
