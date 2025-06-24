@@ -207,7 +207,12 @@ const createOperations = (context: VersionContext) => ({
                 ],
             ),
             set: {
-              ...chunk[0],
+              ...Object.fromEntries(
+                Object.entries(chunk[0]).filter(
+                  ([key]) =>
+                    !conflictTarget.includes(key as keyof InferTable<T>),
+                ),
+              ),
               updatedAt: new Date(),
             } as unknown as PgUpdateSetSource<(typeof schema)[T]>,
           })
