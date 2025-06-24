@@ -33,7 +33,6 @@ export const stripeWebhook = async (
   })
 
   let event: Stripe.Event
-  let idempotencyKey: string
 
   try {
     const signature = req.headers['stripe-signature']
@@ -56,10 +55,11 @@ export const stripeWebhook = async (
       STRIPE_CONFIG.API_KEYS.WEBHOOK_SECRET,
     )
 
-    const { isDuplicate, idempotencyKey: key } =
-      await validateWebhookIdempotency(req.headers, event, event.type)
-
-    idempotencyKey = key ?? ''
+    const { isDuplicate } = await validateWebhookIdempotency(
+      req.headers,
+      event,
+      event.type,
+    )
 
     if (isDuplicate) {
       res.status(200).json({ received: true, message: 'Already processed' })
@@ -71,7 +71,6 @@ export const stripeWebhook = async (
       event: 'webhook_signature_verified',
       metadata: {
         eventType: event.type,
-        idempotencyKey,
       },
     })
   } catch (err) {
@@ -183,7 +182,6 @@ export const stripeWebhook = async (
           event: 'webhook_event_processing',
           metadata: {
             eventType: event.type,
-            idempotencyKey,
           },
         })
 
