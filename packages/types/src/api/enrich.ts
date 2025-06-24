@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../common'
+import { UrlSchema } from '../schemas'
 
 type SocialMediaConfigType = {
   [K: string]: {
@@ -45,13 +46,13 @@ export const DomainRegistrationSchema = z.object({
 // API Request/Response Schemas
 export const EnrichRequestSchema = z.object({
   id: z.string(),
-  website: z.string().url(),
+  website: UrlSchema,
 })
 
 export const EnrichResponseSchema = z.object({
   id: z.string(),
   emails: z.array(z.string().email()),
-  socialLinks: z.record(SocialMediaPlatformEnum, z.array(z.string().url())),
+  socialLinks: z.record(SocialMediaPlatformEnum, z.array(UrlSchema)),
   domainRegistration: DomainRegistrationSchema.optional(),
 })
 

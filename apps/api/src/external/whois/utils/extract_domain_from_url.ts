@@ -1,46 +1,6 @@
 import { logger } from '@ritchy/logger'
+import { SecureUrlSchema } from '@ritchy/types'
 import { z } from 'zod'
-
-// URL validation schema with additional security checks
-const UrlSchema = z
-  .string()
-  .url('Invalid URL format')
-  .refine(
-    (url) => {
-      try {
-        const parsed = new URL(url)
-        // Only allow http and https protocols
-        return ['http:', 'https:'].includes(parsed.protocol)
-      } catch {
-        return false
-      }
-    },
-    {
-      message: 'Only HTTP and HTTPS protocols are allowed',
-    },
-  )
-  .refine(
-    (url) => {
-      try {
-        const parsed = new URL(url)
-        // Prevent localhost and private IP ranges
-        const hostname = parsed.hostname.toLowerCase()
-        return !(
-          hostname === 'localhost' ||
-          hostname.startsWith('127.') ||
-          hostname.startsWith('10.') ||
-          hostname.startsWith('192.168.') ||
-          hostname.startsWith('172.') ||
-          hostname.includes('::1')
-        )
-      } catch {
-        return false
-      }
-    },
-    {
-      message: 'Localhost and private IP addresses are not allowed',
-    },
-  )
 
 /**
  * Extracts domain from URL with proper validation
@@ -49,8 +9,8 @@ const UrlSchema = z
  */
 export const extractDomainFromUrl = (url: string): string => {
   try {
-    // Validate URL first
-    const validatedUrl = UrlSchema.parse(url)
+    // Validate URL first using shared schema
+    const validatedUrl = SecureUrlSchema.parse(url)
 
     // Extract domain using URL constructor for better reliability
     const parsedUrl = new URL(validatedUrl)
