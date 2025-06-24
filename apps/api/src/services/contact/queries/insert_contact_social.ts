@@ -1,0 +1,52 @@
+import { db } from '../../../db/db'
+import { contactSocial } from '../../../db/schema'
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import type * as schema from '../../../db/schema'
+
+export interface InsertContactSocialData {
+  contactId: string
+  platform: string
+  profileUrl: string
+  isPrimary: boolean
+  source: string
+}
+
+/**
+ * Insert a single contact social profile within a transaction
+ * @param tx Transaction instance
+ * @param data Social profile data to insert
+ * @returns Inserted contact social profile
+ */
+export const insert_contact_social_with_transaction = async (
+  tx: PostgresJsDatabase<typeof schema>,
+  data: InsertContactSocialData,
+) => {
+  const [insertedSocial] = await tx
+    .insert(contactSocial)
+    .values(data)
+    .returning()
+
+  return insertedSocial
+}
+
+/**
+ * Insert multiple contact social profiles within a transaction
+ * @param tx Transaction instance
+ * @param socials Array of social profile data to insert
+ * @returns Array of inserted contact social profiles
+ */
+export const insert_contact_socials_with_transaction = async (
+  tx: PostgresJsDatabase<typeof schema>,
+  socials: InsertContactSocialData[],
+) => {
+  if (socials.length === 0) {
+    return []
+  }
+
+  const insertedSocials = await tx
+    .insert(contactSocial)
+    .values(socials)
+    .returning()
+
+  return insertedSocials
+}

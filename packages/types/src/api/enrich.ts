@@ -48,15 +48,6 @@ export const EnrichResponseSchema = z.object({
   socialLinks: z.record(SocialMediaPlatformEnum, z.array(z.string().url())),
 })
 
-export const EnrichmentWebhookSchema = z.object({
-  contactId: z.string().uuid(),
-  enrichmentData: z.object({
-    emails: z.array(z.string().email()),
-    socialLinks: z.record(z.array(z.string().url())),
-  }),
-  source: z.enum(['enrichment', 'manual', 'third_party']).optional(),
-})
-
 export const EnrichApiResponseSchema = z.union([
   EnrichResponseSchema,
   ApiErrorResponseSchema,
@@ -65,7 +56,6 @@ export const EnrichApiResponseSchema = z.union([
 // Type inference from schemas
 export type EnrichRequestQuery = z.infer<typeof EnrichRequestSchema>
 export type EnrichResponse = z.infer<typeof EnrichResponseSchema>
-export type EnrichmentWebhook = z.infer<typeof EnrichmentWebhookSchema>
 export type EnrichApiResponse = z.infer<typeof EnrichApiResponseSchema>
 
 // Add type for the config
