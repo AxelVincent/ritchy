@@ -12,7 +12,7 @@ import { getPlacesWithDetails } from '../../services/places/getPlacesWithDetails
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
-  res: Response<GetSearchContentApiResponse>
+  res: Response<GetSearchContentApiResponse>,
 ): Promise<void> => {
   try {
     const searchId = req.params.id
@@ -25,7 +25,7 @@ export const getSearchContent = async (
 
     if (!result) {
       res.status(404).json({
-        error: 'Search not found'
+        error: 'Search not found',
       })
       return
     }
@@ -46,13 +46,13 @@ export const getSearchContent = async (
           userId,
           model: result.model,
           keyword: result.keyword,
-          rectangle: result.rectangle
-        }
+          rectangle: result.rectangle,
+        },
       })
       const freshResults = await postTextSearchV1({
         model: result.model,
         textQuery: result.keyword,
-        rectangle: result.rectangle
+        rectangle: result.rectangle,
       })
 
       // Store only the place IDs in the search cache
@@ -71,8 +71,8 @@ export const getSearchContent = async (
           cacheKey: key,
           retryAttempt: 'second_attempt_after_fetch',
           searchModel: result.model,
-          searchKeyword: result.keyword
-        }
+          searchKeyword: result.keyword,
+        },
       })
       res.status(500).json({ error: 'Failed to get search content' })
       return
@@ -81,7 +81,7 @@ export const getSearchContent = async (
     // Convert place IDs to the format expected by the shared utility
     const placesWithSearchIds = cachedResults.data.map((placeId) => ({
       placeId,
-      searchId
+      searchId,
     }))
 
     // Use shared utility to get place details and aggregate data
@@ -89,16 +89,16 @@ export const getSearchContent = async (
       placesWithSearchIds,
       {
         userId,
-        includeEnrichment: true
-      }
+        includeEnrichment: true,
+      },
     )
 
     logger.info({
       msg: 'Get search content',
       event: 'get_search_content',
       metadata: {
-        results: aggregatedResults.length
-      }
+        results: aggregatedResults.length,
+      },
     })
     res.json(aggregatedResults)
     return
@@ -107,11 +107,11 @@ export const getSearchContent = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error }
+        metadata: { error },
       })
       res.status(400).json({
         error: 'Invalid request data',
-        details: error.errors
+        details: error.errors,
       })
       return
     }
@@ -125,8 +125,8 @@ export const getSearchContent = async (
         searchId: req.params.id,
         userId: req.auth.userId,
         errorType: error?.constructor?.name,
-        errorKeys: error ? Object.keys(error) : []
-      }
+        errorKeys: error ? Object.keys(error) : [],
+      },
     })
     res.status(500).json({ error: 'Failed to get search content' })
     return
