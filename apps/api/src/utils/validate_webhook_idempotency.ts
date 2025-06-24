@@ -135,5 +135,10 @@ export const validateWebhookIdempotency = async (
     },
   })
 
-  return { record: webhookRecord, isDuplicate: false, provider }
+  return {
+    record: webhookRecord,
+    idempotencyKey,
+    isDuplicate: false,
+    provider,
+  }
 }
