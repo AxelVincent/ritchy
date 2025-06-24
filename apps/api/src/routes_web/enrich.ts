@@ -5,13 +5,11 @@ import {
   EnrichRequestSchema,
   EnrichResponseSchema,
 } from '@ritchy/types'
-import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
-import { db } from '../db/db'
-import { contact } from '../db/schema'
 import { createVersionedDbFromRequest } from '../db/versioned_db/client'
+import { fetchOrCreateContact } from '../services/contact/queries/fetch_or_create_contact'
 import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
 import { saveEnrichmentData } from '../services/enrichment/saveEnrichmentData'
 
@@ -69,41 +67,28 @@ export const enrichWebsite = async (
 
     // Save enrichment data to PostgreSQL for contact metadata
     try {
-      // Get existing contact for this place and user
-      const [existingContact] = await db
-        .select()
-        .from(contact)
-        .where(and(eq(contact.placeId, id), eq(contact.userId, userId)))
+      // Get or create contact for this place and user
+      const contact = await fetchOrCreateContact(id, userId)
 
-      if (existingContact) {
-        await saveEnrichmentData({
-          contactId: existingContact.id,
-          enrichmentData: enrichedData,
-          source: 'enrichment',
-        })
+      await saveEnrichmentData({
+        contactId: contact.id,
+        enrichmentData: enrichedData,
+        source: 'enrichment',
+      })
 
-        logger.info({
-          msg: 'Enrichment data saved to database',
-          event: 'enrichment_data_saved',
-          metadata: {
-            userId,
-            placeId: id,
-            contactId: existingContact.id,
-            stats: {
-              emailsFound: enrichedData.emails.length,
-              socialPlatformsFound: Object.keys(enrichedData.socialLinks)
-                .length,
-            },
+      logger.info({
+        msg: 'Enrichment data saved to database',
+        event: 'enrichment_data_saved',
+        metadata: {
+          userId,
+          placeId: id,
+          contactId: contact.id,
+          stats: {
+            emailsFound: enrichedData.emails.length,
+            socialPlatformsFound: Object.keys(enrichedData.socialLinks).length,
           },
-        })
-      } else {
-        logger.warn({
-          msg: 'No contact found for enrichment',
-          event: 'enrichment_no_contact',
-          metadata: { userId, placeId: id },
-        })
-        // Don't fail the request - user still gets enrichment results
-      }
+        },
+      })
     } catch (saveError) {
       logger.error({
         msg: 'Failed to save enrichment data to database',
