@@ -1,23 +1,20 @@
+import { z } from 'zod'
+
 /**
- * Validates email addresses
+ * Validates email addresses using Zod's built-in email validator
  * @param emails Array of email addresses to validate
  * @returns Array of valid email addresses
  */
 
-export interface EmailValidationResult {
-  email: string
-  isValid: boolean
-}
+const emailSchema = z.string().email()
 
-export const is_valid_email = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-  // Check if email matches regex pattern
-  if (!emailRegex.test(email)) {
+const is_valid_email = (email: string): boolean => {
+  try {
+    emailSchema.parse(email)
+    return true
+  } catch {
     return false
   }
-
-  return true
 }
 
 export const validate_emails = (emails: string[]): string[] => {
