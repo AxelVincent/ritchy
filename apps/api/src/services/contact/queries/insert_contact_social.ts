@@ -1,6 +1,6 @@
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../db/db'
 import { contactSocial } from '../../../db/schema'
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../../db/schema'
 
 export interface InsertContactSocialData {
@@ -9,24 +9,6 @@ export interface InsertContactSocialData {
   profileUrl: string
   isPrimary: boolean
   source: string
-}
-
-/**
- * Insert a single contact social profile within a transaction
- * @param tx Transaction instance
- * @param data Social profile data to insert
- * @returns Inserted contact social profile
- */
-export const insert_contact_social_with_transaction = async (
-  tx: PostgresJsDatabase<typeof schema>,
-  data: InsertContactSocialData,
-) => {
-  const [insertedSocial] = await tx
-    .insert(contactSocial)
-    .values(data)
-    .returning()
-
-  return insertedSocial
 }
 
 /**

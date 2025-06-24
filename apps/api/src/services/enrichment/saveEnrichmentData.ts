@@ -3,8 +3,6 @@ import type { EnrichResponse } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import type * as schema from '../../db/schema'
-import { validate_emails } from '../contact/validators/validate_emails'
-import { validate_socials } from '../contact/validators/validate_socials'
 import {
   get_contact_emails,
   get_primary_contact_email,
@@ -15,7 +13,9 @@ import {
 } from '../contact/queries'
 import { insert_contact_emails_with_transaction } from '../contact/queries'
 import { insert_contact_socials_with_transaction } from '../contact/queries'
-import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url.ts'
+import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url'
+import { validate_emails } from '../contact/validators/validate_emails'
+import { validate_socials } from '../contact/validators/validate_socials'
 
 interface SaveEnrichmentDataOptions {
   contactId: string
