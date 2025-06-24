@@ -155,7 +155,7 @@ const sanitizeEnrichmentData = (
 
   // Sanitize domain registration
   if (sanitized.domainRegistration) {
-    const { registrationDate, registrar } = sanitized.domainRegistration
+    const { registrationDate } = sanitized.domainRegistration
 
     // Validate and fix registration date
     if (registrationDate && typeof registrationDate === 'string') {
@@ -166,15 +166,6 @@ const sanitizeEnrichmentData = (
         ? registrationDate
         : null
     }
-
-    // Validate registrar
-    sanitized.domainRegistration.registrar =
-      typeof registrar === 'string' ? registrar : null
-
-    // Use centralized domain age calculation
-    sanitized.domainRegistration.domainAge = calculateDomainAge(
-      sanitized.domainRegistration.registrationDate,
-    )
   }
 
   // Ensure id is present

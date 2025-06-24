@@ -23,38 +23,36 @@ export const getOrFetchEnrichmentData = async (
   // If cache miss, fetch/scrape as needed
   if (!enrichmentData) {
     enrichmentData = await scrapeFromOptimizedUrls(placeId, website, maxRetries)
-    if (!enrichmentData) return null
+
+    // Only perform WHOIS lookup when fetching new data
+    try {
+      const domain = extractDomainFromUrl(website)
+      const whois = await performWhoisLookup(domain)
+      enrichmentData.domainRegistration = whois ?? undefined
+
+      logger.debug({
+        msg: 'WHOIS data fetched successfully',
+        event: 'whois_data_fetched',
+        metadata: {
+          placeId,
+          domain,
+          registrationDate: whois?.registrationDate,
+        },
+      })
+      if (!enrichmentData) return null
+    } catch (error) {
+      enrichmentData.domainRegistration = undefined
+      logger.warn({
+        msg: 'WHOIS lookup failed, setting domainRegistration to undefined',
+        event: 'whois_lookup_failed',
+        metadata: { placeId, website, error },
+      })
+    }
+
     cacheUpdated = true
   }
 
-  try {
-    const domain = extractDomainFromUrl(website)
-    const whois = await performWhoisLookup(domain)
-    enrichmentData.domainRegistration = whois ?? undefined
-    cacheUpdated = true
-
-    logger.info({
-      msg: 'WHOIS data updated successfully',
-      event: 'whois_data_updated',
-      metadata: {
-        placeId,
-        domain,
-        registrationDate: whois?.registrationDate,
-        registrar: whois?.registrar,
-        domainAge: whois?.domainAge,
-      },
-    })
-  } catch (error) {
-    enrichmentData.domainRegistration = undefined
-    cacheUpdated = true
-    logger.warn({
-      msg: 'WHOIS lookup failed, setting domainRegistration to null',
-      event: 'whois_lookup_failed',
-      metadata: { placeId, website, error },
-    })
-  }
-
-  // Update cache if data was fetched or WHOIS was updated
+  // Update cache if data was fetched
   if (cacheUpdated) {
     await redisClient.set(cacheKey, enrichmentData)
   }

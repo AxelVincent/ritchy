@@ -39,8 +39,6 @@ const SocialMediaPlatformEnum = z.enum(
 // Domain registration data schema
 export const DomainRegistrationSchema = z.object({
   registrationDate: z.string().nullable(),
-  registrar: z.string().nullable(),
-  domainAge: z.number().nullable(),
   lastUpdated: z.string(),
 })
 
