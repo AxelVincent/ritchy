@@ -16,7 +16,7 @@ export interface InsertContactEmailData {
  * @param emails Array of email data to insert
  * @returns Array of inserted contact emails
  */
-export const insert_contact_emails_with_transaction = async (
+export const insertContactEmailsWithTransaction = async (
   tx: PostgresJsDatabase<typeof schema>,
   emails: InsertContactEmailData[],
 ) => {

@@ -7,7 +7,7 @@ import { contactEmail } from '../../../db/schema'
  * @param contactId Contact ID to fetch emails for
  * @returns Array of contact emails
  */
-export const get_contact_emails = async (contactId: string) => {
+export const getContactEmails = async (contactId: string) => {
   return await db.query.contactEmail.findMany({
     where: eq(contactEmail.contactId, contactId),
     orderBy: (contactEmail, { desc }) => [desc(contactEmail.isPrimary)],
@@ -19,7 +19,7 @@ export const get_contact_emails = async (contactId: string) => {
  * @param contactId Contact ID to fetch primary email for
  * @returns Primary email or null if none exists
  */
-export const get_primary_contact_email = async (contactId: string) => {
+export const getPrimaryContactEmail = async (contactId: string) => {
   return await db.query.contactEmail.findFirst({
     where: and(
       eq(contactEmail.contactId, contactId),

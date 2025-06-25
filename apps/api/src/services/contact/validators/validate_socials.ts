@@ -4,7 +4,7 @@
  * @returns Array of valid social media URLs
  */
 
-const is_valid_social_url = (url: string): boolean => {
+const isValidSocialUrl = (url: string): boolean => {
   try {
     const urlObj = new URL(url)
     return urlObj.protocol === 'http:' || urlObj.protocol === 'https:'
@@ -13,6 +13,6 @@ const is_valid_social_url = (url: string): boolean => {
   }
 }
 
-export const validate_socials = (urls: string[]): string[] => {
-  return urls.filter(is_valid_social_url)
+export const validateSocials = (urls: string[]): string[] => {
+  return urls.filter(isValidSocialUrl)
 }

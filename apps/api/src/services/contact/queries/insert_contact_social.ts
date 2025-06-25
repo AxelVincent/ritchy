@@ -17,7 +17,7 @@ export interface InsertContactSocialData {
  * @param socials Array of social profile data to insert
  * @returns Array of inserted contact social profiles
  */
-export const insert_contact_socials_with_transaction = async (
+export const insertContactSocialsWithTransaction = async (
   tx: PostgresJsDatabase<typeof schema>,
   socials: InsertContactSocialData[],
 ) => {

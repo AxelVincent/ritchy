@@ -7,7 +7,7 @@ import { contactSocial } from '../../../db/schema'
  * @param contactId Contact ID to fetch social profiles for
  * @returns Array of contact social profiles
  */
-export const get_contact_socials = async (contactId: string) => {
+export const getContactSocials = async (contactId: string) => {
   return await db.query.contactSocial.findMany({
     where: eq(contactSocial.contactId, contactId),
     orderBy: (contactSocial, { desc }) => [desc(contactSocial.isPrimary)],
@@ -19,7 +19,7 @@ export const get_contact_socials = async (contactId: string) => {
  * @param contactId Contact ID to fetch primary social for
  * @returns Primary social profile or null if none exists
  */
-export const get_primary_contact_social = async (contactId: string) => {
+export const getPrimaryContactSocial = async (contactId: string) => {
   return await db.query.contactSocial.findFirst({
     where: and(
       eq(contactSocial.contactId, contactId),
