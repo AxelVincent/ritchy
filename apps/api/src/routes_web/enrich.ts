@@ -8,6 +8,9 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
+import { eq } from 'drizzle-orm'
+import { db } from '../db/db'
+import { contactEmail } from '../db/schema'
 import { createVersionedDbFromRequest } from '../db/versioned_db/client'
 import { getOrFetchEnrichmentData } from '../services/enrichment/get_or_fetch_enrichment_data'
 
