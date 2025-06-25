@@ -3,7 +3,7 @@ import type { Client } from '@hubspot/api-client'
 import { logger } from '@ritchy/logger'
 import type { ContactMapping } from '@ritchy/types'
 
-import { fetchOrCreateContacts } from '../../../services/contact/queries/fetch_or_create_contact'
+import { fetchOrCreateContacts } from '../../../services/contact/fetch_or_create_contact'
 import { manageHubspotFieldMappings } from '../../../services/hubspot/manage_hubspot_field_mapping'
 import { getFieldMappings } from '../../../services/hubspot/sync/get_field_mappings'
 import { getLeadMappings } from '../../../services/hubspot/sync/get_lead_mappings'

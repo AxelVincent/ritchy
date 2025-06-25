@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
-import { db } from '../../../db/db'
-import { contact } from '../../../db/schema'
-import { getPlaceDetailsV1 } from '../../../external/google_maps/place_details_V1'
+import { db } from '../../db/db'
+import { contact } from '../../db/schema'
+import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
 
 export const fetchOrCreateContact = async (placeId: string, userId: string) => {
   const [existingContact] = await db
