@@ -1,15 +1,18 @@
 import type { Client } from '@hubspot/api-client'
+
 import { logger } from '@ritchy/logger'
 import type { ContactMapping } from '@ritchy/types'
-import { manageHubspotFieldMappings } from '../../../services/hubspot/manage_hubspot_field_mapping'
-import { getValidToken } from '../token_manager'
-import type { BatchOperation, HubspotBase } from '../types'
-import { processHubspotBatch } from './helpers/batch'
 
+import { fetchOrCreateContacts } from '../../../services/contact/fetch_or_create_contact'
+import { manageHubspotFieldMappings } from '../../../services/hubspot/manage_hubspot_field_mapping'
 import { getFieldMappings } from '../../../services/hubspot/sync/get_field_mappings'
 import { getLeadMappings } from '../../../services/hubspot/sync/get_lead_mappings'
 import { upsertLeadMapping } from '../../../services/hubspot/sync/upsert_lead_mapping'
-import { fetchContacts, fetchStatusData } from './helpers/fetch'
+
+import { getValidToken } from '../token_manager'
+import type { BatchOperation, HubspotBase } from '../types'
+import { processHubspotBatch } from './helpers/batch'
+import { fetchStatusData } from './helpers/fetch'
 import { transformContactData } from './helpers/transformers'
 
 /**
@@ -39,7 +42,7 @@ export const createOrUpdateContactsBatch = async (
   })
 
   const [contacts, statusData, leadMappings] = await Promise.all([
-    fetchContacts(placeIds, userId),
+    fetchOrCreateContacts(placeIds, userId),
     fetchStatusData(placeIds, userId),
     getLeadMappings(token.id, placeIds),
   ])
