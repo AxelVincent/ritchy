@@ -1,5 +1,5 @@
+import { logger } from '@ritchy/logger'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import { db } from '../../../db/db'
 import { contactEmail } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
 
@@ -21,6 +21,13 @@ export const insertContactEmailsWithTransaction = async (
   emails: InsertContactEmailData[],
 ) => {
   if (emails.length === 0) {
+    logger.debug({
+      msg: 'No emails to insert',
+      event: 'no_emails_to_insert',
+      metadata: {
+        totalEmails: emails.length,
+      },
+    })
     return []
   }
 

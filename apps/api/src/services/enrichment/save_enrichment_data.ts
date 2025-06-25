@@ -3,12 +3,12 @@ import type { EnrichResponse } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import type * as schema from '../../db/schema'
-import { insertContactEmailsWithTransaction } from '../contact/queries'
-import { insertContactSocialsWithTransaction } from '../contact/queries'
 import { getContactEmails } from '../contact/queries/get_contact_emails'
 import { getContactSocials } from '../contact/queries/get_contact_socials'
 import { getPrimaryContactEmail } from '../contact/queries/get_primary_contact_email'
 import { getPrimaryContactSocial } from '../contact/queries/get_primary_contact_social'
+import { insertContactEmailsWithTransaction } from '../contact/queries/insert_contact_email'
+import { insertContactSocialsWithTransaction } from '../contact/queries/insert_contact_social'
 import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url'
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
@@ -118,6 +118,15 @@ async function processEmailsWithTransaction(
   const emailsDeduplicated = validEmails.length - newEmails.length
 
   if (newEmails.length === 0) {
+    logger.debug({
+      msg: 'No new emails to save',
+      event: 'no_new_emails_to_save',
+      metadata: {
+        contactId,
+        totalEmails: emailList.length,
+        validEmails: validEmails.length,
+      },
+    })
     return {
       emailsSaved: 0,
       emailsDeduplicated,
@@ -135,6 +144,15 @@ async function processEmailsWithTransaction(
 
   // Case 1: No primary email exists - first new email received becomes primary
   if (!existingPrimary) {
+    logger.debug({
+      msg: 'No primary email exists, setting first new email as primary',
+      event: 'no_primary_email_exists',
+      metadata: {
+        contactId,
+        totalEmails: emailList.length,
+        validEmails: validEmails.length,
+      },
+    })
     const [primaryEmail, ...secondaryEmails] = emails
 
     // Prepare email data for insertion
