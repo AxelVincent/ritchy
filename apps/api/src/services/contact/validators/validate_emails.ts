@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 const emailSchema = z.string().email()
 
-const is_valid_email = (email: string): boolean => {
+const isValidEmail = (email: string): boolean => {
   try {
     emailSchema.parse(email)
     return true
@@ -17,6 +17,6 @@ const is_valid_email = (email: string): boolean => {
   }
 }
 
-export const validate_emails = (emails: string[]): string[] => {
-  return emails.filter(is_valid_email)
+export const validateEmails = (emails: string[]): string[] => {
+  return emails.filter(isValidEmail)
 }
