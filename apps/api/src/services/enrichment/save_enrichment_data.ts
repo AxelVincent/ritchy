@@ -20,7 +20,6 @@ import { validate_socials } from '../contact/validators/validate_socials'
 interface SaveEnrichmentDataOptions {
   contactId: string
   enrichmentData: EnrichResponse
-  source?: 'enrichment' | 'manual' | 'third_party'
 }
 
 interface EmailProcessResult {
@@ -42,7 +41,6 @@ interface SocialProcessResult {
 export async function saveEnrichmentData({
   contactId,
   enrichmentData,
-  source = 'enrichment',
 }: SaveEnrichmentDataOptions): Promise<{
   emailResults: EmailProcessResult
   socialResults: SocialProcessResult
@@ -59,7 +57,6 @@ export async function saveEnrichmentData({
       contactId,
       emailsCount: emails.length,
       socialLinksCount: flattenedSocialLinks.length,
-      source,
     },
   })
 
@@ -68,13 +65,11 @@ export async function saveEnrichmentData({
     const emailResults = await processEmailsWithTransaction(
       contactId,
       emails,
-      source,
       tx,
     )
     const socialResults = await processSocialsWithTransaction(
       contactId,
       flattenedSocialLinks,
-      source,
       tx,
     )
 
@@ -99,19 +94,18 @@ export async function saveEnrichmentData({
 
 async function processEmailsWithTransaction(
   contactId: string,
-  emails: string[],
-  source: string,
+  emailList: string[],
   tx: PostgresJsDatabase<typeof schema>,
 ): Promise<EmailProcessResult> {
   // validate incoming new emails
-  const validEmails = validate_emails(emails)
+  const validEmails = validate_emails(emailList)
 
   logger.info({
     msg: 'Email processing',
     event: 'email_processing',
     metadata: {
       contactId,
-      totalEmails: emails.length,
+      totalEmails: emailList.length,
       validEmails: validEmails.length,
     },
   })
@@ -135,25 +129,25 @@ async function processEmailsWithTransaction(
     }
   }
 
+  // Create all emails as secondary first (consistent structure)
+  const emails = newEmails.map((email) => ({
+    contactId,
+    email,
+    isPrimary: false,
+    source: 'enrichment',
+  }))
+
   // Case 1: No primary email exists - first new email received becomes primary
   if (!existingPrimary) {
-    // we slice the first email as the primary and the rest as secondary
-    const [primaryEmail, ...secondaryEmails] = newEmails
+    const [primaryEmail, ...secondaryEmails] = emails
 
     // Prepare email data for insertion
     const emailsToInsert = [
       {
-        contactId,
-        email: primaryEmail,
+        ...primaryEmail,
         isPrimary: true,
-        source,
       },
-      ...secondaryEmails.map((email) => ({
-        contactId,
-        email,
-        isPrimary: false,
-        source,
-      })),
+      ...secondaryEmails,
     ]
 
     // Use transaction-aware insert function
@@ -167,14 +161,7 @@ async function processEmailsWithTransaction(
   }
 
   // Case 2: Primary email exists - all new emails become secondary
-  const secondaryEmailsToInsert = newEmails.map((email) => ({
-    contactId,
-    email,
-    isPrimary: false,
-    source,
-  }))
-
-  await insert_contact_emails_with_transaction(tx, secondaryEmailsToInsert)
+  await insert_contact_emails_with_transaction(tx, emails)
 
   return {
     emailsSaved: newEmails.length,
@@ -185,12 +172,11 @@ async function processEmailsWithTransaction(
 
 async function processSocialsWithTransaction(
   contactId: string,
-  socialLinks: string[],
-  source: string,
+  socialLinkList: string[],
   tx: PostgresJsDatabase<typeof schema>,
 ): Promise<SocialProcessResult> {
   // validate incoming social links
-  const validSocials = validate_socials(socialLinks)
+  const validSocials = validate_socials(socialLinkList)
 
   // Additional business metrics
   const platformsFound = [
@@ -202,7 +188,7 @@ async function processSocialsWithTransaction(
     event: 'social_analysis',
     metadata: {
       contactId,
-      totalSocials: socialLinks.length,
+      totalSocials: socialLinkList.length,
       validSocials: validSocials.length,
       platformsFound,
     },
@@ -227,27 +213,27 @@ async function processSocialsWithTransaction(
     }
   }
 
+  // Create all socials as secondary first (consistent structure)
+  const socials = newSocials.map((url) => ({
+    contactId,
+    platform: extractSocialPlatformFromUrl(url),
+    profileUrl: url,
+    isPrimary: false,
+    source: 'enrichment',
+  }))
+
   // Case 1: No primary social exists - first new social becomes primary
   if (!existingPrimary) {
-    // we slice the first social as the primary and the rest as secondary
-    const [primarySocial, ...secondarySocials] = newSocials
+    const [primarySocial, ...secondarySocials] = socials
 
     // Prepare social data for insertion
     const socialsToInsert = [
       {
-        contactId,
-        platform: extractSocialPlatformFromUrl(primarySocial),
-        profileUrl: primarySocial,
+        ...primarySocial,
         isPrimary: true,
-        source,
+        source: 'enrichment',
       },
-      ...secondarySocials.map((url) => ({
-        contactId,
-        platform: extractSocialPlatformFromUrl(url),
-        profileUrl: url,
-        isPrimary: false,
-        source,
-      })),
+      ...secondarySocials,
     ]
 
     // Use transaction-aware insert function
@@ -261,15 +247,7 @@ async function processSocialsWithTransaction(
   }
 
   // Case 2: Primary social exists - all new socials become secondary
-  const secondarySocialsToInsert = newSocials.map((url) => ({
-    contactId,
-    platform: extractSocialPlatformFromUrl(url),
-    profileUrl: url,
-    isPrimary: false,
-    source,
-  }))
-
-  await insert_contact_socials_with_transaction(tx, secondarySocialsToInsert)
+  await insert_contact_socials_with_transaction(tx, socials)
 
   return {
     socialLinksSaved: newSocials.length,

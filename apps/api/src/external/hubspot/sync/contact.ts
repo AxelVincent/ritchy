@@ -9,7 +9,8 @@ import { processHubspotBatch } from './helpers/batch'
 import { getFieldMappings } from '../../../services/hubspot/sync/get_field_mappings'
 import { getLeadMappings } from '../../../services/hubspot/sync/get_lead_mappings'
 import { upsertLeadMapping } from '../../../services/hubspot/sync/upsert_lead_mapping'
-import { fetchContacts, fetchStatusData } from './helpers/fetch'
+import { fetchOrCreateContacts } from '../../../services/contact/queries/fetch_or_create_contact'
+import { fetchStatusData } from './helpers/fetch'
 import { transformContactData } from './helpers/transformers'
 
 /**
@@ -39,7 +40,7 @@ export const createOrUpdateContactsBatch = async (
   })
 
   const [contacts, statusData, leadMappings] = await Promise.all([
-    fetchContacts(placeIds, userId),
+    fetchOrCreateContacts(placeIds, userId),
     fetchStatusData(placeIds, userId),
     getLeadMappings(token.id, placeIds),
   ])
