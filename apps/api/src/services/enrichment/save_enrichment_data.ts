@@ -107,8 +107,8 @@ async function processEmailsWithTransaction(
   })
 
   // Use non-transaction queries for reads
-  const existingEmails = await getContactEmails(contactId)
-  const existingPrimary = await getPrimaryContactEmail(contactId)
+  const existingEmails = await getContactEmails(contactId, tx)
+  const existingPrimary = await getPrimaryContactEmail(contactId, tx)
 
   // Deduplication logic
   const newEmails = validEmails.filter(
@@ -209,8 +209,8 @@ async function processSocialsWithTransaction(
   })
 
   // Use non-transaction queries for reads
-  const existingSocials = await getContactSocials(contactId)
-  const existingPrimary = await getPrimaryContactSocial(contactId)
+  const existingSocials = await getContactSocials(contactId, tx)
+  const existingPrimary = await getPrimaryContactSocial(contactId, tx)
 
   // Deduplication logic
   const newSocials = validSocials.filter(
