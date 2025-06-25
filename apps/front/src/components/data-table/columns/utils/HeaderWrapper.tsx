@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Tooltip,
   TooltipContent,
@@ -87,27 +86,7 @@ export const HeaderWrapper = ({
               side="top"
               className="max-w-xs p-0 bg-transparent border-none shadow-none"
             >
-              <Card className="shadow-md">
-                <CardContent className="p-4 space-y-2 text-sm">
-                  <div className="font-medium">What does this mean?</div>
-                  <ul className="list-disc pl-4 space-y-1">
-                    <li>
-                      <span className="font-semibold">
-                        Domain registration date
-                      </span>{' '}
-                      is when the website was first purchased. This can help you
-                      spot newly opened businesses.
-                    </li>
-                    <li>
-                      <span className="font-semibold text-foreground">
-                        But it's not always exact:
-                      </span>{' '}
-                      some businesses change names or get a website long after
-                      opening.
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
+              {helper}
             </TooltipContent>
           </Tooltip>
         )}

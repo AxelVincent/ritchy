@@ -7,7 +7,7 @@ import React from 'react'
 import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
-const formatRegistrationDate = (registrationDate: string): string => {
+const formatRegistrationDate = (registrationDate: string): string | null => {
   try {
     const date = parseISO(registrationDate)
     return date.toLocaleDateString('en-US', {
@@ -16,7 +16,7 @@ const formatRegistrationDate = (registrationDate: string): string => {
       day: 'numeric',
     })
   } catch {
-    return 'Invalid date'
+    return null
   }
 }
 
@@ -80,6 +80,20 @@ const DomainRegistrationDateCell = React.memo(
 
     const registrationDate = domainRegistration.registrationDate
     const formattedDate = formatRegistrationDate(registrationDate)
+
+    // Handle invalid date format
+    if (!formattedDate) {
+      return (
+        <ColumnPinCell
+          id={id}
+          content={
+            <span className="text-xs text-muted-foreground">
+              Invalid date format
+            </span>
+          }
+        />
+      )
+    }
 
     return (
       <ColumnPinCell
