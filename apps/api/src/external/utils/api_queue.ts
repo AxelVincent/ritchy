@@ -81,6 +81,7 @@ type QueueOptions = {
 export const createApiQueue = (
   rateLimiter: {
     getToken: (options?: { throwOnLimit?: boolean }) => Promise<void>
+    capacity?: number
   },
   options: QueueOptions = {},
 ) => {
@@ -126,47 +127,43 @@ export const createApiQueue = (
 
     isProcessing = true
 
-    while (queue.length > 0) {
-      const currentRequest = queue[0]
+    // Process multiple requests concurrently up to the burst capacity
+    const concurrentRequests = Math.min(
+      queue.length,
+      rateLimiter.capacity || 50,
+    )
+    const requestsToProcess = queue.splice(0, concurrentRequests)
 
-      if (!currentRequest) {
-        isProcessing = false
-        return
-      }
+    try {
+      await Promise.allSettled(
+        requestsToProcess.map(async (request) => {
+          try {
+            await rateLimiter.getToken()
+            await request.execute()
+          } catch (error) {
+            const currentRetries = request.retries ?? 0
 
-      try {
-        await currentRequest.execute()
-        queue.shift() // Remove completed request
-      } catch (error) {
-        const currentRetries = currentRequest.retries ?? 0
-
-        if (currentRetries < maxRetries) {
-          // Move to end of same priority group and retry
-          const priority = currentRequest.priority ?? 0
-          queue.shift()
-
-          // Find position to insert based on priority
-          const insertIndex = queue.findIndex(
-            (item) => (item.priority ?? 0) < priority,
-          )
-          const updatedRequest = {
-            ...currentRequest,
-            retries: currentRetries + 1,
+            if (currentRetries < maxRetries) {
+              // Re-queue for retry
+              const updatedRequest = {
+                ...request,
+                retries: currentRetries + 1,
+              }
+              queue.push(updatedRequest)
+            } else {
+              onError(error as Error)
+            }
           }
+        }),
+      )
+    } finally {
+      isProcessing = false
 
-          if (insertIndex === -1) {
-            queue.push(updatedRequest)
-          } else {
-            queue.splice(insertIndex, 0, updatedRequest)
-          }
-        } else {
-          queue.shift() // Remove failed request
-          onError(error as Error)
-        }
+      // Continue processing if there are more items in the queue
+      if (queue.length > 0) {
+        processQueue().catch(onError)
       }
     }
-
-    isProcessing = false
   }
 
   const getQueueLength = () => queue.length
