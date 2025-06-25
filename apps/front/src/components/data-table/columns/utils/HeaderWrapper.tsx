@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Tooltip,
   TooltipContent,
@@ -6,23 +7,25 @@ import {
 } from '@/components/ui/tooltip'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, HelpCircle } from 'lucide-react'
 import { Filter } from './Filter'
 
 export const HeaderWrapper = ({
   column,
   title,
+  helper,
 }: {
   column: Column<SearchResult>
   title: string
+  helper?: React.ReactNode
 }) => {
   const canSort = column.getCanSort()
 
   return (
     <div className="w-full flex flex-col gap-2 p-2">
-      <div className="w-full">
+      <div className="w-full flex items-center justify-between">
         <Tooltip>
-          <TooltipTrigger className="w-full">
+          <TooltipTrigger className="flex-1 truncate">
             <Button
               variant="ghost"
               onClick={(e) => {
@@ -41,11 +44,11 @@ export const HeaderWrapper = ({
                     }
                   : undefined
               }
-              className={`w-full h-8 px-4 py-2 ${!canSort ? 'cursor-default' : ''}`}
+              className={`w-full h-8 px-4 py-2 text-left ${!canSort ? 'cursor-default' : ''}`}
               disabled={!canSort}
             >
-              <div className="w-full flex items-center justify-between">
-                <span className="font-medium">{title}</span>
+              <div className="flex items-center justify-between w-full">
+                <span className="font-medium truncate">{title}</span>
                 {canSort &&
                   (column.getIsSorted() === 'asc' ? (
                     <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
@@ -73,6 +76,41 @@ export const HeaderWrapper = ({
             </TooltipContent>
           )}
         </Tooltip>
+        {helper && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="ml-2 cursor-help text-muted-foreground flex-shrink-0">
+                <HelpCircle className="h-4 w-4" aria-label="Help" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="max-w-xs p-0 bg-transparent border-none shadow-none"
+            >
+              <Card className="shadow-md">
+                <CardContent className="p-4 space-y-2 text-sm">
+                  <div className="font-medium">What does this mean?</div>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>
+                      <span className="font-semibold">
+                        Domain registration date
+                      </span>{' '}
+                      is when the website was first purchased. This can help you
+                      spot newly opened businesses.
+                    </li>
+                    <li>
+                      <span className="font-semibold text-foreground">
+                        But it's not always exact:
+                      </span>{' '}
+                      some businesses change names or get a website long after
+                      opening.
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       {column.getCanFilter() && (
