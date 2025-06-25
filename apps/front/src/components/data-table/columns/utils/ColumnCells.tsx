@@ -109,7 +109,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
           }}
           aria-label="Open notes"
         >
-          <span className="text-muted-foreground text-sm flex items-center gap-1.5 w-full">
+          <span className="flex items-center gap-1.5 text-sm w-full">
             <span className="truncate flex-1">{latestNote?.note}</span>
             {place.notes && place.notes.length > 0 && (
               <>
