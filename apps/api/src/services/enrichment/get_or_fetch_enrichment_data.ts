@@ -9,6 +9,10 @@ import { scrapeFromOptimizedUrls } from '../scraperEmailsAndSocials'
 /**
  * Gets enrichment data from cache or fetches it if not available.
  * WHOIS/domainRegistration is always part of the enrichment object.
+ * @param placeId - The Google Maps place ID
+ * @param website - The website URL to scrape
+ * @param maxRetries - Maximum number of retries for scraping
+ * @returns The enrichment data or null if fetching fails
  */
 export const getOrFetchEnrichmentData = async (
   placeId: string,
