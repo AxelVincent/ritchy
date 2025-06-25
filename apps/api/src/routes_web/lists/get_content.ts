@@ -5,7 +5,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
-import { getPlacesWithDetails } from '../../services/places/getPlacesWithDetails'
+import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
 
 export const getListContent = async (
   req: Request<{ id: string }>,
