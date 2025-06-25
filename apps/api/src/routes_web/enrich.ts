@@ -11,7 +11,7 @@ import { z } from 'zod'
 import { createVersionedDbFromRequest } from '../db/versioned_db/client'
 import { fetchOrCreateContact } from '../services/contact/queries/fetch_or_create_contact'
 import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
-import { saveEnrichmentData } from '../services/enrichment/saveEnrichmentData'
+import { saveEnrichmentData } from '../services/enrichment/save_enrichment_data'
 
 /**
  * Enriches website data with emails and social media links
@@ -73,7 +73,6 @@ export const enrichWebsite = async (
       await saveEnrichmentData({
         contactId: contact.id,
         enrichmentData: enrichedData,
-        source: 'enrichment',
       })
 
       logger.info({
