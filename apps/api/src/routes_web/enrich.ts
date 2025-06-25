@@ -3,15 +3,13 @@ import {
   type EnrichApiResponse,
   type EnrichRequestQuery,
   EnrichRequestSchema,
-  EnrichResponseSchema,
+  EnrichResponseSchema
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
 import { createVersionedDbFromRequest } from '../db/versioned_db/client'
-import { fetchOrCreateContact } from '../services/contact'
 import { getOrFetchEnrichmentData } from '../services/enrichment/get_or_fetch_enrichment_data'
-import { saveEnrichmentData } from '../services/enrichment/save_enrichment_data'
 
 /**
  * Enriches website data with emails and social media links
@@ -25,7 +23,7 @@ export const enrichWebsite = async (
     unknown,
     EnrichRequestQuery
   >,
-  res: Response<EnrichApiResponse>,
+  res: Response<EnrichApiResponse>
 ): Promise<void> => {
   try {
     // Validate query parameters
@@ -35,7 +33,7 @@ export const enrichWebsite = async (
     logger.info({
       msg: 'Processing enrichment request',
       event: 'enrichment_request',
-      metadata: { userId, placeId: id, website },
+      metadata: { userId, placeId: id, website }
     })
 
     // Get or fetch enrichment data
@@ -45,11 +43,11 @@ export const enrichWebsite = async (
       logger.warn({
         msg: 'Enrichment failed to produce data',
         event: 'enrichment_no_data',
-        metadata: { userId, placeId: id, website },
+        metadata: { userId, placeId: id, website }
       })
 
       res.status(500).json({
-        error: 'Failed to enrich website',
+        error: 'Failed to enrich website'
       })
       return
     }
@@ -60,48 +58,10 @@ export const enrichWebsite = async (
       {
         userId,
         placeId: id,
-        website,
+        website
       },
-      ['userId', 'placeId'],
+      ['userId', 'placeId']
     )
-
-    // Save enrichment data to PostgreSQL for contact metadata
-    try {
-      // Get or create contact for this place and user
-      const contact = await fetchOrCreateContact(id, userId)
-
-      await saveEnrichmentData({
-        contactId: contact.id,
-        enrichmentData: enrichedData,
-      })
-
-      logger.info({
-        msg: 'Enrichment data saved to database',
-        event: 'enrichment_data_saved',
-        metadata: {
-          userId,
-          placeId: id,
-          contactId: contact.id,
-          stats: {
-            emailsFound: enrichedData.emails.length,
-            socialPlatformsFound: Object.keys(enrichedData.socialLinks).length,
-          },
-        },
-      })
-    } catch (saveError) {
-      logger.error({
-        msg: 'Failed to save enrichment data to database',
-        event: 'enrichment_save_error',
-        metadata: {
-          userId,
-          placeId: id,
-          error:
-            saveError instanceof Error ? saveError.message : String(saveError),
-        },
-      })
-      // Don't fail the entire request if database save fails
-      // User still gets the enrichment results from cache
-    }
 
     // Validate response
     const validatedData = EnrichResponseSchema.parse(enrichedData)
@@ -114,9 +74,9 @@ export const enrichWebsite = async (
         placeId: id,
         stats: {
           emailsFound: enrichedData.emails.length,
-          socialPlatformsFound: Object.keys(enrichedData.socialLinks).length,
-        },
-      },
+          socialPlatformsFound: Object.keys(enrichedData.socialLinks).length
+        }
+      }
     })
 
     res.json(validatedData)
@@ -128,12 +88,12 @@ export const enrichWebsite = async (
         event: 'enrichment_validation_error',
         metadata: {
           error: error.errors,
-          query: req.query,
-        },
+          query: req.query
+        }
       })
       res.status(400).json({
         error: 'Invalid request parameters',
-        details: error.errors,
+        details: error.errors
       })
       return
     }
@@ -143,8 +103,8 @@ export const enrichWebsite = async (
       event: 'enrichment_error',
       metadata: {
         error: error instanceof Error ? error.message : String(error),
-        query: req.query,
-      },
+        query: req.query
+      }
     })
     res.status(500).json({ error: 'Failed to enrich website data' })
     return
