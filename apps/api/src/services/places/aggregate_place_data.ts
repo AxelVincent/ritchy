@@ -7,6 +7,7 @@ import { sanitizeEnrichmentData } from '../enrichment/utils/sanitize_enrichment_
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
+import { getPrimaryEmailsByPlaceIds } from './contacts/get_primary_emails_by_place_id'
 
 interface AggregatePlaceDataOptions {
   userId: string
@@ -42,6 +43,17 @@ export const aggregatePlaceData = async (
   )
   const notes = await getNotesByPlaceIds(placeIds, userId)
   const statuses = await getStatusByPlaceIds(placeIds, userId)
+  const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
+
+  logger.info({
+    msg: 'Primary emails fetched for places',
+    event: 'primary_emails_fetched',
+    metadata: {
+      placeIds,
+      primaryEmailsCount: primaryEmails.size,
+      primaryEmailsData: Object.fromEntries(primaryEmails),
+    },
+  })
 
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
@@ -64,6 +76,7 @@ export const aggregatePlaceData = async (
       enrichment: null,
       searchId: searchIdMap.get(basePlace.id) || null,
       listId: listIdMap.get(basePlace.id) || null,
+      primaryEmails: primaryEmails.get(basePlace.id) || [],
     }),
   )
 
