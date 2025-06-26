@@ -1,8 +1,8 @@
 import type { ContactEmail } from '@ritchy/types'
 import { and, desc, eq, inArray } from 'drizzle-orm'
-import { db } from '../../../db/db'
-import { contact } from '../../../db/schema'
-import { contactEmail } from '../../../db/schema'
+import { db } from '../../../../db/db'
+import { contact } from '../../../../db/schema'
+import { contactEmail } from '../../../../db/schema'
 
 export const getPrimaryEmailsByPlaceIds = async (
   placeIds: string[],
