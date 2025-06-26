@@ -34,6 +34,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'enrichment',
     'searchId',
     'listId',
+    'primaryEmails',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
@@ -398,6 +399,16 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             return enrichData?.socialLinks[platform]?.join(', ') || ''
           },
         })),
+        {
+          header: 'Domain Registration Date',
+          field: 'domainRegistrationDate',
+          accessor: (row: SearchResult): string => {
+            const enrichment = row.enrichment as
+              | EnrichmentWithStatus
+              | undefined
+            return enrichment?.domainRegistration?.registrationDate || ''
+          },
+        },
       ]
 
       validateAllSearchResultFieldsHaveColumns(columns)

@@ -9,7 +9,9 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 
 import { createVersionedDbFromRequest } from '../db/versioned_db/client'
-import { getOrFetchEnrichmentData } from '../services/enrichment/getOrFetchEnrichmentData'
+import { fetchOrCreateContact } from '../services/contact/fetch_or_create_contact'
+import { getOrFetchEnrichmentData } from '../services/enrichment/get_or_fetch_enrichment_data'
+import { saveEnrichmentData } from '../services/enrichment/save_enrichment_data'
 
 /**
  * Enriches website data with emails and social media links
@@ -62,6 +64,44 @@ export const enrichWebsite = async (
       },
       ['userId', 'placeId'],
     )
+
+    // Save enrichment data to PostgreSQL for contact metadata
+    try {
+      // Get or create contact for this place and user
+      const contact = await fetchOrCreateContact(id, userId)
+
+      await saveEnrichmentData({
+        contactId: contact.id,
+        enrichmentData: enrichedData,
+      })
+
+      logger.info({
+        msg: 'Enrichment data saved to database',
+        event: 'enrichment_data_saved',
+        metadata: {
+          userId,
+          placeId: id,
+          contactId: contact.id,
+          stats: {
+            emailsFound: enrichedData.emails.length,
+            socialPlatformsFound: Object.keys(enrichedData.socialLinks).length,
+          },
+        },
+      })
+    } catch (saveError) {
+      logger.error({
+        msg: 'Failed to save enrichment data to database',
+        event: 'enrichment_save_error',
+        metadata: {
+          userId,
+          placeId: id,
+          error:
+            saveError instanceof Error ? saveError.message : String(saveError),
+        },
+      })
+      // Don't fail the entire request if database save fails
+      // User still gets the enrichment results from cache
+    }
 
     // Validate response
     const validatedData = EnrichResponseSchema.parse(enrichedData)
