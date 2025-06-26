@@ -45,16 +45,6 @@ export const aggregatePlaceData = async (
   const statuses = await getStatusByPlaceIds(placeIds, userId)
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
 
-  logger.info({
-    msg: 'Primary emails fetched for places',
-    event: 'primary_emails_fetched',
-    metadata: {
-      placeIds,
-      primaryEmailsCount: primaryEmails.size,
-      primaryEmailsData: Object.fromEntries(primaryEmails),
-    },
-  })
-
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
   if (includeEnrichment) {
