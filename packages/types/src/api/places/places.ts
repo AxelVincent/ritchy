@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { EnrichResponseSchema } from '../enrich'
 import { RectangleSchema, SearchModelEnum } from '../searches/search'
+import { ContactEmailSchema } from './contacts'
 import { NoteSchema } from './notes'
 import { StatusSchema } from './status'
-import { ContactEmailSchema } from './contacts'
 
 // Basic/Common Schemas
 export const LocationSchema = z.object({
