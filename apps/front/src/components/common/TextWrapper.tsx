@@ -10,7 +10,14 @@ import { cn } from '@/lib/utils'
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Label } from '@radix-ui/react-label'
-import { Copy, MapPinned, MessageSquareText, Phone, Trash } from 'lucide-react'
+import {
+  Copy,
+  Mail,
+  MapPinned,
+  MessageSquareText,
+  Phone,
+  Trash,
+} from 'lucide-react'
 import { isValidElement, memo, useMemo } from 'react'
 
 // Move ICONS outside component to avoid recreation
@@ -20,6 +27,7 @@ const ICONS = {
   Trash,
   MessageSquareText,
   Phone,
+  Mail,
   faWhatsapp,
 } as const
 

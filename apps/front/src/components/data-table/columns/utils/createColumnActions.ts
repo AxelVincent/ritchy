@@ -82,3 +82,24 @@ export const createColumnPinNoteActions = (
     },
   ]
 }
+
+export const createColumnPinMailtoActions = (
+  id: string,
+  email: string | null,
+): Action[] => {
+  return [
+    ...(email
+      ? [
+          ...createColumnPinCopyActions(id, email),
+          {
+            icon: 'Mail' as const,
+            onClick: () => {
+              posthog.capture('click_mailto_button', { property: 'value' })
+              window.open(`mailto:${email}`, '_blank')
+            },
+            label: 'Send email',
+          },
+        ]
+      : []),
+  ]
+}

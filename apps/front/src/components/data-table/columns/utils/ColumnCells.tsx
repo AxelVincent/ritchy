@@ -5,6 +5,7 @@ import React from 'react'
 import {
   createColumnPinActions,
   createColumnPinCopyActions,
+  createColumnPinMailtoActions,
   createColumnPinNoteActions,
 } from './createColumnActions'
 
@@ -194,6 +195,27 @@ export const PhoneCell = ({
           }
         }}
       >
+        {content}
+      </span>
+    </TextWrapper>
+  )
+}
+
+export const PrimaryEmailCell = ({
+  id,
+  content,
+}: {
+  id: string
+  content: string
+}) => {
+  const actions = React.useMemo(
+    () => createColumnPinMailtoActions(id, content),
+    [id, content],
+  )
+
+  return (
+    <TextWrapper id={id} actions={actions}>
+      <span className="text-blue-600 hover:text-blue-800 hover:underline">
         {content}
       </span>
     </TextWrapper>
