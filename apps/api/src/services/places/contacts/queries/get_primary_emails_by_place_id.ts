@@ -1,5 +1,6 @@
 import type { ContactEmail } from '@ritchy/types'
 import { and, desc, eq, inArray } from 'drizzle-orm'
+import { logger } from '@ritchy/logger'
 import { db } from '../../../../db/db'
 import { contact } from '../../../../db/schema'
 import { contactEmail } from '../../../../db/schema'
@@ -35,7 +36,7 @@ export const getPrimaryEmailsByPlaceIds = async (
     .orderBy(desc(contactEmail.createdAt))
 
   // Process results more efficiently
-  return primaryEmails.reduce<Map<string, Array<ContactEmail>>>(
+  const result = primaryEmails.reduce<Map<string, Array<ContactEmail>>>(
     (acc, email) => {
       const placeId = email.placeId
       const existing = acc.get(placeId) ?? []
@@ -44,4 +45,16 @@ export const getPrimaryEmailsByPlaceIds = async (
     },
     new Map(),
   )
+
+  logger.info({
+    msg: 'Primary emails fetched for places',
+    event: 'primary_emails_fetched',
+    metadata: {
+      placeIds,
+      primaryEmailsCount: result.size,
+      primaryEmailsData: Object.fromEntries(result),
+    },
+  })
+
+  return result
 }
