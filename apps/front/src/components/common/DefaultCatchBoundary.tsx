@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import {
   ErrorComponent,
   Link,
@@ -15,6 +16,22 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   })
 
   console.error(error)
+
+  // Capture error in Sentry with additional context
+  Sentry.captureException(error, {
+    tags: {
+      component: 'DefaultCatchBoundary',
+      route: isRoot ? 'root' : 'nested',
+    },
+    extra: {
+      errorMessage: error.message,
+      errorStack: error.stack,
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+    },
+    level: 'error',
+  })
 
   return (
     <div className="min-w-0 flex-1 p-4 flex flex-col items-center justify-center gap-6">
