@@ -22,6 +22,7 @@ import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { priceLevelColumn } from './columns/PriceLevelColumn'
 import { priceRangeColumn } from './columns/PriceRangeColumn'
+import { primaryEmailColumn } from './columns/PrimaryEmailColumn'
 import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
@@ -40,6 +41,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   statusColumn,
   websiteColumn,
   phoneColumn,
+  primaryEmailColumn,
   socialEmailColumn,
   domainRegistrationDateColumn,
   notesColumn,
