@@ -12,7 +12,7 @@ export const getUserPlan = async (
     .where(eq(subscription.userId, userId))
     .limit(1)
 
-  if (!result || result.status !== 'active') {
+  if (!result || (result.status !== 'active' && result.status !== 'trialing')) {
     return 'FREE'
   }
 
