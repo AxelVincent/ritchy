@@ -38,7 +38,6 @@ interface DataTableProps<TData, TValue> {
   listId?: string
   searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
-  setData: React.Dispatch<React.SetStateAction<TData[]>>
   storageKey?: string
 }
 
@@ -48,7 +47,6 @@ const ROW_HEIGHT = '34px'
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
-  setData,
   setDataTableRowSelection,
   dataTableRowSelection,
   listId,
@@ -65,10 +63,14 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnOrder, setColumnOrder] = useState<string[]>([])
 
-  // Use the enrichment hook
-  const { pendingFetches, handleFetchEnrichment } = useEnrichment({
-    data,
-    setData,
+  // Use the simplified enrichment hook
+  const {
+    handleFetchEnrichment,
+    isEnriching,
+    enrichmentProgress,
+    enrichmentData,
+    enrichmentError,
+  } = useEnrichment({
     listId,
     searchId,
   })
@@ -145,9 +147,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
       rowSelection: dataTableRowSelection,
       columnSizing,
     },
-    meta: {
-      setData,
-    },
     onColumnSizingChange: (updater) => {
       const newSizing =
         typeof updater === 'function' ? updater(columnSizing) : updater
@@ -207,7 +206,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
           <div className="flex gap-2">
             <EnrichmentButtons
               table={table}
-              pendingFetches={pendingFetches}
+              isEnriching={isEnriching}
+              enrichmentProgress={enrichmentProgress}
+              enrichmentData={enrichmentData}
+              enrichmentError={enrichmentError}
               handleFetchEnrichment={handleFetchEnrichment}
             />
             {!isMobile && (

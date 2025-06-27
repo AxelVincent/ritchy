@@ -22,12 +22,20 @@ interface EmailProcessResult {
   emailsSaved: number
   emailsDeduplicated: number
   primaryEmailSet: boolean
+  emails: string[]
 }
 
 interface SocialProcessResult {
   socialLinksSaved: number
   socialLinksDeduplicated: number
   primarySocialSet: boolean
+  socials: string[]
+}
+
+export interface SaveEnrichmentDataResult {
+  emailResults: EmailProcessResult
+  socialResults: SocialProcessResult
+  contactId: string
 }
 
 /**
@@ -37,10 +45,7 @@ interface SocialProcessResult {
 export async function saveEnrichmentData({
   contactId,
   enrichmentData,
-}: SaveEnrichmentDataOptions): Promise<{
-  emailResults: EmailProcessResult
-  socialResults: SocialProcessResult
-}> {
+}: SaveEnrichmentDataOptions): Promise<SaveEnrichmentDataResult> {
   const { emails, socialLinks } = enrichmentData
 
   // Flatten socialLinks object to array of URLs
@@ -51,7 +56,9 @@ export async function saveEnrichmentData({
     event: 'enrichment_data_save_start',
     metadata: {
       contactId,
+      emails,
       emailsCount: emails.length,
+      socialLinks: socialLinks,
       socialLinksCount: flattenedSocialLinks.length,
     },
   })
@@ -85,7 +92,10 @@ export async function saveEnrichmentData({
     },
   })
 
-  return result
+  return {
+    ...result,
+    contactId,
+  }
 }
 
 async function processEmailsWithTransaction(
@@ -131,6 +141,7 @@ async function processEmailsWithTransaction(
       emailsSaved: 0,
       emailsDeduplicated,
       primaryEmailSet: false,
+      emails: validEmails,
     }
   }
 
@@ -171,6 +182,7 @@ async function processEmailsWithTransaction(
       emailsSaved: newEmails.length,
       emailsDeduplicated,
       primaryEmailSet: true,
+      emails: validEmails,
     }
   }
 
@@ -181,6 +193,7 @@ async function processEmailsWithTransaction(
     emailsSaved: newEmails.length,
     emailsDeduplicated,
     primaryEmailSet: false,
+    emails: validEmails,
   }
 }
 
@@ -224,6 +237,7 @@ async function processSocialsWithTransaction(
       socialLinksSaved: 0,
       socialLinksDeduplicated,
       primarySocialSet: false,
+      socials: validSocials,
     }
   }
 
@@ -257,6 +271,7 @@ async function processSocialsWithTransaction(
       socialLinksSaved: newSocials.length,
       socialLinksDeduplicated,
       primarySocialSet: true,
+      socials: validSocials,
     }
   }
 
@@ -267,5 +282,6 @@ async function processSocialsWithTransaction(
     socialLinksSaved: newSocials.length,
     socialLinksDeduplicated,
     primarySocialSet: false,
+    socials: validSocials,
   }
 }
