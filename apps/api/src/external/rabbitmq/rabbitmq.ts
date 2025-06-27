@@ -8,6 +8,8 @@ import {
   type QueueMessage,
   type QueueStats,
   RABBITMQ_CONFIG,
+  createConnectionOptions,
+  createSafeConnectionUrl,
 } from '../../config/rabbitmq'
 
 type QueueOptions = {
@@ -70,6 +72,8 @@ const createRabbitMQClient = () => {
     channel: amqp.Channel
   }> => {
     try {
+      state = 'connecting'
+
       logger.info({
         msg: 'Connecting to RabbitMQ',
         event: 'rabbitmq_connecting',
@@ -77,10 +81,13 @@ const createRabbitMQClient = () => {
           host: RABBITMQ_CONFIG.HOST,
           port: RABBITMQ_CONFIG.PORT,
           vhost: RABBITMQ_CONFIG.VHOST,
+          // Use safe URL for logging
+          connectionUrl: createSafeConnectionUrl(),
         },
       })
 
-      const newConnection = await amqp.connect(RABBITMQ_CONFIG.URL)
+      // Use secure connection options instead of URL with embedded credentials
+      const newConnection = await amqp.connect(createConnectionOptions())
       const newChannel = await newConnection.createChannel()
 
       // Set up connection event handlers
@@ -261,7 +268,7 @@ const createRabbitMQClient = () => {
 
   // Generate unique message ID
   const generateMessageId = (): string => {
-    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
   }
 
   // Handle individual message processing
@@ -305,11 +312,28 @@ const createRabbitMQClient = () => {
         metadata: { messageId, error: errorMessage },
       })
 
-      const queueMessage: QueueMessage<T> = JSON.parse(
-        message.content.toString(),
-      )
+      // Safely parse the message content with try-catch
+      let queueMessage: QueueMessage<T> | null = null
+      try {
+        queueMessage = JSON.parse(message.content.toString())
+      } catch (parseError) {
+        logger.error({
+          msg: 'Failed to parse malformed message content',
+          event: 'rabbitmq_message_parse_failed',
+          metadata: {
+            messageId,
+            parseError:
+              parseError instanceof Error
+                ? parseError.message
+                : String(parseError),
+          },
+        })
+        // If we can't parse the message, we can't retry it safely - send to DLQ
+        channel.nack(message, false, false)
+        return
+      }
 
-      if (queueMessage.retryCount < QUEUE_CONFIG.MAX_RETRIES) {
+      if (queueMessage && queueMessage.retryCount < QUEUE_CONFIG.MAX_RETRIES) {
         channel.nack(message, false, true)
 
         logger.info({
@@ -321,7 +345,7 @@ const createRabbitMQClient = () => {
             maxRetries: QUEUE_CONFIG.MAX_RETRIES,
           },
         })
-      } else {
+      } else if (queueMessage) {
         channel.nack(message, false, false)
 
         logger.warn({

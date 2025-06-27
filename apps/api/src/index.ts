@@ -9,6 +9,7 @@ import express, { type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import pinoHttp from 'pino-http'
+import { validateRabbitMQAtStartup } from './config/rabbitmq'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
 import { rabbitMQHealthMonitor } from './external/rabbitmq/health-monitor'
@@ -21,6 +22,9 @@ import {
   shutdown_enrichment_queue,
 } from './services/enrichment/queue/batch_enrichment_queue'
 import webhookRoutes from './webhook'
+
+// Validate RabbitMQ at startup
+await validateRabbitMQAtStartup()
 
 const app = express()
 const server = createServer(app)

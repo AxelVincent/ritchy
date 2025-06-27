@@ -222,7 +222,7 @@ const getHealthReport = (): {
 /**
  * Create and export the health monitor
  */
-export const createRedisHealthMonitor = (): HealthMonitor => ({
+const createRedisHealthMonitor = (): HealthMonitor => ({
   start,
   stop,
   getMetrics,

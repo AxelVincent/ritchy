@@ -1,10 +1,23 @@
+import { logger } from '@ritchy/logger'
 import { z } from 'zod'
 
 const rabbitMQEnvSchema = z.object({
-  RABBITMQ_HOST: z.string().default('localhost'),
-  RABBITMQ_PORT: z.string().default('5672'),
-  RABBITMQ_USER: z.string().default('admin'),
-  RABBITMQ_PASSWORD: z.string().default('password'),
+  RABBITMQ_HOST: z
+    .string()
+    .min(1, 'RabbitMQ host is required')
+    .default('localhost'),
+  RABBITMQ_PORT: z
+    .string()
+    .regex(/^\d+$/, 'RabbitMQ port must be a valid number')
+    .default('5672'),
+  RABBITMQ_USER: z
+    .string()
+    .min(1, 'RabbitMQ user is required')
+    .default('admin'),
+  RABBITMQ_PASSWORD: z
+    .string()
+    .min(1, 'RabbitMQ password is required')
+    .default('password'),
   RABBITMQ_VHOST: z.string().default('/'),
 })
 
@@ -16,8 +29,30 @@ export const RABBITMQ_CONFIG = {
   USER: env.RABBITMQ_USER,
   PASSWORD: env.RABBITMQ_PASSWORD,
   VHOST: env.RABBITMQ_VHOST,
-  URL: `amqp://${env.RABBITMQ_USER}:${env.RABBITMQ_PASSWORD}@${env.RABBITMQ_HOST}:${env.RABBITMQ_PORT}/${env.RABBITMQ_VHOST}`,
 } as const
+
+/**
+ * Creates a safe connection URL for logging (without credentials)
+ * @returns Connection URL safe for logging
+ */
+export const createSafeConnectionUrl = (): string => {
+  return `amqp://***:***@${RABBITMQ_CONFIG.HOST}:${RABBITMQ_CONFIG.PORT}${RABBITMQ_CONFIG.VHOST}`
+}
+
+/**
+ * Creates connection options object (alternative to URL-based auth)
+ * This approach keeps credentials separate from the connection string
+ */
+export const createConnectionOptions = () => ({
+  protocol: 'amqp',
+  hostname: RABBITMQ_CONFIG.HOST,
+  port: RABBITMQ_CONFIG.PORT,
+  username: RABBITMQ_CONFIG.USER,
+  password: RABBITMQ_CONFIG.PASSWORD,
+  vhost: RABBITMQ_CONFIG.VHOST,
+  heartbeat: 5,
+  timeout: 10000,
+})
 
 // Queue configuration
 export const QUEUE_CONFIG = {
@@ -58,4 +93,47 @@ export type QueueHealth = {
   isConnected: boolean
   mainQueue: QueueStats
   deadLetterQueue: QueueStats
+}
+
+/**
+ * Simple RabbitMQ startup validation
+ */
+export const validateRabbitMQAtStartup = async (): Promise<void> => {
+  try {
+    logger.info({
+      msg: 'Validating RabbitMQ configuration and connectivity',
+      event: 'rabbitmq_startup_validation_start',
+      metadata: {
+        connectionUrl: createSafeConnectionUrl(),
+      },
+    })
+
+    // Test connection using secure connection options
+    const amqp = await import('amqplib')
+    const connection = await amqp.connect(createConnectionOptions())
+    const channel = await connection.createChannel()
+    await channel.close()
+    await connection.close()
+
+    logger.info({
+      msg: 'RabbitMQ validation successful',
+      event: 'rabbitmq_startup_validation_success',
+      metadata: {
+        host: RABBITMQ_CONFIG.HOST,
+        port: RABBITMQ_CONFIG.PORT,
+        vhost: RABBITMQ_CONFIG.VHOST,
+      },
+    })
+  } catch (error) {
+    logger.error({
+      msg: 'RabbitMQ validation failed',
+      event: 'rabbitmq_startup_validation_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+    throw new Error(
+      `RabbitMQ validation failed: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
 }

@@ -70,6 +70,8 @@ export function useEnrichment<TData extends SearchResult>({
   const queryClient = useQueryClient()
   const activeJobIdRef = useRef<string | null>(null)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const isPollingInProgressRef = useRef<boolean>(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [lastKnownStatus, setLastKnownStatus] = useState<string | null>(null)
 
@@ -90,6 +92,102 @@ export function useEnrichment<TData extends SearchResult>({
     setIsInitialized(true)
   }, [listId, searchId])
 
+  // Polling function with overlap protection
+  const performPolling = useCallback(async () => {
+    // Skip if polling is already in progress
+    if (isPollingInProgressRef.current) {
+      return
+    }
+
+    isPollingInProgressRef.current = true
+
+    try {
+      // Create abort controller for this polling request
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
+      // Check if we should stop due to abort signal
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      // Poll job status
+      const statusResult = await jobStatusQuery.refetch()
+
+      // Check for abort again after async operation
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      // Poll content data to get updated enrichment results
+      if (listId) {
+        queryClient.invalidateQueries({
+          queryKey: listContentKeys.list(listId),
+        })
+      } else if (searchId) {
+        queryClient.invalidateQueries({
+          queryKey: searchContentKeys.search(searchId),
+        })
+      }
+
+      // Check for completion and show toast
+      if (statusResult.data && 'status' in statusResult.data) {
+        const currentStatus = statusResult.data.status
+
+        // Show toast on completion
+        if (currentStatus === 'completed' || currentStatus === 'error') {
+          // Only show toast if we haven't shown it yet for this job
+          if (lastKnownStatus !== 'completed' && lastKnownStatus !== 'error') {
+            if (statusResult.data.data) {
+              const { processedMessages, totalMessages, errors } =
+                statusResult.data.data
+              const successCount = processedMessages - (errors?.length || 0)
+              const errorCount = errors?.length || 0
+
+              if (errorCount > 0) {
+                toast.warning('⚠️ Enrichment Completed with Errors', {
+                  description: `${successCount} items enriched successfully, ${errorCount} failed`,
+                  duration: 8000,
+                })
+              } else {
+                toast('✅ Enrichment Complete!', {
+                  description: `Successfully enriched ${totalMessages} items`,
+                  duration: 5000,
+                })
+              }
+            }
+          }
+
+          // Stop polling since job is complete
+          setLastKnownStatus(currentStatus)
+          stopPolling()
+        } else if (currentStatus === 'processing') {
+          // Update status but continue polling
+          setLastKnownStatus(currentStatus)
+        }
+      }
+    } catch (error) {
+      // Don't handle aborted requests as errors
+      if (error instanceof Error && error.name === 'AbortError') {
+        return
+      }
+
+      console.error('Polling error:', error)
+      // Show error toast for polling issues
+      if (lastKnownStatus !== 'error') {
+        toast.error('❌ Enrichment Error', {
+          description:
+            'Failed to check enrichment status. Please refresh the page.',
+          duration: 6000,
+        })
+        setLastKnownStatus('error')
+      }
+    } finally {
+      isPollingInProgressRef.current = false
+      abortControllerRef.current = null
+    }
+  }, [jobStatusQuery, listId, searchId, queryClient, lastKnownStatus])
+
   // Start polling function
   const startPolling = useCallback(() => {
     // Clear any existing polling
@@ -97,76 +195,17 @@ export function useEnrichment<TData extends SearchResult>({
       clearInterval(pollingIntervalRef.current)
     }
 
-    // Start polling job status and content
-    pollingIntervalRef.current = setInterval(async () => {
-      try {
-        // Poll job status
-        const statusResult = await jobStatusQuery.refetch()
+    // Abort any in-progress polling request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
 
-        // Poll content data to get updated enrichment results
-        if (listId) {
-          queryClient.invalidateQueries({
-            queryKey: listContentKeys.list(listId),
-          })
-        } else if (searchId) {
-          queryClient.invalidateQueries({
-            queryKey: searchContentKeys.search(searchId),
-          })
-        }
+    // Reset polling state
+    isPollingInProgressRef.current = false
 
-        // Check for completion and show toast
-        if (statusResult.data && 'status' in statusResult.data) {
-          const currentStatus = statusResult.data.status
-
-          // Show toast on completion
-          if (currentStatus === 'completed' || currentStatus === 'error') {
-            // Only show toast if we haven't shown it yet for this job
-            if (
-              lastKnownStatus !== 'completed' &&
-              lastKnownStatus !== 'error'
-            ) {
-              if (statusResult.data.data) {
-                const { processedMessages, totalMessages, errors } =
-                  statusResult.data.data
-                const successCount = processedMessages - (errors?.length || 0)
-                const errorCount = errors?.length || 0
-
-                if (errorCount > 0) {
-                  toast.warning('⚠️ Enrichment Completed with Errors', {
-                    description: `${successCount} items enriched successfully, ${errorCount} failed`,
-                    duration: 8000,
-                  })
-                } else {
-                  toast('✅ Enrichment Complete!', {
-                    description: `Successfully enriched ${totalMessages} items`,
-                    duration: 5000,
-                  })
-                }
-              }
-            }
-
-            // Stop polling since job is complete
-            setLastKnownStatus(currentStatus)
-            stopPolling()
-          } else if (currentStatus === 'processing') {
-            // Update status but continue polling
-            setLastKnownStatus(currentStatus)
-          }
-        }
-      } catch (error) {
-        console.error('Polling error:', error)
-        // Show error toast for polling issues
-        if (lastKnownStatus !== 'error') {
-          toast.error('❌ Enrichment Error', {
-            description:
-              'Failed to check enrichment status. Please refresh the page.',
-            duration: 6000,
-          })
-          setLastKnownStatus('error')
-        }
-      }
-    }, 5000) // Poll every 5 seconds
-  }, [jobStatusQuery, listId, searchId, queryClient, lastKnownStatus])
+    // Start polling with overlap protection
+    pollingIntervalRef.current = setInterval(performPolling, 5000)
+  }, [performPolling])
 
   // Stop polling function
   const stopPolling = useCallback(() => {
@@ -174,6 +213,15 @@ export function useEnrichment<TData extends SearchResult>({
       clearInterval(pollingIntervalRef.current)
       pollingIntervalRef.current = null
     }
+
+    // Abort any in-progress polling request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+
+    // Reset polling state
+    isPollingInProgressRef.current = false
     activeJobIdRef.current = null
     setLastKnownStatus(null)
     clearStoredJobData(listId, searchId)
@@ -186,6 +234,14 @@ export function useEnrichment<TData extends SearchResult>({
         clearInterval(pollingIntervalRef.current)
         pollingIntervalRef.current = null
       }
+
+      // Abort any in-progress polling request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+
+      isPollingInProgressRef.current = false
     }
   }, [])
 
