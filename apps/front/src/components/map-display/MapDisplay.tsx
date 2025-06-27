@@ -130,7 +130,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                   <DataTable
                     columns={columns}
                     data={tableData}
-                    setData={setTableData}
                     setDataTableRowSelection={setDataTableRowSelection}
                     dataTableRowSelection={dataTableRowSelection}
                     onFilteredDataChange={setFilteredPlaceIds}
@@ -191,7 +190,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           <DataTable
             columns={columns}
             data={tableData}
-            setData={setTableData}
             setDataTableRowSelection={setDataTableRowSelection}
             dataTableRowSelection={dataTableRowSelection}
             onFilteredDataChange={setFilteredPlaceIds}

@@ -107,56 +107,6 @@
 # - Resource pooling
 
 #-----------------------------------------------------------------------------
-# PROJECT STRUCTURE
-#-----------------------------------------------------------------------------
-
-# Shared Types Package
-# ------------------
-**/packages/types/src/
-    index.ts            # Main export file
-    api/               # API-related schemas and types
-        auth.ts       # Authentication types
-        users.ts      # User-related types
-        places.ts    # Place-related types
-    schemas.ts        # Shared Zod schemas
-    types.ts         # Shared TypeScript types
-
-# Frontend Application
-# ------------------
-**/apps/front/src/
-    main.tsx                # Entry point
-    App.tsx                # Root component
-    features/              # Feature-based modules
-        [feature]/
-            components/    # Feature components
-            hooks/        # Feature hooks
-            services/     # Feature services
-            types.ts     # Feature-specific types
-    components/           # Shared components
-        ui/              # Shadcn components
-        common/          # Common components
-    lib/                 # Core infrastructure
-        api/            # API client
-    providers/           # React providers
-    routes/              # Application routes
-    hooks/              # Global hooks
-    types/              # Global types
-    utils/              # Utilities
-
-# Backend Application
-# -----------------
-**/apps/api/src/
-    index.ts             # Entry point
-    controllers/         # Request handlers
-    routes/             # Route definitions
-    services/           # Business logic
-    db/                 # Database
-        schema/         # Drizzle schema
-        migrations/     # Migrations
-    external/           # External services
-    utils/             # Utilities
-
-#-----------------------------------------------------------------------------
 # CODE STYLE RULES
 #-----------------------------------------------------------------------------
 

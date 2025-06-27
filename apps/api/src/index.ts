@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { createServer } from 'node:http'
 import { clerkMiddleware, getAuth } from '@clerk/express'
 import { baseLogger, logger } from '@ritchy/logger'
 import timeout from 'connect-timeout'
@@ -10,12 +11,19 @@ import helmet from 'helmet'
 import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
+import { rabbitMQHealthMonitor } from './external/rabbitmq/health-monitor'
+import { rabbitMQService } from './external/rabbitmq/service'
 import { redisHealthMonitor } from './external/redis/health-monitor'
 import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
+import {
+  initialize_enrichment_queue,
+  shutdown_enrichment_queue,
+} from './services/enrichment/queue/batch_enrichment_queue'
 import webhookRoutes from './webhook'
 
 const app = express()
+const server = createServer(app)
 
 // Body parser middleware
 app.use(
@@ -47,7 +55,8 @@ const isAuthenticated = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { userId, sessionId } = getAuth(req)
+    const { userId, sessionId, getToken } = getAuth(req)
+    const token = await getToken()
 
     if (!userId || !sessionId) {
       res.status(401).json({
@@ -84,6 +93,8 @@ const isAuthenticated = async (
       firstName: user.firstName ?? '',
       lastName: user.lastName ?? '',
       sessionId,
+      clerkId: userId,
+      token: token ?? '',
     }
 
     // Wrap the rest of the request handling in a context with user information
@@ -235,7 +246,47 @@ setInterval(() => {
   lastHeapUsed = heapUsedMB
 }, 900000) // Check every 15 minutes
 
+// Start Redis health monitor
 redisHealthMonitor.start(1000 * 60 * 15) // Check every 15 minutes
+// Start RabbitMQ health monitor
+rabbitMQHealthMonitor.start(1000 * 60 * 5) // Check every 5 minutes (more frequent for queue monitoring)
+
+// Initialize enrichment queue
+initialize_enrichment_queue()
+  .then(() => {
+    logger.info({
+      msg: 'Enrichment queue initialized successfully',
+      event: 'enrichment_queue_initialized',
+    })
+  })
+  .catch((error) => {
+    logger.error({
+      msg: 'Failed to initialize enrichment queue',
+      event: 'enrichment_queue_init_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+  })
+
+// Initialize RabbitMQ service
+rabbitMQService
+  .start()
+  .then(() => {
+    logger.info({
+      msg: 'RabbitMQ service started successfully',
+      event: 'rabbitmq_service_started',
+    })
+  })
+  .catch((error) => {
+    logger.error({
+      msg: 'Failed to start RabbitMQ service',
+      event: 'rabbitmq_service_start_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+  })
 
 // Then start the server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
@@ -258,9 +309,9 @@ function haltOnTimedout(
   if (!req.timedout) next()
 }
 
-app.listen(PORT, '::', () => {
+server.listen(PORT, '::', () => {
   logger.info({
-    msg: `Server running on port ${PORT} (IPv4/IPv6)`,
+    msg: `Server running on port ${PORT} (IPv4/IPv6) with WebSocket support`,
     event: 'server_started',
   })
 })
@@ -283,18 +334,82 @@ process.on('unhandledRejection', (reason, promise) => {
 })
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info({
-    msg: 'Shutting down Redis health monitor',
-    event: 'redis_health_monitor_shutdown',
+    msg: 'Shutting down services',
+    event: 'graceful_shutdown_start',
   })
+
+  // Shutdown Redis health monitor
   redisHealthMonitor.stop()
+  // Shutdown RabbitMQ health monitor
+  rabbitMQHealthMonitor.stop()
+
+  // Shutdown enrichment queue
+  try {
+    await shutdown_enrichment_queue()
+  } catch (error) {
+    logger.error({
+      msg: 'Error shutting down enrichment queue',
+      event: 'enrichment_queue_shutdown_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+
+  // Shutdown RabbitMQ service
+  try {
+    await rabbitMQService.stop()
+  } catch (error) {
+    logger.error({
+      msg: 'Error shutting down RabbitMQ service',
+      event: 'rabbitmq_service_shutdown_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+
+  process.exit(0)
 })
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info({
-    msg: 'Shutting down Redis health monitor',
-    event: 'redis_health_monitor_shutdown',
+    msg: 'Shutting down services',
+    event: 'graceful_shutdown_start',
   })
+
+  // Shutdown Redis health monitor
   redisHealthMonitor.stop()
+  // Shutdown RabbitMQ health monitor
+  rabbitMQHealthMonitor.stop()
+
+  // Shutdown enrichment queue
+  try {
+    await shutdown_enrichment_queue()
+  } catch (error) {
+    logger.error({
+      msg: 'Error shutting down enrichment queue',
+      event: 'enrichment_queue_shutdown_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+
+  // Shutdown RabbitMQ service
+  try {
+    await rabbitMQService.stop()
+  } catch (error) {
+    logger.error({
+      msg: 'Error shutting down RabbitMQ service',
+      event: 'rabbitmq_service_shutdown_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+  }
+
+  process.exit(0)
 })

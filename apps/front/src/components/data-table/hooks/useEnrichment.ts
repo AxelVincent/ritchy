@@ -1,138 +1,272 @@
-import { enrichKeys } from '@/api/queries/enrich/useEnrichWebsite'
-import { webApiClient } from '@/hooks/useApi'
-import { useAuth } from '@clerk/clerk-react'
-import type { EnrichApiResponse, SearchResult } from '@ritchy/types'
+import { useBatchEnrichment } from '@/api/mutations/enrichment/useBatchEnrichment'
+import { useEnrichmentJobStatus } from '@/api/queries/enrich/useEnrichmentJobStatus'
+import { listContentKeys } from '@/api/queries/lists/useListContent'
+import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import type { SearchResult } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
+
+// Helper functions for page-specific localStorage persistence
+const getStorageKey = (listId?: string, searchId?: string): string => {
+  if (listId) return `enrichment_active_job_list_${listId}`
+  if (searchId) return `enrichment_active_job_search_${searchId}`
+  return 'enrichment_active_job_default'
+}
+
+const getStoredJobData = (
+  listId?: string,
+  searchId?: string,
+): string | null => {
+  try {
+    const key = getStorageKey(listId, searchId)
+    const stored = localStorage.getItem(key)
+    if (!stored) return null
+
+    const data = JSON.parse(stored)
+    // Check if the job is less than 24 hours old
+    const isRecent = Date.now() - data.timestamp < 24 * 60 * 60 * 1000
+    return isRecent ? data.jobId : null
+  } catch {
+    return null
+  }
+}
+
+const setStoredJobData = (
+  jobId: string,
+  listId?: string,
+  searchId?: string,
+): void => {
+  try {
+    const key = getStorageKey(listId, searchId)
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        jobId,
+        timestamp: Date.now(),
+      }),
+    )
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+const clearStoredJobData = (listId?: string, searchId?: string): void => {
+  try {
+    const key = getStorageKey(listId, searchId)
+    localStorage.removeItem(key)
+  } catch {
+    // Ignore localStorage errors
+  }
+}
 
 export function useEnrichment<TData extends SearchResult>({
-  data,
-  setData,
   listId,
   searchId,
 }: {
-  data: TData[]
-  setData: React.Dispatch<React.SetStateAction<TData[]>>
   listId?: string
   searchId?: string
 }) {
-  const [pendingFetches, setPendingFetches] = useState(new Set<string>())
   const queryClient = useQueryClient()
-  const { getToken } = useAuth()
+  const activeJobIdRef = useRef<string | null>(null)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [lastKnownStatus, setLastKnownStatus] = useState<string | null>(null)
 
-  const handleFetchEnrichment = async (selectedIds: string[]) => {
-    if (selectedIds.length === 0) return
+  // Mutations and queries
+  const batchEnrichmentMutation = useBatchEnrichment()
+  const jobStatusQuery = useEnrichmentJobStatus(
+    activeJobIdRef.current || '',
+    isInitialized && !!activeJobIdRef.current,
+  )
 
-    setPendingFetches(new Set(selectedIds))
+  // Initialize from localStorage on mount (page-specific)
+  useEffect(() => {
+    const storedJobId = getStoredJobData(listId, searchId)
+    if (storedJobId) {
+      activeJobIdRef.current = storedJobId
+      startPolling()
+    }
+    setIsInitialized(true)
+  }, [listId, searchId])
 
-    // Set all selected rows to loading state
-    setData((currentData) =>
-      currentData.map((item) => ({
-        ...item,
-        enrichment: selectedIds.includes(item.id)
-          ? { emails: [], socialLinks: {}, isLoading: true }
-          : item.enrichment,
-      })),
-    )
+  // Start polling function
+  const startPolling = useCallback(() => {
+    // Clear any existing polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
 
-    const token = await getToken()
-
-    const fetchPromises = selectedIds.map(async (id) => {
-      const item = data.find((item) => item.id === id)
-      const website = item?.website
-
-      if (!website) {
-        // Update the item directly since there's no website
-        setData((currentData) =>
-          currentData.map((item) => {
-            if (item.id === id) {
-              return {
-                ...item,
-                enrichment: {
-                  emails: [],
-                  socialLinks: {},
-                  error: 'No website available',
-                  isLoading: false,
-                },
-              }
-            }
-            return item
-          }),
-        )
-        return
-      }
-
+    // Start polling job status and content
+    pollingIntervalRef.current = setInterval(async () => {
       try {
-        // Use the query client to fetch using the same key as useEnrichWebsite
-        const response = await queryClient.fetchQuery({
-          queryKey: enrichKeys.website(id),
-          queryFn: async () => {
-            // Use the shared webApiClient from useApi.ts
-            return webApiClient.fetchWithAuth<EnrichApiResponse>(
-              `/enrich?id=${id}&website=${encodeURIComponent(website)}`,
-              { method: 'GET' },
-              token,
-            )
-          },
-        })
+        // Poll job status
+        const statusResult = await jobStatusQuery.refetch()
 
-        // Update the UI
-        setData((currentData) =>
-          currentData.map((item) => {
-            if (item.id === id) {
-              return {
-                ...item,
-                enrichment: {
-                  ...response,
-                  isLoading: false,
-                },
+        // Poll content data to get updated enrichment results
+        if (listId) {
+          queryClient.invalidateQueries({
+            queryKey: listContentKeys.list(listId),
+          })
+        } else if (searchId) {
+          queryClient.invalidateQueries({
+            queryKey: searchContentKeys.search(searchId),
+          })
+        }
+
+        // Check for completion and show toast
+        if (statusResult.data && 'status' in statusResult.data) {
+          const currentStatus = statusResult.data.status
+
+          // Show toast on completion
+          if (currentStatus === 'completed' || currentStatus === 'error') {
+            // Only show toast if we haven't shown it yet for this job
+            if (
+              lastKnownStatus !== 'completed' &&
+              lastKnownStatus !== 'error'
+            ) {
+              if (statusResult.data.data) {
+                const { processedMessages, totalMessages, errors } =
+                  statusResult.data.data
+                const successCount = processedMessages - (errors?.length || 0)
+                const errorCount = errors?.length || 0
+
+                if (errorCount > 0) {
+                  toast.warning('⚠️ Enrichment Completed with Errors', {
+                    description: `${successCount} items enriched successfully, ${errorCount} failed`,
+                    duration: 8000,
+                  })
+                } else {
+                  toast('✅ Enrichment Complete!', {
+                    description: `Successfully enriched ${totalMessages} items`,
+                    duration: 5000,
+                  })
+                }
               }
             }
-            return item
-          }),
-        )
+
+            // Stop polling since job is complete
+            setLastKnownStatus(currentStatus)
+            stopPolling()
+          } else if (currentStatus === 'processing') {
+            // Update status but continue polling
+            setLastKnownStatus(currentStatus)
+          }
+        }
       } catch (error) {
-        // Update the item with the error
-        setData((currentData) =>
-          currentData.map((item) => {
-            if (item.id === id) {
-              return {
-                ...item,
-                enrichment: {
-                  emails: [],
-                  socialLinks: {},
-                  error:
-                    error instanceof Error ? error.message : 'Failed to fetch',
-                  isLoading: false,
-                },
-              }
-            }
-            return item
-          }),
-        )
-      } finally {
-        setPendingFetches((current) => {
-          const updated = new Set(current)
-          updated.delete(id)
-          return updated
-        })
+        console.error('Polling error:', error)
+        // Show error toast for polling issues
+        if (lastKnownStatus !== 'error') {
+          toast.error('❌ Enrichment Error', {
+            description:
+              'Failed to check enrichment status. Please refresh the page.',
+            duration: 6000,
+          })
+          setLastKnownStatus('error')
+        }
       }
-    })
+    }, 5000) // Poll every 5 seconds
+  }, [jobStatusQuery, listId, searchId, queryClient, lastKnownStatus])
 
-    await Promise.allSettled(fetchPromises)
+  // Stop polling function
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+    activeJobIdRef.current = null
+    setLastKnownStatus(null)
+    clearStoredJobData(listId, searchId)
+  }, [listId, searchId])
 
-    // Invalidate the listContent query if we're in a list view
-    if (listId) {
-      queryClient.invalidateQueries({ queryKey: ['listContent', listId] })
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
     }
-    // Invalidate the searchContent query if we're in a search view
-    if (searchId) {
-      queryClient.invalidateQueries({ queryKey: ['searchContent', searchId] })
-    }
-  }
+  }, [])
+
+  // Handler function for starting enrichment
+  const handleFetchEnrichment = useCallback(
+    async (selectedIds: string[]): Promise<void> => {
+      try {
+        if (selectedIds.length === 0) {
+          throw new Error('No items selected for enrichment')
+        }
+
+        // Get current data to extract enrichments
+        let currentData: TData[] = []
+        if (listId) {
+          const listData = queryClient.getQueryData(
+            listContentKeys.list(listId),
+          )
+          currentData = (listData as unknown as { items: TData[] })?.items || []
+        } else if (searchId) {
+          const searchData = queryClient.getQueryData(
+            searchContentKeys.search(searchId),
+          )
+          currentData = (searchData as TData[]) || []
+        }
+
+        // Get enrichments that need to be processed
+        const enrichmentsToProcess = selectedIds
+          .map((id) => {
+            const item = currentData.find((d) => d.id === id)
+            return item?.website ? { placeId: id, website: item.website } : null
+          })
+          .filter(Boolean) as Array<{ placeId: string; website: string }>
+
+        if (enrichmentsToProcess.length === 0) {
+          throw new Error('No valid websites found for enrichment')
+        }
+
+        // Start batch enrichment
+        const response = await batchEnrichmentMutation.mutateAsync({
+          enrichments: enrichmentsToProcess,
+        })
+
+        if ('jobId' in response) {
+          activeJobIdRef.current = response.jobId
+          setStoredJobData(response.jobId, listId, searchId)
+          setLastKnownStatus('processing')
+          startPolling()
+
+          // Show start toast
+          toast('🚀 Enrichment Started', {
+            description: `Processing ${response.enrichmentCount} websites...`,
+          })
+        }
+      } catch (error) {
+        toast.error('❌ Failed to Start Enrichment', {
+          description:
+            error instanceof Error ? error.message : 'Unknown error occurred',
+          duration: 5000,
+        })
+        throw error
+      }
+    },
+    [batchEnrichmentMutation, listId, searchId, queryClient, startPolling],
+  )
 
   return {
-    pendingFetches,
     handleFetchEnrichment,
+    isEnriching:
+      batchEnrichmentMutation.isPending || activeJobIdRef.current !== null,
+    enrichmentProgress:
+      jobStatusQuery.data && 'progress' in jobStatusQuery.data
+        ? jobStatusQuery.data.progress
+        : 0,
+    enrichmentData:
+      jobStatusQuery.data && 'data' in jobStatusQuery.data
+        ? jobStatusQuery.data.data
+        : null,
+    enrichmentError:
+      batchEnrichmentMutation.error?.message ||
+      (jobStatusQuery.data && 'error' in jobStatusQuery.data
+        ? String(jobStatusQuery.data.error)
+        : null),
   }
 }
