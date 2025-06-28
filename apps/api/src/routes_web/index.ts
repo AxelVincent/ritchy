@@ -1,6 +1,6 @@
 import express, { type Router } from 'express'
 import { ensureDemoCodeValidated } from '../middleware/ensure_demo_code_validated'
-import { enrichWebsite } from './enrich'
+import enrichRouter from './enrich'
 import hubspotRouter from './hubspot'
 import listsRouter from './lists'
 import paymentsRouter from './payments'
@@ -10,9 +10,6 @@ import usersRouter from './users'
 
 const router: Router = express.Router()
 
-// Places routes
-router.get('/enrich', ensureDemoCodeValidated, enrichWebsite)
-
 // Lists routes
 router.use('/lists', ensureDemoCodeValidated, listsRouter)
 
@@ -21,6 +18,9 @@ router.use('/searches', ensureDemoCodeValidated, searchesRouter)
 
 // Places routes
 router.use('/places', ensureDemoCodeValidated, placesRouter)
+
+// Enrich routes
+router.use('/enrich', ensureDemoCodeValidated, enrichRouter)
 
 // Payments routes
 router.use('/payments', paymentsRouter)

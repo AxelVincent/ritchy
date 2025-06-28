@@ -75,6 +75,24 @@ export const performWhoisLookup = async (
           throw new Error('Domain not found')
         }
 
+        // Handle 400 errors for invalid domain data
+        if (response.status === 400) {
+          const errorText = await response.text()
+          try {
+            const errorData = JSON.parse(errorText)
+            if (errorData.code === 'DOMAIN_INVALID_INFO') {
+              logger.warn({
+                msg: 'WHOIS API returned invalid domain info',
+                event: 'whois_api_invalid_domain',
+                metadata: { domain, error: errorData.message },
+              })
+              return null // Return null instead of throwing
+            }
+          } catch {
+            // If we can't parse the error, fall through to normal error handling
+          }
+        }
+
         const errorText = await response.text()
         throw new Error(`WHOIS API error: ${response.status} - ${errorText}`)
       }
@@ -110,7 +128,7 @@ export const performWhoisLookup = async (
       lastUpdated: new Date().toISOString(),
     }
 
-    logger.info({
+    logger.debug({
       msg: 'WHOIS API lookup completed successfully',
       event: 'whois_api_lookup_success',
       metadata: {
