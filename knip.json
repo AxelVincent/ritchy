@@ -1,14 +1,25 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "workspaces": {
-    "apps/*": {
-      "entry": ["src/index.ts", "src/main.tsx"],
+    "apps/front": {
+      "entry": ["src/main.tsx"],
       "project": "**/*.{ts,tsx}",
       "ignoreDependencies": [
-        "@radix-ui/react-collapsible",
         "@radix-ui/react-hover-card",
-        "react-hook-form"
+        "react-hook-form",
+        "@radix-ui/react-progress",
+        "@radix-ui/react-slider",
+        "next-themes"
       ]
+    },
+    "apps/api": {
+      "entry": ["src/index.ts"],
+      "project": "**/*.{ts,tsx}"
+    },
+    "packages/logger": {
+      "entry": ["src/index.ts"],
+      "project": "**/*.{ts,tsx}",
+      "ignoreDependencies": ["pino-pretty"]
     },
     "packages/*": {
       "entry": ["src/index.ts"],
@@ -20,10 +31,8 @@
     "**/build/**",
     "**/components/ui/**",
     "**/*.test.{ts,tsx}",
-    "**/*.spec.{ts,tsx}",
-    "**/google-maps.types.ts"
+    "**/*.spec.{ts,tsx}"
   ],
-  "ignoreBinaries": ["db:migrate"],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true
