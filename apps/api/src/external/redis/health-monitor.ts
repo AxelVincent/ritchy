@@ -85,10 +85,13 @@ const performHealthCheck = async (): Promise<void> => {
         connectionStatus,
       }
 
-      sendSlackNotification({
-        channel: 'tech_monitoring',
-        text: `🚨 Redis health check failed - unexpected response: ${result}`,
-      })
+      // Only send Slack notifications in non-local environments
+      if (process.env.NODE_ENV !== 'development') {
+        sendSlackNotification({
+          channel: 'tech_monitoring',
+          text: `🚨 [${process.env.NODE_ENV}] Redis health check failed - unexpected response: ${result}`,
+        })
+      }
 
       logger.error({
         msg: 'Redis health check failed - unexpected response',
@@ -112,10 +115,13 @@ const performHealthCheck = async (): Promise<void> => {
       connectionStatus: 'disconnected',
     }
 
-    sendSlackNotification({
-      channel: 'tech_monitoring',
-      text: `🚨 Redis health check failed - connection error: ${errorMessage}`,
-    })
+    // Only send Slack notifications in non-local environments
+    if (process.env.NODE_ENV !== 'development') {
+      sendSlackNotification({
+        channel: 'tech_monitoring',
+        text: `🚨 [${process.env.NODE_ENV}] Redis health check failed - connection error: ${errorMessage}`,
+      })
+    }
 
     logger.error({
       msg: 'Redis health check failed',
