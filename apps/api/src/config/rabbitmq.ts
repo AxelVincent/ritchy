@@ -18,7 +18,7 @@ const rabbitMQEnvSchema = z.object({
     .string()
     .min(1, 'RabbitMQ password is required')
     .default('password'),
-  RABBITMQ_VHOST: z.string().default('/')
+  RABBITMQ_VHOST: z.string().default('/'),
 })
 
 const env = rabbitMQEnvSchema.parse(process.env)
@@ -28,7 +28,7 @@ export const RABBITMQ_CONFIG = {
   PORT: Number.parseInt(env.RABBITMQ_PORT),
   USER: env.RABBITMQ_USER,
   PASSWORD: env.RABBITMQ_PASSWORD,
-  VHOST: env.RABBITMQ_VHOST
+  VHOST: env.RABBITMQ_VHOST,
 } as const
 
 /**
@@ -51,7 +51,7 @@ export const createConnectionOptions = () => ({
   password: RABBITMQ_CONFIG.PASSWORD,
   vhost: RABBITMQ_CONFIG.VHOST,
   heartbeat: 5,
-  timeout: 10000
+  timeout: 10000,
 })
 
 // Queue configuration
@@ -62,7 +62,7 @@ export const QUEUE_CONFIG = {
   CHUNK_DELAY_MS: 100,
   CONCURRENT_JOBS: 4,
   MESSAGE_TTL: 24 * 60 * 60 * 1000,
-  MAX_RETRIES: 3
+  MAX_RETRIES: 3,
 } as const
 
 // Type definitions
@@ -81,7 +81,7 @@ export type QueueMessage<T = unknown> = {
 
 export type JobProcessor<T = unknown> = (
   data: T,
-  messageId: string
+  messageId: string,
 ) => Promise<unknown>
 
 export type QueueStats = {
@@ -110,9 +110,9 @@ export const validateRabbitMQAtStartup = async (): Promise<void> => {
           port: RABBITMQ_CONFIG.PORT,
           vhost: RABBITMQ_CONFIG.VHOST,
           user: RABBITMQ_CONFIG.USER ? '***' : 'undefined',
-          password: RABBITMQ_CONFIG.PASSWORD ? '***' : 'undefined'
-        }
-      }
+          password: RABBITMQ_CONFIG.PASSWORD ? '***' : 'undefined',
+        },
+      },
     })
 
     // Test connection using secure connection options
@@ -128,8 +128,8 @@ export const validateRabbitMQAtStartup = async (): Promise<void> => {
       metadata: {
         host: RABBITMQ_CONFIG.HOST,
         port: RABBITMQ_CONFIG.PORT,
-        vhost: RABBITMQ_CONFIG.VHOST
-      }
+        vhost: RABBITMQ_CONFIG.VHOST,
+      },
     })
   } catch (error) {
     // Enhanced error handling to capture more details
@@ -163,13 +163,13 @@ export const validateRabbitMQAtStartup = async (): Promise<void> => {
         config: {
           host: RABBITMQ_CONFIG.HOST,
           port: RABBITMQ_CONFIG.PORT,
-          vhost: RABBITMQ_CONFIG.VHOST
-        }
-      }
+          vhost: RABBITMQ_CONFIG.VHOST,
+        },
+      },
     })
 
     throw new Error(
-      `RabbitMQ validation failed: ${errorMessage} (type: ${errorType}, code: ${errorCode})`
+      `RabbitMQ validation failed: ${errorMessage} (type: ${errorType}, code: ${errorCode})`,
     )
   }
 }
