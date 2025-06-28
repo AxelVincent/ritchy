@@ -182,22 +182,3 @@ export const chunkArray = <T>(array: T[], chunkSize: number): T[][] => {
   }
   return chunks
 }
-
-/**
- * Processes bulk operations in chunks to avoid transaction size limits
- */
-export const processBulkOperationInChunks = async <T, R>(
-  items: T[],
-  chunkSize: number,
-  processChunk: (chunk: T[]) => Promise<R[]>,
-): Promise<R[]> => {
-  const chunks = chunkArray(items, chunkSize)
-  const results: R[] = []
-
-  for (const chunk of chunks) {
-    const chunkResults = await processChunk(chunk)
-    results.push(...chunkResults)
-  }
-
-  return results
-}
