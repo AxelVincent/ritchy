@@ -57,8 +57,10 @@ export const aggregatePlaceData = async (
   }
 
   // Aggregate data from different sources for each place
-  const initialAggregatedPlaces = places.map(
-    (basePlace): Place => ({
+  const initialAggregatedPlaces = places.map((basePlace): Place => {
+    const primaryEmail = primaryEmails.get(basePlace.id) || null
+
+    return {
       ...basePlace,
       lists: associations.get(basePlace.id) || [],
       notes: notes.get(basePlace.id) || [],
@@ -66,9 +68,9 @@ export const aggregatePlaceData = async (
       enrichment: null,
       searchId: searchIdMap.get(basePlace.id) || null,
       listId: listIdMap.get(basePlace.id) || null,
-      primaryEmails: primaryEmails.get(basePlace.id) || [],
-    }),
-  )
+      primaryEmail,
+    }
+  })
 
   // Process enrichment data in parallel if needed
   if (includeEnrichment && enrichedPlaces.size > 0) {

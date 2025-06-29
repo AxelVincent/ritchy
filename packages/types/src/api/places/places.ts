@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { EnrichResponseSchema } from '../enrich'
 import { RectangleSchema, SearchModelEnum } from '../searches/search'
-import { ContactEmailSchema } from './contacts'
 import { NoteSchema } from './notes'
 import { StatusSchema } from './status'
 
@@ -176,7 +175,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   notes: z.array(NoteSchema).optional().nullable(),
   status: StatusSchema.nullable(),
   enrichment: EnrichResponseSchema.nullable(),
-  primaryEmails: z.array(ContactEmailSchema).optional(),
+  primaryEmail: z.string().email().nullable(),
 })
 
 // Type inference from schemas
