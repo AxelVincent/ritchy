@@ -58,9 +58,7 @@ export const aggregatePlaceData = async (
 
   // Aggregate data from different sources for each place
   const initialAggregatedPlaces = places.map((basePlace): Place => {
-    const placePrimaryEmails = primaryEmails.get(basePlace.id) || []
-    // get precisely one primary email for each place
-    const primaryEmail = placePrimaryEmails[0]?.email || null
+    const primaryEmail = primaryEmails.get(basePlace.id) || null
 
     return {
       ...basePlace,
