@@ -4,16 +4,15 @@ import { db } from '../../../../db/db'
 import { contact } from '../../../../db/schema'
 import { contactEmail } from '../../../../db/schema'
 
-export const getPrimaryEmailsByPlaceIds = async (
+export const getSecondaryEmailsByPlaceIds = async (
   placeIds: string[],
   userId: string,
 ) => {
-  // If there are no placeIds, return empty map immediately
   if (placeIds.length === 0) {
-    return new Map<string, string>()
+    return new Map<string, string[]>()
   }
 
-  const primaryEmails = await db
+  const secondaryEmails = await db
     .select({
       email: contactEmail.email,
       placeId: contact.placeId,
@@ -24,26 +23,26 @@ export const getPrimaryEmailsByPlaceIds = async (
       and(
         inArray(contact.placeId, placeIds),
         eq(contact.userId, userId),
-        eq(contactEmail.isPrimary, true),
+        eq(contactEmail.isPrimary, false),
       ),
     )
     .orderBy(desc(contactEmail.createdAt))
 
-  // Process results to get only the first email per place
-  const result = new Map<string, string>()
-  for (const emailData of primaryEmails) {
+  const result = new Map<string, string[]>()
+  for (const emailData of secondaryEmails) {
     if (!result.has(emailData.placeId)) {
-      result.set(emailData.placeId, emailData.email)
+      result.set(emailData.placeId, [])
     }
+    result.get(emailData.placeId)?.push(emailData.email)
   }
 
   logger.info({
-    msg: 'Primary emails fetched for places',
-    event: 'primary_emails_fetched',
+    msg: 'Secondary emails fetched for places',
+    event: 'secondary_emails_fetched',
     metadata: {
       placeIds,
-      primaryEmailsCount: result.size,
-      primaryEmailsData: Object.fromEntries(result),
+      secondaryEmailsCount: result.size,
+      secondaryEmailsData: Object.fromEntries(result),
     },
   })
 

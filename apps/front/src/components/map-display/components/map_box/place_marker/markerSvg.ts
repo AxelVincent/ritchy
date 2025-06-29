@@ -127,20 +127,3 @@ const createPinMarker = (color: string, isSelected: boolean): SVGElement => {
 
   return svg
 }
-
-/**
- * Update an existing emoji marker without recreating it
- */
-export const updateEmojiMarker = (
-  element: HTMLElement,
-  color: string,
-  isSelected: boolean,
-  hasBadge: boolean,
-): void => {
-  // Update classes efficiently
-  element.classList.toggle('selected', isSelected)
-  element.classList.toggle('with-badge', hasBadge)
-
-  // Update color variable
-  element.style.setProperty('--marker-color', color)
-}

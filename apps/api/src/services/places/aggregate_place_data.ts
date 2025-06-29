@@ -6,6 +6,7 @@ import { getOrFetchEnrichmentData } from '../enrichment/get_or_fetch_enrichment_
 import { sanitizeEnrichmentData } from '../enrichment/utils/sanitize_enrichment_data'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_emails_by_place_id'
+import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
 
@@ -44,7 +45,7 @@ export const aggregatePlaceData = async (
   const notes = await getNotesByPlaceIds(placeIds, userId)
   const statuses = await getStatusByPlaceIds(placeIds, userId)
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
-
+  const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
   if (includeEnrichment) {
@@ -57,8 +58,8 @@ export const aggregatePlaceData = async (
   }
 
   // Aggregate data from different sources for each place
-  const initialAggregatedPlaces = places.map(
-    (basePlace): Place => ({
+  const initialAggregatedPlaces = places.map((basePlace): Place => {
+    return {
       ...basePlace,
       lists: associations.get(basePlace.id) || [],
       notes: notes.get(basePlace.id) || [],
@@ -66,9 +67,10 @@ export const aggregatePlaceData = async (
       enrichment: null,
       searchId: searchIdMap.get(basePlace.id) || null,
       listId: listIdMap.get(basePlace.id) || null,
-      primaryEmails: primaryEmails.get(basePlace.id) || [],
-    }),
-  )
+      primaryEmail: primaryEmails.get(basePlace.id) || null,
+      secondaryEmails: secondaryEmails.get(basePlace.id) || [],
+    }
+  })
 
   // Process enrichment data in parallel if needed
   if (includeEnrichment && enrichedPlaces.size > 0) {

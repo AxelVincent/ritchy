@@ -399,7 +399,7 @@ const mapSocialLinks = (
   return mapped as Record<SocialMediaPlatform, string[]>
 }
 
-async function scrapeFromOptimizedUrls(
+export async function scrapeFromOptimizedUrls(
   id: string,
   baseUrl: string,
   concurrencyLimit = 5,
@@ -526,15 +526,3 @@ async function scrapeFromOptimizedUrls(
 
   return result
 }
-
-// Example usage
-// ;(async () => {
-//   const baseUrl = 'https://swellsurfmorocco.com'
-
-//   const { emails, socialLinks } = await scrapeFromOptimizedUrls(baseUrl, 5)
-
-//   console.log('Emails found:', emails)
-//   console.log('Social Links found:', socialLinks)
-// })()
-
-export { scrapeEmailsAndSocials, scrapeFromOptimizedUrls }

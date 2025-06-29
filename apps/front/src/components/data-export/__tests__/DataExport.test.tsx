@@ -117,6 +117,7 @@ describe('DataExport', () => {
         searchId: null,
         listId: null,
         enrichment: null,
+        primaryEmail: 'test@example.com',
       },
     ]
 
@@ -183,6 +184,7 @@ describe('DataExport', () => {
         searchId: null,
         listId: null,
         enrichment: null,
+        primaryEmail: 'test@example.com',
       },
     ]
 

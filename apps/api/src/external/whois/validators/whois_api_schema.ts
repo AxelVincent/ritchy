@@ -36,7 +36,7 @@ const domainSchema = z.object({
 
 // Registrar schema
 const registrarSchema = z.object({
-  name: z.string(),
+  name: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
   referral_url: z.string().optional(),
