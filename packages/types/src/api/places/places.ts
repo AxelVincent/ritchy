@@ -176,6 +176,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   status: StatusSchema.nullable(),
   enrichment: EnrichResponseSchema.nullable(),
   primaryEmail: z.string().email().nullable(),
+  secondaryEmails: z.array(z.string().email()).optional(),
 })
 
 // Type inference from schemas
