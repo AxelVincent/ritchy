@@ -6,9 +6,9 @@ import { getOrFetchEnrichmentData } from '../enrichment/get_or_fetch_enrichment_
 import { sanitizeEnrichmentData } from '../enrichment/utils/sanitize_enrichment_data'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_emails_by_place_id'
+import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
-import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 
 interface AggregatePlaceDataOptions {
   userId: string

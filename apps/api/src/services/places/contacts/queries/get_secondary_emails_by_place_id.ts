@@ -1,8 +1,8 @@
 import { logger } from '@ritchy/logger'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { db } from '../../../../db/db'
 import { contact } from '../../../../db/schema'
 import { contactEmail } from '../../../../db/schema'
-import { and, eq, inArray, desc } from 'drizzle-orm'
 
 export const getSecondaryEmailsByPlaceIds = async (
   placeIds: string[],
