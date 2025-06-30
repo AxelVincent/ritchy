@@ -229,6 +229,3 @@ export const createHubspotProperties = async (
 
   return properties
 }
-
-// Export the mapping retrieval function for other uses
-export { getOrCreateFieldMappings }
