@@ -8,6 +8,10 @@ import {
 import { and, eq, like, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { hubspotFieldMapping } from '../../db/schema'
+import {
+  type MappingResult,
+  MappingResultSchema,
+} from './validators/mapping_result'
 
 type FieldType = 'contact' | 'company' | 'status'
 
@@ -15,14 +19,6 @@ type MappingInput = {
   tokenId: string
   fieldType: FieldType
   mode?: MappingMode
-}
-
-type MappingResult = {
-  tokenId: string
-  internalField: ContactField | CompanyField | StatusField
-  hubspotField: string
-  createdAt: Date
-  updatedAt: Date
 }
 
 type MappingMode = 'missing' | 'reset'
@@ -154,35 +150,6 @@ export const manageHubspotFieldMappings = async ({
     metadata: { tokenId, fieldType, createdCount: insertedMappings.length },
   })
 
-  return [...existingMappings, ...insertedMappings]
-}
-
-/**
- * Creates both contact and company field mappings in a single transaction
- * @param params.tokenId - The HubSpot token ID to associate the mappings with
- * @returns Promise<MappingResult[]> - All created mappings
- */
-export const createAllHubspotFieldMappings = async (
-  tokenId: string,
-): Promise<MappingResult[]> => {
-  // Create both contact and company mappings
-  const [contactMappings, companyMappings] = await Promise.all([
-    manageHubspotFieldMappings({
-      tokenId,
-      fieldType: 'contact',
-      mode: 'reset',
-    }),
-    manageHubspotFieldMappings({
-      tokenId,
-      fieldType: 'company',
-      mode: 'reset',
-    }),
-    manageHubspotFieldMappings({
-      tokenId,
-      fieldType: 'status',
-      mode: 'reset',
-    }),
-  ])
-
-  return [...contactMappings, ...companyMappings]
+  const allMappings = [...existingMappings, ...insertedMappings]
+  return allMappings.map((mapping) => MappingResultSchema.parse(mapping))
 }
