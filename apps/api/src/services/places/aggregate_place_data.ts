@@ -4,6 +4,7 @@ import { EnrichResponseSchema } from '@ritchy/types'
 import { getUserEnrichedPlaces } from '../enrichment/getUserEnrichedPlaces'
 import { getOrFetchEnrichmentData } from '../enrichment/get_or_fetch_enrichment_data'
 import { sanitizeEnrichmentData } from '../enrichment/utils/sanitize_enrichment_data'
+import { getHubspotSyncedByPlaceIds } from '../hubspot/get_hubspot_synced_by_place_ids'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_emails_by_place_id'
 import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
@@ -46,6 +47,7 @@ export const aggregatePlaceData = async (
   const statuses = await getStatusByPlaceIds(placeIds, userId)
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
   const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
+  const hubspotSynced = await getHubspotSyncedByPlaceIds(placeIds, userId)
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
   if (includeEnrichment) {
@@ -69,6 +71,7 @@ export const aggregatePlaceData = async (
       listId: listIdMap.get(basePlace.id) || null,
       primaryEmail: primaryEmails.get(basePlace.id) || null,
       secondaryEmails: secondaryEmails.get(basePlace.id) || [],
+      hubspotSynced: hubspotSynced.get(basePlace.id) || false,
     }
   })
 
