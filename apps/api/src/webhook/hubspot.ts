@@ -9,7 +9,9 @@ import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { HUBSPOT_CONFIG } from '../config/hubspot'
 import { db } from '../db/db'
-import { webhookEvent } from '../db/schema'
+import { hubspotLeadMapping, webhookEvent } from '../db/schema'
+import { clearContactMapping } from '../services/hubspot/clear_contact_mapping'
+import { deleteCompanyMapping } from '../services/hubspot/delete_company_mapping'
 import { upsertStatus } from '../services/places/status/upsert_status'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
@@ -44,6 +46,14 @@ const verifyHubSpotSignature = (
   req: Request,
   clientSecret: string,
 ): boolean => {
+  // Temporary bypass for development
+  if (process.env.NODE_ENV === 'development') {
+    logger.warn({
+      msg: 'SKIPPING signature verification in development mode',
+      event: 'webhook_signature_bypass',
+    })
+    return true
+  }
   const MAX_ALLOWED_TIMESTAMP = 300000 // 5 minutes in milliseconds
   const signature = req.headers['x-hubspot-signature-v3'] as string
   const timestamp = req.headers['x-hubspot-request-timestamp'] as string
@@ -177,6 +187,13 @@ export const hubspotWebhook = async (
     // Process each event individually
     const results = await Promise.all(
       events.map(async (event) => {
+        if (event.changeSource === 'INTEGRATION') {
+          return {
+            status: 'skipped',
+            eventId: event.eventId,
+            webhookId: event.eventId,
+          }
+        }
         const { record, isDuplicate } = await validateWebhookIdempotency(
           req.headers,
           event,
@@ -298,6 +315,20 @@ export const hubspotWebhook = async (
               logger.info({
                 msg: 'Processing object property change event',
                 event: 'object_property_change_event_processing',
+                metadata: {
+                  event,
+                },
+              })
+              break
+            case 'company.deletion': {
+              await deleteCompanyMapping(event.objectId.toString())
+              break
+            }
+            case 'contact.deletion':
+              await clearContactMapping(event.objectId.toString(), '')
+              logger.info({
+                msg: 'Processing contact deletion event',
+                event: 'contact_deletion_event_processing',
                 metadata: {
                   event,
                 },

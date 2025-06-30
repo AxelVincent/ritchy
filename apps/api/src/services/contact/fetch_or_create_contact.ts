@@ -16,9 +16,8 @@ export const fetchOrCreateContact = async (placeId: string, userId: string) => {
       .values({
         placeId,
         userId,
-        firstname: place.name,
-        lastname: '',
-        email: '',
+        firstname: '',
+        lastname: place.name,
         phone: place.phone,
       })
       .returning()

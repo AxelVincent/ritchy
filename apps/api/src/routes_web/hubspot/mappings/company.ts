@@ -13,7 +13,7 @@ import { db } from '../../../db/db'
 import { hubspotFieldMapping } from '../../../db/schema'
 import { getHubspotProperties } from '../../../external/hubspot/properties'
 import { withHubspotClient } from '../../../external/hubspot/token_manager'
-import { getHubspotToken } from '../../../services/hubspot/get_hubspot_token'
+import { getHubspotToken } from '../../../services/hubspot/queries/get_hubspot_token'
 
 type CompanyMapping = {
   tokenId: string

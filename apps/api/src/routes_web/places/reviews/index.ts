@@ -2,8 +2,8 @@ import {
   GetReviewsApiResponseSchema,
   GetReviewsParamsSchema,
 } from '@ritchy/types'
-import { validateRequest } from 'apps/api/src/middleware/zodValidation'
 import express, { type Router } from 'express'
+import { validateRequest } from '../../../middleware/zodValidation'
 import { getPlaceReviews } from './get'
 
 const reviewsRouter: Router = express.Router({ mergeParams: true })

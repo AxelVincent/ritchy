@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
-import { createAllHubspotFieldMappings } from '../../services/hubspot/manage_hubspot_field_mapping'
+import { createAllHubspotFieldMappings } from '../../services/hubspot/utils/create_all_hubspot_field_mappings'
 
 // Types
 export type HubspotToken = InferSelectModel<typeof hubspotToken>
