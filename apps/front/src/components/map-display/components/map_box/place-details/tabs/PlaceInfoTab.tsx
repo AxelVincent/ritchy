@@ -2,8 +2,8 @@ import { OpeningHoursContent } from '@/components/common/OpeningHours'
 import { StatusIndicator } from '@/components/common/StatusIndicator'
 import { TextWrapper } from '@/components/common/TextWrapper'
 import {
-  PhoneCell,
   ContactEmailCell,
+  PhoneCell,
 } from '@/components/data-table/columns/utils/ColumnCells'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
