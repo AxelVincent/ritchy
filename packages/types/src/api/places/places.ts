@@ -177,6 +177,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   enrichment: EnrichResponseSchema.nullable(),
   primaryEmail: z.string().email().nullable(),
   secondaryEmails: z.array(z.string().email()).optional(),
+  hubspotSynced: z.boolean(),
 })
 
 // Type inference from schemas
