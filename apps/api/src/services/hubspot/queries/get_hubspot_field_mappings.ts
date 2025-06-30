@@ -2,7 +2,7 @@ import { and, eq, like, sql } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { hubspotFieldMapping } from '../../../db/schema'
 
-export const getFieldMappings = async (
+export const getHubspotFieldMappings = async (
   tokenId: string,
   fieldType: 'contact' | 'company',
 ) => {

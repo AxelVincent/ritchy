@@ -2,11 +2,11 @@ import { logger } from '@ritchy/logger'
 import { syncPlaceApiResponseSchema, syncPlaceBodySchema } from '@ritchy/types'
 import express, { type Router } from 'express'
 import { z } from 'zod'
-import { createOrUpdateCompaniesBatch } from '../../external/hubspot/sync/company'
-import { createOrUpdateContactsBatch } from '../../external/hubspot/sync/contact'
 import { withHubspotClient } from '../../external/hubspot/token_manager'
 import type { HubspotBase } from '../../external/hubspot/types'
 import { validateRequest } from '../../middleware/zodValidation'
+import { createOrUpdateCompanies } from '../../services/hubspot/create_or_update_companies'
+import { createOrUpdateContacts } from '../../services/hubspot/create_or_update_contacts'
 
 const syncRouter: Router = express.Router()
 
@@ -31,7 +31,7 @@ syncRouter.post(
             const batchPlaceIds = placeIds.slice(i, i + BATCH_SIZE)
 
             // 1. Process companies first (this creates the lead mappings)
-            const companies = await createOrUpdateCompaniesBatch(
+            const companies = await createOrUpdateCompanies(
               batchPlaceIds,
               userId,
               client,
@@ -39,7 +39,7 @@ syncRouter.post(
             allCompanies.push(...companies)
 
             // 2. Process contacts (this only creates contacts for places that don't have them)
-            const contacts = await createOrUpdateContactsBatch(
+            const contacts = await createOrUpdateContacts(
               batchPlaceIds,
               userId,
               client,

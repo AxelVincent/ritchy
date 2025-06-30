@@ -11,7 +11,7 @@ import {
 } from '@ritchy/types'
 import { getHubspotProperties } from 'apps/api/src/external/hubspot/properties'
 import { withHubspotClient } from 'apps/api/src/external/hubspot/token_manager'
-import { getHubspotToken } from 'apps/api/src/services/hubspot/get_hubspot_token'
+import { getHubspotToken } from 'apps/api/src/services/hubspot/queries/get_hubspot_token'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../../db/db'

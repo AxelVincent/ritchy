@@ -4,8 +4,8 @@ import {
   getValidToken,
   withHubspotClient,
 } from '../../external/hubspot/token_manager'
-import { createHubspotProperties } from './create_hubspot_properties'
-import { getHubspotLeadMapping } from './sync/get_hubspot_lead_mapping'
+import { getHubspotLeadMapping } from './queries/get_hubspot_lead_mapping'
+import { createHubspotProperties } from './utils/create_hubspot_properties'
 
 /**
  * Updates the status of a HubSpot contact
