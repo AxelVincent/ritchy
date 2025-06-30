@@ -3,7 +3,7 @@ import { StatusIndicator } from '@/components/common/StatusIndicator'
 import { TextWrapper } from '@/components/common/TextWrapper'
 import {
   PhoneCell,
-  PrimaryEmailCell,
+  ContactEmailCell,
 } from '@/components/data-table/columns/utils/ColumnCells'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -193,7 +193,7 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => {
           {place.primaryEmail && (
             <div className="flex items-center gap-3 mb-2">
               <Mail className="h-5 w-5 text-muted-foreground shrink-0" />
-              <PrimaryEmailCell id={place.id} content={place.primaryEmail} />
+              <ContactEmailCell id={place.id} content={place.primaryEmail} />
             </div>
           )}
 

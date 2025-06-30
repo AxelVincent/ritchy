@@ -1,5 +1,5 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
-import { PrimaryEmailCell } from '@/components/data-table/columns/utils/ColumnCells'
+import { ContactEmailCell } from '@/components/data-table/columns/utils/ColumnCells'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -68,7 +68,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="mt-2 ml-8">
                     {place.primaryEmail ? (
-                      <PrimaryEmailCell
+                      <ContactEmailCell
                         id={place.id}
                         content={place.primaryEmail}
                       />
@@ -123,7 +123,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
                     place.secondaryEmails.length > 0 ? (
                       <div className="space-y-2">
                         {place.secondaryEmails.map((email) => (
-                          <PrimaryEmailCell
+                          <ContactEmailCell
                             key={email}
                             id={place.id}
                             content={email}

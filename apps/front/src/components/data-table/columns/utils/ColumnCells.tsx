@@ -201,7 +201,7 @@ export const PhoneCell = ({
   )
 }
 
-export const PrimaryEmailCell = ({
+export const ContactEmailCell = ({
   id,
   content,
 }: {
