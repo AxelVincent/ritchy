@@ -5,7 +5,7 @@ import { hubspotLeadMapping } from '../../db/schema'
 
 export const clearContactMapping = async (
   contactId: string,
-  value: string
+  value: string,
 ): Promise<void> => {
   // Input validation
   if (!contactId?.trim()) {

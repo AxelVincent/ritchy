@@ -3,7 +3,9 @@ import { logger } from 'packages/logger/dist'
 import { db } from '../../db/db'
 import { hubspotLeadMapping } from '../../db/schema'
 
-export const deleteCompanyMapping = async (companyId: string): Promise<void> => {
+export const deleteCompanyMapping = async (
+  companyId: string,
+): Promise<void> => {
   // Input validation
   if (!companyId?.trim()) {
     throw new Error('Company ID is required')
