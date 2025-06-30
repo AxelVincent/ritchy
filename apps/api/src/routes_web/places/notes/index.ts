@@ -4,8 +4,8 @@ import {
   NotesApiResponseSchema,
 } from '@ritchy/types'
 import { NotesParamsSchema } from '@ritchy/types'
-import { validateRequest } from 'apps/api/src/middleware/zodValidation'
 import express, { type Router } from 'express'
+import { validateRequest } from '../../../middleware/zodValidation'
 import { addPlaceNote } from './create'
 import { getPlaceNotes } from './list'
 

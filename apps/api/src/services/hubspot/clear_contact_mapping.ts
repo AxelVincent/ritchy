@@ -1,5 +1,5 @@
+import { logger } from '@ritchy/logger'
 import { eq } from 'drizzle-orm'
-import { logger } from 'packages/logger/dist'
 import { db } from '../../db/db'
 import { hubspotLeadMapping } from '../../db/schema'
 
