@@ -36,8 +36,8 @@ export const OpeningHoursSchema = z.object({
 })
 
 export const LocalizedTextSchema = z.object({
-  text: z.string(),
-  languageCode: z.string(),
+  text: z.string().optional(),
+  languageCode: z.string().optional(),
 })
 
 export const AddressComponentSchema = z.object({
