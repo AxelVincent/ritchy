@@ -60,6 +60,8 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
               <div className="flex-1">
                 <div className="text-sm text-muted-foreground">
                   No contact emails available
+                  <br />
+                  Use the Enrich All button to find emails
                 </div>
               </div>
             </div>
