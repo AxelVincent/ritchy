@@ -1,6 +1,6 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCell, PrimaryEmailCell } from './utils/ColumnCells'
+import { ColumnPinCell, ContactEmailCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const primaryEmailColumn: ColumnDef<SearchResult> = {
@@ -17,7 +17,7 @@ export const primaryEmailColumn: ColumnDef<SearchResult> = {
     const primaryEmail = row.original.primaryEmail
 
     return primaryEmail ? (
-      <PrimaryEmailCell id={row.original.id} content={primaryEmail} />
+      <ContactEmailCell id={row.original.id} content={primaryEmail} />
     ) : (
       <ColumnPinCell
         id={row.original.id}
