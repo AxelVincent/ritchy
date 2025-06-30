@@ -1,4 +1,3 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
 import { ContactEmailCell } from '@/components/data-table/columns/utils/ColumnCells'
 import { Badge } from '@/components/ui/badge'
 import type { Place } from '@ritchy/types'
