@@ -1,4 +1,5 @@
 import { ContactEmailCell } from '@/components/data-table/columns/utils/ColumnCells'
+import { SecondaryEmailsList } from '@/components/data-table/columns/utils/SecondaryEmailsList'
 import { Badge } from '@/components/ui/badge'
 import type { Place } from '@ritchy/types'
 import { Mail } from 'lucide-react'
@@ -40,14 +41,11 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
               {/* Secondary Emails */}
               {place.secondaryEmails && place.secondaryEmails.length > 0 && (
                 <div className="flex flex-col gap-2 mb-3">
-                  <div className="ml-8 space-y-2">
-                    {place.secondaryEmails.map((email) => (
-                      <ContactEmailCell
-                        key={email}
-                        id={place.id}
-                        content={email}
-                      />
-                    ))}
+                  <div className="ml-8">
+                    <SecondaryEmailsList
+                      emails={place.secondaryEmails}
+                      id={place.id}
+                    />
                   </div>
                 </div>
               )}

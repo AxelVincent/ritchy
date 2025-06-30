@@ -3,20 +3,21 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { useState } from 'react'
 import { ContactEmailCell } from './utils/ColumnCells'
 import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
+import { SecondaryEmailsList } from './utils/SecondaryEmailsList'
 
 export const secondaryEmailsColumn: ColumnDef<SearchResult> = {
   id: 'secondaryEmails',
   size: 300,
   accessorFn: (row) => {
     const emails = row.secondaryEmails ?? []
-    // Lenght is passed to DataTable to filter by amount of emails
+    // Length is passed to DataTable to filter by amount of emails
     return emails.length
   },
   enableColumnFilter: true,
@@ -28,6 +29,7 @@ export const secondaryEmailsColumn: ColumnDef<SearchResult> = {
   ),
   cell: ({ row }) => {
     const emails = row.original.secondaryEmails
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     if (!emails?.length) {
       return (
@@ -48,21 +50,13 @@ export const secondaryEmailsColumn: ColumnDef<SearchResult> = {
 
     // Multiple emails: show first email + badge with count
     return (
-      <Dialog>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <div
           className="group flex items-center w-full cursor-pointer min-h-[24px]"
-          onClick={() => {
-            const dialogTrigger = document.querySelector(
-              `[data-secondary-emails-dialog-trigger="${row.original.id}"]`,
-            ) as HTMLButtonElement
-            dialogTrigger?.click()
-          }}
+          onClick={() => setIsDialogOpen(true)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
-              const dialogTrigger = document.querySelector(
-                `[data-secondary-emails-dialog-trigger="${row.original.id}"]`,
-              ) as HTMLButtonElement
-              dialogTrigger?.click()
+              setIsDialogOpen(true)
             }
           }}
           aria-label="Open secondary emails"
@@ -72,27 +66,12 @@ export const secondaryEmailsColumn: ColumnDef<SearchResult> = {
             +{emails.length - 1} more
           </span>
           <div className="flex-1" />
-          <DialogTrigger asChild>
-            <div
-              data-secondary-emails-dialog-trigger={row.original.id}
-              className="hidden"
-            />
-          </DialogTrigger>
         </div>
         <DialogContent className="max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{row.original.name}'s Secondary Emails</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            {emails.map((email) => (
-              <div
-                key={email}
-                className="flex items-center justify-between border-b pb-2"
-              >
-                <ContactEmailCell id={row.original.id} content={email} />
-              </div>
-            ))}
-          </div>
+          <SecondaryEmailsList emails={emails} id={row.original.id} />
         </DialogContent>
       </Dialog>
     )
