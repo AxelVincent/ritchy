@@ -8,6 +8,3 @@ export const getPlacesStatus = (placeIds: string[], userId: string) =>
     .select()
     .from(status)
     .where(and(inArray(status.placeId, placeIds), eq(status.userId, userId)))
-
-export const fetchPlaces = (placeIds: string[]) =>
-  Promise.all(placeIds.map((placeId) => getPlaceDetailsV1(placeId)))
