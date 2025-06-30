@@ -1,9 +1,9 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../../../../db/db'
 import { status } from '../../../../db/schema'
-import { getPlaceDetailsV1 } from '../../../google_maps/place_details_V1'
+import { getPlaceDetailsV1 } from '../../../../external/google_maps/place_details_V1'
 
-export const fetchStatusData = (placeIds: string[], userId: string) =>
+export const getPlacesStatus = (placeIds: string[], userId: string) =>
   db
     .select()
     .from(status)

@@ -5,8 +5,8 @@ import {
   LEAD_STATUS_MAPPING,
 } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
-import { db } from '../../db/db'
-import { hubspotFieldMapping } from '../../db/schema'
+import { db } from '../../../db/db'
+import { hubspotFieldMapping } from '../../../db/schema'
 
 type FieldUpdate = {
   internalField: InternalField

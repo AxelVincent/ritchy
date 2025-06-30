@@ -1,6 +1,6 @@
 import type { Client } from '@hubspot/api-client'
 import { logger } from '@ritchy/logger'
-import type { BatchOperation, EntityType, HubspotBase } from '../../types'
+import type { BatchOperation, EntityType, HubspotBase } from '../types'
 
 const createBatchOperations = (operations: BatchOperation[]) => {
   const createBatch = operations
@@ -27,7 +27,7 @@ const createBatchOperations = (operations: BatchOperation[]) => {
   return { createBatch, updateBatch }
 }
 
-export const processHubspotBatch = async (
+export const sendDataToHubspot = async (
   operations: BatchOperation[],
   client: Client,
   entityType: EntityType,
