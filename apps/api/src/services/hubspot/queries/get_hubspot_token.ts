@@ -1,6 +1,6 @@
-import { db } from 'apps/api/src/db/db'
-import { hubspotToken } from 'apps/api/src/db/schema'
 import { eq } from 'drizzle-orm'
+import { db } from '../../../db/db'
+import { hubspotToken } from '../../../db/schema'
 
 export const getHubspotToken = async (userId: string) => {
   const [token] = await db
