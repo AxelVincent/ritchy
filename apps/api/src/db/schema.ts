@@ -292,6 +292,7 @@ export const hubspotToken = pgTable('hubspot_token', {
     .unique(),
   accessToken: text('access_token').notNull(),
   refreshToken: text('refresh_token').notNull(),
+  portalId: text('portal_id'),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

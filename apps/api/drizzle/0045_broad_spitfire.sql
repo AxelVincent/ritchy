@@ -1,0 +1,1 @@
+ALTER TABLE "hubspot_token" ADD COLUMN "portal_id" text;

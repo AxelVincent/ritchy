@@ -39,7 +39,6 @@ export const getValidToken = async (
     .where(
       and(
         eq(hubspotToken.userId, userId),
-        // Exclude state tokens
         sql`${hubspotToken.accessToken} NOT LIKE 'oauth_state:%'`,
       ),
     )

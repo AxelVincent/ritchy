@@ -1,10 +1,11 @@
 import { logger } from '@ritchy/logger'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { hubspotLeadMapping } from '../../db/schema'
 
 export const clearContactMapping = async (
   contactId: string,
+  tokenId: string,
   value: string,
 ): Promise<void> => {
   // Input validation
@@ -17,7 +18,12 @@ export const clearContactMapping = async (
     .set({
       hubspotContactId: value,
     })
-    .where(eq(hubspotLeadMapping.hubspotContactId, contactId))
+    .where(
+      and(
+        eq(hubspotLeadMapping.hubspotContactId, contactId),
+        eq(hubspotLeadMapping.tokenId, tokenId),
+      ),
+    )
     .returning()
 
   if (updatedMappings.length === 0) {

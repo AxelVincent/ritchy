@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
+import { withHubspotClient } from '../../external/hubspot/token_manager'
 import { createAllHubspotFieldMappings } from '../../services/hubspot/utils/create_all_hubspot_field_mappings'
 
 // Types
@@ -20,6 +21,17 @@ export const getAuthUrl = (state: string): string => {
   })
 
   return `${HUBSPOT_CONFIG.API.AUTH_URL}?${params.toString()}`
+}
+
+const getPortalIdFromAccountInfo = async (accessToken: string) => {
+  const response = await fetch(
+    'https://api.hubapi.com/account-info/v3/details',
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
+  const accountInfo = await response.json()
+  return accountInfo.portalId
 }
 
 export const exchangeCodeForToken = async (
@@ -49,11 +61,21 @@ export const exchangeCodeForToken = async (
     }
 
     const data = await response.json()
+
+    logger.info({
+      msg: 'HubSpot OAuth response',
+      event: 'hubspot_oauth_response',
+      metadata: {
+        data,
+      },
+    })
+    const portalId = await getPortalIdFromAccountInfo(data.access_token)
     const mappedToken = {
       id: data.id,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       expiresAt: new Date(Date.now() + data.expires_in * 1000),
+      portalId,
       userId,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
@@ -67,12 +89,14 @@ export const exchangeCodeForToken = async (
         accessToken: mappedToken.accessToken,
         refreshToken: mappedToken.refreshToken,
         expiresAt: mappedToken.expiresAt,
+        portalId: portalId,
       })
       .onConflictDoUpdate({
         target: hubspotToken.userId,
         set: {
           accessToken: mappedToken.accessToken,
           refreshToken: mappedToken.refreshToken,
+          portalId: mappedToken.portalId,
           expiresAt: mappedToken.expiresAt,
           updatedAt: new Date(),
         },
