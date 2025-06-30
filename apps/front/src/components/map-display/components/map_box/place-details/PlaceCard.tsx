@@ -219,6 +219,13 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     Informations
                   </TabsTrigger>
                   <TabsTrigger
+                    value="contact"
+                    aria-label="Contact"
+                    className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                  >
+                    Contact
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="reviews"
                     aria-label="Reviews"
                     className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
@@ -232,13 +239,6 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                   >
                     Notes
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="contact"
-                    aria-label="Contact"
-                    className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
-                  >
-                    Contact
-                  </TabsTrigger>
                 </TabsList>
 
                 <div className="flex-1 overflow-hidden flex flex-col">
@@ -247,6 +247,13 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     className="mt-0 p-4 h-full flex-1 overflow-auto"
                   >
                     <PlaceInfoTab place={currentPlace} />
+                  </TabsContent>
+
+                  <TabsContent
+                    value="contact"
+                    className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
+                  >
+                    <PlaceContactTab place={currentPlace} />
                   </TabsContent>
 
                   <TabsContent
@@ -261,13 +268,6 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
                   >
                     <PlaceReviewsTab place={currentPlace} />
-                  </TabsContent>
-
-                  <TabsContent
-                    value="contact"
-                    className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
-                  >
-                    <PlaceContactTab place={currentPlace} />
                   </TabsContent>
                 </div>
               </Tabs>
