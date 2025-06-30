@@ -201,7 +201,7 @@ export const PhoneCell = ({
   )
 }
 
-export const PrimaryEmailCell = ({
+export const ContactEmailCell = ({
   id,
   content,
 }: {
@@ -213,9 +213,23 @@ export const PrimaryEmailCell = ({
     [id, content],
   )
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    posthog.capture('click_mailto_button', { property: 'value' })
+    window.open(`mailto:${content}`, '_blank')
+  }
+
   return (
     <TextWrapper id={id} actions={actions}>
-      <span className="text-blue-600 hover:text-blue-800 hover:underline">
+      <span
+        className="text-blue-600 hover:text-blue-800 hover:underline"
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick(e as unknown as React.MouseEvent)
+          }
+        }}
+      >
         {content}
       </span>
     </TextWrapper>
