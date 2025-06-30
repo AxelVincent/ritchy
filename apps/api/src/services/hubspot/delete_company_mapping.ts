@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { logger } from 'packages/logger/dist'
 import { db } from '../../db/db'
 import { hubspotLeadMapping } from '../../db/schema'

@@ -11,11 +11,16 @@ export const clearContactMapping = async (
   if (!contactId?.trim()) {
     throw new Error('Contact ID is required')
   }
-  const contactMappings = await db
-    .select()
-    .from(hubspotLeadMapping)
+  // Update contact mappings using direct UPDATE with RETURNING for efficiency
+  const updatedMappings = await db
+    .update(hubspotLeadMapping)
+    .set({
+      hubspotContactId: value,
+    })
     .where(eq(hubspotLeadMapping.hubspotContactId, contactId))
-  if (contactMappings.length === 0) {
+    .returning()
+
+  if (updatedMappings.length === 0) {
     logger.info({
       msg: 'No lead mappings found for deleted HubSpot contact',
       event: 'hubspot_contact_deletion_no_mappings',
@@ -25,21 +30,14 @@ export const clearContactMapping = async (
     })
     return
   }
-  const deletedMappings = await db
-    .update(hubspotLeadMapping)
-    .set({
-      hubspotContactId: value,
-    })
-    .where(eq(hubspotLeadMapping.hubspotContactId, contactId))
-    .returning()
 
   logger.info({
     msg: 'Updated HubSpot contact mappings',
     event: 'hubspot_contact_deletion_success',
     metadata: {
       hubspotContactId: contactId,
-      deletedMappingsCount: deletedMappings.length,
-      deletedMappings: deletedMappings.map((mapping) => ({
+      updatedMappingsCount: updatedMappings.length,
+      updatedMappings: updatedMappings.map((mapping) => ({
         id: mapping.id,
         placeId: mapping.placeId,
         tokenId: mapping.tokenId,
