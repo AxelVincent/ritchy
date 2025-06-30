@@ -8,7 +8,7 @@ export const primaryEmailColumn: ColumnDef<SearchResult> = {
   accessorKey: 'primaryEmail',
   size: 200,
   meta: {
-    filterVariant: 'multi-select',
+    filterVariant: 'text',
   },
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Primary Email" />
