@@ -3,13 +3,18 @@ import { logger } from 'packages/logger/dist'
 import { db } from '../../db/db'
 import { hubspotLeadMapping } from '../../db/schema'
 
-export const deleteCompanyMapping = async (companyId: string) => {
-  // Find all lead mappings that reference this company
-  const companyLeadMappings = await db
-    .select()
-    .from(hubspotLeadMapping)
-    .where(and(eq(hubspotLeadMapping.hubspotCompanyId, companyId)))
-  if (companyLeadMappings.length === 0) {
+export const deleteCompanyMapping = async (companyId: string): Promise<void> => {
+  // Input validation
+  if (!companyId?.trim()) {
+    throw new Error('Company ID is required')
+  }
+  // Delete all lead mappings for this company using DELETE ... RETURNING for efficiency
+  const deletedMappings = await db
+    .delete(hubspotLeadMapping)
+    .where(eq(hubspotLeadMapping.hubspotCompanyId, companyId))
+    .returning()
+
+  if (deletedMappings.length === 0) {
     logger.info({
       msg: 'No lead mappings found for deleted HubSpot company',
       event: 'hubspot_company_deletion_no_mappings',
@@ -19,12 +24,6 @@ export const deleteCompanyMapping = async (companyId: string) => {
     })
     return
   }
-
-  // Delete all lead mappings for this company
-  const deletedMappings = await db
-    .delete(hubspotLeadMapping)
-    .where(and(eq(hubspotLeadMapping.hubspotCompanyId, companyId)))
-    .returning()
 
   logger.info({
     msg: 'Deleted HubSpot company mappings',

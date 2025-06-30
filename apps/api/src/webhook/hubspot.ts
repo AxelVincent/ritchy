@@ -11,7 +11,7 @@ import { HUBSPOT_CONFIG } from '../config/hubspot'
 import { db } from '../db/db'
 import { hubspotLeadMapping, webhookEvent } from '../db/schema'
 import { deleteCompanyMapping } from '../services/hubspot/delete_company_mapping'
-import { updateContactMapping } from '../services/hubspot/remove_contact_mapping'
+import { clearContactMapping } from '../services/hubspot/clear_contact_mapping'
 import { upsertStatus } from '../services/places/status/upsert_status'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
@@ -325,7 +325,7 @@ export const hubspotWebhook = async (
               break
             }
             case 'contact.deletion':
-              await updateContactMapping(event.objectId.toString(), '')
+              await clearContactMapping(event.objectId.toString(), '')
               logger.info({
                 msg: 'Processing contact deletion event',
                 event: 'contact_deletion_event_processing',
