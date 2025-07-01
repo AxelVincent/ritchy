@@ -17,12 +17,18 @@ export const sanitizeEnrichmentData = (
   // Sanitize social links
   if (sanitized.socialLinks) {
     for (const platform of Object.keys(sanitized.socialLinks)) {
-      const links = sanitized.socialLinks[platform]
-      sanitized.socialLinks[platform] = Array.isArray(links)
-        ? links.filter((link) => typeof link === 'string' && isValidUrl(link))
-        : typeof links === 'string' && isValidUrl(links)
-          ? [links]
-          : []
+      const links =
+        sanitized.socialLinks[platform as keyof typeof sanitized.socialLinks]
+      if (links) {
+        sanitized.socialLinks[platform as keyof typeof sanitized.socialLinks] =
+          Array.isArray(links)
+            ? links.filter(
+                (link) => typeof link === 'string' && isValidUrl(link),
+              )
+            : typeof links === 'string' && isValidUrl(links)
+              ? [links]
+              : []
+      }
     }
   }
 
