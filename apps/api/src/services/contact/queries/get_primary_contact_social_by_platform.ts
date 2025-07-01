@@ -1,10 +1,10 @@
+import type { SocialMediaPlatformEnum } from '@ritchy/types'
 import { and, desc, eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import type { z } from 'zod'
 import { db } from '../../../db/db'
 import { contactSocial } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
-import type { SocialMediaPlatformEnum } from '@ritchy/types'
-import type { z } from 'zod'
 
 type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 

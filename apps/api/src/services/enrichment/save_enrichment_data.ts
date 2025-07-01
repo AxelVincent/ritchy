@@ -1,6 +1,7 @@
 import { logger } from '@ritchy/logger'
 import type { EnrichResponse, SocialMediaPlatformEnum } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import type { z } from 'zod'
 import { db } from '../../db/db'
 import type * as schema from '../../db/schema'
 import { getContactEmails } from '../contact/queries/get_contact_emails'
@@ -11,7 +12,6 @@ import { upsertContactSocialsWithTransaction } from '../contact/queries/upsert_c
 import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url'
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
-import type { z } from 'zod'
 
 type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
