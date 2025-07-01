@@ -23,15 +23,51 @@ export const getAuthUrl = (state: string): string => {
   return `${HUBSPOT_CONFIG.API.AUTH_URL}?${params.toString()}`
 }
 
-const getPortalIdFromAccountInfo = async (accessToken: string) => {
-  const response = await fetch(
-    'https://api.hubapi.com/account-info/v3/details',
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    },
-  )
-  const accountInfo = await response.json()
-  return accountInfo.portalId
+// Zod schema for HubSpot account info API response validation
+const HubSpotAccountInfoSchema = z.object({
+  portalId: z.union([z.number(), z.string()]).transform((val) => 
+    typeof val === 'string' ? val : val.toString()
+  ),
+})
+
+const getPortalIdFromAccountInfo = async (accessToken: string): Promise<string> => {
+  try {
+    const response = await fetch(
+      'https://api.hubapi.com/account-info/v3/details',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error(
+        `HubSpot account info API failed: ${response.status} ${response.statusText}`,
+      )
+    }
+
+    const accountInfo = await response.json()
+    
+    // Validate the API response structure
+    const validatedAccountInfo = HubSpotAccountInfoSchema.parse(accountInfo)
+    
+    return validatedAccountInfo.portalId
+  } catch (error) {
+    logger.error({
+      msg: 'Failed to fetch portal ID from HubSpot account info',
+      event: 'hubspot_portal_id_fetch_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+    
+    if (error instanceof z.ZodError) {
+      throw new Error(
+        `Invalid HubSpot account info response structure: ${error.message}`,
+      )
+    }
+    
+    throw error
+  }
 }
 
 export const exchangeCodeForToken = async (

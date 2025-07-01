@@ -1,8 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { and, eq } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { hubspotLeadMapping, hubspotToken } from '../../db/schema'
-import { getHubspotTokenByPortalId } from './queries/get_hubspot_token_by_portal_id'
+import { hubspotLeadMapping } from '../../db/schema'
 
 export const deleteCompanyMapping = async (
   companyId: string,
