@@ -1,5 +1,4 @@
 import { logger } from '@ritchy/logger'
-import { QUEUE_CONFIG } from '../../config/rabbitmq'
 import { sendSlackNotification } from '../slack/slack'
 import { rabbitMQClient } from './rabbitmq'
 
@@ -180,10 +179,12 @@ const performHealthCheck = async (): Promise<void> => {
 
     // Send alerts for critical issues
     if (mainQueueStatus === 'critical' || dlqStatus === 'critical') {
-      sendSlackNotification({
-        channel: 'tech_monitoring',
-        text: `🚨 RabbitMQ critical issue detected - Main Queue: ${mainQueueStatus}, DLQ: ${dlqStatus}, Messages: ${queueHealth.mainQueue.messageCount}, Consumers: ${queueHealth.mainQueue.consumerCount}`,
-      })
+      if (process.env.NODE_ENV !== 'development') {
+        sendSlackNotification({
+          channel: 'tech_monitoring',
+          text: `🚨 [${process.env.NODE_ENV}] RabbitMQ critical issue detected - Main Queue: ${mainQueueStatus}, DLQ: ${dlqStatus}, Messages: ${queueHealth.mainQueue.messageCount}, Consumers: ${queueHealth.mainQueue.consumerCount}`,
+        })
+      }
     }
   } catch (error) {
     const latency = Date.now() - start
@@ -209,10 +210,12 @@ const performHealthCheck = async (): Promise<void> => {
       },
     }
 
-    sendSlackNotification({
-      channel: 'tech_monitoring',
-      text: `🚨 RabbitMQ health check failed - connection error: ${errorMessage}`,
-    })
+    if (process.env.NODE_ENV !== 'development') {
+      sendSlackNotification({
+        channel: 'tech_monitoring',
+        text: `🚨 [${process.env.NODE_ENV}] RabbitMQ health check failed - connection error: ${errorMessage}`,
+      })
+    }
 
     logger.error({
       msg: 'RabbitMQ health check failed',
