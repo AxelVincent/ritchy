@@ -115,7 +115,9 @@ export const createCheckoutSession = async (
     const priceId =
       billingInterval === 'yearly'
         ? STRIPE_PLANS[plan].price?.yearly
-        : STRIPE_PLANS[plan].price?.monthly
+        : billingInterval === 'quarterly'
+          ? STRIPE_PLANS[plan].price?.quarterly
+          : STRIPE_PLANS[plan].price?.monthly
 
     if (!priceId) {
       logger.error({

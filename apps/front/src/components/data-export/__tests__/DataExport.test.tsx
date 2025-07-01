@@ -1,4 +1,4 @@
-import type { SearchModel, SearchResult, SubscriptionPlan } from '@ritchy/types'
+import type { Plan, SearchModel, SearchResult } from '@ritchy/types'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -23,9 +23,9 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
 }))
 
-// Mock for useUserMe with default NAVIGATOR plan
+// Mock for useUserMe with default ESSENTIALS plan
 const userMeMock = vi.fn().mockReturnValue({
-  data: { plan: 'NAVIGATOR' },
+  data: { plan: 'ESSENTIALS' },
 })
 
 vi.mock('@/api/queries/users/useUserMe', () => ({
@@ -34,13 +34,11 @@ vi.mock('@/api/queries/users/useUserMe', () => ({
 
 // Mock for isModelAvailable
 vi.mock('@/lib/subscription', () => ({
-  isModelAvailable: (plan: SubscriptionPlan, model: SearchModel) => {
-    if (plan === 'FREE') return model === 'ESSENTIALS'
-    if (plan === 'NAVIGATOR') return ['ESSENTIALS', 'NAVIGATOR'].includes(model)
-    if (plan === 'EXPLORER')
-      return ['ESSENTIALS', 'NAVIGATOR', 'EXPLORER'].includes(model)
+  isModelAvailable: (plan: Plan, model: SearchModel) => {
+    if (plan === 'FREE') return model === 'ENHANCED'
+    if (plan === 'ESSENTIALS') return ['ENHANCED'].includes(model)
     if (plan === 'PRO') return true
-    return model === 'ESSENTIALS'
+    return model === 'ENHANCED'
   },
 }))
 

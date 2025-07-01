@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import type { NextFunction, Request, Response } from 'express'
 import { db } from '../db/db'
 import { userDemoCode } from '../db/schema'
-import { getUserPlan } from '../services/subscription' // Assuming this service exists and works
+import { getUserPlan } from '../services/payment/queries/get_user_plan' // Assuming this service exists and works
 
 export const ensureDemoCodeValidated = async (
   req: Request,

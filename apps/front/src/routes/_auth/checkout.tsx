@@ -1,6 +1,6 @@
 import { useCreateCheckoutSession } from '@/api/mutations/payments/useCreateCheckoutSession'
 import { getValidPromos } from '@/components/payment/promos'
-import type { SearchModel } from '@ritchy/types'
+import type { Plan } from '@ritchy/types'
 import {
   EmbeddedCheckout,
   EmbeddedCheckoutProvider,
@@ -47,7 +47,7 @@ function CheckoutComponent() {
   useEffect(() => {
     if (plan) {
       createSession({
-        plan: plan as SearchModel,
+        plan: plan as Plan,
         billingInterval: billingInterval as 'monthly' | 'yearly',
         currency: currency as 'usd' | 'eur',
       })

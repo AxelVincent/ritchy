@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { EnrichResponseSchema } from '../enrich'
-import { RectangleSchema, SearchModelEnum } from '../searches/search'
+import { SearchModelEnum } from '../payments/checkout'
+import { RectangleSchema } from '../searches/search'
 import { NoteSchema } from './notes'
 import { StatusSchema } from './status'
 
@@ -125,7 +126,7 @@ export const PriceRangeSchema = z.object({
 export const PlacesSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
   rectangle: RectangleSchema,
-  model: SearchModelEnum.default('ESSENTIALS'),
+  model: SearchModelEnum.default('BASIC'),
 })
 
 export const PlaceListAssociationSchema = z.object({

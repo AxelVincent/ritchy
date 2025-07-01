@@ -15,10 +15,10 @@ export interface AnnualOffer {
 // Centralized active promotions
 const activePromos: PromoOffer[] = [
   {
-    code: 'MARCH29',
-    discount: 29,
-    planId: 'ESSENTIALS',
-    validUntil: '2025-03-31T23:59:59Z', // March 31, 2025
+    code: 'SUMMER25',
+    discount: 25,
+    planId: 'PRO',
+    validUntil: '2025-08-31T23:59:59Z', // March 31, 2025
   },
   // Add more promos as needed
 ]

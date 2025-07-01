@@ -1,10 +1,19 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
-import { SearchModelEnum } from '../searches/search'
+
+export const PlanEnum = z.enum(['FREE', 'ESSENTIALS', 'PRO'])
+
+export const SearchModelEnum = z.enum([
+  'BASIC',
+  'ENHANCED',
+  'ADVANCED',
+  'EXPERT',
+])
+export type SearchModel = z.infer<typeof SearchModelEnum>
 
 export const CreateCheckoutSessionRequestBodySchema = z.object({
-  plan: SearchModelEnum,
-  billingInterval: z.enum(['monthly', 'yearly']),
+  plan: PlanEnum,
+  billingInterval: z.enum(['monthly', 'quarterly', 'yearly']),
   currency: z.enum(['usd', 'eur']),
 })
 
@@ -17,6 +26,8 @@ export const CreateCheckoutSessionApiResponseSchema = z.union([
   CreateCheckoutSessionResponseSchema,
   ApiErrorResponseSchema,
 ])
+
+export type Plan = z.infer<typeof PlanEnum>
 
 export type CreateCheckoutSessionRequestBody = z.infer<
   typeof CreateCheckoutSessionRequestBodySchema
