@@ -3,6 +3,7 @@ import {
   type CreateSearchApiResponse,
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
+  hasModelAccess,
 } from '@ritchy/types'
 import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -10,7 +11,6 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
 import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
-import { hasModelAccess } from '../../services/payment/helpers/has_model_access'
 import { getUserSearchModel } from '../../services/payment/queries/get_user_search_model'
 
 export const createSearch = async (
@@ -61,11 +61,15 @@ export const createSearch = async (
 
     // Special handling for BASIC model with search limits (free users)
     if (userSearchModel === 'BASIC') {
-      const searchCount = await db
-        .select({ count: sql<number>`count(*)` })
+      // Optimized query: use LIMIT 4 to avoid counting all records
+      // We only need to know if user has 3+ searches to enforce the limit
+      const searchRecords = await db
+        .select({ id: search.id })
         .from(search)
-        .where(and(eq(search.userId, req.auth.userId)))
-        .then((result) => Number(result[0].count))
+        .where(eq(search.userId, req.auth.userId))
+        .limit(4)
+
+      const searchCount = searchRecords.length
 
       logger.info({
         msg: 'Basic model search count checked',
