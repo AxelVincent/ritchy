@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
-import { SubscriptionPlanEnum } from './subscriptions'
+import { PlanEnum } from '../payments/checkout'
 
 export const UserMeDataSchema = z.object({
-  plan: SubscriptionPlanEnum,
+  plan: PlanEnum,
   isDemoValidated: z.boolean(),
 })
 

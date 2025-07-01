@@ -3,7 +3,7 @@ import {
   type CreateSearchApiResponse,
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
-  PLAN_RADIUS_LIMITS,
+  hasModelAccess,
 } from '@ritchy/types'
 import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -11,9 +11,7 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
 import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
-import { getUserPlan } from '../../services/subscription'
-import { getLargestSquareFromCoordinates } from '../../utils/geo_utils'
-import { type PlanType, hasModelAccess } from '../../utils/plan-access'
+import { getUserSearchModel } from '../../services/payment/queries/get_user_search_model'
 
 export const createSearch = async (
   req: Request<
@@ -26,7 +24,6 @@ export const createSearch = async (
   logger.info({
     msg: 'Search creation initiated',
     event: 'search_creation_started',
-
     metadata: {
       requestBody: req.body,
     },
@@ -34,46 +31,48 @@ export const createSearch = async (
 
   try {
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
-    const plan = await getUserPlan(req.auth.userId)
+    const userSearchModel = await getUserSearchModel(req.auth.userId)
 
     logger.info({
       msg: 'Search request validated',
       event: 'search_validation_passed',
-
       metadata: {
-        plan,
-        model: parsedBody.model,
+        userSearchModel,
+        requestedModel: parsedBody.model,
       },
     })
 
-    if (
-      !hasModelAccess(plan as PlanType, parsedBody.model) &&
-      !(plan === 'FREE' && parsedBody.model === 'ESSENTIALS')
-    ) {
+    // Check if user's search model allows the requested model
+    if (!hasModelAccess(userSearchModel, parsedBody.model)) {
       logger.warn({
         msg: 'Model access denied',
         event: 'search_model_access_denied',
         metadata: {
-          plan,
+          userSearchModel,
           requestedModel: parsedBody.model,
         },
       })
       res.status(403).json({
         error: 'Forbidden',
-        message: `This feature is only available for ${parsedBody.model} and above users`,
+        message: `Your current subscription allows up to ${userSearchModel} searches. Please upgrade to access ${parsedBody.model} searches.`,
       })
       return
     }
 
-    if (plan === 'FREE' && parsedBody.model === 'ESSENTIALS') {
-      const searchCount = await db
-        .select({ count: sql<number>`count(*)` })
+    // Special handling for BASIC model with search limits (free users)
+    if (userSearchModel === 'BASIC') {
+      // Optimized query: use LIMIT 4 to avoid counting all records
+      // We only need to know if user has 3+ searches to enforce the limit
+      const searchRecords = await db
+        .select({ id: search.id })
         .from(search)
-        .where(and(eq(search.userId, req.auth.userId)))
-        .then((result) => Number(result[0].count))
+        .where(eq(search.userId, req.auth.userId))
+        .limit(4)
+
+      const searchCount = searchRecords.length
 
       logger.info({
-        msg: 'Free plan search count checked',
+        msg: 'Basic model search count checked',
         event: 'search_count_checked',
         metadata: {
           currentSearchCount: searchCount,
@@ -83,7 +82,7 @@ export const createSearch = async (
 
       if (searchCount >= 3) {
         logger.warn({
-          msg: 'Free plan search limit reached',
+          msg: 'Basic model search limit reached',
           event: 'search_limit_reached',
           metadata: {
             searchCount,
@@ -93,7 +92,7 @@ export const createSearch = async (
         res.status(403).json({
           error: 'Search limit reached',
           message:
-            'Free plan users are limited to 3 ESSENTIALS searches. Please upgrade your plan for unlimited searches.',
+            'Basic plan users are limited to 3 searches. Please upgrade your plan for unlimited searches.',
         })
         return
       }
@@ -113,8 +112,8 @@ export const createSearch = async (
       event: 'search_created',
       metadata: {
         searchId: result.id,
-        plan,
-        model: parsedBody.model,
+        userSearchModel,
+        requestedModel: parsedBody.model,
         rectangle: parsedBody.rectangle,
       },
     })
