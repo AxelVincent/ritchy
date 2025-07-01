@@ -204,6 +204,12 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.primaryEmail || '',
         },
         {
+          header: 'Secondary Emails',
+          field: 'secondaryEmails',
+          accessor: (row: SearchResult): string =>
+            row.secondaryEmails?.join(', ') || '',
+        },
+        {
           header: 'Rating',
           field: 'rating',
           accessor: (row: SearchResult): string => row.rating?.toString() || '',

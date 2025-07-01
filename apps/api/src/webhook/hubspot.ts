@@ -12,6 +12,8 @@ import { db } from '../db/db'
 import { hubspotLeadMapping, webhookEvent } from '../db/schema'
 import { clearContactMapping } from '../services/hubspot/clear_contact_mapping'
 import { deleteCompanyMapping } from '../services/hubspot/delete_company_mapping'
+import { getHubspotTokenByPortalId } from '../services/hubspot/queries/get_hubspot_token_by_portal_id'
+import { updatePlaceStatus } from '../services/hubspot/update_place_status'
 import { upsertStatus } from '../services/places/status/upsert_status'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
@@ -22,7 +24,7 @@ type WebhookResponse = {
 }
 
 // HubSpot webhook event types
-type HubSpotWebhookEvent = {
+export type HubSpotWebhookEvent = {
   subscriptionType: string
   portalId: number
   appId: number
@@ -194,6 +196,21 @@ export const hubspotWebhook = async (
             webhookId: event.eventId,
           }
         }
+
+        const token = await getHubspotTokenByPortalId(event.portalId.toString())
+        if (!token) {
+          logger.error({
+            msg: 'No HubSpot token found for portal',
+            event: 'hubspot_token_not_found',
+            metadata: { portalId: event.portalId },
+          })
+          return {
+            status: 'token_not_found',
+            eventId: event.eventId,
+            webhookId: event.eventId,
+          }
+        }
+
         const { record, isDuplicate } = await validateWebhookIdempotency(
           req.headers,
           event,
@@ -213,119 +230,38 @@ export const hubspotWebhook = async (
           switch (event.subscriptionType) {
             case 'object.propertyChange':
               if (event.propertyName === 'hs_lead_status') {
-                // Find the lead mapping record
-                const leadMapping = await db.query.hubspotLeadMapping.findFirst(
-                  {
-                    where: (mapping, { or, eq }) =>
-                      or(
-                        eq(mapping.hubspotCompanyId, event.objectId.toString()),
-                        eq(mapping.hubspotContactId, event.objectId.toString()),
-                      ),
-                  },
-                )
-
-                if (!leadMapping) {
-                  logger.warn({
-                    msg: 'No lead mapping found for HubSpot object',
-                    event: 'hubspot_lead_mapping_not_found',
-                    metadata: {
-                      objectId: event.objectId,
-                      propertyName: event.propertyName,
-                      propertyValue: event.propertyValue,
-                    },
-                  })
-                  break
-                }
-
-                // Get the token to find the userId
-                const token = await db.query.hubspotToken.findFirst({
-                  where: (token, { eq }) => eq(token.id, leadMapping.tokenId),
-                })
-
-                if (!token) {
-                  logger.error({
-                    msg: 'No HubSpot token found for lead mapping',
-                    event: 'hubspot_token_not_found',
-                    metadata: {
-                      leadMappingId: leadMapping.id,
-                      tokenId: leadMapping.tokenId,
-                    },
-                  })
-                  break
-                }
-
-                // Get the user from the token
-                const user = await db.query.user.findFirst({
-                  where: (user, { eq }) => eq(user.id, token.userId),
-                })
-
-                if (!user) {
-                  logger.error({
-                    msg: 'No user found for HubSpot token',
-                    event: 'hubspot_user_not_found',
-                    metadata: {
-                      tokenId: token.id,
-                      userId: token.userId,
-                    },
-                  })
-                  break
-                }
-
-                // Create reverse mapping from HubSpot to internal status
-                const reverseStatusMapping = Object.fromEntries(
-                  Object.entries(LEAD_STATUS_MAPPING).map(
-                    ([internal, hubspot]) => [hubspot, internal],
-                  ),
-                ) as Record<HubspotLeadStatus, InternalLeadStatus>
-
-                const newStatus =
-                  reverseStatusMapping[
-                    event.propertyValue as HubspotLeadStatus
-                  ] ?? 'NEW'
-
-                // Update the status using the existing upsertStatus function
-                await upsertStatus(
-                  {
-                    userId: user.id,
+                await updatePlaceStatus({
+                  tokenId: token.id,
+                  context: {
+                    userId: token.userId,
                     sessionId: req.auth.sessionId,
                     changeSource: 'integration',
                     metadata: {
-                      ...req.metadata,
+                      timestamp: new Date(),
+                      ipAddress: req.ip ?? '',
+                      userAgent: String(req.headers['user-agent'] ?? ''),
+                      requestId: String(req.headers['x-request-id'] ?? ''),
                     },
-                    additionalContext: {
-                      hubspotEvent: event,
-                    },
-                    bulkOperationId: batchId,
                   },
-                  leadMapping.placeId,
-                  newStatus,
-                )
-
+                  batchId,
+                  contactId: event.objectId.toString(),
+                  event,
+                })
                 logger.info({
-                  msg: 'Updated place status from HubSpot webhook',
-                  event: 'hubspot_status_update',
+                  msg: 'Processing object property change event',
+                  event: 'object_property_change_event_processing',
                   metadata: {
-                    placeId: leadMapping.placeId,
-                    userId: user.id,
-                    oldStatus: event.propertyValue,
-                    newStatus,
+                    event,
                   },
                 })
               }
-              logger.info({
-                msg: 'Processing object property change event',
-                event: 'object_property_change_event_processing',
-                metadata: {
-                  event,
-                },
-              })
               break
             case 'company.deletion': {
-              await deleteCompanyMapping(event.objectId.toString())
+              await deleteCompanyMapping(event.objectId.toString(), token.id)
               break
             }
             case 'contact.deletion':
-              await clearContactMapping(event.objectId.toString(), '')
+              await clearContactMapping(event.objectId.toString(), token.id, '')
               logger.info({
                 msg: 'Processing contact deletion event',
                 event: 'contact_deletion_event_processing',

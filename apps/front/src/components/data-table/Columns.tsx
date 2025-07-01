@@ -26,6 +26,7 @@ import { primaryEmailColumn } from './columns/PrimaryEmailColumn'
 import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
+import { secondaryEmailsColumn } from './columns/SecondaryEmailsColumn'
 import { selectColumn } from './columns/SelectColumn'
 import { socialEmailColumn } from './columns/SocialEmailColumn'
 
@@ -42,6 +43,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   websiteColumn,
   phoneColumn,
   primaryEmailColumn,
+  secondaryEmailsColumn,
   socialEmailColumn,
   domainRegistrationDateColumn,
   notesColumn,
