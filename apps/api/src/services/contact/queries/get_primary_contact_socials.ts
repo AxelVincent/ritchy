@@ -9,7 +9,7 @@ import type * as schema from '../../../db/schema'
  * @param contactId Contact ID to fetch primary social profiles
  * @returns Primary social profiles List or empty list if none exists
  */
-export const getPrimaryContactSocialsByContact = async (
+export const getPrimaryContactSocials = async (
   contactId: string,
   tx?: PostgresJsDatabase<typeof schema>,
 ) => {

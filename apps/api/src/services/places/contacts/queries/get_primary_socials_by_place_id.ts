@@ -7,7 +7,7 @@ import { contact } from '../../../../db/schema'
 export const getPrimarySocialsByPlaceIds = async (
   placeIds: string[],
   userId: string,
-) => {
+): Promise<Map<string, { platform: string; profileUrl: string }>> => {
   if (placeIds.length === 0) {
     return new Map<string, { platform: string; profileUrl: string }>()
   }

@@ -6,9 +6,8 @@ import type * as schema from '../../db/schema'
 import { getContactEmails } from '../contact/queries/get_contact_emails'
 import { getContactSocials } from '../contact/queries/get_contact_socials'
 import { getPrimaryContactEmail } from '../contact/queries/get_primary_contact_email'
-import { getPrimaryContactSocialsByContact } from '../contact/queries/get_primary_contact_socials'
 import { insertContactEmailsWithTransaction } from '../contact/queries/insert_contact_email'
-import { insertContactSocialsWithTransaction } from '../contact/queries/insert_contact_social'
+import { upsertContactSocialsWithTransaction } from '../contact/queries/upsert_contact_social'
 import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url'
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
@@ -64,23 +63,26 @@ export async function saveEnrichmentData({
   })
 
   // Use transaction for atomic operations
-  const result = await db.transaction(async (tx) => {
-    const emailResults = await processEmailsWithTransaction(
-      contactId,
-      emails,
-      tx,
-    )
-    const socialResults = await processSocialsWithTransaction(
-      contactId,
-      flattenedSocialLinks,
-      tx,
-    )
+  const result = await db.transaction(
+    async (tx) => {
+      const emailResults = await processEmailsWithTransaction(
+        contactId,
+        emails,
+        tx,
+      )
+      const socialResults = await processSocialsWithTransaction(
+        contactId,
+        flattenedSocialLinks,
+        tx,
+      )
 
-    return {
-      emailResults,
-      socialResults,
-    }
-  })
+      return {
+        emailResults,
+        socialResults,
+      }
+    },
+    { isolationLevel: 'repeatable read' }, // Preventing dirty reads, TODO: optimization to do here potentially
+  )
 
   logger.info({
     msg: 'Enrichment data save completed',
@@ -239,47 +241,19 @@ async function processSocialsWithTransaction(
     }
   }
 
-  // Only check primary socials if we have new socials to save
-  const existingPrimarySocials = await getPrimaryContactSocialsByContact(
-    contactId,
-    tx,
-  )
-
-  // Create all socials as secondary first (consistent structure)
-  const socials = newSocials.map((url) => ({
+  // Create all socials - let the upsert function handle primary/secondary logic
+  const socialsToUpsert = newSocials.map((url) => ({
     contactId,
     platform: extractSocialPlatformFromUrl(url),
     profileUrl: url,
-    isPrimary: false,
+    isPrimary: true, // Try primary first, upsert will handle conflicts
     source: 'enrichment',
   }))
 
-  // Process primary logic per platform
-  const platformsWithPrimaryInBatch = new Set<string>()
-  const socialsToInsert = socials.map((social) => {
-    const platform = social.platform
-    const hasExistingPrimaryForPlatform = existingPrimarySocials.some(
-      (primary) => primary.platform === platform,
-    )
-    const hasPrimaryInBatch = platformsWithPrimaryInBatch.has(platform)
+  // Use upsert function to handle primary/secondary logic
+  await upsertContactSocialsWithTransaction(tx, socialsToUpsert)
 
-    // If no primary exists for this platform (existing or in this batch), make this social primary
-    if (!hasExistingPrimaryForPlatform && !hasPrimaryInBatch) {
-      platformsWithPrimaryInBatch.add(platform)
-      return {
-        ...social,
-        isPrimary: true,
-      }
-    }
-
-    // Otherwise, keep as secondary
-    return social
-  })
-
-  // Use transaction-aware insert function
-  await insertContactSocialsWithTransaction(tx, socialsToInsert)
-
-  const primarySocialSet = socialsToInsert.some((social) => social.isPrimary)
+  const primarySocialSet = socialsToUpsert.some((social) => social.isPrimary)
 
   return {
     socialLinksSaved: newSocials.length,
