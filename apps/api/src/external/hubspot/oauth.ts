@@ -25,12 +25,14 @@ export const getAuthUrl = (state: string): string => {
 
 // Zod schema for HubSpot account info API response validation
 const HubSpotAccountInfoSchema = z.object({
-  portalId: z.union([z.number(), z.string()]).transform((val) => 
-    typeof val === 'string' ? val : val.toString()
-  ),
+  portalId: z
+    .union([z.number(), z.string()])
+    .transform((val) => (typeof val === 'string' ? val : val.toString())),
 })
 
-const getPortalIdFromAccountInfo = async (accessToken: string): Promise<string> => {
+const getPortalIdFromAccountInfo = async (
+  accessToken: string,
+): Promise<string> => {
   try {
     const response = await fetch(
       'https://api.hubapi.com/account-info/v3/details',
@@ -46,10 +48,10 @@ const getPortalIdFromAccountInfo = async (accessToken: string): Promise<string> 
     }
 
     const accountInfo = await response.json()
-    
+
     // Validate the API response structure
     const validatedAccountInfo = HubSpotAccountInfoSchema.parse(accountInfo)
-    
+
     return validatedAccountInfo.portalId
   } catch (error) {
     logger.error({
@@ -59,13 +61,13 @@ const getPortalIdFromAccountInfo = async (accessToken: string): Promise<string> 
         error: error instanceof Error ? error.message : String(error),
       },
     })
-    
+
     if (error instanceof z.ZodError) {
       throw new Error(
         `Invalid HubSpot account info response structure: ${error.message}`,
       )
     }
-    
+
     throw error
   }
 }
