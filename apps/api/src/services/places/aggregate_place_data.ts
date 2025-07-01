@@ -72,7 +72,7 @@ export const aggregatePlaceData = async (
       searchId: searchIdMap.get(basePlace.id) || null,
       listId: listIdMap.get(basePlace.id) || null,
       primaryEmail: primaryEmails.get(basePlace.id) || null,
-      primarySocial: primarySocials.get(basePlace.id) || null,
+      primarySocials: primarySocials.get(basePlace.id) || [],
       secondaryEmails: secondaryEmails.get(basePlace.id) || [],
       hubspotSynced: hubspotSynced.get(basePlace.id) || false,
     }

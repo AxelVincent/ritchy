@@ -2,6 +2,7 @@ import {
   CompanyFieldEnum,
   ContactFieldEnum,
   StatusFieldEnum,
+  SocialMediaPlatformEnum,
 } from '@ritchy/types'
 import { type InferSelectModel, sql } from 'drizzle-orm'
 import {
@@ -451,6 +452,11 @@ export const contactEmail = pgTable(
   }),
 )
 
+export const socialPlatformEnum = pgEnum(
+  'social_platform',
+  SocialMediaPlatformEnum.options,
+)
+
 export const contactSocial = pgTable(
   'contact_social',
   {
@@ -458,7 +464,7 @@ export const contactSocial = pgTable(
     contactId: uuid('contact_id')
       .notNull()
       .references(() => contact.id, { onDelete: 'cascade' }),
-    platform: text('platform').notNull(), // ex facebook, instagram, twitter, linkedin, etc.
+    platform: socialPlatformEnum('platform').notNull(),
     profileUrl: text('profile_url').notNull(),
     username: text('username'), // extracted from profileUrl
     isPrimary: boolean('is_primary').notNull().default(false),

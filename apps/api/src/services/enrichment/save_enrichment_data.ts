@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import type { EnrichResponse } from '@ritchy/types'
+import type { EnrichResponse, SocialMediaPlatformEnum } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import type * as schema from '../../db/schema'
@@ -11,6 +11,9 @@ import { upsertContactSocialsWithTransaction } from '../contact/queries/upsert_c
 import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url'
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
+import type { z } from 'zod'
+
+type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
 interface SaveEnrichmentDataOptions {
   contactId: string
@@ -242,13 +245,19 @@ async function processSocialsWithTransaction(
   }
 
   // Create all socials - let the upsert function handle primary/secondary logic
-  const socialsToUpsert = newSocials.map((url) => ({
-    contactId,
-    platform: extractSocialPlatformFromUrl(url),
-    profileUrl: url,
-    isPrimary: true, // Try primary first, upsert will handle conflicts
-    source: 'enrichment',
-  }))
+  const socialsToUpsert = newSocials
+    .map((url) => ({
+      contactId,
+      platform: extractSocialPlatformFromUrl(url),
+      profileUrl: url,
+      isPrimary: true, // Try primary first, upsert will handle conflicts
+      source: 'enrichment',
+    }))
+    .filter((social) => social.platform !== 'unknown')
+    .map((social) => ({
+      ...social,
+      platform: social.platform as SocialMediaPlatform,
+    }))
 
   // Use upsert function to handle primary/secondary logic
   await upsertContactSocialsWithTransaction(tx, socialsToUpsert)

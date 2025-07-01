@@ -1,0 +1,2 @@
+CREATE TYPE "public"."social_platform" AS ENUM('linkedin', 'twitter', 'facebook', 'instagram', 'youtube', 'tiktok', 'pinterest', 'reddit', 'snapchat');--> statement-breakpoint
+ALTER TABLE "contact_social" ALTER COLUMN "platform" SET DATA TYPE social_platform USING platform::social_platform;

@@ -7,9 +7,9 @@ import { contact } from '../../../../db/schema'
 export const getPrimarySocialsByPlaceIds = async (
   placeIds: string[],
   userId: string,
-): Promise<Map<string, { platform: string; profileUrl: string }>> => {
+): Promise<Map<string, { platform: string; profileUrl: string }[]>> => {
   if (placeIds.length === 0) {
-    return new Map<string, { platform: string; profileUrl: string }>()
+    return new Map<string, { platform: string; profileUrl: string }[]>()
   }
   const primarySocials = await db
     .select({
@@ -28,8 +28,7 @@ export const getPrimarySocialsByPlaceIds = async (
     )
     .orderBy(desc(contactSocial.createdAt))
 
-  // Process results to get one primary social per place, prioritizing LinkedIn for now
-  const result = new Map<string, { platform: string; profileUrl: string }>()
+  const result = new Map<string, { platform: string; profileUrl: string }[]>()
   const placeGroups = new Map<
     string,
     Array<{ platform: string; profileUrl: string }>
@@ -49,16 +48,9 @@ export const getPrimarySocialsByPlaceIds = async (
     }
   }
 
-  // For each place, prioritize LinkedIn, then take the first available
   for (const [placeId, socials] of placeGroups) {
-    const linkedinSocial = socials.find(
-      (social) => social.platform === 'linkedin',
-    )
-    if (linkedinSocial) {
-      result.set(placeId, linkedinSocial)
-    } else {
-      result.set(placeId, socials[0])
-    }
+    // Return all primary socials for each place
+    result.set(placeId, socials)
   }
 
   logger.info({

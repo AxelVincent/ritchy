@@ -118,7 +118,7 @@ describe('DataExport', () => {
         listId: null,
         enrichment: null,
         primaryEmail: 'test@example.com',
-        primarySocial: null,
+        primarySocials: [],
         hubspotSynced: false,
       },
     ]
@@ -187,7 +187,7 @@ describe('DataExport', () => {
         listId: null,
         enrichment: null,
         primaryEmail: 'test@example.com',
-        primarySocial: null,
+        primarySocials: [],
         hubspotSynced: false,
       },
     ]

@@ -3,6 +3,10 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../db/db'
 import { contactSocial } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
+import type { SocialMediaPlatformEnum } from '@ritchy/types'
+import type { z } from 'zod'
+
+type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
 /**
  * Get primary social profile for a specific contact
@@ -11,7 +15,7 @@ import type * as schema from '../../../db/schema'
  */
 export const getPrimaryContactSocialByPlatform = async (
   contactId: string,
-  platform: string,
+  platform: SocialMediaPlatform,
   tx?: PostgresJsDatabase<typeof schema>,
 ) => {
   const dbInstance = tx || db

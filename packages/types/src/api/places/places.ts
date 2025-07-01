@@ -176,12 +176,14 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   status: StatusSchema.nullable(),
   enrichment: EnrichResponseSchema.nullable(),
   primaryEmail: z.string().email().nullable(),
-  primarySocial: z
-    .object({
-      platform: z.string(),
-      profileUrl: z.string(),
-    })
-    .nullable(),
+  primarySocials: z
+    .array(
+      z.object({
+        platform: z.string(),
+        profileUrl: z.string(),
+      }),
+    )
+    .optional(),
   secondaryEmails: z.array(z.string().email()).optional(),
   hubspotSynced: z.boolean(),
 })

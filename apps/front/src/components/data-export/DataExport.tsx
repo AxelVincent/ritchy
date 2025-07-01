@@ -8,7 +8,11 @@ import {
   PlaceSchema,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
+  type SocialMediaPlatformEnum,
 } from '@ritchy/types'
+import type { z } from 'zod'
+
+type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
 import posthog from 'posthog-js'
@@ -408,7 +412,11 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.socialLinks[platform]?.join(', ') || ''
+            return (
+              enrichData?.socialLinks[platform as SocialMediaPlatform]?.join(
+                ', ',
+              ) || ''
+            )
           },
         })),
         {
