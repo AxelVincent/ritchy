@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
-import { db } from '../../../../db/db'
 import { and, desc, eq, inArray } from 'drizzle-orm'
+import { db } from '../../../../db/db'
 import { contactSocial } from '../../../../db/schema'
 import { contact } from '../../../../db/schema'
 
