@@ -528,11 +528,7 @@ export const PricingCards = ({
                   asChild
                 >
                   <Link
-                    to={
-                      isCurrentPlan
-                        ? '/dashboard'
-                        : `/checkout?plan=${tier.plan}&billingInterval=${billingPeriod}&currency=${currency}`
-                    }
+                    to={`/checkout?plan=${tier.plan}&billingInterval=${billingPeriod}&currency=${currency}`}
                     className="flex items-center justify-center"
                   >
                     {isCurrentPlan ? 'Manage subscription' : 'Start now'}
