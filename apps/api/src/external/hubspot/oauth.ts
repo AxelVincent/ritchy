@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
+import { withHubspotClient } from '../../external/hubspot/token_manager'
 import { createAllHubspotFieldMappings } from '../../services/hubspot/utils/create_all_hubspot_field_mappings'
 
 // Types
@@ -20,6 +21,55 @@ export const getAuthUrl = (state: string): string => {
   })
 
   return `${HUBSPOT_CONFIG.API.AUTH_URL}?${params.toString()}`
+}
+
+// Zod schema for HubSpot account info API response validation
+const HubSpotAccountInfoSchema = z.object({
+  portalId: z
+    .union([z.number(), z.string()])
+    .transform((val) => (typeof val === 'string' ? val : val.toString())),
+})
+
+const getPortalIdFromAccountInfo = async (
+  accessToken: string,
+): Promise<string> => {
+  try {
+    const response = await fetch(
+      'https://api.hubapi.com/account-info/v3/details',
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error(
+        `HubSpot account info API failed: ${response.status} ${response.statusText}`,
+      )
+    }
+
+    const accountInfo = await response.json()
+
+    // Validate the API response structure
+    const validatedAccountInfo = HubSpotAccountInfoSchema.parse(accountInfo)
+
+    return validatedAccountInfo.portalId
+  } catch (error) {
+    logger.error({
+      msg: 'Failed to fetch portal ID from HubSpot account info',
+      event: 'hubspot_portal_id_fetch_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+
+    if (error instanceof z.ZodError) {
+      throw new Error(
+        `Invalid HubSpot account info response structure: ${error.message}`,
+      )
+    }
+
+    throw error
+  }
 }
 
 export const exchangeCodeForToken = async (
@@ -49,11 +99,21 @@ export const exchangeCodeForToken = async (
     }
 
     const data = await response.json()
+
+    logger.info({
+      msg: 'HubSpot OAuth response',
+      event: 'hubspot_oauth_response',
+      metadata: {
+        data,
+      },
+    })
+    const portalId = await getPortalIdFromAccountInfo(data.access_token)
     const mappedToken = {
       id: data.id,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       expiresAt: new Date(Date.now() + data.expires_in * 1000),
+      portalId,
       userId,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
@@ -67,12 +127,14 @@ export const exchangeCodeForToken = async (
         accessToken: mappedToken.accessToken,
         refreshToken: mappedToken.refreshToken,
         expiresAt: mappedToken.expiresAt,
+        portalId: portalId,
       })
       .onConflictDoUpdate({
         target: hubspotToken.userId,
         set: {
           accessToken: mappedToken.accessToken,
           refreshToken: mappedToken.refreshToken,
+          portalId: mappedToken.portalId,
           expiresAt: mappedToken.expiresAt,
           updatedAt: new Date(),
         },

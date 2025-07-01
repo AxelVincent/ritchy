@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS "uniq_user_id_hubspot_token" ON "hubspot_token" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_hubspot_token_portal_id" ON "hubspot_token" USING btree ("portal_id");

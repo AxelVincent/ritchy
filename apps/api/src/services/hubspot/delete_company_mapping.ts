@@ -1,19 +1,29 @@
 import { logger } from '@ritchy/logger'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { hubspotLeadMapping } from '../../db/schema'
 
 export const deleteCompanyMapping = async (
   companyId: string,
+  tokenId: string,
 ): Promise<void> => {
   // Input validation
   if (!companyId?.trim()) {
     throw new Error('Company ID is required')
   }
+  if (!tokenId?.trim()) {
+    throw new Error('Token ID is required')
+  }
+
   // Delete all lead mappings for this company using DELETE ... RETURNING for efficiency
   const deletedMappings = await db
     .delete(hubspotLeadMapping)
-    .where(eq(hubspotLeadMapping.hubspotCompanyId, companyId))
+    .where(
+      and(
+        eq(hubspotLeadMapping.hubspotCompanyId, companyId),
+        eq(hubspotLeadMapping.tokenId, tokenId),
+      ),
+    )
     .returning()
 
   if (deletedMappings.length === 0) {

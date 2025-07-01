@@ -284,18 +284,26 @@ export const userDemoCode = pgTable(
   }),
 )
 
-export const hubspotToken = pgTable('hubspot_token', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' })
-    .unique(),
-  accessToken: text('access_token').notNull(),
-  refreshToken: text('refresh_token').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+export const hubspotToken = pgTable(
+  'hubspot_token',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' })
+      .unique(),
+    accessToken: text('access_token').notNull(),
+    refreshToken: text('refresh_token').notNull(),
+    portalId: text('portal_id'),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqUserId: uniqueIndex('uniq_user_id_hubspot_token').on(table.userId),
+    portalIdIdx: index('idx_hubspot_token_portal_id').on(table.portalId),
+  }),
+)
 
 // Update the enum to include status fields
 export const internalFieldEnum = pgEnum('internal_field', [
