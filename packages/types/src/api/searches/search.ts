@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
+import { SearchModelEnum } from '../payments/checkout'
 import { PlaceSchema } from '../places/places'
 
 export const SearchItemSchema = z.object({
@@ -14,14 +15,6 @@ export const SearchSchema = z.array(SearchItemSchema)
 
 export type SearchItem = z.infer<typeof SearchItemSchema>
 export type Search = z.infer<typeof SearchSchema>
-
-export const SearchModelEnum = z.enum([
-  'ESSENTIALS',
-  'NAVIGATOR',
-  'EXPLORER',
-  'PRO',
-])
-export type SearchModel = z.infer<typeof SearchModelEnum>
 
 export const CoordinateSchema = z.object({
   latitude: z.number(),

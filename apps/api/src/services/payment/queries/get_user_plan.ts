@@ -1,11 +1,9 @@
-import type { SubscriptionPlan } from '@ritchy/types'
+import type { Plan, SearchModel } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
-import { db } from '../db/db'
-import { subscription } from '../db/schema'
+import { db } from '../../../db/db'
+import { subscription } from '../../../db/schema'
 
-export const getUserPlan = async (
-  userId: string,
-): Promise<SubscriptionPlan> => {
+export const getUserPlan = async (userId: string): Promise<Plan> => {
   const [result] = await db
     .select()
     .from(subscription)

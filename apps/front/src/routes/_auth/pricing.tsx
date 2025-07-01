@@ -12,9 +12,9 @@ export const Route = createFileRoute('/_auth/pricing')({
 })
 
 function PricingComponent() {
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>(
-    'monthly',
-  )
+  const [billingPeriod, setBillingPeriod] = useState<
+    'monthly' | 'quarterly' | 'yearly'
+  >('monthly')
   const [currency, setCurrency] = useState<'usd' | 'eur'>('usd')
 
   // Detect user's location and set currency on component mount
@@ -104,6 +104,17 @@ function PricingComponent() {
               </button>
               <button
                 type="button"
+                onClick={() => setBillingPeriod('quarterly')}
+                className={`rounded-full px-4 sm:px-6 py-1.5 sm:py-2 text-sm transition-colors ${
+                  billingPeriod === 'quarterly'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'hover:bg-secondary-hover text-muted-foreground'
+                }`}
+              >
+                Quarterly
+              </button>
+              <button
+                type="button"
                 onClick={() => setBillingPeriod('yearly')}
                 className={`rounded-full px-4 sm:px-6 py-1.5 sm:py-2 text-sm transition-colors ${
                   billingPeriod === 'yearly'
@@ -121,17 +132,6 @@ function PricingComponent() {
               <div className="inline-flex rounded-full bg-green-500/20 dark:bg-green-500/10 px-3 sm:px-6 py-2 sm:py-3">
                 <p className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-400">
                   Save up to {annualOffer.discount}% with yearly plan
-                </p>
-              </div>
-            </div>
-          )}
-
-          {validPromos.length > 0 && (
-            <div className="mt-3 sm:mt-4">
-              <div className="inline-flex rounded-full bg-orange-500/20 dark:bg-orange-500/10 px-3 sm:px-6 py-2 sm:py-3">
-                <p className="text-xs sm:text-sm font-medium text-orange-700 dark:text-orange-400">
-                  Limited time offer: Use code {validPromos[0].code} for{' '}
-                  {validPromos[0].discount}% off
                 </p>
               </div>
             </div>

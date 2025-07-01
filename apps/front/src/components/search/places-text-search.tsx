@@ -13,6 +13,7 @@ import { Search } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useUserMe } from '@/api/queries/users/useUserMe'
+import { CalButton } from '@/components/common/CalButton'
 import { LocationAutocomplete as SearchLocationAutocomplete } from '@/components/search/location-autocomplete'
 import type { Location } from '@/components/search/search-map'
 import { isModelAvailable } from '@/lib/subscription'
@@ -38,7 +39,7 @@ export const PlacesTextSearch = ({
   const { data: me } = useUserMe()
   const [searchText, setSearchText] = useState('')
   const [placeName, setPlaceName] = useState('')
-  const [model, setModel] = useState<SearchModel>('ESSENTIALS')
+  const [model, setModel] = useState<SearchModel>('BASIC')
   const currentLocationRef = useRef<Location>(location)
   const userPlan = me?.plan || 'FREE'
   const [isOpen, setIsOpen] = useState(false)
@@ -47,15 +48,17 @@ export const PlacesTextSearch = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const [isSelectOpen, setIsSelectOpen] = useState(false)
 
-  // Remove the refs and focus effect since we'll use autoFocus prop
-  const [isFirstRender, setIsFirstRender] = useState(true)
-
+  // Pre-select the highest available model for the user
   useEffect(() => {
-    if (isFirstRender) {
-      setIsFirstRender(false)
-      return
+    if (me?.plan) {
+      // Check models in order from highest to lowest available
+      if (isModelAvailable(me.plan, 'ENHANCED')) {
+        setModel('ENHANCED')
+      } else {
+        setModel('BASIC')
+      }
     }
-  }, [isFirstRender])
+  }, [me?.plan])
 
   useEffect(() => {
     currentLocationRef.current = {
@@ -172,17 +175,27 @@ export const PlacesTextSearch = ({
   }
 
   const nextStep = () => {
-    const searchPowerLabel = {
-      ESSENTIALS: 'Essentials (60 results)',
-      NAVIGATOR: 'Navigator (240 results)',
-      EXPLORER: 'Explorer (1000 results)',
-      PRO: 'Pro (4000 results)',
-    }[model]
+    const getResultCount = (model: SearchModel) => {
+      if (model === 'BASIC') {
+        return '60 business listings'
+      }
+      if (model === 'ENHANCED') {
+        return '240 business listings'
+      }
+      if (model === 'ADVANCED') {
+        return '960 business listings'
+      }
+      if (model === 'EXPERT') {
+        return '3840 business listings'
+      }
+    }
+
+    const searchPowerLabel = `${model} (${getResultCount(model)})`
 
     const parts = []
     if (step >= 1 && searchText) {
       parts.push(searchText)
-      parts.push(`${searchPowerLabel}`)
+      parts.push(searchPowerLabel)
     }
 
     const combinedInput = parts.filter(Boolean).join(' • ')
@@ -269,7 +282,7 @@ export const PlacesTextSearch = ({
               <SearchLocationAutocomplete
                 onLocationSelect={handleLocationSelect}
                 initialAddress={placeName}
-                autoFocus={!isFirstRender}
+                autoFocus={true}
               />
             </div>
             <div className="flex justify-between">
@@ -296,95 +309,68 @@ export const PlacesTextSearch = ({
                 onValueChange={handleModelChange}
                 onOpenChange={setIsSelectOpen}
               >
-                <SelectTrigger id="model-select" className="w-[100px]">
+                <SelectTrigger id="model-select" className="w-full">
                   <SelectValue placeholder="Select a model">
-                    {model === 'ESSENTIALS' && 'Essentials'}
-                    {model === 'NAVIGATOR' && 'Navigator'}
-                    {model === 'EXPLORER' && 'Explorer'}
-                    {model === 'PRO' && 'Pro'}
+                    {model === 'BASIC' && 'Basic'}
+                    {model === 'ENHANCED' && 'Enhanced'}
+                    {model === 'ADVANCED' && 'Advanced'}
+                    {model === 'EXPERT' && 'Expert'}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ESSENTIALS" className="cursor-pointer">
+                  <SelectItem value="BASIC" className="cursor-pointer">
                     <div className="space-y-1 w-full">
-                      <div>Essentials</div>
+                      <div>Basic</div>
                       <div className="text-xs text-muted-foreground">
-                        Basic search with up to 60 results
+                        Up to 60 business listings per search
                       </div>
                     </div>
                   </SelectItem>
-                  <SelectItem value="NAVIGATOR" className="cursor-pointer">
+                  <SelectItem value="ENHANCED" className="cursor-pointer">
                     <div className="space-y-1 w-full">
                       <div className="flex items-center w-full">
                         <span
                           className={
-                            !isModelAvailable(userPlan, 'NAVIGATOR')
+                            !isModelAvailable(userPlan, 'ENHANCED')
                               ? 'text-muted-foreground'
                               : ''
                           }
                         >
-                          Navigator
+                          Enhanced
                         </span>
-                        {!isModelAvailable(userPlan, 'NAVIGATOR') && (
+                        {!isModelAvailable(userPlan, 'ENHANCED') && (
                           <span className="text-xs font-medium text-primary ml-auto">
                             Upgrade
                           </span>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Enhanced search with up to 240 results
-                      </div>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="EXPLORER" className="cursor-pointer">
-                    <div className="space-y-1 w-full">
-                      <div className="flex items-center w-full">
-                        <span
-                          className={
-                            !isModelAvailable(userPlan, 'EXPLORER')
-                              ? 'text-muted-foreground'
-                              : ''
-                          }
-                        >
-                          Explorer
-                        </span>
-                        {!isModelAvailable(userPlan, 'EXPLORER') && (
-                          <span className="text-xs font-medium text-primary ml-auto">
-                            Upgrade
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Advanced search with up to 1000 results
-                      </div>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="PRO" className="cursor-pointer">
-                    <div className="space-y-1 w-full">
-                      <div className="flex items-center w-full">
-                        <span
-                          className={
-                            !isModelAvailable(userPlan, 'PRO')
-                              ? 'text-muted-foreground'
-                              : ''
-                          }
-                        >
-                          Pro
-                        </span>
-                        {!isModelAvailable(userPlan, 'PRO') && (
-                          <span className="text-xs font-medium text-primary ml-auto">
-                            Upgrade
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Premium search with up to 4000 results
+                        Up to 240 business listings per search
                       </div>
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Advanced search power options */}
+            <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground">
+                Need more search power?
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span>Advanced (1,000 business listings)</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Expert (4,000 business listings)</span>
+                </div>
+              </div>
+              <CalButton variant="outline" size="sm" className="w-full">
+                Contact us to upgrade search power
+              </CalButton>
+            </div>
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={prevStep}>
                 Back
