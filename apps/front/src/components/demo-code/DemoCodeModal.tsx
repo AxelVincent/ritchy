@@ -1,7 +1,7 @@
 import { useValidateDemoCode } from '@/api/mutations/users/useValidateDemoCode'
+import { CalButton } from '@/components/common/CalButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getCalApi } from '@calcom/embed-react'
 import { useAuth } from '@clerk/clerk-react'
 import type {
   ApiErrorResponse,
@@ -25,19 +25,6 @@ export const DemoCodeModal = ({
   const { mutate: validateCode, isPending } = useValidateDemoCode()
   const router = useRouter()
   const { signOut } = useAuth()
-
-  // Initialize Cal.com popup
-  useEffect(() => {
-    ;(async () => {
-      const cal = await getCalApi()
-      cal('ui', {
-        theme: 'light',
-        styles: {
-          branding: { brandColor: '#2563eb' }, // Tailwind blue-600
-        },
-      })
-    })()
-  }, [])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -85,14 +72,7 @@ export const DemoCodeModal = ({
             <h3 className="text-sm font-medium text-gray-700 mb-1">
               Option 1: Schedule a demo & Get a free trial code
             </h3>
-            <Button
-              data-cal-link="ryan-baissaut-799ndn/ritchydemo"
-              data-cal-config='{"theme":"light"}'
-              type="button"
-              size="sm"
-            >
-              Book a demo
-            </Button>
+            <CalButton size="sm">Book a demo</CalButton>
           </div>
 
           <div>

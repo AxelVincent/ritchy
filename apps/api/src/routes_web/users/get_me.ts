@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { userDemoCode } from '../../db/schema'
-import { getUserPlan } from '../../services/subscription'
+import { getUserPlan } from '../../services/payment/queries/get_user_plan'
 
 export const getMe = async (
   req: Request,

@@ -330,6 +330,13 @@
       "when": 1751362009716,
       "tag": "0046_chunky_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1751384862397,
+      "tag": "0047_polite_dragon_man",
+      "breakpoints": true
     }
   ]
 }

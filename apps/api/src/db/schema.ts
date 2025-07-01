@@ -1,6 +1,8 @@
 import {
   CompanyFieldEnum,
   ContactFieldEnum,
+  PlanEnum,
+  SearchModelEnum,
   StatusFieldEnum,
 } from '@ritchy/types'
 import { type InferSelectModel, sql } from 'drizzle-orm'
@@ -87,12 +89,7 @@ export const note = pgTable(
   }),
 )
 
-export const searchModelEnum = pgEnum('search_model', [
-  'ESSENTIALS',
-  'NAVIGATOR',
-  'EXPLORER',
-  'PRO',
-])
+export const searchModelEnum = pgEnum('search_model', SearchModelEnum.options)
 
 export const search = pgTable('search', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -150,13 +147,10 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', [
   'paused', // Subscription is paused (if pause feature enabled)
 ])
 
-export const subscriptionPlanEnum = pgEnum('subscription_plan', [
-  'FREE',
-  'ESSENTIALS',
-  'EXPLORER',
-  'NAVIGATOR',
-  'PRO',
-])
+export const subscriptionPlanEnum = pgEnum(
+  'subscription_plan',
+  PlanEnum.options,
+)
 
 export const subscription = pgTable(
   'subscription',
@@ -171,6 +165,7 @@ export const subscription = pgTable(
     stripeCustomerId: text('stripe_customer_id').notNull(),
     status: subscriptionStatusEnum('status').notNull().default('incomplete'),
     plan: subscriptionPlanEnum('plan').notNull().default('FREE'),
+    searchModel: searchModelEnum('search_model').notNull().default('BASIC'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

@@ -6,16 +6,12 @@ const envSchema = z.object({
   STRIPE_PUBLIC_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   STRIPE_PRO_PRODUCT_ID: z.string().min(1),
-  STRIPE_EXPLORER_PRODUCT_ID: z.string().min(1),
-  STRIPE_NAVIGATOR_PRODUCT_ID: z.string().min(1),
   STRIPE_ESSENTIALS_PRODUCT_ID: z.string().min(1),
   STRIPE_PRO_MONTHLY_PRICE_ID: z.string().min(1),
-  STRIPE_EXPLORER_MONTHLY_PRICE_ID: z.string().min(1),
-  STRIPE_NAVIGATOR_MONTHLY_PRICE_ID: z.string().min(1),
   STRIPE_ESSENTIALS_MONTHLY_PRICE_ID: z.string().min(1),
+  STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID: z.string().min(1),
+  STRIPE_PRO_QUARTERLY_PRICE_ID: z.string().min(1),
   STRIPE_PRO_YEARLY_PRICE_ID: z.string().min(1),
-  STRIPE_EXPLORER_YEARLY_PRICE_ID: z.string().min(1),
-  STRIPE_NAVIGATOR_YEARLY_PRICE_ID: z.string().min(1),
   STRIPE_ESSENTIALS_YEARLY_PRICE_ID: z.string().min(1),
 })
 
@@ -30,21 +26,19 @@ export const STRIPE_CONFIG = {
   PRICE: {
     MONTHLY: {
       PRO: env.STRIPE_PRO_MONTHLY_PRICE_ID,
-      EXPLORER: env.STRIPE_EXPLORER_MONTHLY_PRICE_ID,
-      NAVIGATOR: env.STRIPE_NAVIGATOR_MONTHLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_MONTHLY_PRICE_ID,
+    },
+    QUARTERLY: {
+      PRO: env.STRIPE_PRO_QUARTERLY_PRICE_ID,
+      ESSENTIALS: env.STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID,
     },
     YEARLY: {
       PRO: env.STRIPE_PRO_YEARLY_PRICE_ID,
-      EXPLORER: env.STRIPE_EXPLORER_YEARLY_PRICE_ID,
-      NAVIGATOR: env.STRIPE_NAVIGATOR_YEARLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_YEARLY_PRICE_ID,
     },
   },
   PRODUCT_IDS: {
     PRO: env.STRIPE_PRO_PRODUCT_ID,
-    EXPLORER: env.STRIPE_EXPLORER_PRODUCT_ID,
-    NAVIGATOR: env.STRIPE_NAVIGATOR_PRODUCT_ID,
     ESSENTIALS: env.STRIPE_ESSENTIALS_PRODUCT_ID,
   },
 } as const
@@ -59,30 +53,16 @@ export const STRIPE_PLANS = {
     name: 'ESSENTIALS',
     price: {
       monthly: env.STRIPE_ESSENTIALS_MONTHLY_PRICE_ID,
+      quarterly: env.STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID,
       yearly: env.STRIPE_ESSENTIALS_YEARLY_PRICE_ID,
     },
     productId: env.STRIPE_ESSENTIALS_PRODUCT_ID,
-  },
-  EXPLORER: {
-    name: 'EXPLORER',
-    price: {
-      monthly: env.STRIPE_EXPLORER_MONTHLY_PRICE_ID,
-      yearly: env.STRIPE_EXPLORER_YEARLY_PRICE_ID,
-    },
-    productId: env.STRIPE_EXPLORER_PRODUCT_ID,
-  },
-  NAVIGATOR: {
-    name: 'NAVIGATOR',
-    price: {
-      monthly: env.STRIPE_NAVIGATOR_MONTHLY_PRICE_ID,
-      yearly: env.STRIPE_NAVIGATOR_YEARLY_PRICE_ID,
-    },
-    productId: env.STRIPE_NAVIGATOR_PRODUCT_ID,
   },
   PRO: {
     name: 'PRO',
     price: {
       monthly: env.STRIPE_PRO_MONTHLY_PRICE_ID,
+      quarterly: env.STRIPE_PRO_QUARTERLY_PRICE_ID,
       yearly: env.STRIPE_PRO_YEARLY_PRICE_ID,
     },
     productId: env.STRIPE_PRO_PRODUCT_ID,

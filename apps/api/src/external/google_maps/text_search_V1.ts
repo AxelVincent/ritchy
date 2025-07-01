@@ -120,13 +120,13 @@ export async function postTextSearchV1(
 
   const squares = (() => {
     switch (requestBody.model) {
-      case 'PRO':
+      case 'EXPERT':
         return squares3840
-      case 'EXPLORER':
+      case 'ADVANCED':
         return squares960
-      case 'NAVIGATOR':
+      case 'ENHANCED':
         return squares240
-      case 'ESSENTIALS':
+      case 'BASIC':
         return squares60
       default:
         return squares60

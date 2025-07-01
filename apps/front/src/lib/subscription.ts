@@ -1,23 +1,22 @@
-import type { SearchModel, SubscriptionPlan } from '@ritchy/types'
+import type { Plan, SearchModel } from '@ritchy/types'
 
 export const isModelAvailable = (
-  userPlan: SubscriptionPlan | undefined,
+  userPlan: Plan | undefined,
   modelType: SearchModel,
 ): boolean => {
   const plan = userPlan ?? 'FREE'
 
   switch (plan) {
     case 'FREE':
-      return modelType === 'ESSENTIALS'
+      return modelType === 'BASIC'
     case 'ESSENTIALS':
-      return ['ESSENTIALS'].includes(modelType)
-    case 'NAVIGATOR':
-      return ['ESSENTIALS', 'NAVIGATOR'].includes(modelType)
-    case 'EXPLORER':
-      return ['ESSENTIALS', 'NAVIGATOR', 'EXPLORER'].includes(modelType)
+      return ['BASIC', 'ESSENTIALS'].includes(modelType)
     case 'PRO':
-      return true
+      return ['BASIC', 'ESSENTIALS'].includes(modelType)
     default:
-      return modelType === 'ESSENTIALS'
+      return modelType === 'BASIC'
   }
+
+  // Note: ADVANCED and EXPERT models are only available through contact/custom activation
+  // They are not available through regular subscription plans
 }
