@@ -330,6 +330,13 @@
       "when": 1751362009716,
       "tag": "0046_chunky_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1751365830076,
+      "tag": "0047_optimal_sunfire",
+      "breakpoints": true
     }
   ]
 }

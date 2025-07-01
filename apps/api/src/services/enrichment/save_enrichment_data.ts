@@ -6,12 +6,12 @@ import type * as schema from '../../db/schema'
 import { getContactEmails } from '../contact/queries/get_contact_emails'
 import { getContactSocials } from '../contact/queries/get_contact_socials'
 import { getPrimaryContactEmail } from '../contact/queries/get_primary_contact_email'
-import { getPrimaryContactSocial } from '../contact/queries/get_primary_contact_social'
 import { insertContactEmailsWithTransaction } from '../contact/queries/insert_contact_email'
 import { insertContactSocialsWithTransaction } from '../contact/queries/insert_contact_social'
 import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url'
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
+import { getPrimaryContactSocialsByContact } from '../contact/queries/get_primary_contact_socials'
 
 interface SaveEnrichmentDataOptions {
   contactId: string
@@ -223,8 +223,6 @@ async function processSocialsWithTransaction(
 
   // Use non-transaction queries for reads
   const existingSocials = await getContactSocials(contactId, tx)
-  const existingPrimary = await getPrimaryContactSocial(contactId, tx)
-
   // Deduplication logic
   const newSocials = validSocials.filter(
     (url) => !existingSocials.some((s) => s.profileUrl === url),
@@ -241,6 +239,12 @@ async function processSocialsWithTransaction(
     }
   }
 
+  // Only check primary socials if we have new socials to save
+  const existingPrimarySocials = await getPrimaryContactSocialsByContact(
+    contactId,
+    tx,
+  )
+
   // Create all socials as secondary first (consistent structure)
   const socials = newSocials.map((url) => ({
     contactId,
@@ -250,38 +254,37 @@ async function processSocialsWithTransaction(
     source: 'enrichment',
   }))
 
-  // Case 1: No primary social exists - first new social becomes primary
-  if (!existingPrimary) {
-    const [primarySocial, ...secondarySocials] = socials
+  // Process primary logic per platform
+  const platformsWithPrimaryInBatch = new Set<string>()
+  const socialsToInsert = socials.map((social) => {
+    const platform = social.platform
+    const hasExistingPrimaryForPlatform = existingPrimarySocials.some(
+      (primary) => primary.platform === platform,
+    )
+    const hasPrimaryInBatch = platformsWithPrimaryInBatch.has(platform)
 
-    // Prepare social data for insertion
-    const socialsToInsert = [
-      {
-        ...primarySocial,
+    // If no primary exists for this platform (existing or in this batch), make this social primary
+    if (!hasExistingPrimaryForPlatform && !hasPrimaryInBatch) {
+      platformsWithPrimaryInBatch.add(platform)
+      return {
+        ...social,
         isPrimary: true,
-        source: 'enrichment',
-      },
-      ...secondarySocials,
-    ]
-
-    // Use transaction-aware insert function
-    await insertContactSocialsWithTransaction(tx, socialsToInsert)
-
-    return {
-      socialLinksSaved: newSocials.length,
-      socialLinksDeduplicated,
-      primarySocialSet: true,
-      socials: validSocials,
+      }
     }
-  }
 
-  // Case 2: Primary social exists - all new socials become secondary
-  await insertContactSocialsWithTransaction(tx, socials)
+    // Otherwise, keep as secondary
+    return social
+  })
+
+  // Use transaction-aware insert function
+  await insertContactSocialsWithTransaction(tx, socialsToInsert)
+
+  const primarySocialSet = socialsToInsert.some((social) => social.isPrimary)
 
   return {
     socialLinksSaved: newSocials.length,
     socialLinksDeduplicated,
-    primarySocialSet: false,
+    primarySocialSet,
     socials: validSocials,
   }
 }

@@ -467,9 +467,9 @@ export const contactSocial = pgTable(
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => ({
-    // Unique primary social per contact
+    // Unique primary social per platform per contact
     primaryContactSocial: uniqueIndex('idx_contact_social_primary')
-      .on(table.contactId)
+      .on(table.contactId, table.platform)
       .where(sql`${table.isPrimary} = true`),
 
     // Index for queries by contact_id

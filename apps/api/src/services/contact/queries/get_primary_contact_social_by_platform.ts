@@ -9,8 +9,9 @@ import type * as schema from '../../../db/schema'
  * @param contactId Contact ID to fetch primary social for
  * @returns Primary social profile or null if none exists
  */
-export const getPrimaryContactSocial = async (
+export const getPrimaryContactSocialByPlatform = async (
   contactId: string,
+  platform: string,
   tx?: PostgresJsDatabase<typeof schema>,
 ) => {
   const dbInstance = tx || db
@@ -21,6 +22,7 @@ export const getPrimaryContactSocial = async (
     .where(
       and(
         eq(contactSocial.contactId, contactId),
+        eq(contactSocial.platform, platform),
         eq(contactSocial.isPrimary, true),
       ),
     )

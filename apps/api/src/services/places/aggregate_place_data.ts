@@ -10,6 +10,7 @@ import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_email
 import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
+import { getPrimarySocialsByPlaceIds } from './contacts/queries/get_primary_socials_by_place_id'
 
 interface AggregatePlaceDataOptions {
   userId: string
@@ -46,6 +47,7 @@ export const aggregatePlaceData = async (
   const notes = await getNotesByPlaceIds(placeIds, userId)
   const statuses = await getStatusByPlaceIds(placeIds, userId)
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
+  const primarySocials = await getPrimarySocialsByPlaceIds(placeIds, userId)
   const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
   const hubspotSynced = await getHubspotSyncedByPlaceIds(placeIds, userId)
   // Get user's enriched places if needed
@@ -70,6 +72,7 @@ export const aggregatePlaceData = async (
       searchId: searchIdMap.get(basePlace.id) || null,
       listId: listIdMap.get(basePlace.id) || null,
       primaryEmail: primaryEmails.get(basePlace.id) || null,
+      primarySocial: primarySocials.get(basePlace.id) || null,
       secondaryEmails: secondaryEmails.get(basePlace.id) || [],
       hubspotSynced: hubspotSynced.get(basePlace.id) || false,
     }

@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS "idx_contact_social_primary";--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_contact_social_primary" ON "contact_social" USING btree ("contact_id","platform") WHERE "contact_social"."is_primary" = true;
