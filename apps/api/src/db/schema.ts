@@ -423,7 +423,6 @@ export const contactEmail = pgTable(
     email: text('email').notNull(),
     isPrimary: boolean('is_primary').notNull().default(false),
     emailType: text('email_type'),
-    source: text('source'), // 'enrichment', 'manual', 'third_party'
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -463,7 +462,6 @@ export const contactSocial = pgTable(
     profileUrl: text('profile_url').notNull(),
     username: text('username'), // extracted from profileUrl
     isPrimary: boolean('is_primary').notNull().default(false),
-    source: text('source'), // 'enrichment', 'manual', 'third_party'
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

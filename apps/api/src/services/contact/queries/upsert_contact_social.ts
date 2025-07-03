@@ -10,7 +10,6 @@ export interface InsertContactSocialData {
   platform: SocialMediaPlatform
   profileUrl: string
   isPrimary: boolean
-  source: string
 }
 
 /**
