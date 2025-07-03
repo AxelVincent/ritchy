@@ -40,6 +40,10 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'listId',
     'secondaryEmails',
     'hubspotSynced',
+    'primaryLinkedinSocial',
+    'primaryFacebookSocial',
+    'primaryInstagramSocial',
+    'primaryTwitterSocial',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
