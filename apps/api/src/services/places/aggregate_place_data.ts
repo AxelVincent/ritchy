@@ -7,17 +7,19 @@ import { sanitizeEnrichmentData } from '../enrichment/utils/sanitize_enrichment_
 import { getHubspotSyncedByPlaceIds } from '../hubspot/get_hubspot_synced_by_place_ids'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_emails_by_place_id'
+import { getPrimarySocialsByPlaceIds } from './contacts/queries/get_primary_socials_by_place_id'
 import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
 
-interface AggregatePlaceDataOptions {
+type PlaceWithSearchId = PlaceBase & { searchId?: string | null }
+
+export interface AggregatePlaceDataOptions {
   userId: string
-  listId?: string
   excludeListId?: string
   includeEnrichment?: boolean
+  listId?: string
 }
-type PlaceWithSearchId = PlaceBase & { searchId?: string | null }
 
 /**
  * Aggregates place data by joining information from different sources
@@ -48,6 +50,13 @@ export const aggregatePlaceData = async (
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
   const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
   const hubspotSynced = await getHubspotSyncedByPlaceIds(placeIds, userId)
+
+  // Get all primary socials for all platforms in a single query
+  const primarySocialsByPlace = await getPrimarySocialsByPlaceIds(
+    placeIds,
+    userId,
+  )
+
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
   if (includeEnrichment) {
@@ -61,6 +70,8 @@ export const aggregatePlaceData = async (
 
   // Aggregate data from different sources for each place
   const initialAggregatedPlaces = places.map((basePlace): Place => {
+    const placeSocials = primarySocialsByPlace.get(basePlace.id) || new Map()
+
     return {
       ...basePlace,
       lists: associations.get(basePlace.id) || [],
@@ -71,6 +82,10 @@ export const aggregatePlaceData = async (
       listId: listIdMap.get(basePlace.id) || null,
       primaryEmail: primaryEmails.get(basePlace.id) || null,
       secondaryEmails: secondaryEmails.get(basePlace.id) || [],
+      primaryLinkedinSocial: placeSocials.get('linkedin') || null,
+      primaryFacebookSocial: placeSocials.get('facebook') || null,
+      primaryInstagramSocial: placeSocials.get('instagram') || null,
+      primaryTwitterSocial: placeSocials.get('twitter') || null,
       hubspotSynced: hubspotSynced.get(basePlace.id) || false,
     }
   })

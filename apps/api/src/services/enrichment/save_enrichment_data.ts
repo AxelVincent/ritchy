@@ -2,16 +2,17 @@ import { logger } from '@ritchy/logger'
 import type { EnrichResponse } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
+import type { contactSocial } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { getContactEmails } from '../contact/queries/get_contact_emails'
-import { getContactSocials } from '../contact/queries/get_contact_socials'
 import { getPrimaryContactEmail } from '../contact/queries/get_primary_contact_email'
-import { getPrimaryContactSocial } from '../contact/queries/get_primary_contact_social'
 import { insertContactEmailsWithTransaction } from '../contact/queries/insert_contact_email'
-import { insertContactSocialsWithTransaction } from '../contact/queries/insert_contact_social'
+import { upsertContactSocialsWithTransaction } from '../contact/queries/upsert_contact_social'
 import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_platform_from_url'
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
+
+type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
 
 interface SaveEnrichmentDataOptions {
   contactId: string
@@ -64,23 +65,26 @@ export async function saveEnrichmentData({
   })
 
   // Use transaction for atomic operations
-  const result = await db.transaction(async (tx) => {
-    const emailResults = await processEmailsWithTransaction(
-      contactId,
-      emails,
-      tx,
-    )
-    const socialResults = await processSocialsWithTransaction(
-      contactId,
-      flattenedSocialLinks,
-      tx,
-    )
+  const result = await db.transaction(
+    async (tx) => {
+      const emailResults = await processEmailsWithTransaction(
+        contactId,
+        emails,
+        tx,
+      )
+      const socialResults = await processSocialsWithTransaction(
+        contactId,
+        flattenedSocialLinks,
+        tx,
+      )
 
-    return {
-      emailResults,
-      socialResults,
-    }
-  })
+      return {
+        emailResults,
+        socialResults,
+      }
+    },
+    { isolationLevel: 'repeatable read' },
+  )
 
   logger.info({
     msg: 'Enrichment data save completed',
@@ -221,67 +225,40 @@ async function processSocialsWithTransaction(
     },
   })
 
-  // Use non-transaction queries for reads
-  const existingSocials = await getContactSocials(contactId, tx)
-  const existingPrimary = await getPrimaryContactSocial(contactId, tx)
-
-  // Deduplication logic
-  const newSocials = validSocials.filter(
-    (url) => !existingSocials.some((s) => s.profileUrl === url),
-  )
-
-  const socialLinksDeduplicated = validSocials.length - newSocials.length
-
-  if (newSocials.length === 0) {
+  if (validSocials.length === 0) {
     return {
       socialLinksSaved: 0,
-      socialLinksDeduplicated,
+      socialLinksDeduplicated: 0,
       primarySocialSet: false,
-      socials: validSocials,
+      socials: [],
     }
   }
 
-  // Create all socials as secondary first (consistent structure)
-  const socials = newSocials.map((url) => ({
-    contactId,
-    platform: extractSocialPlatformFromUrl(url),
-    profileUrl: url,
-    isPrimary: false,
-    source: 'enrichment',
-  }))
-
-  // Case 1: No primary social exists - first new social becomes primary
-  if (!existingPrimary) {
-    const [primarySocial, ...secondarySocials] = socials
-
-    // Prepare social data for insertion
-    const socialsToInsert = [
-      {
-        ...primarySocial,
+  // Create socials data - let upsert function handle all logic
+  const socialsToUpsert = validSocials
+    .map((url) => {
+      const platform = extractSocialPlatformFromUrl(url)
+      return {
+        contactId,
+        platform,
+        profileUrl: url,
         isPrimary: true,
         source: 'enrichment',
-      },
-      ...secondarySocials,
-    ]
+      }
+    })
+    .filter((social) => social.platform !== 'unknown')
+    .map((social) => ({
+      ...social,
+      platform: social.platform as SocialMediaPlatform,
+    }))
 
-    // Use transaction-aware insert function
-    await insertContactSocialsWithTransaction(tx, socialsToInsert)
-
-    return {
-      socialLinksSaved: newSocials.length,
-      socialLinksDeduplicated,
-      primarySocialSet: true,
-      socials: validSocials,
-    }
-  }
-
-  // Case 2: Primary social exists - all new socials become secondary
-  await insertContactSocialsWithTransaction(tx, socials)
+  // Let the upsert function handle all logic (deduplication, primary/secondary)
+  await upsertContactSocialsWithTransaction(tx, socialsToUpsert)
 
   return {
-    socialLinksSaved: newSocials.length,
-    socialLinksDeduplicated,
-    primarySocialSet: false,
+    socialLinksSaved: validSocials.length,
+    socialLinksDeduplicated: 0, // Let upsert handle deduplication
+    primarySocialSet: true, // Upsert will handle the actual primary logic
     socials: validSocials,
   }
 }

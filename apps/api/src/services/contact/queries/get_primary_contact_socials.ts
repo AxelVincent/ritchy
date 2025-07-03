@@ -5,17 +5,17 @@ import { contactSocial } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
 
 /**
- * Get primary social profile for a specific contact
- * @param contactId Contact ID to fetch primary social for
- * @returns Primary social profile or null if none exists
+ * Get primary social profiles for a specific contact
+ * @param contactId Contact ID to fetch primary social profiles
+ * @returns Primary social profiles List or empty list if none exists
  */
-export const getPrimaryContactSocial = async (
+export const getPrimaryContactSocialsByContact = async (
   contactId: string,
   tx?: PostgresJsDatabase<typeof schema>,
 ) => {
   const dbInstance = tx || db
 
-  const [primarySocial] = await dbInstance
+  const primarySocials = await dbInstance
     .select()
     .from(contactSocial)
     .where(
@@ -25,7 +25,6 @@ export const getPrimaryContactSocial = async (
       ),
     )
     .orderBy(desc(contactSocial.createdAt))
-    .limit(1)
 
-  return primarySocial
+  return primarySocials
 }

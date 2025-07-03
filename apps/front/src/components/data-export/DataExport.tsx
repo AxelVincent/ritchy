@@ -8,12 +8,16 @@ import {
   PlaceSchema,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
+  type SocialMediaPlatformEnum,
 } from '@ritchy/types'
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
 import posthog from 'posthog-js'
 import { useState } from 'react'
 import React from 'react'
+import type { z } from 'zod'
+
+type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
 interface DataExportProps {
   /** Array of search results to export. If selectedRows is undefined, all data will be exported */
@@ -36,6 +40,10 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'listId',
     'secondaryEmails',
     'hubspotSynced',
+    'primaryLinkedinSocial',
+    'primaryFacebookSocial',
+    'primaryInstagramSocial',
+    'primaryTwitterSocial',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
@@ -408,7 +416,11 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.socialLinks[platform]?.join(', ') || ''
+            return (
+              enrichData?.socialLinks[platform as SocialMediaPlatform]?.join(
+                ', ',
+              ) || ''
+            )
           },
         })),
         {
