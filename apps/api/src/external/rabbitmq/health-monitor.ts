@@ -81,7 +81,9 @@ const assessQueueHealth = (
 ): 'healthy' | 'warning' | 'critical' => {
   if (isMainQueue) {
     // Main queue health assessment
-    if (consumerCount === 0) return 'critical' // No consumers
+    // If no messages and no consumers, this is idle state (healthy)
+    if (messageCount === 0 && consumerCount === 0) return 'healthy'
+    if (consumerCount === 0) return 'critical' // No consumers when messages exist
     if (messageCount > 1000) return 'critical' // Too many pending messages
     if (messageCount > 100) return 'warning' // High message count
     if (consumerCount < 2) return 'warning' // Low consumer count
