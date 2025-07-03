@@ -1,10 +1,10 @@
 import { logger } from '@ritchy/logger'
+import type { SocialMediaPlatformEnum } from '@ritchy/types'
 import { and, desc, eq, inArray } from 'drizzle-orm'
+import type { z } from 'zod'
 import { db } from '../../../../db/db'
 import { contactSocial } from '../../../../db/schema'
 import { contact } from '../../../../db/schema'
-import type { z } from 'zod'
-import type { SocialMediaPlatformEnum } from '@ritchy/types'
 
 type SocialPlatform = z.infer<typeof SocialMediaPlatformEnum>
 

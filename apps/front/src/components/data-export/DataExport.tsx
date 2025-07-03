@@ -10,12 +10,12 @@ import {
   type SearchResult,
   type SocialMediaPlatformEnum,
 } from '@ritchy/types'
-import type { z } from 'zod'
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
 import posthog from 'posthog-js'
 import { useState } from 'react'
 import React from 'react'
+import type { z } from 'zod'
 
 type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
