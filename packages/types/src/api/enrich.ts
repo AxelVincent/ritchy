@@ -32,10 +32,17 @@ export const SOCIAL_MEDIA_CONFIG: SocialMediaConfigType = {
   snapchat: { domain: 'snapchat.com', icon: Camera },
 } as const
 
-// Basic/Common Schemas
-const SocialMediaPlatformEnum = z.enum(
-  Object.keys(SOCIAL_MEDIA_CONFIG) as [string, ...string[]],
-)
+export const SocialMediaPlatformEnum = z.enum([
+  'linkedin',
+  'twitter',
+  'facebook',
+  'instagram',
+  'youtube',
+  'tiktok',
+  'pinterest',
+  'reddit',
+  'snapchat',
+])
 
 // Domain registration data schema
 export const DomainRegistrationSchema = z.object({
