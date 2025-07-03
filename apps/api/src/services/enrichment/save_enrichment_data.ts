@@ -242,7 +242,6 @@ async function processSocialsWithTransaction(
         platform,
         profileUrl: url,
         isPrimary: true,
-        source: 'enrichment',
       }
     })
     .filter((social) => social.platform !== 'unknown')
