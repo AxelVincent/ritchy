@@ -10,6 +10,7 @@ import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_email
 import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
+import { getPrimarySocialsByPlaceIds } from './contacts/queries/get_primary_socials_by_place_id'
 
 interface AggregatePlaceDataOptions {
   userId: string
@@ -48,6 +49,26 @@ export const aggregatePlaceData = async (
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
   const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
   const hubspotSynced = await getHubspotSyncedByPlaceIds(placeIds, userId)
+  const primaryLinkedinSocial = await getPrimarySocialsByPlaceIds(
+    placeIds,
+    userId,
+    'linkedin',
+  )
+  const primaryFacebookSocial = await getPrimarySocialsByPlaceIds(
+    placeIds,
+    userId,
+    'facebook',
+  )
+  const primaryInstagramSocial = await getPrimarySocialsByPlaceIds(
+    placeIds,
+    userId,
+    'instagram',
+  )
+  const primaryTwitterSocial = await getPrimarySocialsByPlaceIds(
+    placeIds,
+    userId,
+    'twitter',
+  )
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
   if (includeEnrichment) {
@@ -71,6 +92,10 @@ export const aggregatePlaceData = async (
       listId: listIdMap.get(basePlace.id) || null,
       primaryEmail: primaryEmails.get(basePlace.id) || null,
       secondaryEmails: secondaryEmails.get(basePlace.id) || [],
+      primaryLinkedinSocial: primaryLinkedinSocial.get(basePlace.id) || null,
+      primaryFacebookSocial: primaryFacebookSocial.get(basePlace.id) || null,
+      primaryInstagramSocial: primaryInstagramSocial.get(basePlace.id) || null,
+      primaryTwitterSocial: primaryTwitterSocial.get(basePlace.id) || null,
       hubspotSynced: hubspotSynced.get(basePlace.id) || false,
     }
   })
