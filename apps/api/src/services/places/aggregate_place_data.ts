@@ -7,8 +7,8 @@ import { sanitizeEnrichmentData } from '../enrichment/utils/sanitize_enrichment_
 import { getHubspotSyncedByPlaceIds } from '../hubspot/get_hubspot_synced_by_place_ids'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
 import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_emails_by_place_id'
-import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 import { getPrimarySocialsByPlaceIds } from './contacts/queries/get_primary_socials_by_place_id'
+import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
 
