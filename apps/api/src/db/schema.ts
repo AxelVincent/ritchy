@@ -1,9 +1,9 @@
 import {
   CompanyFieldEnum,
   ContactFieldEnum,
-  SocialMediaPlatformEnum,
   PlanEnum,
   SearchModelEnum,
+  SocialMediaPlatformEnum,
   StatusFieldEnum,
 } from '@ritchy/types'
 import { type InferSelectModel, sql } from 'drizzle-orm'
