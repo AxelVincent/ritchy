@@ -1,8 +1,8 @@
 import { logger } from '@ritchy/logger'
-import type { EnrichResponse, SocialMediaPlatformEnum } from '@ritchy/types'
+import type { EnrichResponse } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import type { z } from 'zod'
 import { db } from '../../db/db'
+import type { contactSocial } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { getContactEmails } from '../contact/queries/get_contact_emails'
 import { getContactSocials } from '../contact/queries/get_contact_socials'
@@ -14,7 +14,7 @@ import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_pl
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
 
-type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
+type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
 
 interface SaveEnrichmentDataOptions {
   contactId: string

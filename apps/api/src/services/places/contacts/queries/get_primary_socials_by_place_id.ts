@@ -4,23 +4,14 @@ import { db } from '../../../../db/db'
 import { contactSocial } from '../../../../db/schema'
 import { contact } from '../../../../db/schema'
 
-type SocialPlatform =
-  | 'linkedin'
-  | 'twitter'
-  | 'facebook'
-  | 'instagram'
-  | 'youtube'
-  | 'tiktok'
-  | 'pinterest'
-  | 'reddit'
-  | 'snapchat'
+type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
 
 export const getPrimarySocialsByPlaceIds = async (
   placeIds: string[],
   userId: string,
-): Promise<Map<string, Map<SocialPlatform, string | null>>> => {
+): Promise<Map<string, Map<SocialMediaPlatform, string | null>>> => {
   if (placeIds.length === 0) {
-    return new Map<string, Map<SocialPlatform, string | null>>()
+    return new Map<string, Map<SocialMediaPlatform, string | null>>()
   }
 
   const primarySocials = await db
@@ -40,17 +31,17 @@ export const getPrimarySocialsByPlaceIds = async (
     )
     .orderBy(desc(contactSocial.createdAt))
 
-  const result = new Map<string, Map<SocialPlatform, string | null>>()
+  const result = new Map<string, Map<SocialMediaPlatform, string | null>>()
 
   // Initialize maps for each place
   for (const placeId of placeIds) {
-    result.set(placeId, new Map<SocialPlatform, string | null>())
+    result.set(placeId, new Map<SocialMediaPlatform, string | null>())
   }
 
   // Group by place and platform
   for (const socialData of primarySocials) {
     const placeId = socialData.placeId
-    const platform = socialData.platform as SocialPlatform
+    const platform = socialData.platform as SocialMediaPlatform
     const placeMap = result.get(placeId)
 
     if (placeMap && !placeMap.has(platform)) {
