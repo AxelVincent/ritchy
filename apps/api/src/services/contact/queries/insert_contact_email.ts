@@ -7,7 +7,6 @@ export interface InsertContactEmailData {
   contactId: string
   email: string
   isPrimary: boolean
-  source: string
 }
 
 /**

@@ -337,6 +337,13 @@
       "when": 1751384862397,
       "tag": "0047_polite_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1751565455334,
+      "tag": "0048_boring_speed",
+      "breakpoints": true
     }
   ]
 }

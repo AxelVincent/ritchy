@@ -154,7 +154,6 @@ async function processEmailsWithTransaction(
     contactId,
     email,
     isPrimary: false,
-    source: 'enrichment',
   }))
 
   // Case 1: No primary email exists - first new email received becomes primary
