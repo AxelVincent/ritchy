@@ -9,6 +9,7 @@ import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPla
 import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_emails_by_place_id'
 import { getPrimarySocialsByPlaceIds } from './contacts/queries/get_primary_socials_by_place_id'
 import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
+import { getSecondarySocialsByPlaceIds } from './contacts/queries/get_secondary_socials_by_place_ids'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
 
@@ -49,6 +50,7 @@ export const aggregatePlaceData = async (
   const statuses = await getStatusByPlaceIds(placeIds, userId)
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
   const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
+  const secondarySocials = await getSecondarySocialsByPlaceIds(placeIds, userId)
   const hubspotSynced = await getHubspotSyncedByPlaceIds(placeIds, userId)
 
   // Get all primary socials for all platforms in a single query
@@ -70,7 +72,11 @@ export const aggregatePlaceData = async (
 
   // Aggregate data from different sources for each place
   const initialAggregatedPlaces = places.map((basePlace): Place => {
-    const placeSocials = primarySocialsByPlace.get(basePlace.id) || new Map()
+    // get primary and secondary socials for the place
+    const primaryPlaceSocials =
+      primarySocialsByPlace.get(basePlace.id) || new Map()
+    const secondaryPlaceSocials =
+      secondarySocials.get(basePlace.id) || new Map()
 
     return {
       ...basePlace,
@@ -82,10 +88,14 @@ export const aggregatePlaceData = async (
       listId: listIdMap.get(basePlace.id) || null,
       primaryEmail: primaryEmails.get(basePlace.id) || null,
       secondaryEmails: secondaryEmails.get(basePlace.id) || [],
-      primaryLinkedinSocial: placeSocials.get('linkedin') || null,
-      primaryFacebookSocial: placeSocials.get('facebook') || null,
-      primaryInstagramSocial: placeSocials.get('instagram') || null,
-      primaryTwitterSocial: placeSocials.get('twitter') || null,
+      primaryLinkedinSocial: primaryPlaceSocials.get('linkedin') || null,
+      primaryFacebookSocial: primaryPlaceSocials.get('facebook') || null,
+      primaryInstagramSocial: primaryPlaceSocials.get('instagram') || null,
+      primaryTwitterSocial: primaryPlaceSocials.get('twitter') || null,
+      secondaryLinkedinSocials: secondaryPlaceSocials.get('linkedin') || [],
+      secondaryFacebookSocials: secondaryPlaceSocials.get('facebook') || [],
+      secondaryInstagramSocials: secondaryPlaceSocials.get('instagram') || [],
+      secondaryTwitterSocials: secondaryPlaceSocials.get('twitter') || [],
       hubspotSynced: hubspotSynced.get(basePlace.id) || false,
     }
   })
