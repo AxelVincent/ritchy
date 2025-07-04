@@ -35,8 +35,12 @@ export const getSecondarySocialsByPlaceIds = async (
   // initialize the result map
   const result = new Map<string, Map<SocialMediaPlatform, string | null>>()
 
-  for (const placeId of placeIds) {
-    result.set(placeId, new Map<SocialMediaPlatform, string | null>())
+  // initialize the result map for each place with secondary socials
+  for (const secondarySocial of secondarySocials) {
+    result.set(
+      secondarySocial.placeId,
+      new Map<SocialMediaPlatform, string | null>(),
+    )
   }
 
   // group by place and platform
@@ -51,7 +55,7 @@ export const getSecondarySocialsByPlaceIds = async (
   }
 
   logger.info({
-    msg: 'Secondary socials fetched for places',
+    msg: 'Secondary socials fetched for places containing secondary socials',
     event: 'secondary_socials_fetched',
     metadata: {
       placeIds,
