@@ -1,8 +1,8 @@
-import { contactSocial } from '../../../../db/schema'
-import { db } from '../../../../db/db'
-import { contact } from '../../../../db/schema'
 import { logger } from '@ritchy/logger'
 import { and, desc, eq, inArray } from 'drizzle-orm'
+import { db } from '../../../../db/db'
+import { contactSocial } from '../../../../db/schema'
+import { contact } from '../../../../db/schema'
 
 type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
 
