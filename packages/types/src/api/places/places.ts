@@ -181,6 +181,10 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   primaryFacebookSocial: z.string().url().nullable(),
   primaryInstagramSocial: z.string().url().nullable(),
   primaryTwitterSocial: z.string().url().nullable(),
+  secondaryLinkedinSocials: z.array(z.string().url()).optional().default([]),
+  secondaryFacebookSocials: z.array(z.string().url()).optional().default([]),
+  secondaryInstagramSocials: z.array(z.string().url()).optional().default([]),
+  secondaryTwitterSocials: z.array(z.string().url()).optional().default([]),
   secondaryEmails: z.array(z.string().email()).optional(),
   hubspotSynced: z.boolean(),
 })
