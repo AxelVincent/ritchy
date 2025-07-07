@@ -44,6 +44,10 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'primaryFacebookSocial',
     'primaryInstagramSocial',
     'primaryTwitterSocial',
+    'secondaryLinkedinSocials',
+    'secondaryFacebookSocials',
+    'secondaryInstagramSocials',
+    'secondaryTwitterSocials',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
