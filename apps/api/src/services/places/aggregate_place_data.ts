@@ -9,7 +9,7 @@ import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPla
 import { getPrimaryEmailsByPlaceIds } from './contacts/queries/get_primary_emails_by_place_id'
 import { getPrimarySocialsByPlaceIds } from './contacts/queries/get_primary_socials_by_place_id'
 import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_emails_by_place_id'
-import { getSecondarySocialsByPlaceIds } from './contacts/queries/get_secondary_socials_by_place_ids'
+import { groupSecondarySocialsByPlace } from './group_secondary_socials_by_place'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
 
@@ -50,7 +50,7 @@ export const aggregatePlaceData = async (
   const statuses = await getStatusByPlaceIds(placeIds, userId)
   const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
   const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
-  const secondarySocials = await getSecondarySocialsByPlaceIds(placeIds, userId)
+  const secondarySocials = await groupSecondarySocialsByPlace(placeIds, userId)
   const hubspotSynced = await getHubspotSyncedByPlaceIds(placeIds, userId)
 
   // Get all primary socials for all platforms in a single query
