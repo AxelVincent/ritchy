@@ -12,6 +12,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { getDomainFromUrl } from '@/lib/utils/url-utils'
 import type { Place } from '@ritchy/types'
 import {
   ChevronDown,
@@ -175,7 +176,7 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => {
                   className="text-blue-600 hover:text-blue-800 hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {new URL(place.website).hostname}
+                  {getDomainFromUrl(place.website)}
                 </a>
               </TextWrapper>
             </div>
