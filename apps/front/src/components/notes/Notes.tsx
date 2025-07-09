@@ -16,6 +16,7 @@ const NoteEditor = ({
   isSubmitting: boolean
 }) => {
   const [content, setContent] = useState('')
+  const [isFocused, setIsFocused] = useState(false)
 
   const handleSubmit = () => {
     if (!content.trim()) return
@@ -27,41 +28,65 @@ const NoteEditor = ({
     setContent(e.target.value)
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      handleSubmit()
+    }
+  }
+
+  const showHelper = isFocused && !content.trim()
+
   return (
-    <div className="flex items-center">
-      <Textarea
-        placeholder="Add a note..."
-        value={content}
-        onChange={handleChange}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault()
-            handleSubmit()
-          }
-        }}
-        className="min-h-[36px] max-h-[36px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-2"
-        disabled={isSubmitting}
-        style={{
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          overflowWrap: 'break-word',
-        }}
-      />
-      <div className="flex items-center gap-2">
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={handleSubmit}
-          className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          disabled={!content.trim() || isSubmitting}
-        >
-          <ArrowUpCircle
-            className={`h-4 w-4 ${
-              content.trim() && !isSubmitting ? 'text-blue-600' : ''
-            }`}
-          />
-        </Button>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center">
+        <Textarea
+          placeholder="Add a note..."
+          value={content}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="min-h-[36px] max-h-[36px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-2"
+          disabled={isSubmitting}
+          style={{
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+          }}
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={handleSubmit}
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            disabled={!content.trim() || isSubmitting}
+          >
+            <ArrowUpCircle
+              className={`h-4 w-4 ${
+                content.trim() && !isSubmitting ? 'text-blue-600' : ''
+              }`}
+            />
+          </Button>
+        </div>
       </div>
+
+      {showHelper && (
+        <div className="px-2 pb-1">
+          <span className="text-xs text-muted-foreground animate-in fade-in duration-200">
+            💡 Press{' '}
+            <kbd className="px-1 py-0.5 text-xs bg-muted rounded border">
+              Ctrl
+            </kbd>{' '}
+            +{' '}
+            <kbd className="px-1 py-0.5 text-xs bg-muted rounded border">
+              Enter
+            </kbd>{' '}
+            to submit
+          </span>
+        </div>
+      )}
     </div>
   )
 }
