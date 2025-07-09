@@ -21,8 +21,10 @@ export const createPrimarySocialColumn = (
       <HeaderWrapper column={column} title={`Primary ${capitalizedName}`} />
     ),
     cell: ({ row }) => {
-      const socialField = `primary${capitalizedName}Social`
-      const primarySocial = row.original[socialField as keyof SearchResult]
+      const socialField =
+        `primary${capitalizedName}Social` as keyof SearchResult
+      const primarySocial =
+        socialField in row.original ? row.original[socialField] : null
 
       return primarySocial ? (
         <ColumnPinCopyCell

@@ -1,15 +1,8 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useState } from 'react'
 import { ColumnPinCell, ColumnPinCopyCell } from './ColumnCells'
 import { HeaderWrapper } from './HeaderWrapper'
-import { SecondarySocialsList } from './SecondarySocialsList'
+import { SecondarySocialDialog } from './SecondarySocialDialog'
 /**
  * Factory function to create secondary social media columns for the data table.
  *
@@ -58,9 +51,10 @@ export const createSecondarySocialColumn = (
       <HeaderWrapper column={column} title={`Secondary ${capitalizedName}`} />
     ),
     cell: ({ row }) => {
-      const socialField = `secondary${capitalizedName}Socials`
-      const secondarySocials = row.original[socialField as keyof SearchResult]
-      const [isDialogOpen, setIsDialogOpen] = useState(false)
+      const socialField =
+        `secondary${capitalizedName}Socials` as keyof SearchResult
+      const secondarySocials =
+        socialField in row.original ? row.original[socialField] : []
 
       if (!Array.isArray(secondarySocials) || secondarySocials.length === 0) {
         return (
@@ -89,40 +83,23 @@ export const createSecondarySocialColumn = (
 
       // Multiple socials: show first social + badge with count
       return (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <div
-            className="group flex items-center w-full cursor-pointer min-h-[24px]"
-            onClick={() => setIsDialogOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setIsDialogOpen(true)
-              }
-            }}
-            aria-label={`Open secondary ${socialName.toLowerCase()} links`}
-          >
-            <ColumnPinCopyCell
-              id={row.original.id}
-              content={socialsArray[0]}
-              href={socialsArray[0]}
-            />
-            <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap ml-1.5 mr-1.5">
-              +{socialsArray.length - 1} more
-            </span>
-            <div className="flex-1" />
-          </div>
-          <DialogContent className="max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>
-                {row.original.name}'s Secondary {capitalizedName} Links
-              </DialogTitle>
-            </DialogHeader>
-            <SecondarySocialsList
-              links={socialsArray}
-              platform={socialName.toLowerCase()}
-              id={row.original.id}
-            />
-          </DialogContent>
-        </Dialog>
+        <SecondarySocialDialog
+          socialsArray={socialsArray}
+          capitalizedName={capitalizedName}
+          placeName={row.original.name}
+          placeId={row.original.id}
+          socialName={socialName}
+        >
+          <ColumnPinCopyCell
+            id={row.original.id}
+            content={socialsArray[0]}
+            href={socialsArray[0]}
+          />
+          <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap ml-1.5 mr-1.5">
+            +{socialsArray.length - 1} more
+          </span>
+          <div className="flex-1" />
+        </SecondarySocialDialog>
       )
     },
   }

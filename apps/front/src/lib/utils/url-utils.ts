@@ -5,6 +5,9 @@
 export const getCleanUrlDisplay = (url: string): string => {
   try {
     const urlObj = new URL(url)
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return url
+    }
     const cleanHostname = urlObj.hostname.replace('www.', '')
     return cleanHostname + urlObj.pathname + urlObj.search + urlObj.hash
   } catch {
