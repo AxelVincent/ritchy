@@ -28,7 +28,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           onChange={onChange}
           ref={ref}
           className={cn(
-            'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+            'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
             // Add padding-right to accommodate the clear button
             value ? 'pr-8' : '',
             className,
@@ -42,7 +42,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-ring"
             aria-label="Clear input"
           >
-            {!props.readOnly && <X className="h-4 w-4" />}
+            {value && !props.readOnly && <X className="h-4 w-4" />}
           </button>
         )}
       </div>
