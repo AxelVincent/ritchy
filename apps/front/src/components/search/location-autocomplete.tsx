@@ -139,7 +139,7 @@ export function LocationAutocomplete({
               <div
                 key={location.placeId}
                 className={cn(
-                  'flex items-center gap-2 p-2 cursor-pointer hover:bg-muted rounded-md',
+                  'flex items-center gap-2 p-2 hover:bg-muted rounded-md',
                   value === location.placeId && 'bg-muted',
                 )}
                 onClick={() => handleLocationSelect(location)}

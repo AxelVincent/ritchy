@@ -167,7 +167,6 @@ export function NavCustomLists() {
                   <DropdownMenuItem
                     onClick={() => deleteList.mutateAsync({ id: list.id })}
                     disabled={deleteList.isPending}
-                    className="cursor-pointer"
                   >
                     <Trash2 className="text-muted-foreground" />
                     <p>Delete</p>

@@ -22,9 +22,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
   accessorKey: 'openingHours',
   size: 200,
   enableColumnFilter: false,
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Opening Hours" />
-  ),
+  header: () => <HeaderWrapper title="Opening Hours" />,
   cell: ({ row }) => {
     const openingHours = row.original.openingHours
     const utcOffsetMinutes = row.original.utcOffsetMinutes

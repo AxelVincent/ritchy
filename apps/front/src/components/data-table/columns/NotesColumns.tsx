@@ -39,7 +39,7 @@ export const notesColumn: ColumnDef<SearchResult> = {
     return true
   },
   size: 200,
-  header: ({ column }) => <HeaderWrapper column={column} title="Notes" />,
+  header: () => <HeaderWrapper title="Notes" />,
   cell: ({ row }) => {
     const place = row.original
     return (

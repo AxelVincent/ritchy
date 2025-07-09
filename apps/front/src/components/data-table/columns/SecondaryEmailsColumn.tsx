@@ -24,9 +24,7 @@ export const secondaryEmailsColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'range',
   },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Secondary Emails" />
-  ),
+  header: () => <HeaderWrapper title="Secondary Emails" />,
   cell: ({ row }) => {
     const emails = row.original.secondaryEmails
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -52,7 +50,7 @@ export const secondaryEmailsColumn: ColumnDef<SearchResult> = {
     return (
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <div
-          className="group flex items-center w-full cursor-pointer min-h-[24px]"
+          className="group flex items-center w-full min-h-[24px]"
           onClick={() => setIsDialogOpen(true)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {

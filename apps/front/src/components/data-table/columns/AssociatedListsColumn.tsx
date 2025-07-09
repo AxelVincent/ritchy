@@ -40,7 +40,7 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
       return Array.from(uniqueLists)
     },
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Lists" />,
+  header: () => <HeaderWrapper title="Lists" />,
   cell: ({ row }) => {
     const lists = row.original.lists
 

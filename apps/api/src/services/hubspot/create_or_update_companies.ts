@@ -25,9 +25,13 @@ export const createOrUpdateCompanies = async (
     event: 'hubspot_company_batch_start',
     metadata: { placeIds, tokenId: token.id },
   })
+  const placesWithSearchIds = placeIds.map((placeId) => ({
+    placeId,
+    searchId: null as string | null,
+  }))
 
   const [places, leadMappings] = await Promise.all([
-    getPlaces(placeIds),
+    getPlaces(placesWithSearchIds),
     getHubspotLeadMappings(token.id, placeIds),
   ])
 

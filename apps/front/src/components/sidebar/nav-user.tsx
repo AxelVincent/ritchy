@@ -49,14 +49,13 @@ export function NavUser() {
 
   const { data: me } = useUserMe()
   const userPlan = me?.plan || 'FREE'
-  console.log('me', me)
   const hasActiveSubscription = userPlan !== 'FREE'
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild className="cursor-pointer">
+          <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -107,7 +106,6 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="cursor-pointer"
               >
                 <Sun
                   className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
@@ -121,7 +119,6 @@ export function NavUser() {
                 {theme === 'dark' ? 'Light' : 'Dark'} mode
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="cursor-pointer"
                 onClick={() => {
                   navigate({ to: '/integrations' })
                 }}
@@ -133,7 +130,6 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
-                className="cursor-pointer"
                 onClick={() => {
                   navigate({ to: '/pricing' })
                 }}
@@ -143,7 +139,6 @@ export function NavUser() {
               </DropdownMenuItem>
               {hasActiveSubscription && (
                 <DropdownMenuItem
-                  className="cursor-pointer"
                   onClick={async () => {
                     const response = await createPortalSession.mutateAsync({})
                     if (response && 'url' in response) {
@@ -163,17 +158,11 @@ export function NavUser() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => setIsProfileOpen(true)}
-                className="cursor-pointer"
-              >
+              <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
                 <UserRoundCog />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => signOut()}
-                className="cursor-pointer"
-              >
+              <DropdownMenuItem onClick={() => signOut()}>
                 <LogOut />
                 Log out
               </DropdownMenuItem>

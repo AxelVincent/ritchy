@@ -10,9 +10,7 @@ export const primaryEmailColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Primary Email" />
-  ),
+  header: () => <HeaderWrapper title="Primary Email" />,
   cell: ({ row }) => {
     const primaryEmail = row.original.primaryEmail
 

@@ -330,7 +330,7 @@ export const PricingCards = ({
             {hasPromo && (
               <div className="absolute top-3 right-3">
                 <Alert
-                  className="w-auto cursor-pointer transition-colors hover:bg-muted/50 p-2"
+                  className="w-auto transition-colors hover:bg-muted/50 p-2"
                   onClick={() => copyPromoCode(applicablePromo.code)}
                 >
                   <div className="flex items-center justify-center gap-2">

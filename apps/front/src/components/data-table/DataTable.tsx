@@ -265,14 +265,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     }}
                     className={cn('border-r border-border bg-background')}
                   >
-                    <div
-                      {...{
-                        className: header.column.getCanSort()
-                          ? 'w-full cursor-pointer select-none'
-                          : '',
-                        onClick: header.column.getToggleSortingHandler(),
-                      }}
-                    >
+                    <div className="w-full">
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext(),

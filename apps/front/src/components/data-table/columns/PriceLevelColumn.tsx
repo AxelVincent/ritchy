@@ -25,7 +25,7 @@ export const priceLevelColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'multi-select',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Price Level" />,
+  header: () => <HeaderWrapper title="Price Level" />,
   cell: ({ row }) => {
     const formattedLevel = formatPriceLevel(row.original.priceLevel)
     return (

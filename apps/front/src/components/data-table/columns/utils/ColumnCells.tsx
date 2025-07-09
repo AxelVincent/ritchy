@@ -101,7 +101,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
     <TextWrapper id={id} actions={actions}>
       <Dialog modal={false}>
         <div
-          className="group flex items-center w-full cursor-pointer min-h-[24px]"
+          className="group flex items-center w-full min-h-[24px]"
           onClick={handleClick}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -187,7 +187,7 @@ export const PhoneCell = ({
       ]}
     >
       <span
-        className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
+        className="text-blue-600 hover:text-blue-800 hover:underline"
         onClick={handleCall}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {

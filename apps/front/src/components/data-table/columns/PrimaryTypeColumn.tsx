@@ -11,9 +11,7 @@ export const primaryTypeColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'multi-select',
   },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Primary Type" />
-  ),
+  header: () => <HeaderWrapper title="Primary Type" />,
   cell: ({ row }) => (
     <ColumnPinCell
       id={row.original.id}

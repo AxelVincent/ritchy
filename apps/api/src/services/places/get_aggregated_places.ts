@@ -1,9 +1,9 @@
 import { logger } from '@ritchy/logger'
-import type { Place, PlaceBase } from '@ritchy/types'
+import type { FilterCondition, Place, PlaceBase } from '@ritchy/types'
 import { PlaceSchema } from '@ritchy/types'
 import { z } from 'zod'
-import { getPlaceDetailsOptimized } from '../../external/google_maps/place_details_optimized'
 import { aggregatePlaceData } from './aggregate_place_data'
+import { getPlaces } from './get_places'
 
 interface PlaceWithSearchId {
   placeId: string
@@ -15,6 +15,7 @@ interface AggregatePlaceDataOptions {
   listId?: string
   excludeListId?: string
   includeEnrichment?: boolean
+  redisFilters?: FilterCondition
 }
 
 interface GetPlacesWithDetailsResult {
@@ -27,31 +28,26 @@ interface GetPlacesWithDetailsResult {
 
 /**
  * Shared utility to fetch place details and aggregate data for multiple places
- * Used by both search and list content endpoints
+ * Uses the optimized batch flow: check existence -> refresh missing -> get all -> map
  */
-export const getPlacesWithDetails = async (
+export const getAggregatedPlaces = async (
   placesWithSearchIds: PlaceWithSearchId[],
   options: AggregatePlaceDataOptions,
 ): Promise<GetPlacesWithDetailsResult> => {
-  const { userId, listId, excludeListId, includeEnrichment = false } = options
+  const {
+    userId,
+    listId,
+    excludeListId,
+    includeEnrichment = false,
+    redisFilters,
+  } = options
 
-  // Get place details with rate limiting and optimization
-  const placeDetailsResults = await Promise.allSettled(
-    placesWithSearchIds.map(async ({ placeId, searchId }) =>
-      getPlaceDetailsOptimized(placeId, searchId),
-    ),
-  )
+  // Use the new optimized batch approach with search ID optimization and Redis filtering
+  const placeDetailsResults = await getPlaces(placesWithSearchIds, redisFilters)
 
   // Analyze results
-  const cacheHits = placeDetailsResults.filter(
-    (result) => result.status === 'fulfilled' && result.value.fromCache,
-  ).length
-  const cacheMisses = placeDetailsResults.filter(
-    (result) => result.status === 'fulfilled' && !result.value.fromCache,
-  ).length
-  const errors = placeDetailsResults.filter(
-    (result) => result.status === 'rejected',
-  ).length
+  const cacheHits = placeDetailsResults.length
+  const cacheMisses = 0
 
   logger.info({
     msg: 'Place details retrieval summary',
@@ -60,8 +56,8 @@ export const getPlacesWithDetails = async (
       totalPlaces: placesWithSearchIds.length,
       cacheHits,
       cacheMisses,
-      errors,
       context: listId ? 'list' : 'search',
+      hasRedisFilters: !!redisFilters,
     },
   })
 
@@ -70,21 +66,12 @@ export const getPlacesWithDetails = async (
     placesWithSearchIds.map(({ placeId, searchId }) => [placeId, searchId]),
   )
 
-  const placeDetails = placeDetailsResults
-    .filter(
-      (
-        result,
-      ): result is PromiseFulfilledResult<PlaceBase & { fromCache: boolean }> =>
-        result.status === 'fulfilled',
-    )
-    .map((result) => {
-      const { fromCache, ...place } = result.value
-      // Add searchId to the place data
-      return {
-        ...place,
-        searchId: placeSearchMap.get(place.id) || null,
-      }
-    })
+  const placeDetails = placeDetailsResults.map((place) => {
+    return {
+      ...place,
+      searchId: placeSearchMap.get(place.id) || null,
+    }
+  })
 
   // Aggregate data for the place details
   const aggregatedPlaceDetails = await aggregatePlaceData(placeDetails, {
@@ -132,7 +119,7 @@ export const getPlacesWithDetails = async (
     places: aggregatedPlaceDetails,
     cacheHits,
     cacheMisses,
-    errors,
+    errors: 0, // No individual errors with batch approach
     validationErrors,
   }
 }

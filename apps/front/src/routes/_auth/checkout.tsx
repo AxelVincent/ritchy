@@ -94,7 +94,7 @@ function CheckoutComponent() {
       {validPromos.length > 0 && (
         <div className="flex justify-center mb-4">
           <div
-            className="flex items-center gap-2 bg-orange-500/20 dark:bg-orange-500/10 px-4 py-2 rounded-full cursor-pointer"
+            className="flex items-center gap-2 bg-orange-500/20 dark:bg-orange-500/10 px-4 py-2 rounded-full"
             onClick={() => handleCopyPromo(validPromos[0].code)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {

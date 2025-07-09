@@ -138,9 +138,7 @@ export const socialEmailColumn: ColumnDef<SearchResult> = {
   size: 200,
   enableColumnFilter: false,
   enableSorting: false,
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Socials & Emails" />
-  ),
+  header: () => <HeaderWrapper title="Socials & Emails" />,
   cell: ({ row, table }) => {
     const { setSelectedPlaceId } = useMapStore()
     const enrichment = row.original.enrichment as

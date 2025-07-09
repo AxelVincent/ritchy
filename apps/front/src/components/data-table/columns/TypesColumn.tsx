@@ -17,7 +17,7 @@ export const typesColumn: ColumnDef<SearchResult> = {
     const rowTypes = row.getValue(id) as string[]
     return filterValue.some((filter) => rowTypes.includes(filter))
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Types" />,
+  header: () => <HeaderWrapper title="Types" />,
   cell: ({ row }) => {
     const types = row.original.types
 

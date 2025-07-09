@@ -1,4 +1,4 @@
-import { useSearchContentQuery } from '@/api/queries/search/useSearchContent'
+import { usePlacesQuery } from '@/api/queries/places/usePlaces'
 import { ApiErrorDisplay } from '@/components/common/ApiErrorDisplay'
 import { LoadingMessages } from '@/components/common/LoadingMessages'
 import { MapDisplay } from '@/components/map-display/MapDisplay'
@@ -15,11 +15,15 @@ export const Route = createFileRoute('/_auth/search/$searchId')({
 
 function RouteComponent() {
   const { searchId } = Route.useLoaderData()
-  const { data, isLoading, error } = useSearchContentQuery(searchId)
+  const { data, isPending, error } = usePlacesQuery({
+    operator: 'equals',
+    field: 'search.id',
+    value: searchId,
+  })
 
-  if (isLoading) return <LoadingMessages />
+  if (isPending) return <LoadingMessages />
   if (error) return <ApiErrorDisplay error={error} />
   if (!data || 'error' in data) return null
 
-  return <MapDisplay key={searchId} places={data} searchId={searchId} />
+  return <MapDisplay key={searchId} places={data.places} searchId={searchId} />
 }

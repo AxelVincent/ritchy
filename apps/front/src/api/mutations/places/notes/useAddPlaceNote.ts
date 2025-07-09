@@ -1,12 +1,10 @@
-import { listContentKeys } from '@/api/queries/lists/useListContent'
-import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import { placesKeys } from '@/api/queries/places/usePlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   AddNoteApiResponse,
   AddNoteRequest,
-  GetListContentResponse,
-  GetSearchContentResponse,
   Note,
+  Place,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -25,16 +23,14 @@ export const useAddPlaceNote = () => {
         queryKey: ['notes', 'place', placeId],
         exact: true,
       })
-      if (searchId) {
-        await queryClient.cancelQueries({
-          queryKey: searchContentKeys.search(searchId),
-        })
-      }
-      if (listId) {
-        await queryClient.cancelQueries({
-          queryKey: listContentKeys.list(listId),
-        })
-      }
+
+      // Determine which ID to use based on current view
+      const currentId = listId || searchId
+      const idType = listId ? 'listId' : 'searchId'
+      const filters = { [idType]: currentId }
+      const queryKey = [...placesKeys.all, 'filters', JSON.stringify(filters)]
+
+      await queryClient.cancelQueries({ queryKey })
 
       // Snapshot previous values
       const previousNotes = queryClient.getQueryData<Note[]>([
@@ -42,16 +38,7 @@ export const useAddPlaceNote = () => {
         'place',
         placeId,
       ])
-      const previousSearch = searchId
-        ? queryClient.getQueryData<GetSearchContentResponse>(
-            searchContentKeys.search(searchId),
-          )
-        : undefined
-      const previousList = listId
-        ? queryClient.getQueryData<GetListContentResponse>(
-            listContentKeys.list(listId),
-          )
-        : undefined
+      const previousPlaces = queryClient.getQueryData<Place[]>(queryKey)
 
       // Create optimistic note
       const optimisticNote: Note = {
@@ -69,54 +56,28 @@ export const useAddPlaceNote = () => {
         (old = []) => [optimisticNote, ...old],
       )
 
-      // Update search results if applicable
-      if (previousSearch && searchId) {
-        queryClient.setQueryData(
-          searchContentKeys.search(searchId),
-          (oldData: GetSearchContentResponse) => {
-            return oldData.map((place) => {
-              if (place.id === placeId) {
-                return {
-                  ...place,
-                  notes: [optimisticNote, ...(place.notes || [])],
-                }
+      // Update places data
+      if (previousPlaces) {
+        queryClient.setQueryData<Place[]>(queryKey, (oldData = []) => {
+          return oldData.map((place) => {
+            if (place.id === placeId) {
+              return {
+                ...place,
+                notes: [optimisticNote, ...(place.notes || [])],
               }
-              return place
-            })
-          },
-        )
-      }
-
-      // Update list content if applicable
-      if (previousList && listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(listId),
-          (oldData: GetListContentResponse) => {
-            return {
-              ...oldData,
-              items: oldData.items.map((place) => {
-                if (place.id === placeId) {
-                  return {
-                    ...place,
-                    notes: [optimisticNote, ...(place.notes || [])],
-                  }
-                }
-                return place
-              }),
             }
-          },
-        )
+            return place
+          })
+        })
       }
 
-      return { previousNotes, previousSearch, previousList, searchId, listId }
+      return { previousNotes, previousPlaces, queryKey }
     },
     onError: (_, variables, context: unknown) => {
       const typedContext = context as {
         previousNotes?: Note[]
-        previousSearch?: GetSearchContentResponse
-        previousList?: GetListContentResponse
-        searchId?: string
-        listId?: string
+        previousPlaces?: Place[]
+        queryKey: readonly unknown[]
       }
 
       // Rollback all optimistic updates on error
@@ -126,16 +87,10 @@ export const useAddPlaceNote = () => {
           typedContext.previousNotes,
         )
       }
-      if (typedContext.searchId) {
+      if (typedContext.previousPlaces) {
         queryClient.setQueryData(
-          searchContentKeys.search(typedContext.searchId),
-          typedContext.previousSearch,
-        )
-      }
-      if (typedContext.listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(typedContext.listId),
-          typedContext.previousList,
+          typedContext.queryKey,
+          typedContext.previousPlaces,
         )
       }
     },

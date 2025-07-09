@@ -10,9 +10,7 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'range',
   },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Rating Count" />
-  ),
+  header: () => <HeaderWrapper title="Rating Count" />,
   enableSorting: true,
   sortingFn: 'alphanumeric',
   sortUndefined: -1,

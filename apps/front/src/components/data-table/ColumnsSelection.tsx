@@ -396,7 +396,7 @@ export const ColumnsSelection = <TData,>({
                 )}
                 <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
                 <DropdownMenuCheckboxItem
-                  className="capitalize cursor-pointer flex-1"
+                  className="capitalize flex-1"
                   checked={column.getIsVisible()}
                   onSelect={(e) => e.preventDefault()}
                   onCheckedChange={(value) =>

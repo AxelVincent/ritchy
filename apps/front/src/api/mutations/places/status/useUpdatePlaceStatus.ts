@@ -1,9 +1,8 @@
-import { listContentKeys } from '@/api/queries/lists/useListContent'
-import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import { placesKeys } from '@/api/queries/places/usePlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
-  GetListContentResponse,
-  GetSearchContentResponse,
+  Place,
+  PostGetPlacesApiResponse,
   UpdateStatusApiResponse,
   UpdateStatusRequest,
 } from '@ritchy/types'
@@ -20,90 +19,50 @@ export const useUpdatePlaceStatus = () => {
     getEndpoint: ({ placeId }) => `/places/${placeId}/status`,
     getBody: ({ status, searchId, listId }) => ({ status, searchId, listId }),
     onMutate: async ({ placeId, searchId, status, listId }) => {
-      // Cancel any outgoing refetches to avoid overwriting our optimistic update
-      await queryClient.cancelQueries({
-        queryKey: searchId ? searchContentKeys.search(searchId) : undefined,
-      })
-      await queryClient.cancelQueries({
-        queryKey: listId ? listContentKeys.list(listId) : undefined,
-      })
+      // Determine which ID to use based on current view
+      const currentId = listId || searchId
+      const idType = listId ? 'listId' : 'searchId'
+      const filters = { [idType]: currentId }
 
-      // Snapshot the previous value
-      const previousSearch = searchId
-        ? queryClient.getQueryData(searchContentKeys.search(searchId))
-        : undefined
-      const previousList = listId
-        ? queryClient.getQueryData(listContentKeys.list(listId))
-        : undefined
+      const queryKey = [...placesKeys.all, 'filters', JSON.stringify(filters)]
 
-      // Optimistically update the search results
-      if (previousSearch && searchId) {
-        queryClient.setQueryData(
-          searchContentKeys.search(searchId),
-          (oldData: GetSearchContentResponse) => {
-            return oldData.map((place) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousData = queryClient.getQueryData<Place[]>(queryKey)
+
+      // Optimistically update
+      if (previousData) {
+        queryClient.setQueryData<Place[]>(queryKey, (oldData) => {
+          return (
+            oldData?.map((place) => {
               if (place.id === placeId) {
                 return {
                   ...place,
                   status: {
-                    ...place.status,
                     status,
                     updatedAt: new Date().toISOString(),
+                    createdAt:
+                      place.status?.createdAt ?? new Date().toISOString(),
                   },
                 }
               }
               return place
-            })
-          },
-        )
+            }) ?? []
+          )
+        })
       }
 
-      // Optimistically update the list
-      if (previousList && listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(listId),
-          (oldData: GetListContentResponse) => {
-            return {
-              ...oldData,
-              items: oldData.items.map((place) => {
-                if (place.id === placeId) {
-                  return {
-                    ...place,
-                    status: {
-                      ...place.status,
-                      status,
-                      updatedAt: new Date().toISOString(),
-                    },
-                  }
-                }
-                return place
-              }),
-            }
-          },
-        )
-      }
-
-      // Return a context object with the snapshotted values
-      return { previousSearch, previousList, searchId, listId }
+      return { previousData, queryKey }
     },
     onError: (_, _variables, context: unknown) => {
       const typedContext = context as {
-        previousSearch?: GetSearchContentResponse
-        previousList?: GetListContentResponse
-        searchId?: string
-        listId?: string
+        previousData?: PostGetPlacesApiResponse
+        queryKey: readonly unknown[]
       }
-      // If the mutation fails, roll back to the previous values
-      if (typedContext?.searchId) {
+      // Roll back to the previous value
+      if (typedContext?.previousData) {
         queryClient.setQueryData(
-          searchContentKeys.search(typedContext.searchId),
-          typedContext.previousSearch,
-        )
-      }
-      if (typedContext?.listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(typedContext.listId),
-          typedContext.previousList,
+          typedContext.queryKey,
+          typedContext.previousData,
         )
       }
     },

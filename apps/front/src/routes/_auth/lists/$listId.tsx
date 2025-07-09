@@ -1,4 +1,4 @@
-import { useListContentQuery } from '@/api/queries/lists/useListContent'
+import { usePlacesQuery } from '@/api/queries/places/usePlaces'
 import { ApiErrorDisplay } from '@/components/common/ApiErrorDisplay'
 import { LoadingMessages } from '@/components/common/LoadingMessages'
 import { MapDisplay } from '@/components/map-display/MapDisplay'
@@ -15,11 +15,22 @@ export const Route = createFileRoute('/_auth/lists/$listId')({
 
 function RouteComponent() {
   const { listId } = Route.useLoaderData()
-  const { data, isLoading, error } = useListContentQuery(listId)
+  const { data, isPending, error } = usePlacesQuery({
+    filters: {
+      operator: 'AND',
+      conditions: [
+        {
+          field: 'list.id',
+          operator: 'equals',
+          value: listId
+        }
+      ]
+    },
+  })
 
-  if (isLoading) return <LoadingMessages />
+  if (isPending) return <LoadingMessages />
   if (error) return <ApiErrorDisplay error={error} />
   if (!data || 'error' in data) return null
 
-  return <MapDisplay key={listId} listId={listId} places={data.items} />
+  return <MapDisplay key={listId} listId={listId} places={data.places} />
 }

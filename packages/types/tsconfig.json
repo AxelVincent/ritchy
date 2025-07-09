@@ -15,7 +15,10 @@
     "composite": true,
     "declarationMap": true
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*",
+    "../../apps/api/src/routes_web/places/types/filters.ts"
+  ],
   "exclude": ["node_modules", "dist"],
   "references": []
 }

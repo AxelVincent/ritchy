@@ -318,7 +318,7 @@ export const PlacesTextSearch = ({
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="BASIC" className="cursor-pointer">
+                  <SelectItem value="BASIC">
                     <div className="space-y-1 w-full">
                       <div>Basic</div>
                       <div className="text-xs text-muted-foreground">
@@ -326,7 +326,7 @@ export const PlacesTextSearch = ({
                       </div>
                     </div>
                   </SelectItem>
-                  <SelectItem value="ENHANCED" className="cursor-pointer">
+                  <SelectItem value="ENHANCED">
                     <div className="space-y-1 w-full">
                       <div className="flex items-center w-full">
                         <span

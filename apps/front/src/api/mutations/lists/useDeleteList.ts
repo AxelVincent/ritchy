@@ -1,3 +1,4 @@
+import { placesKeys } from '@/api/queries/places/usePlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   DeleteListApiResponse,
@@ -15,6 +16,7 @@ export const useDeleteList = () => {
       getEndpoint: ({ id }) => `/lists/${id}`,
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['lists'] })
+        queryClient.invalidateQueries({ queryKey: placesKeys.all })
       },
     },
   )

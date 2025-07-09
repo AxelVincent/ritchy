@@ -148,9 +148,8 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
     return true
   },
   size: 180,
-  header: ({ column }) => (
+  header: () => (
     <HeaderWrapper
-      column={column}
       title="Domain Registration Date"
       helper={
         <Card className="shadow-md">

@@ -19,7 +19,7 @@ export const websiteColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
+  header: () => <HeaderWrapper title="Website" />,
   cell: ({ row }) => {
     const website = row.getValue('website') as string
     return (

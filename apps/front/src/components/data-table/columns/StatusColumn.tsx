@@ -16,7 +16,7 @@ export const statusColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'multi-select',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Status" />,
+  header: () => <HeaderWrapper title="Status" />,
   cell: ({ row }) => {
     return (
       <ColumnPinCell

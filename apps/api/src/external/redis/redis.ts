@@ -225,12 +225,138 @@ const createRedisClient = () => {
     }
   }
 
+  /**
+   * Check existence of multiple keys using Redis pipeline with EXISTS
+   * @param placeIds - Array of place IDs to check
+   * @returns Object mapping place ID to existence boolean
+   */
+  const checkPlaceKeysExistence = async (
+    placeIds: string[],
+  ): Promise<Record<string, boolean>> => {
+    if (placeIds.length === 0) {
+      return {}
+    }
+
+    try {
+      logger.debug({
+        msg: 'Starting key existence check',
+        event: 'redis_key_existence_debug',
+        metadata: {
+          placeIds: placeIds.slice(0, 5),
+          totalCount: placeIds.length,
+        },
+      })
+
+      // Create pipeline for batch EXISTS commands
+      const pipeline = redis.pipeline()
+
+      // Add EXISTS command for each place ID
+      for (const id of placeIds) {
+        const key = `place:${id}`
+        pipeline.exists(key)
+        logger.debug({
+          msg: 'Added EXISTS command to pipeline',
+          event: 'redis_pipeline_command_added',
+          metadata: { key },
+        })
+      }
+
+      logger.debug({
+        msg: 'Pipeline created, executing commands',
+        event: 'redis_pipeline_executing',
+        metadata: { commandCount: placeIds.length },
+      })
+
+      // Execute all commands in one batch
+      const results = await pipeline.exec()
+
+      logger.debug({
+        msg: 'Pipeline execution completed',
+        event: 'redis_pipeline_executed',
+        metadata: {
+          resultsLength: results?.length || 0,
+          resultsPreview: results?.slice(0, 3) || [],
+        },
+      })
+
+      // Handle empty results
+      if (!results || results.length === 0) {
+        logger.error({
+          msg: 'Pipeline returned empty results',
+          event: 'redis_pipeline_empty_results',
+          metadata: { placeIds: placeIds.slice(0, 5) },
+        })
+
+        // Fallback to individual EXISTS commands
+        const existenceMap: Record<string, boolean> = {}
+        for (const placeId of placeIds) {
+          try {
+            const exists = await redis.exists(`place:${placeId}`)
+            existenceMap[placeId] = exists === 1
+          } catch (error) {
+            logger.error({
+              msg: 'Individual EXISTS command failed',
+              event: 'redis_exists_individual_error',
+              metadata: { placeId, error },
+            })
+            existenceMap[placeId] = false
+          }
+        }
+        return existenceMap
+      }
+
+      // Convert pipeline results to key-value mapping
+      const existenceMap: Record<string, boolean> = {}
+
+      results.forEach(([error, exists], index) => {
+        const placeId = placeIds[index]
+        if (error) {
+          logger.warn({
+            msg: 'Error checking key existence',
+            event: 'redis_key_existence_error_single',
+            metadata: { placeId, error },
+          })
+          existenceMap[placeId] = false
+        } else {
+          existenceMap[placeId] = exists === 1
+        }
+      })
+
+      const existingCount = Object.values(existenceMap).filter(Boolean).length
+
+      logger.info({
+        msg: 'Key existence check completed',
+        event: 'redis_key_existence_check',
+        metadata: {
+          requestedKeys: placeIds.length,
+          existingKeys: existingCount,
+          cacheHitRate: `${((existingCount / placeIds.length) * 100).toFixed(1)}%`,
+        },
+      })
+
+      return existenceMap
+    } catch (error) {
+      logger.error({
+        msg: 'Key existence check failed',
+        event: 'redis_key_existence_error',
+        metadata: {
+          error,
+          placeIds: placeIds.slice(0, 10),
+          totalIds: placeIds.length,
+        },
+      })
+
+      throw error
+    }
+  }
+
   return {
     redis, // Expose raw client for advanced operations
     get,
     set,
     markAsDeleted,
     flush,
+    checkPlaceKeysExistence,
   }
 }
 

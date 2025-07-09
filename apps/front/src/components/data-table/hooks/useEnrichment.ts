@@ -1,7 +1,6 @@
 import { useBatchEnrichment } from '@/api/mutations/enrichment/useBatchEnrichment'
 import { useEnrichmentJobStatus } from '@/api/queries/enrich/useEnrichmentJobStatus'
-import { listContentKeys } from '@/api/queries/lists/useListContent'
-import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import { placesKeys } from '@/api/queries/places/usePlaces'
 import type { SearchResult } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -94,41 +93,25 @@ export function useEnrichment<TData extends SearchResult>({
 
   // Polling function with overlap protection
   const performPolling = useCallback(async () => {
-    // Skip if polling is already in progress
-    if (isPollingInProgressRef.current) {
-      return
-    }
-
+    if (isPollingInProgressRef.current) return
     isPollingInProgressRef.current = true
 
     try {
-      // Create abort controller for this polling request
       const abortController = new AbortController()
       abortControllerRef.current = abortController
+      if (abortController.signal.aborted) return
 
-      // Check if we should stop due to abort signal
-      if (abortController.signal.aborted) {
-        return
-      }
-
-      // Poll job status
       const statusResult = await jobStatusQuery.refetch()
+      if (abortController.signal.aborted) return
 
-      // Check for abort again after async operation
-      if (abortController.signal.aborted) {
-        return
-      }
+      // Determine which ID to use based on current view
+      const currentId = listId || searchId
+      const idType = listId ? 'listId' : 'searchId'
+      const filters = { [idType]: currentId }
+      const queryKey = [...placesKeys.all, 'filters', JSON.stringify(filters)]
 
       // Poll content data to get updated enrichment results
-      if (listId) {
-        queryClient.invalidateQueries({
-          queryKey: listContentKeys.list(listId),
-        })
-      } else if (searchId) {
-        queryClient.invalidateQueries({
-          queryKey: searchContentKeys.search(searchId),
-        })
-      }
+      queryClient.invalidateQueries({ queryKey })
 
       // Check for completion and show toast
       if (statusResult.data && 'status' in statusResult.data) {
@@ -253,19 +236,14 @@ export function useEnrichment<TData extends SearchResult>({
           throw new Error('No items selected for enrichment')
         }
 
+        // Determine which ID to use based on current view
+        const currentId = listId || searchId
+        const idType = listId ? 'listId' : 'searchId'
+        const filters = { [idType]: currentId }
+        const queryKey = [...placesKeys.all, 'filters', JSON.stringify(filters)]
+
         // Get current data to extract enrichments
-        let currentData: TData[] = []
-        if (listId) {
-          const listData = queryClient.getQueryData(
-            listContentKeys.list(listId),
-          )
-          currentData = (listData as unknown as { items: TData[] })?.items || []
-        } else if (searchId) {
-          const searchData = queryClient.getQueryData(
-            searchContentKeys.search(searchId),
-          )
-          currentData = (searchData as TData[]) || []
-        }
+        const currentData = queryClient.getQueryData<TData[]>(queryKey) || []
 
         // Get enrichments that need to be processed
         const enrichmentsToProcess = selectedIds

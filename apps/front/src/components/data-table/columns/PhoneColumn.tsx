@@ -10,7 +10,7 @@ export const phoneColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Phone" />,
+  header: () => <HeaderWrapper title="Phone" />,
   cell: ({ row }) => {
     const phone = row.getValue('phone') as string
     return <PhoneCell id={row.original.id} content={phone} />

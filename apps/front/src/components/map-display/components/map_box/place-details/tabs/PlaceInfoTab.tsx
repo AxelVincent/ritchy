@@ -94,7 +94,7 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => {
 
           {/* Opening hours section */}
           {place.openingHours && (
-            <div className="flex flex-col gap-2 mb-2 cursor-pointer">
+            <div className="flex flex-col gap-2 mb-2">
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="flex-1">

@@ -11,9 +11,7 @@ export const nameColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => {
-    return <HeaderWrapper column={column} title="Name" />
-  },
+  header: () => <HeaderWrapper title="Name" />,
   cell: ({ row }) => {
     return (
       <ColumnPinCopyCell id={row.original.id} content={row.original.name} />

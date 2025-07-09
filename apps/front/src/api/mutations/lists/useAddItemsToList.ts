@@ -1,3 +1,4 @@
+import { placesKeys } from '@/api/queries/places/usePlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   AddItemsToListApiResponse,
@@ -12,18 +13,10 @@ export const useAddItemsToList = () => {
     '/lists/:id/items',
     {
       getEndpoint: ({ id }) => `/lists/${id}/items`,
-      onSuccess: (_, { id }) => {
-        queryClient.invalidateQueries({
-          queryKey: ['lists'],
-          exact: true,
-        })
-        queryClient.invalidateQueries({
-          queryKey: ['listContent', id],
-          exact: true,
-        })
-        queryClient.invalidateQueries({
-          queryKey: ['searchContent'],
-        })
+      onSuccess: () => {
+        // Invalidate lists
+        queryClient.invalidateQueries({ queryKey: ['lists'] })
+        queryClient.invalidateQueries({ queryKey: placesKeys.all })
       },
     },
   )

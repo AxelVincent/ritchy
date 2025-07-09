@@ -11,7 +11,7 @@ export const ratingColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'range',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Rating" />,
+  header: () => <HeaderWrapper title="Rating" />,
   enableSorting: true,
   sortingFn: 'alphanumeric',
   sortUndefined: -1,

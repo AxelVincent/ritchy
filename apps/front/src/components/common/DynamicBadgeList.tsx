@@ -37,7 +37,6 @@ export const DynamicBadgeList = ({
         <Popover>
           <PopoverTrigger asChild>
             <div
-              className="cursor-pointer"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               onKeyUp={(e) => e.stopPropagation()}

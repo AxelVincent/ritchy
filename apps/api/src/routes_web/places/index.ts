@@ -1,6 +1,8 @@
 import {
   AutocompleteApiResponseSchema,
   AutocompleteRequestBodySchema,
+  PostGetPlacesApiResponseSchema,
+  PostGetPlacesRequestSchema,
 } from '@ritchy/types'
 import {
   GeocodeApiResponseSchema,
@@ -11,6 +13,7 @@ import { validateRequest } from '../../middleware/zodValidation'
 import { getGeocode } from './get_geocode'
 import notesRouter from './notes'
 import { postAutocomplete } from './post_autocomplete'
+import { postGetPlaces } from './post_get_places'
 import reviewsRouter from './reviews'
 import statusRouter from './status'
 
@@ -21,6 +24,15 @@ placesRouter.use('/:placeId/status', statusRouter)
 placesRouter.use('/:placeId/notes', notesRouter)
 
 placesRouter.use('/:placeId/reviews', reviewsRouter)
+
+placesRouter.post(
+  '/',
+  validateRequest({
+    bodySchema: PostGetPlacesRequestSchema,
+    responseSchema: PostGetPlacesApiResponseSchema,
+  }),
+  postGetPlaces,
+)
 
 placesRouter.post(
   '/autocomplete',

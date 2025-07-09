@@ -25,6 +25,7 @@ services:
       --user ${REDISUSER} on '>${REDISPASSWORD}' allcommands allkeys
       --appendonly yes
       --loadmodule /opt/redis-stack/lib/rejson.so
+      --loadmodule /opt/redis-stack/lib/redisearch.so
     environment:
       - REDIS_USER=${REDISUSER}
       - REDIS_PASSWORD=${REDISPASSWORD}

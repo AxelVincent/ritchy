@@ -1,3 +1,4 @@
+import { placesKeys } from '@/api/queries/places/usePlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   DeleteItemsFromListApiResponse,
@@ -14,15 +15,9 @@ export const useDeleteItemsFromList = () => {
   >('/lists/:id/items', {
     method: 'DELETE',
     getEndpoint: ({ id }) => `/lists/${id}/items`,
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({
-        queryKey: ['lists'],
-        exact: true,
-      })
-      queryClient.invalidateQueries({
-        queryKey: ['listContent', id],
-        exact: true,
-      })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lists'] })
+      queryClient.invalidateQueries({ queryKey: placesKeys.all })
     },
   })
 }

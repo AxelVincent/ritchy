@@ -77,7 +77,6 @@ export const StatusDropdown = ({
           <DropdownMenuItem
             key={statusOption}
             onClick={() => handleStatusChange(statusOption)}
-            className="cursor-pointer"
           >
             <StatusBadge status={statusOption} />
           </DropdownMenuItem>
