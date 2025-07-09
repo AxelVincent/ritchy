@@ -14,6 +14,7 @@ import {
   Smartphone,
   Twitter,
 } from 'lucide-react'
+import { useMemo } from 'react'
 
 export const PlaceContactTab = ({ place }: { place: Place }) => {
   const getSocialIcon = (platform: string) => {
@@ -54,64 +55,46 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
     )
   }
 
+  // helper function to create social entries, the isPrimary is handled in the map function
+  const createSocialEntries = (
+    primaryField: string | null,
+    secondaryField: string[] | null,
+    platform: string,
+  ) => {
+    const entries = []
+    if (primaryField) {
+      entries.push({ url: primaryField, platform, isPrimary: true })
+    }
+    if (secondaryField) {
+      entries.push(
+        ...secondaryField.map((url) => ({ url, platform, isPrimary: false })),
+      )
+    }
+    return entries
+  }
+
   const renderSocialSection = () => {
     const allSocials = [
-      ...(place.primaryLinkedinSocial
-        ? [
-            {
-              url: place.primaryLinkedinSocial,
-              platform: 'LinkedIn',
-              isPrimary: true,
-            },
-          ]
-        : []),
-      ...(place.secondaryLinkedinSocials?.map((url) => ({
-        url,
-        platform: 'LinkedIn',
-        isPrimary: false,
-      })) || []),
-      ...(place.primaryFacebookSocial
-        ? [
-            {
-              url: place.primaryFacebookSocial,
-              platform: 'Facebook',
-              isPrimary: true,
-            },
-          ]
-        : []),
-      ...(place.secondaryFacebookSocials?.map((url) => ({
-        url,
-        platform: 'Facebook',
-        isPrimary: false,
-      })) || []),
-      ...(place.primaryInstagramSocial
-        ? [
-            {
-              url: place.primaryInstagramSocial,
-              platform: 'Instagram',
-              isPrimary: true,
-            },
-          ]
-        : []),
-      ...(place.secondaryInstagramSocials?.map((url) => ({
-        url,
-        platform: 'Instagram',
-        isPrimary: false,
-      })) || []),
-      ...(place.primaryTwitterSocial
-        ? [
-            {
-              url: place.primaryTwitterSocial,
-              platform: 'Twitter',
-              isPrimary: true,
-            },
-          ]
-        : []),
-      ...(place.secondaryTwitterSocials?.map((url) => ({
-        url,
-        platform: 'Twitter',
-        isPrimary: false,
-      })) || []),
+      ...createSocialEntries(
+        place.primaryLinkedinSocial,
+        place.secondaryLinkedinSocials,
+        'LinkedIn',
+      ),
+      ...createSocialEntries(
+        place.primaryFacebookSocial,
+        place.secondaryFacebookSocials,
+        'Facebook',
+      ),
+      ...createSocialEntries(
+        place.primaryInstagramSocial,
+        place.secondaryInstagramSocials,
+        'Instagram',
+      ),
+      ...createSocialEntries(
+        place.primaryTwitterSocial,
+        place.secondaryTwitterSocials,
+        'Twitter',
+      ),
     ]
 
     return (
@@ -159,11 +142,15 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
   const hasEmails =
     place.primaryEmail ||
     (place.secondaryEmails && place.secondaryEmails.length > 0)
-  const hasSocials =
-    place.primaryLinkedinSocial ||
-    place.primaryFacebookSocial ||
-    place.primaryInstagramSocial ||
-    place.primaryTwitterSocial
+
+  const hasSocials = useMemo(() => {
+    return (
+      place.primaryLinkedinSocial ||
+      place.primaryFacebookSocial ||
+      place.primaryInstagramSocial ||
+      place.primaryTwitterSocial
+    )
+  }, [place])
 
   return (
     <div className="h-full flex flex-col">
