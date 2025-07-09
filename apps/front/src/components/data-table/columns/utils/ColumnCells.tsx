@@ -1,5 +1,6 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
 import type { Note, SearchResult } from '@ritchy/types'
 import React from 'react'
 import {
@@ -45,10 +46,11 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 hover:text-blue-800 hover:underline"
+      className="text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-[200px]"
       onClick={(e) => e.stopPropagation()}
+      title={content || undefined}
     >
-      {content}
+      {getCleanUrlDisplay(content || '')}
     </a>
   ) : (
     content

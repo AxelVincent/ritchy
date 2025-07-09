@@ -34,6 +34,8 @@ import { domainRegistrationDateColumn } from './columns/DomainRegistrationDateCo
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
+import { createPrimarySocialColumn } from './columns/utils/createPrimarySocialColumnFactory'
+import { createSecondarySocialColumn } from './columns/utils/createSecondarySocialColumnFactory'
 
 // Compose the columns array
 export const columns: ColumnDef<SearchResult>[] = [
@@ -44,6 +46,14 @@ export const columns: ColumnDef<SearchResult>[] = [
   phoneColumn,
   primaryEmailColumn,
   secondaryEmailsColumn,
+  createPrimarySocialColumn('linkedin'),
+  createPrimarySocialColumn('facebook'),
+  createPrimarySocialColumn('instagram'),
+  createPrimarySocialColumn('twitter'),
+  createSecondarySocialColumn('facebook'),
+  createSecondarySocialColumn('linkedin'),
+  createSecondarySocialColumn('instagram'),
+  createSecondarySocialColumn('twitter'),
   socialEmailColumn,
   domainRegistrationDateColumn,
   notesColumn,

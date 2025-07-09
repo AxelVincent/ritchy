@@ -263,7 +263,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       left: header.index === 0 ? 0 : undefined,
                       zIndex: header.index === 0 ? 2 : 1,
                     }}
-                    className={cn('border-r border-border bg-background')}
+                    className={cn('border-r border-border', {
+                      'bg-muted': header.index === 0,
+                      'bg-muted/30': header.index !== 0,
+                    })}
                   >
                     <div
                       {...{
@@ -336,7 +339,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                         alignItems: 'center',
                       }}
                       className={cn('border-r border-border', {
-                        'bg-background':
+                        'bg-muted':
                           cell.column.id === visibleCells[0].column.id,
                         'bg-primary-foreground':
                           selectedPlaceId === row.original.id,

@@ -1,8 +1,7 @@
 import { DataTable } from '@/components/data-table/DataTable'
+import { EmptyListState } from '@/components/lists/empty-list-state'
 import { MapBox } from '@/components/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
-
-import { EmptyListState } from '@/components/lists/empty-list-state'
 import type { Location } from '@/components/search/search-map'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
@@ -63,13 +62,7 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     localStorage.setItem('mapDisplayPanelSizes', JSON.stringify(sizes))
   }
 
-  // Update searchResults to use listData when available, fallback to mockData in development
-  const [searchResults, setSearchResults] = useState<Place[]>(() => {
-    if (places && places.length > 0) {
-      return places
-    }
-    return process.env.NODE_ENV === 'development' ? [] : []
-  })
+  const [searchResults, setSearchResults] = useState<Place[]>(places || [])
 
   // Search and selection state
   const [dataTableRowSelection, setDataTableRowSelection] =
