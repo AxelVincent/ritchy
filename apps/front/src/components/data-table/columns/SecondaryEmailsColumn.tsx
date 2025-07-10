@@ -32,16 +32,7 @@ export const secondaryEmailsColumn: ColumnDef<SearchResult> = {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     if (!emails?.length) {
-      return (
-        <ColumnPinCell
-          id={row.original.id}
-          content={
-            <span className="text-muted-foreground text-sm">
-              No secondary emails
-            </span>
-          }
-        />
-      )
+      return <ColumnPinCell id={row.original.id} content={null} />
     }
 
     if (emails.length === 1) {
