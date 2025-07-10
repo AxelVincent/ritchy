@@ -90,15 +90,18 @@ export const createSecondarySocialColumn = (
           placeId={row.original.id}
           socialName={socialName}
         >
-          <ColumnPinCopyCell
-            id={row.original.id}
-            content={socialsArray[0]}
-            href={socialsArray[0]}
-          />
-          <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap ml-1.5 mr-1.5">
-            +{socialsArray.length - 1} more
-          </span>
-          <div className="flex-1" />
+          <div className="flex items-center w-full">
+            <div className="flex-1 min-w-0">
+              <ColumnPinCopyCell
+                id={row.original.id}
+                content={socialsArray[0]}
+                href={socialsArray[0]}
+              />
+            </div>
+            <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full mr-1 whitespace-nowrap ml-1.5 shrink-0">
+              +{socialsArray.length - 1} more
+            </span>
+          </div>
         </SecondarySocialDialog>
       )
     },

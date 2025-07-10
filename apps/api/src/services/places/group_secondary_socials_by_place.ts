@@ -14,9 +14,9 @@ type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
 export const groupSecondarySocialsByPlace = async (
   placeIds: string[],
   userId: string,
-): Promise<Map<string, Map<SocialMediaPlatform, string | null>>> => {
+): Promise<Map<string, Map<SocialMediaPlatform, string[]>>> => {
   if (placeIds.length === 0) {
-    return new Map<string, Map<SocialMediaPlatform, string | null>>()
+    return new Map<string, Map<SocialMediaPlatform, string[]>>()
   }
 
   try {
@@ -31,16 +31,22 @@ export const groupSecondarySocialsByPlace = async (
       const platform = socialData.platform as SocialMediaPlatform
 
       if (!acc.has(placeId)) {
-        acc.set(placeId, new Map<SocialMediaPlatform, string | null>())
+        acc.set(placeId, new Map<SocialMediaPlatform, string[]>())
       }
 
       const placeMap = acc.get(placeId)
-      if (placeMap && !placeMap.has(platform)) {
-        placeMap.set(platform, socialData.profileUrl)
+      if (placeMap) {
+        if (!placeMap.has(platform)) {
+          placeMap.set(platform, [])
+        }
+        const platformArray = placeMap.get(platform)
+        if (platformArray) {
+          platformArray.push(socialData.profileUrl)
+        }
       }
 
       return acc
-    }, new Map<string, Map<SocialMediaPlatform, string | null>>())
+    }, new Map<string, Map<SocialMediaPlatform, string[]>>())
 
     logger.info({
       msg: 'Secondary socials grouped by place',

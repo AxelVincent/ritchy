@@ -47,7 +47,7 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-[200px]"
+      className="text-blue-600 hover:text-blue-800 hover:underline block w-full overflow-hidden text-ellipsis whitespace-nowrap px-2 py-1 rounded transition-colors"
       onClick={(e) => e.stopPropagation()}
       title={content || undefined}
     >

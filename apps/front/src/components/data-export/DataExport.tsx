@@ -38,7 +38,6 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'enrichment',
     'searchId',
     'listId',
-    'secondaryEmails',
     'hubspotSynced',
   ]
   // Get all fields from SearchResult schema
@@ -220,22 +219,10 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             row.primaryLinkedinSocial || '',
         },
         {
-          header: 'Secondary LinkedIn Socials',
-          field: 'secondaryLinkedinSocials',
-          accessor: (row: SearchResult): string =>
-            row.secondaryLinkedinSocials?.join(', ') || '',
-        },
-        {
           header: 'Primary Facebook Social',
           field: 'primaryFacebookSocial',
           accessor: (row: SearchResult): string =>
             row.primaryFacebookSocial || '',
-        },
-        {
-          header: 'Secondary Facebook Socials',
-          field: 'secondaryFacebookSocials',
-          accessor: (row: SearchResult): string =>
-            row.secondaryFacebookSocials?.join(', ') || '',
         },
         {
           header: 'Primary Instagram Social',
@@ -244,22 +231,37 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             row.primaryInstagramSocial || '',
         },
         {
-          header: 'Secondary Instagram Socials',
-          field: 'secondaryInstagramSocials',
-          accessor: (row: SearchResult): string =>
-            row.secondaryInstagramSocials?.join(', ') || '',
-        },
-        {
           header: 'Primary Twitter Social',
           field: 'primaryTwitterSocial',
           accessor: (row: SearchResult): string =>
             row.primaryTwitterSocial || '',
         },
         {
+          header: 'Secondary LinkedIn Socials',
+          field: 'secondaryLinkedinSocials',
+          accessor: (row: SearchResult): string =>
+            (row.secondaryLinkedinSocials || []).join(', '),
+        },
+
+        {
+          header: 'Secondary Facebook Socials',
+          field: 'secondaryFacebookSocials',
+          accessor: (row: SearchResult): string =>
+            (row.secondaryFacebookSocials || []).join(', '),
+        },
+
+        {
+          header: 'Secondary Instagram Socials',
+          field: 'secondaryInstagramSocials',
+          accessor: (row: SearchResult): string =>
+            (row.secondaryInstagramSocials || []).join(', '),
+        },
+
+        {
           header: 'Secondary Twitter Socials',
           field: 'secondaryTwitterSocials',
           accessor: (row: SearchResult): string =>
-            row.secondaryTwitterSocials?.join(', ') || '',
+            (row.secondaryTwitterSocials || []).join(', '),
         },
         {
           header: 'Rating',
