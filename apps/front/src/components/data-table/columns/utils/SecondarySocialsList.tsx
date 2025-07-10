@@ -2,15 +2,10 @@ import { ColumnPinCopyCell } from './ColumnCells'
 
 export const SecondarySocialsList = ({
   links,
-  platform,
   id,
-}: { links: string[]; platform: string; id: string }) => {
+}: { links: string[]; id: string }) => {
   if (!links || links.length === 0) {
-    return (
-      <div className="text-muted-foreground text-sm">
-        No secondary {platform} links
-      </div>
-    )
+    return null
   }
 
   return (

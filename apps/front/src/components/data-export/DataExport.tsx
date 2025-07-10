@@ -94,6 +94,12 @@ export const validateAllSearchResultFieldsHaveColumns = (
   }
 }
 
+const ensureArray = (value: string | string[] | undefined | null): string[] => {
+  if (Array.isArray(value)) return value
+  if (value === null || value === undefined) return []
+  return [value]
+}
+
 /**
  * Component that handles exporting search results to CSV format.
  * Includes enrichment data from website scraping if available.
@@ -129,6 +135,16 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
 
     try {
       setIsExporting(true)
+
+      // Create a copy of the data with properly structured fields
+      const exportData = selectedRows.map((row) => ({
+        ...row,
+        secondaryFacebookSocials: ensureArray(row.secondaryFacebookSocials),
+        secondaryInstagramSocials: ensureArray(row.secondaryInstagramSocials),
+        secondaryLinkedinSocials: ensureArray(row.secondaryLinkedinSocials),
+        secondaryTwitterSocials: ensureArray(row.secondaryTwitterSocials),
+        secondaryEmails: ensureArray(row.secondaryEmails),
+      }))
 
       // Create a Map of website URIs to enrichment data
       const enrichmentMap = new Map<string, EnrichmentWithStatus>(
@@ -210,7 +226,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           header: 'Secondary Emails',
           field: 'secondaryEmails',
           accessor: (row: SearchResult): string =>
-            row.secondaryEmails?.join(', ') || '',
+            (row.secondaryEmails || []).join(', '),
         },
         {
           header: 'Primary LinkedIn Social',
@@ -256,7 +272,6 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string =>
             (row.secondaryInstagramSocials || []).join(', '),
         },
-
         {
           header: 'Secondary Twitter Socials',
           field: 'secondaryTwitterSocials',
@@ -484,7 +499,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
       validateAllSearchResultFieldsHaveColumns(columns)
 
       validateAndExportToCsv<SearchResult>({
-        data: selectedRows,
+        data: exportData,
         filename: 'places.csv',
         schema: PlaceSchema,
         columns,

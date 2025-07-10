@@ -10,7 +10,5 @@ export const SecondaryEmailsList = ({
         <ContactEmailCell key={email} id={id} content={email} />
       ))}
     </div>
-  ) : (
-    <div className="text-muted-foreground text-sm">No secondary emails</div>
-  )
+  ) : null
 }

@@ -46,11 +46,7 @@ export const SecondarySocialDialog = ({
             {placeName}'s Secondary {capitalizedName} Links
           </DialogTitle>
         </DialogHeader>
-        <SecondarySocialsList
-          links={socialsArray}
-          platform={socialName.toLowerCase()}
-          id={placeId}
-        />
+        <SecondarySocialsList links={socialsArray} id={placeId} />
       </DialogContent>
     </Dialog>
   )

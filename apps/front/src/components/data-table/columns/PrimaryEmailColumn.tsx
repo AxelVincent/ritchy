@@ -19,14 +19,7 @@ export const primaryEmailColumn: ColumnDef<SearchResult> = {
     return primaryEmail ? (
       <ContactEmailCell id={row.original.id} content={primaryEmail} />
     ) : (
-      <ColumnPinCell
-        id={row.original.id}
-        content={
-          <span className="text-muted-foreground text-sm">
-            No primary email
-          </span>
-        }
-      />
+      <ColumnPinCell id={row.original.id} content={null} />
     )
   },
 }
