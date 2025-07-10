@@ -33,14 +33,7 @@ export const createPrimarySocialColumn = (
           href={primarySocial as string}
         />
       ) : (
-        <ColumnPinCell
-          id={row.original.id}
-          content={
-            <span className="text-muted-foreground text-sm">
-              No primary {capitalizedName}
-            </span>
-          }
-        />
+        <ColumnPinCell id={row.original.id} content={null} />
       )
     },
   }

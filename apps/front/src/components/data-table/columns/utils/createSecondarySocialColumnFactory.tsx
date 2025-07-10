@@ -57,16 +57,7 @@ export const createSecondarySocialColumn = (
         socialField in row.original ? row.original[socialField] : []
 
       if (!Array.isArray(secondarySocials) || secondarySocials.length === 0) {
-        return (
-          <ColumnPinCell
-            id={row.original.id}
-            content={
-              <span className="text-muted-foreground text-sm">
-                No secondary {capitalizedName} links
-              </span>
-            }
-          />
-        )
+        return <ColumnPinCell id={row.original.id} content={null} />
       }
 
       const socialsArray = secondarySocials as string[]
