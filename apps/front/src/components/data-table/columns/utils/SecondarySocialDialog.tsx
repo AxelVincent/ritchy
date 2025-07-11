@@ -40,7 +40,7 @@ export const SecondarySocialDialog = ({
       >
         {children}
       </div>
-      <DialogContent className="max-w-[425px]">
+      <DialogContent className="max-w-[425px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {placeName}'s Secondary {capitalizedName} Links
