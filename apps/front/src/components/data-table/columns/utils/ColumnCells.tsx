@@ -1,5 +1,6 @@
 import { TextWrapper } from '@/components/common/TextWrapper'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import { formatPhoneNumberWithCountry } from '@/lib/utils/phone-utils'
 import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
 import type { Note, SearchResult } from '@ritchy/types'
 import React from 'react'
@@ -46,7 +47,7 @@ export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-[200px]"
+      className="text-blue-600 hover:text-blue-800 hover:underline block w-full overflow-hidden text-ellipsis whitespace-nowrap px-2 py-1 rounded transition-colors"
       onClick={(e) => e.stopPropagation()}
       title={content || undefined}
     >
@@ -164,6 +165,8 @@ export const PhoneCell = ({
     window.open(`tel:${content}`, '_blank')
   }
 
+  const formattedPhoneWithCountry = formatPhoneNumberWithCountry(content)
+
   return (
     <TextWrapper
       id={id}
@@ -187,6 +190,7 @@ export const PhoneCell = ({
           label: 'WhatsApp',
         },
       ]}
+      customTooltipContent={formattedPhoneWithCountry}
     >
       <span
         className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"

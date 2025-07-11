@@ -34,7 +34,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
     ]
 
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col gap-4">
         {allEmails.map((email, index) => (
           <div
             key={`${place.id}-email-${index}`}
@@ -55,47 +55,73 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
     )
   }
 
-  // helper function to create social entries, the isPrimary is handled in the map function
-  const createSocialEntries = (
-    primaryField: string | null,
-    secondaryField: string[] | null,
-    platform: string,
-  ) => {
-    const entries = []
-    if (primaryField) {
-      entries.push({ url: primaryField, platform, isPrimary: true })
-    }
-    if (secondaryField) {
-      entries.push(
-        ...secondaryField.map((url) => ({ url, platform, isPrimary: false })),
-      )
-    }
-    return entries
-  }
-
   const renderSocialSection = () => {
-    const allSocials = [
-      ...createSocialEntries(
-        place.primaryLinkedinSocial,
-        place.secondaryLinkedinSocials,
-        'LinkedIn',
-      ),
-      ...createSocialEntries(
-        place.primaryFacebookSocial,
-        place.secondaryFacebookSocials,
-        'Facebook',
-      ),
-      ...createSocialEntries(
-        place.primaryInstagramSocial,
-        place.secondaryInstagramSocials,
-        'Instagram',
-      ),
-      ...createSocialEntries(
-        place.primaryTwitterSocial,
-        place.secondaryTwitterSocials,
-        'Twitter',
-      ),
+    // Collect all primary socials first
+    const primarySocials = [
+      ...(place.primaryLinkedinSocial
+        ? [
+            {
+              url: place.primaryLinkedinSocial,
+              platform: 'LinkedIn',
+              isPrimary: true,
+            },
+          ]
+        : []),
+      ...(place.primaryFacebookSocial
+        ? [
+            {
+              url: place.primaryFacebookSocial,
+              platform: 'Facebook',
+              isPrimary: true,
+            },
+          ]
+        : []),
+      ...(place.primaryInstagramSocial
+        ? [
+            {
+              url: place.primaryInstagramSocial,
+              platform: 'Instagram',
+              isPrimary: true,
+            },
+          ]
+        : []),
+      ...(place.primaryTwitterSocial
+        ? [
+            {
+              url: place.primaryTwitterSocial,
+              platform: 'Twitter',
+              isPrimary: true,
+            },
+          ]
+        : []),
     ]
+
+    // Then collect all secondary socials
+    const secondarySocials = [
+      ...(place.secondaryLinkedinSocials || []).map((url) => ({
+        url,
+        platform: 'LinkedIn',
+        isPrimary: false,
+      })),
+      ...(place.secondaryFacebookSocials || []).map((url) => ({
+        url,
+        platform: 'Facebook',
+        isPrimary: false,
+      })),
+      ...(place.secondaryInstagramSocials || []).map((url) => ({
+        url,
+        platform: 'Instagram',
+        isPrimary: false,
+      })),
+      ...(place.secondaryTwitterSocials || []).map((url) => ({
+        url,
+        platform: 'Twitter',
+        isPrimary: false,
+      })),
+    ]
+
+    // Combine primary first, then secondary
+    const allSocials = [...primarySocials, ...secondarySocials]
 
     return (
       <div className="grid grid-cols-2 gap-4">
