@@ -47,75 +47,61 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
 
   const startTime = Date.now()
 
-  try {
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
-        'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
-        Referer: GOOGLE_MAPS_CONFIG.REFERRER,
-      },
-    })
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
+      'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
+      Referer: GOOGLE_MAPS_CONFIG.REFERRER,
+    },
+  })
 
-    if (!response.ok) {
-      const errorData = await response.json()
+  if (!response.ok) {
+    const errorData = await response.json()
 
-      // Check if it's a 404 (place not found) or similar error
-      if (response.status === 404) {
-        logger.info({
-          msg: 'Place not found in Google API - marking as deleted',
-          event: 'google_place_not_found',
-          metadata: {
-            placeId,
-            statusCode: response.status,
-            durationMs: Date.now() - startTime,
-          },
-        })
-        throw new Error('PLACE_NOT_FOUND')
-      }
-
-      logger.error({
-        msg: 'Google API Error Details',
-        event: 'google_api_error',
+    // Check if it's a 404 (place not found) or similar error
+    if (response.status === 404) {
+      logger.info({
+        msg: 'Place not found in Google API',
+        event: 'google_place_not_found',
         metadata: {
-          errorData,
           placeId,
+          errorData,
           statusCode: response.status,
           durationMs: Date.now() - startTime,
         },
       })
-      throw new Error(
-        `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
-      )
+      await redisClient.markAsDeleted(placeId)
+      throw new Error('PLACE_NOT_FOUND')
     }
 
-    const endTime = Date.now()
-
-    logger.info({
-      msg: 'Google Place Details API call successful - BILLABLE REQUEST UNIT',
-      event: 'google_place_details_api_billable',
-      metadata: {
-        placeId,
-        durationMs: endTime - startTime,
-      },
-    })
-
-    return response.json()
-  } catch (error) {
-    const endTime = Date.now()
-
     logger.error({
-      msg: 'Google Place Details API call failed',
-      event: 'google_place_details_api_failure',
+      msg: 'Google API Error Details',
+      event: 'google_api_error',
       metadata: {
+        errorData,
         placeId,
-        durationMs: endTime - startTime,
-        error,
+        statusCode: response.status,
+        durationMs: Date.now() - startTime,
       },
     })
-
-    throw error
+    throw new Error(
+      `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
+    )
   }
+
+  const endTime = Date.now()
+
+  logger.info({
+    msg: 'Google Place Details API call successful - BILLABLE REQUEST UNIT',
+    event: 'google_place_details_api_billable',
+    metadata: {
+      placeId,
+      durationMs: endTime - startTime,
+    },
+  })
+
+  return response.json()
 }
 
 export async function getPlaceDetailsV1(
@@ -220,43 +206,25 @@ export async function getPlaceDetailsV1(
 
     return { ...result, fromCache: false }
   } catch (error) {
-    // If place is not found, mark existing cache as deleted
+    logger.info({
+      msg: 'Error fetching place details',
+      event: 'place_details_fetch_error',
+      metadata: { placeId, error },
+    })
+
     if (error instanceof Error && error.message === 'PLACE_NOT_FOUND') {
       if (cachedData) {
-        // Mark existing cache as deleted
         await redisClient.markAsDeleted(key)
-
-        const result = mapToPlaceDetails(cachedData.data)
-        if (result.openingHours) {
-          result.openingHours.openNow = calculateOpenNow(
-            result.openingHours,
-            result.utcOffsetMinutes,
-          )
-        }
-
         logger.info({
           msg: 'Marked existing place as deleted',
           event: 'place_details_marked_deleted',
           metadata: { placeId },
         })
-
-        return {
-          ...result,
-          fromCache: true,
-          is_deleted: true,
-        }
       }
-
-      logger.info({
-        msg: 'Created deleted place entry',
-        event: 'place_details_created_deleted',
-        metadata: { placeId },
-      })
     }
 
-    // If we have cached data but API failed, return cached data
     if (cachedData) {
-      logger.warn({
+      logger.info({
         msg: 'API failed, returning cached data as fallback',
         event: 'place_details_api_fallback',
         metadata: {
