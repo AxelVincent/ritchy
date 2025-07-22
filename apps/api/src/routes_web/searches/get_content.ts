@@ -1,18 +1,18 @@
 import { logger } from '@ritchy/logger'
 import type { GetSearchContentApiResponse } from '@ritchy/types'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
-import { search } from '../../db/schema'
+import { place, search, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
 import { REDIS_KEYS } from '../../external/redis/keys'
-import { redisClient } from '../../external/redis/redis'
+import { createRedisClient, redisClient } from '../../external/redis/redis'
 import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
-  res: Response<GetSearchContentApiResponse>,
+  res: Response<GetSearchContentApiResponse>
 ): Promise<void> => {
   try {
     const searchId = req.params.id
@@ -25,19 +25,17 @@ export const getSearchContent = async (
 
     if (!result) {
       res.status(404).json({
-        error: 'Search not found',
+        error: 'Search not found'
       })
       return
     }
 
-    const key = REDIS_KEYS.search(searchId)
-    let cachedResults = await redisClient.get<string[]>(key)
+    const searchPlaces = await db
+      .select()
+      .from(searchPlace)
+      .where(and(eq(searchPlace.searchId, searchId)))
 
-    if (
-      !cachedResults ||
-      !cachedResults.data ||
-      cachedResults.data.length === 0
-    ) {
+    if (!searchPlaces || searchPlaces.length === 0) {
       logger.info({
         msg: 'No cached search results, fetching from Google Maps and caching',
         event: 'no_cached_search_results',
@@ -46,59 +44,110 @@ export const getSearchContent = async (
           userId,
           model: result.model,
           keyword: result.keyword,
-          rectangle: result.rectangle,
-        },
+          rectangle: result.rectangle
+        }
       })
       const freshResults = await postTextSearchV1({
         model: result.model,
         textQuery: result.keyword,
-        rectangle: result.rectangle,
+        rectangle: result.rectangle
       })
 
-      // Store only the place IDs in the search cache
-      const placeIds = freshResults.map((place) => place.id)
-      await redisClient.set(key, placeIds)
+      const places = await db
+        .insert(place)
+        .values(
+          freshResults.map((place) => ({
+            source: 'google' as const,
+            sourceId: place.sourceId
+          }))
+        )
+        .returning({ id: place.id })
+        .onConflictDoUpdate({
+          target: place.sourceId,
+          set: {
+            source: sql`excluded.source`,
+            sourceId: sql`excluded.source_id`
+          }
+        })
+      logger.info({
+        msg: 'Places inserted',
+        event: 'places_inserted',
+        metadata: {
+          places: places.length
+        }
+      })
+      const userPlaces = await db
+        .insert(userPlace)
+        .values(
+          places.map((place) => ({
+            userId,
+            placeId: place.id
+          }))
+        )
+        .returning({ id: userPlace.id })
+        .onConflictDoUpdate({
+          target: [userPlace.userId, userPlace.placeId],
+          set: {
+            placeId: sql`excluded.place_id`,
+            userId: sql`excluded.user_id`
+          }
+        })
+
+      logger.info({
+        msg: 'User places inserted',
+        event: 'user_places_inserted',
+        metadata: {
+          userPlaces: userPlaces.length
+        }
+      })
+      await db.insert(searchPlace).values(
+        userPlaces.map((userPlace) => ({
+          searchId,
+          userPlaceId: userPlace.id
+        }))
+      )
     }
 
-    cachedResults = await redisClient.get<string[]>(key)
-    if (!cachedResults || !cachedResults.data) {
+    const cachedResults = await db
+      .select()
+      .from(searchPlace)
+      .innerJoin(userPlace, eq(searchPlace.userPlaceId, userPlace.id))
+      .where(eq(searchPlace.searchId, searchId))
+
+    if (!cachedResults || cachedResults.length === 0) {
       logger.error({
         msg: 'No cached results found after fetch',
         event: 'no_cached_results_found',
         metadata: {
           searchId,
           userId,
-          cacheKey: key,
           retryAttempt: 'second_attempt_after_fetch',
           searchModel: result.model,
-          searchKeyword: result.keyword,
-        },
+          searchKeyword: result.keyword
+        }
       })
       res.status(500).json({ error: 'Failed to get search content' })
       return
     }
 
     // Convert place IDs to the format expected by the shared utility
-    const placesWithSearchIds = cachedResults.data.map((placeId) => ({
-      placeId,
-      searchId,
-    }))
+    const userPlaceIds = cachedResults.map((result) => result.user_place.id)
 
     // Use shared utility to get place details and aggregate data
     const { places: aggregatedResults } = await getPlacesWithDetails(
-      placesWithSearchIds,
+      userPlaceIds,
       {
         userId,
-        includeEnrichment: true,
-      },
+        includeEnrichment: true
+      }
     )
 
     logger.info({
       msg: 'Get search content',
       event: 'get_search_content',
       metadata: {
-        results: aggregatedResults.length,
-      },
+        results: aggregatedResults.length
+      }
     })
     res.json(aggregatedResults)
     return
@@ -107,11 +156,11 @@ export const getSearchContent = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error },
+        metadata: { error }
       })
       res.status(400).json({
         error: 'Invalid request data',
-        details: error.errors,
+        details: error.errors
       })
       return
     }
@@ -125,8 +174,8 @@ export const getSearchContent = async (
         searchId: req.params.id,
         userId: req.auth.userId,
         errorType: error?.constructor?.name,
-        errorKeys: error ? Object.keys(error) : [],
-      },
+        errorKeys: error ? Object.keys(error) : []
+      }
     })
     res.status(500).json({ error: 'Failed to get search content' })
     return

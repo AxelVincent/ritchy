@@ -9,7 +9,7 @@ export const ListResponseSchema = z.object({
   emoji: z.string(),
   itemCount: z.number(),
   createdAt: z.string(),
-  updatedAt: z.string(),
+  updatedAt: z.string()
 })
 
 export const ListsResponseSchema = z.array(ListResponseSchema)
@@ -20,45 +20,44 @@ export const GetListContentResponseSchema = z.object({
   emoji: z.string(),
   items: z.array(PlaceSchema),
   createdAt: z.string(),
-  updatedAt: z.string(),
+  updatedAt: z.string()
 })
 
 // Request Schemas
 export const UpsertListRequestSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1),
-  emoji: z.string().min(1),
+  emoji: z.string().min(1)
 })
 
 export const AddItemsToListRequestBodySchema = z.object({
   items: z.array(
     z.object({
-      placeId: z.string(),
-      searchId: z.string().uuid().nullable(),
-    }),
-  ),
+      userPlaceId: z.string()
+    })
+  )
 })
 
 export const AddItemsToListRequestParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid()
 })
 
 export const AddItemsToListRequestSchema = z.object({
   ...AddItemsToListRequestParamsSchema.shape,
-  ...AddItemsToListRequestBodySchema.shape,
+  ...AddItemsToListRequestBodySchema.shape
 })
 
 export const DeleteItemsFromListRequestBodySchema = z.object({
-  items: z.array(z.string()),
+  items: z.array(z.string())
 })
 
 export const DeleteItemsFromListRequestParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid()
 })
 
 export const DeleteItemsFromListRequestSchema = z.object({
   ...DeleteItemsFromListRequestParamsSchema.shape,
-  ...DeleteItemsFromListRequestBodySchema.shape,
+  ...DeleteItemsFromListRequestBodySchema.shape
 })
 
 // Response Schemas with Error Handling
@@ -67,57 +66,57 @@ export const UpsertListResponseSchema = z.object({
   name: z.string(),
   emoji: z.string(),
   createdAt: z.string(),
-  updatedAt: z.string(),
+  updatedAt: z.string()
 })
 
 export const DeleteItemsFromListResponseSchema = z.object({
-  success: z.boolean(),
+  success: z.boolean()
 })
 
 export const AddItemsToListResponseSchema = z.object({
   success: z.boolean(),
   duplicates: z.array(z.number()),
-  added: z.array(z.number()),
+  added: z.array(z.number())
 })
 
 // API Union Types
 export const GetListContentApiResponseSchema = z.union([
   GetListContentResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export const AddItemsToListApiResponseSchema = z.union([
   AddItemsToListResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export const UpsertListApiResponseSchema = z.union([
   UpsertListResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export const ListsApiResponseSchema = z.union([
   ListsResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export const DeleteItemsFromListApiResponseSchema = z.union([
   DeleteItemsFromListResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 // Add these new schemas
 export const DeleteListRequestParamsSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().uuid()
 })
 
 export const DeleteListResponseSchema = z.object({
-  success: z.boolean(),
+  success: z.boolean()
 })
 
 export const DeleteListApiResponseSchema = z.union([
   DeleteListResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 // Type Inferences

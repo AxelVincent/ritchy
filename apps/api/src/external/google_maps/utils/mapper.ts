@@ -3,12 +3,12 @@ import type { GooglePlacesTextSearchResponse, PreferredPlace } from './../types'
 
 const objectMapper = (place: PreferredPlace) => {
   return {
-    id: place.id,
+    sourceId: place.id,
     website: place.websiteUri || '',
     name: place.displayName?.text || '',
     location: {
       latitude: place.location?.latitude || 0,
-      longitude: place.location?.longitude || 0,
+      longitude: place.location?.longitude || 0
     },
     types: place.types || [],
     primaryType: place.primaryType,
@@ -27,64 +27,66 @@ const objectMapper = (place: PreferredPlace) => {
       shortFormattedAddress: place.shortFormattedAddress || '',
       country:
         place.addressComponents?.find((component) =>
-          component.types.includes('country'),
+          component.types.includes('country')
         )?.longText || '',
       locality:
         place.addressComponents?.find((component) =>
-          component.types.includes('locality'),
+          component.types.includes('locality')
         )?.longText || '',
       sublocality:
         place.addressComponents?.find((component) =>
-          component.types.includes('sublocality'),
+          component.types.includes('sublocality')
         )?.longText || '',
       postalCode:
         place.addressComponents?.find((component) =>
-          component.types.includes('postal_code'),
+          component.types.includes('postal_code')
         )?.longText || '',
       postalCodeSuffix:
         place.addressComponents?.find((component) =>
-          component.types.includes('postal_code_suffix'),
+          component.types.includes('postal_code_suffix')
         )?.longText || '',
       plusCode:
         place.addressComponents?.find((component) =>
-          component.types.includes('plus_code'),
+          component.types.includes('plus_code')
         )?.longText || '',
       street:
         place.addressComponents?.find((component) =>
-          component.types.includes('route'),
+          component.types.includes('route')
         )?.longText || '',
       streetNumber:
         place.addressComponents?.find((component) =>
-          component.types.includes('street_number'),
+          component.types.includes('street_number')
         )?.longText || '',
       neighborhood:
         place.addressComponents?.find((component) =>
-          component.types.includes('neighborhood'),
+          component.types.includes('neighborhood')
         )?.longText || '',
       administrativeAreaLevel1:
         place.addressComponents?.find((component) =>
-          component.types.includes('administrative_area_level_1'),
+          component.types.includes('administrative_area_level_1')
         )?.longText || '',
       administrativeAreaLevel2:
         place.addressComponents?.find((component) =>
-          component.types.includes('administrative_area_level_2'),
+          component.types.includes('administrative_area_level_2')
         )?.longText || '',
       administrativeAreaLevel3:
         place.addressComponents?.find((component) =>
-          component.types.includes('administrative_area_level_3'),
-        )?.longText || '',
-    },
+          component.types.includes('administrative_area_level_3')
+        )?.longText || ''
+    }
   }
 }
 
 export function mapToPlacesSearchResult(
-  response: GooglePlacesTextSearchResponse,
-): PlaceBase[] {
+  response: GooglePlacesTextSearchResponse
+): Omit<PlaceBase, 'id'>[] {
   if (!response.places) return []
 
   return response.places.map(objectMapper)
 }
 
-export function mapToPlaceDetails(place: PreferredPlace): PlaceBase {
+export function mapToPlaceDetails(
+  place: PreferredPlace
+): Omit<PlaceBase, 'id'> {
   return objectMapper(place)
 }

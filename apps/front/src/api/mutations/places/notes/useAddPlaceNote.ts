@@ -6,7 +6,7 @@ import type {
   AddNoteRequest,
   GetListContentResponse,
   GetSearchContentResponse,
-  Note,
+  Note
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -15,24 +15,19 @@ export const useAddPlaceNote = () => {
 
   return useApiMutation<
     AddNoteApiResponse,
-    AddNoteRequest & { searchId: string | null; listId: string | null }
-  >('/places/:placeId/notes', {
-    getEndpoint: ({ placeId }) => `/places/${placeId}/notes`,
+    AddNoteRequest & { listId: string | null }
+  >('/places/:userPlaceId/notes', {
+    getEndpoint: ({ userPlaceId }) => `/places/${userPlaceId}/notes`,
     getBody: ({ note }) => ({ note }),
-    onMutate: async ({ placeId, note, searchId, listId }) => {
+    onMutate: async ({ userPlaceId, note, listId }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: ['notes', 'place', placeId],
-        exact: true,
+        queryKey: ['notes', 'place', userPlaceId],
+        exact: true
       })
-      if (searchId) {
-        await queryClient.cancelQueries({
-          queryKey: searchContentKeys.search(searchId),
-        })
-      }
       if (listId) {
         await queryClient.cancelQueries({
-          queryKey: listContentKeys.list(listId),
+          queryKey: listContentKeys.list(listId)
         })
       }
 
@@ -40,52 +35,29 @@ export const useAddPlaceNote = () => {
       const previousNotes = queryClient.getQueryData<Note[]>([
         'notes',
         'place',
-        placeId,
+        userPlaceId
       ])
-      const previousSearch = searchId
-        ? queryClient.getQueryData<GetSearchContentResponse>(
-            searchContentKeys.search(searchId),
-          )
-        : undefined
       const previousList = listId
         ? queryClient.getQueryData<GetListContentResponse>(
-            listContentKeys.list(listId),
+            listContentKeys.list(listId)
           )
         : undefined
 
       // Create optimistic note
       const optimisticNote: Note = {
         id: `temp-${Date.now()}`,
-        placeId,
+        userPlaceId,
         note,
         userId: 'current-user',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
 
       // Update notes query
       queryClient.setQueryData<Note[]>(
-        ['notes', 'place', placeId],
-        (old = []) => [optimisticNote, ...old],
+        ['notes', 'place', userPlaceId],
+        (old = []) => [optimisticNote, ...old]
       )
-
-      // Update search results if applicable
-      if (previousSearch && searchId) {
-        queryClient.setQueryData(
-          searchContentKeys.search(searchId),
-          (oldData: GetSearchContentResponse) => {
-            return oldData.map((place) => {
-              if (place.id === placeId) {
-                return {
-                  ...place,
-                  notes: [optimisticNote, ...(place.notes || [])],
-                }
-              }
-              return place
-            })
-          },
-        )
-      }
 
       // Update list content if applicable
       if (previousList && listId) {
@@ -95,20 +67,20 @@ export const useAddPlaceNote = () => {
             return {
               ...oldData,
               items: oldData.items.map((place) => {
-                if (place.id === placeId) {
+                if (place.id === userPlaceId) {
                   return {
                     ...place,
-                    notes: [optimisticNote, ...(place.notes || [])],
+                    notes: [optimisticNote, ...(place.notes || [])]
                   }
                 }
                 return place
-              }),
+              })
             }
-          },
+          }
         )
       }
 
-      return { previousNotes, previousSearch, previousList, searchId, listId }
+      return { previousNotes, previousList, listId }
     },
     onError: (_, variables, context: unknown) => {
       const typedContext = context as {
@@ -122,29 +94,29 @@ export const useAddPlaceNote = () => {
       // Rollback all optimistic updates on error
       if (typedContext.previousNotes) {
         queryClient.setQueryData(
-          ['notes', 'place', variables.placeId],
-          typedContext.previousNotes,
+          ['notes', 'place', variables.userPlaceId],
+          typedContext.previousNotes
         )
       }
       if (typedContext.searchId) {
         queryClient.setQueryData(
           searchContentKeys.search(typedContext.searchId),
-          typedContext.previousSearch,
+          typedContext.previousSearch
         )
       }
       if (typedContext.listId) {
         queryClient.setQueryData(
           listContentKeys.list(typedContext.listId),
-          typedContext.previousList,
+          typedContext.previousList
         )
       }
     },
-    onSuccess: (_, { placeId }) => {
+    onSuccess: (_, { userPlaceId }) => {
       // Invalidate the notes query to get the real server data
       queryClient.invalidateQueries({
-        queryKey: ['notes', 'place', placeId],
-        exact: true,
+        queryKey: ['notes', 'place', userPlaceId],
+        exact: true
       })
-    },
+    }
   })
 }

@@ -3,7 +3,7 @@ import { logger } from '@ritchy/logger'
 import {
   type HubspotLeadStatus,
   type InternalLeadStatus,
-  LEAD_STATUS_MAPPING,
+  LEAD_STATUS_MAPPING
 } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -46,13 +46,13 @@ export type HubSpotWebhookEvent = {
  */
 const verifyHubSpotSignature = (
   req: Request,
-  clientSecret: string,
+  clientSecret: string
 ): boolean => {
   // Temporary bypass for development
   if (process.env.NODE_ENV === 'development') {
     logger.warn({
       msg: 'SKIPPING signature verification in development mode',
-      event: 'webhook_signature_bypass',
+      event: 'webhook_signature_bypass'
     })
     return true
   }
@@ -66,7 +66,7 @@ const verifyHubSpotSignature = (
     logger.error({
       msg: 'Timestamp is invalid',
       event: 'webhook_invalid_timestamp',
-      metadata: { timestamp, currentTime },
+      metadata: { timestamp, currentTime }
     })
     return false
   }
@@ -90,8 +90,8 @@ const verifyHubSpotSignature = (
       timestamp,
       bodyString,
       rawString,
-      signature,
-    },
+      signature
+    }
   })
 
   // Create HMAC SHA-256 hash
@@ -102,7 +102,7 @@ const verifyHubSpotSignature = (
 
   const isValid = crypto.timingSafeEqual(
     Buffer.from(hashedString),
-    Buffer.from(signature),
+    Buffer.from(signature)
   )
 
   if (!isValid) {
@@ -120,9 +120,9 @@ const verifyHubSpotSignature = (
           uri,
           bodyString,
           timestamp,
-          rawString,
-        },
-      },
+          rawString
+        }
+      }
     })
   }
 
@@ -131,7 +131,7 @@ const verifyHubSpotSignature = (
 
 export const hubspotWebhook = async (
   req: Request,
-  res: Response<WebhookResponse>,
+  res: Response<WebhookResponse>
 ): Promise<void> => {
   // Parse the raw body to JSON
   const body = Buffer.isBuffer(req.body)
@@ -150,8 +150,8 @@ export const hubspotWebhook = async (
       events,
       eventCount: events.length,
       eventTypes: events.map((e) => e.subscriptionType),
-      webhookKey: res.locals.webhookKey,
-    },
+      webhookKey: res.locals.webhookKey
+    }
   })
 
   const signature = req.headers['x-hubspot-signature-v3'] as string
@@ -159,11 +159,11 @@ export const hubspotWebhook = async (
   if (!signature) {
     logger.error({
       msg: 'Missing HubSpot signature header',
-      event: 'webhook_missing_signature',
+      event: 'webhook_missing_signature'
     })
     res.status(400).json({
       error: 'Missing signature',
-      message: 'Missing X-HubSpot-Signature-v3 header',
+      message: 'Missing X-HubSpot-Signature-v3 header'
     })
     return
   }
@@ -176,12 +176,12 @@ export const hubspotWebhook = async (
         msg: 'Invalid HubSpot webhook signature',
         event: 'webhook_invalid_signature',
         metadata: {
-          signatureHeader: signature,
-        },
+          signatureHeader: signature
+        }
       })
       res.status(400).json({
         error: 'Invalid signature',
-        message: 'Webhook signature verification failed',
+        message: 'Webhook signature verification failed'
       })
       return
     }
@@ -193,7 +193,7 @@ export const hubspotWebhook = async (
           return {
             status: 'skipped',
             eventId: event.eventId,
-            webhookId: event.eventId,
+            webhookId: event.eventId
           }
         }
 
@@ -202,26 +202,26 @@ export const hubspotWebhook = async (
           logger.error({
             msg: 'No HubSpot token found for portal',
             event: 'hubspot_token_not_found',
-            metadata: { portalId: event.portalId },
+            metadata: { portalId: event.portalId }
           })
           return {
             status: 'token_not_found',
             eventId: event.eventId,
-            webhookId: event.eventId,
+            webhookId: event.eventId
           }
         }
 
         const { record, isDuplicate } = await validateWebhookIdempotency(
           req.headers,
           event,
-          event.subscriptionType,
+          event.subscriptionType
         )
 
         if (isDuplicate) {
           return {
             status: 'already_processed',
             eventId: event.eventId,
-            webhookId: record.id,
+            webhookId: record.id
           }
         }
 
@@ -240,19 +240,19 @@ export const hubspotWebhook = async (
                       timestamp: new Date(),
                       ipAddress: req.ip ?? '',
                       userAgent: String(req.headers['user-agent'] ?? ''),
-                      requestId: String(req.headers['x-request-id'] ?? ''),
-                    },
+                      requestId: String(req.headers['x-request-id'] ?? '')
+                    }
                   },
                   batchId,
                   contactId: event.objectId.toString(),
-                  event,
+                  event
                 })
                 logger.info({
                   msg: 'Processing object property change event',
                   event: 'object_property_change_event_processing',
                   metadata: {
-                    event,
-                  },
+                    event
+                  }
                 })
               }
               break
@@ -266,8 +266,8 @@ export const hubspotWebhook = async (
                 msg: 'Processing contact deletion event',
                 event: 'contact_deletion_event_processing',
                 metadata: {
-                  event,
-                },
+                  event
+                }
               })
               break
             default:
@@ -275,15 +275,15 @@ export const hubspotWebhook = async (
                 msg: `Unsupported event type: ${event.subscriptionType}`,
                 event: 'unsupported_event_type',
                 metadata: {
-                  event,
-                },
+                  event
+                }
               })
               break
           }
           return {
             status: 'processed',
             eventId: event.eventId,
-            webhookId: record.id,
+            webhookId: record.id
           }
         } catch (error) {
           // Update webhook record if processing failed
@@ -291,13 +291,13 @@ export const hubspotWebhook = async (
             .update(webhookEvent)
             .set({
               status: 'failed',
-              error: error instanceof Error ? error.message : String(error),
+              error: error instanceof Error ? error.message : String(error)
             })
             .where(eq(webhookEvent.id, record.id))
 
           throw error
         }
-      }),
+      })
     )
 
     logger.info({
@@ -310,13 +310,13 @@ export const hubspotWebhook = async (
         results: results.map((r) => ({
           eventId: r.eventId,
           status: r.status,
-          webhookId: r.webhookId,
-        })),
-      },
+          webhookId: r.webhookId
+        }))
+      }
     })
 
     res.json({
-      received: true,
+      received: true
     })
   } catch (err) {
     logger.error({
@@ -328,14 +328,14 @@ export const hubspotWebhook = async (
             ? {
                 message: err.message,
                 name: err.name,
-                stack: err.stack,
+                stack: err.stack
               }
-            : err,
-      },
+            : err
+      }
     })
     res.status(500).json({
       error: 'Webhook processing failed',
-      message: 'Error processing webhook',
+      message: 'Error processing webhook'
     })
   }
 }

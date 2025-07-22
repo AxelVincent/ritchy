@@ -12,8 +12,7 @@ import { getSecondaryEmailsByPlaceIds } from './contacts/queries/get_secondary_e
 import { groupSecondarySocialsByPlace } from './group_secondary_socials_by_place'
 import { getNotesByPlaceIds } from './notes/getNotesByPlaceIds'
 import { getStatusByPlaceIds } from './status/getStatusByPlaceIds'
-
-type PlaceWithSearchId = PlaceBase & { searchId?: string | null }
+import type { PlaceDetailsOptimized } from '../../external/google_maps/place_details_optimized'
 
 export interface AggregatePlaceDataOptions {
   userId: string
@@ -26,47 +25,89 @@ export interface AggregatePlaceDataOptions {
  * Aggregates place data by joining information from different sources
  */
 export const aggregatePlaceData = async (
-  places: PlaceWithSearchId[],
-  options: AggregatePlaceDataOptions,
+  places: PlaceDetailsOptimized[],
+  options: AggregatePlaceDataOptions
 ): Promise<Place[]> => {
   const { userId, excludeListId, includeEnrichment = false, listId } = options
-  const placeIds = places.map((place) => place.id)
+  const userPlaceIds = places.map((place) => place.id)
 
-  // Create a map to store searchIds for each place
-  const searchIdMap = new Map(
-    places.filter((p) => p.searchId).map((p) => [p.id, p.searchId]),
-  )
   const listIdMap = listId
     ? new Map(places.map((p) => [p.id, listId]))
     : new Map()
 
   // Get associations, notes, and lead statuses for each place
   const associations = await getListAssociationsByPlaceIds(
-    placeIds,
+    userPlaceIds,
     userId,
-    excludeListId,
+    excludeListId
   )
-  const notes = await getNotesByPlaceIds(placeIds, userId)
-  const statuses = await getStatusByPlaceIds(placeIds, userId)
-  const primaryEmails = await getPrimaryEmailsByPlaceIds(placeIds, userId)
-  const secondaryEmails = await getSecondaryEmailsByPlaceIds(placeIds, userId)
-  const secondarySocials = await groupSecondarySocialsByPlace(placeIds, userId)
-  const hubspotSynced = await getHubspotSyncedByPlaceIds(placeIds, userId)
+  logger.info({
+    msg: 'List associations by place ids',
+    event: 'list_associations_by_place_ids',
+    metadata: {
+      associations
+    }
+  })
+  const notes = await getNotesByPlaceIds(userPlaceIds)
+  logger.info({
+    msg: 'Notes by place ids',
+    event: 'notes_by_place_ids',
+    metadata: {
+      notes
+    }
+  })
+  const statuses = await getStatusByPlaceIds(userPlaceIds)
+  logger.info({
+    msg: 'Statuses by place ids',
+    event: 'statuses_by_place_ids',
+    metadata: {
+      statuses
+    }
+  })
+  const primaryEmails = await getPrimaryEmailsByPlaceIds(userPlaceIds)
+  logger.info({
+    msg: 'Primary emails by place ids',
+    event: 'primary_emails_by_place_ids',
+    metadata: {
+      primaryEmails
+    }
+  })
+  const secondaryEmails = await getSecondaryEmailsByPlaceIds(userPlaceIds)
+  logger.info({
+    msg: 'Secondary emails by place ids',
+    event: 'secondary_emails_by_place_ids',
+    metadata: {
+      secondaryEmails
+    }
+  })
+  const secondarySocials = await groupSecondarySocialsByPlace(userPlaceIds)
+  logger.info({
+    msg: 'Secondary socials by place ids',
+    event: 'secondary_socials_by_place_ids',
+    metadata: {
+      secondarySocials
+    }
+  })
+  const hubspotSynced = await getHubspotSyncedByPlaceIds(userPlaceIds, userId)
+  logger.info({
+    msg: 'Hubspot synced by place ids',
+    event: 'hubspot_synced_by_place_ids',
+    metadata: {
+      hubspotSynced
+    }
+  })
 
   // Get all primary socials for all platforms in a single query
-  const primarySocialsByPlace = await getPrimarySocialsByPlaceIds(
-    placeIds,
-    userId,
-  )
+  const primarySocialsByPlace = await getPrimarySocialsByPlaceIds(userPlaceIds)
 
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, string>()
   if (includeEnrichment) {
-    enrichedPlaces = await getUserEnrichedPlaces(userId)
+    enrichedPlaces = await getUserEnrichedPlaces(userPlaceIds)
     logger.info({
       msg: 'Fetched enriched places data',
       event: 'enriched_places_fetched',
-      metadata: { count: enrichedPlaces.size },
+      metadata: { count: enrichedPlaces.size }
     })
   }
 
@@ -82,9 +123,8 @@ export const aggregatePlaceData = async (
       ...basePlace,
       lists: associations.get(basePlace.id) || [],
       notes: notes.get(basePlace.id) || [],
-      status: statuses.get(basePlace.id) || null,
+      status: statuses.get(basePlace.id)?.status || 'NEW',
       enrichment: null,
-      searchId: searchIdMap.get(basePlace.id) || null,
       listId: listIdMap.get(basePlace.id) || null,
       primaryEmail: primaryEmails.get(basePlace.id) || null,
       secondaryEmails: secondaryEmails.get(basePlace.id) || [],
@@ -96,7 +136,7 @@ export const aggregatePlaceData = async (
       secondaryFacebookSocials: secondaryPlaceSocials.get('facebook') || [],
       secondaryInstagramSocials: secondaryPlaceSocials.get('instagram') || [],
       secondaryTwitterSocials: secondaryPlaceSocials.get('twitter') || [],
-      hubspotSynced: hubspotSynced.get(basePlace.id) || false,
+      hubspotSynced: hubspotSynced.get(basePlace.id) || false
     }
   })
 
@@ -112,40 +152,40 @@ export const aggregatePlaceData = async (
           }
           const enrichmentData = await getOrFetchEnrichmentData(
             place.id,
-            website,
+            website
           )
           if (!enrichmentData) return { placeId: place.id, enrichment: null }
 
           const sanitizedData = sanitizeEnrichmentData(enrichmentData, place.id)
           const validatedEnrichment = EnrichResponseSchema.parse(sanitizedData)
           return { placeId: place.id, enrichment: validatedEnrichment }
-        }),
+        })
     )
 
     const enrichmentMap = new Map(
       enrichmentResults
         .filter(
           (
-            result,
+            result
           ): result is PromiseFulfilledResult<{
             placeId: string
             enrichment: EnrichResponse | null
           }> =>
-            result.status === 'fulfilled' && result.value.enrichment !== null,
+            result.status === 'fulfilled' && result.value.enrichment !== null
         )
         .map((result) => [
           result.value.placeId,
-          result.value.enrichment as EnrichResponse,
-        ]),
+          result.value.enrichment as EnrichResponse
+        ])
     )
 
     return initialAggregatedPlaces.map((place) =>
       enrichmentMap.has(place.id)
         ? {
             ...place,
-            enrichment: enrichmentMap.get(place.id) as EnrichResponse,
+            enrichment: enrichmentMap.get(place.id) as EnrichResponse
           }
-        : place,
+        : place
     )
   }
 

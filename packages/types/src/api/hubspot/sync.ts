@@ -3,19 +3,19 @@ import { ApiErrorResponseSchema } from '../../common'
 
 // Schema for the request
 export const syncPlaceBodySchema = z.object({
-  placeIds: z.array(z.string()),
+  userPlaceIds: z.array(z.string())
 })
 
 // Schema for the response
 export const syncPlaceResponseSchema = z.object({
   success: z.boolean(),
   companyIds: z.array(z.string()),
-  error: z.string().optional(),
+  error: z.string().optional()
 })
 
 export const syncPlaceApiResponseSchema = z.union([
   syncPlaceResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export type SyncPlaceBody = z.infer<typeof syncPlaceBodySchema>

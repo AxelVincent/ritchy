@@ -15,7 +15,7 @@ export function validateAndExportToCsv<T>({
   data,
   filename = 'export.csv',
   columns,
-  schema,
+  schema
 }: ExportOptions<SearchResult>) {
   // Validate all data
   const validatedData = data.map((item) =>
@@ -25,9 +25,9 @@ export function validateAndExportToCsv<T>({
         ...item.enrichment,
         id: item.id,
         emails: item.enrichment?.emails ?? [],
-        socialLinks: item.enrichment?.socialLinks ?? {},
-      },
-    }),
+        socialLinks: item.enrichment?.socialLinks ?? {}
+      }
+    })
   )
 
   // If no columns provided, use default object keys
@@ -35,7 +35,7 @@ export function validateAndExportToCsv<T>({
     columns ||
     Object.keys(validatedData[0]).map((key) => ({
       header: key,
-      accessor: (row: T) => row[key as keyof T],
+      accessor: (row: T) => row[key as keyof T]
     }))
 
   // Generate CSV content
@@ -85,8 +85,8 @@ export function validateAndExportToCsv<T>({
           // within the field must be escaped by doubling them
           return `"${value.replace(/"/g, '""')}"`
         })
-        .join(';'),
-    ),
+        .join(';')
+    )
   ]
 
   // Join rows with Windows-style line endings for better Excel compatibility

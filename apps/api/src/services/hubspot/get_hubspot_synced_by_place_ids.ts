@@ -4,8 +4,8 @@ import { hubspotLeadMapping } from '../../db/schema'
 import { getHubspotToken } from './queries/get_hubspot_token'
 
 export const getHubspotSyncedByPlaceIds = async (
-  placeIds: string[],
-  userId: string,
+  userPlaceIds: string[],
+  userId: string
 ): Promise<Map<string, boolean>> => {
   const token = await getHubspotToken(userId)
   if (!token) {
@@ -14,19 +14,14 @@ export const getHubspotSyncedByPlaceIds = async (
   const hubspotSyncedPlaces = await db
     .select()
     .from(hubspotLeadMapping)
-    .where(
-      and(
-        inArray(hubspotLeadMapping.placeId, placeIds),
-        eq(hubspotLeadMapping.tokenId, token.id),
-      ),
-    )
+    .where(inArray(hubspotLeadMapping.userPlaceId, userPlaceIds))
 
   const hubspotSyncedMap = new Map<string, boolean>()
 
-  for (const placeId of placeIds) {
+  for (const userPlaceId of userPlaceIds) {
     hubspotSyncedMap.set(
-      placeId,
-      hubspotSyncedPlaces.some((p) => p.placeId === placeId),
+      userPlaceId,
+      hubspotSyncedPlaces.some((p) => p.userPlaceId === userPlaceId)
     )
   }
 

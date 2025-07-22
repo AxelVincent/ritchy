@@ -2,40 +2,40 @@ import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
 export const NotesParamsSchema = z.object({
-  placeId: z.string(),
+  userPlaceId: z.string()
 })
 
 // Basic Schema
 export const NoteSchema = z.object({
   id: z.string().uuid(),
-  placeId: z.string(),
+  userPlaceId: z.string(),
   note: z.string(),
   userId: z.string(),
   createdAt: z.string(),
-  updatedAt: z.string(),
+  updatedAt: z.string()
 })
 
 export const NotesResponseSchema = z.array(NoteSchema)
 
 export const AddNoteBodySchema = z.object({
-  note: z.string().min(1),
+  note: z.string().min(1)
 })
 
 // Request Schemas
 export const AddNoteRequestSchema = z.intersection(
   NotesParamsSchema,
-  AddNoteBodySchema,
+  AddNoteBodySchema
 )
 
 // Response Schemas with Error Handling
 export const NotesApiResponseSchema = z.union([
   NotesResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export const AddNoteApiResponseSchema = z.union([
   NoteSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 // Type Inferences

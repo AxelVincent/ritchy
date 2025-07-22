@@ -40,13 +40,13 @@ import type {
   InferInsert,
   InferTable,
   TableName,
-  VersionContext,
+  VersionContext
 } from './types'
 import { getContextFromRequest } from './utils/helpers'
 
 // Transaction wrapper
 const withTransaction = async <T>(
-  operation: (db: PostgresJsDatabase<typeof schema>) => Promise<T>,
+  operation: (db: PostgresJsDatabase<typeof schema>) => Promise<T>
 ): Promise<T> => {
   return db.transaction(operation)
 }
@@ -72,7 +72,7 @@ export const createVersionedDb = (context: VersionContext) => {
     update: <T extends TableName>(
       table: T,
       data: PgUpdateSetSource<InferTable<T>>,
-      where: { id: string },
+      where: { id: string }
     ) => withTransaction((db) => operations.update(table, data, where, db)),
 
     delete: <T extends TableName>(table: T, where: { id: string }) =>
@@ -81,38 +81,38 @@ export const createVersionedDb = (context: VersionContext) => {
     bulkUpsert: <T extends TableName>(
       table: T,
       data: (InferInsert<T> & { id?: string })[],
-      conflictTarget: (keyof InferTable<T>)[],
+      conflictTarget: (keyof InferTable<T>)[]
     ) =>
       withTransaction((db) =>
-        operations.bulkUpsert(table, data, conflictTarget, db),
+        operations.bulkUpsert(table, data, conflictTarget, db)
       ),
 
     bulkDelete: <T extends TableName>(
       table: T,
       data: (Record<string, unknown> & { id?: string })[],
-      conflictTarget: (keyof InferTable<T>)[],
+      conflictTarget: (keyof InferTable<T>)[]
     ) =>
       withTransaction((db) =>
-        operations.bulkDelete(table, data, conflictTarget, db),
+        operations.bulkDelete(table, data, conflictTarget, db)
       ),
 
     upsert: <T extends TableName>(
       table: T,
       data: InferInsert<T>,
-      conflictTarget: (keyof InferTable<T>)[],
+      conflictTarget: (keyof InferTable<T>)[]
     ) =>
       withTransaction(async (db) => {
         const {
-          records: [record],
+          records: [record]
         } = await operations.bulkUpsert(table, [data], conflictTarget, db)
         return record
       }),
 
     transaction: <T>(
       fn: (
-        ops: typeof operations & { db: PostgresJsDatabase<typeof schema> },
-      ) => Promise<T>,
-    ) => withTransaction(async (db) => fn({ ...operations, db })),
+        ops: typeof operations & { db: PostgresJsDatabase<typeof schema> }
+      ) => Promise<T>
+    ) => withTransaction(async (db) => fn({ ...operations, db }))
   }
 }
 

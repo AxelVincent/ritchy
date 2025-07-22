@@ -43,21 +43,31 @@ const DELETED_TTL = 30 * 24 * 60 * 60 // 30 days for deleted items
  *
  * @returns Object containing Redis client and utility methods
  */
-const createRedisClient = () => {
+export const createRedisClient = ({
+  isPublic = false
+}: {
+  isPublic?: boolean
+}) => {
   // https://docs.railway.com/guides/private-networking#ioredis
-  const URL = `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
+  const URL = isPublic
+    ? `${REDIS_CONFIG.PUBLIC_URL}?family=0`
+    : `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
+
+  console.log('URL', isPublic, URL)
+
   const redis = new Redis(URL, {
     retryStrategy: (times) => {
       const delay = Math.min(times * 50, 2000)
       return delay
-    },
+    }
   })
 
   redis.on('error', (error) => {
+    console.log('error', isPublic, URL)
     logger.error({
       msg: 'Redis connection error',
       event: 'redis_error',
-      metadata: { error },
+      metadata: { error }
     })
   })
 
@@ -77,7 +87,7 @@ const createRedisClient = () => {
    */
   const get = async <T>(
     key: string,
-    prefix?: string,
+    prefix?: string
   ): Promise<CacheData<T> | null> => {
     const fullKey = prefix ? `${prefix}:${key}` : key
 
@@ -96,7 +106,7 @@ const createRedisClient = () => {
         logger.info({
           msg: 'Retrieved deleted data from cache',
           event: 'redis_deleted_data_retrieved',
-          metadata: { key: fullKey },
+          metadata: { key: fullKey }
         })
       }
 
@@ -110,7 +120,7 @@ const createRedisClient = () => {
       logger.error({
         msg: 'Failed to retrieve cached data using JSON module',
         event: 'redis_json_get_error',
-        metadata: { error, key: fullKey },
+        metadata: { error, key: fullKey }
       })
       return null
     }
@@ -125,7 +135,7 @@ const createRedisClient = () => {
   const set = async <T>(
     key: string,
     value: T,
-    options: CacheOptions = {},
+    options: CacheOptions = {}
   ): Promise<void> => {
     const { ttl = DEFAULT_TTL, prefix } = options
     const fullKey = prefix ? `${prefix}:${key}` : key
@@ -143,7 +153,7 @@ const createRedisClient = () => {
         updated_at: now,
         expires_at: expiresAt,
         // Preserve is_deleted flag if it exists and we're not explicitly updating
-        ...(existingData?.is_deleted && { is_deleted: false }),
+        ...(existingData?.is_deleted && { is_deleted: false })
       }
 
       // Use JSON.SET command from Redis JSON module
@@ -155,13 +165,13 @@ const createRedisClient = () => {
       logger.debug({
         msg: 'Data cached successfully',
         event: 'redis_data_cached',
-        metadata: { key: fullKey, ttl },
+        metadata: { key: fullKey, ttl }
       })
     } catch (error) {
       logger.error({
         msg: 'Failed to cache data using JSON module',
         event: 'redis_json_set_error',
-        metadata: { error, key: fullKey },
+        metadata: { error, key: fullKey }
       })
     }
   }
@@ -180,7 +190,7 @@ const createRedisClient = () => {
         logger.warn({
           msg: 'Attempted to mark non-existent key as deleted',
           event: 'redis_mark_deleted_not_found',
-          metadata: { key: fullKey },
+          metadata: { key: fullKey }
         })
         return
       }
@@ -189,7 +199,7 @@ const createRedisClient = () => {
         ...existingData,
         is_deleted: true,
         updated_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + DELETED_TTL * 1000).toISOString(),
+        expires_at: new Date(Date.now() + DELETED_TTL * 1000).toISOString()
       }
 
       await redis.call('JSON.SET', fullKey, '$', JSON.stringify(updatedData))
@@ -198,13 +208,13 @@ const createRedisClient = () => {
       logger.info({
         msg: 'Data marked as deleted',
         event: 'redis_data_marked_deleted',
-        metadata: { key: fullKey, ttl: DELETED_TTL },
+        metadata: { key: fullKey, ttl: DELETED_TTL }
       })
     } catch (error) {
       logger.error({
         msg: 'Failed to mark data as deleted',
         event: 'redis_mark_deleted_error',
-        metadata: { error, key: fullKey },
+        metadata: { error, key: fullKey }
       })
     }
   }
@@ -230,9 +240,8 @@ const createRedisClient = () => {
     get,
     set,
     markAsDeleted,
-    flush,
+    flush
   }
 }
 
-// Create singleton instance
-export const redisClient = createRedisClient()
+export const redisClient = createRedisClient({ isPublic: false })

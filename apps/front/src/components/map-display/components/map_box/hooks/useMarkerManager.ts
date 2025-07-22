@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react'
 import { MARKER_COLORS } from '../constants/markers'
 import {
   createActiveMarker,
-  createFilteredMarkerSvg,
+  createFilteredMarkerSvg
 } from '../place_marker/markerSvg'
 
 type MarkerState = {
@@ -43,8 +43,8 @@ const getColorWithCache = (status: string): string => {
           | 'INTERESTED'
           | 'WON'
           | 'LOST',
-        'hex',
-      ),
+        'hex'
+      )
     )
   }
   return colorCache.get(status) || MARKER_COLORS.DEFAULT
@@ -52,7 +52,7 @@ const getColorWithCache = (status: string): string => {
 
 const createMarker = (
   place: Place,
-  onClick: (placeId: string) => void,
+  onClick: (placeId: string) => void
 ): mapboxgl.Marker => {
   const markerElement = document.createElement('div')
   markerElement.classList.add('marker')
@@ -62,7 +62,7 @@ const createMarker = (
   const marker = new mapboxgl.Marker({
     element: markerElement,
     scale: 1,
-    offset: [0, -14],
+    offset: [0, -14]
   }).setLngLat([place.location.longitude, place.location.latitude])
 
   markerElement.addEventListener('click', () => {
@@ -75,22 +75,20 @@ const createMarker = (
 const computeMarkerState = (
   place: Place,
   isDisplayed: boolean,
-  selectedPlaceId: string | null,
+  selectedPlaceId: string | null
 ): MarkerState => ({
   isDisplayed,
   isSelectedPlace: place.id === selectedPlaceId,
-  color: place.status
-    ? getColorWithCache(place.status.status)
-    : MARKER_COLORS.DEFAULT,
+  color: place.status ? getColorWithCache(place.status) : MARKER_COLORS.DEFAULT,
   emoji: place.lists?.[0]?.emoji,
-  hasBadge: Boolean(place.lists && place.lists.length > 1),
+  hasBadge: Boolean(place.lists && place.lists.length > 1)
 })
 
 const updateMarkerVisuals = (
   marker: mapboxgl.Marker,
   newState: MarkerState,
   currentState: MarkerState,
-  place: Place,
+  place: Place
 ): void => {
   const element = marker.getElement()
   const hasStateChanged =
@@ -102,7 +100,7 @@ const updateMarkerVisuals = (
     ? createActiveMarker(
         newState.color,
         { lists: [{ emoji: place?.lists?.[0]?.emoji ?? '' }] } as Place,
-        newState.isSelectedPlace,
+        newState.isSelectedPlace
       )
     : createFilteredMarkerSvg()
 
@@ -119,7 +117,7 @@ const updateMarkerVisuals = (
 export const useMarkerManager = ({
   map,
   places,
-  displayedPlaceIds,
+  displayedPlaceIds
 }: UseMarkerManagerProps) => {
   const { setCenterPlaceSpreadsheetId, setSelectedPlaceId, selectedPlaceId } =
     useMapStore()
@@ -162,14 +160,17 @@ export const useMarkerManager = ({
         const newState = computeMarkerState(
           place,
           displayedPlaceIds.has(place.id),
-          selectedPlaceId,
+          selectedPlaceId
         )
 
         if (!markerRef) {
           // Create new marker
           const marker = createMarker(place, handleMarkerClick)
           marker.addTo(map)
-          markersRef.current.set(place.id, { marker, currentState: newState })
+          markersRef.current.set(place.id, {
+            marker,
+            currentState: newState
+          })
           updateMarkerVisuals(marker, newState, {} as MarkerState, place)
         } else {
           // Update existing marker
@@ -177,7 +178,7 @@ export const useMarkerManager = ({
             markerRef.marker,
             newState,
             markerRef.currentState,
-            place,
+            place
           )
           markerRef.currentState = newState
         }

@@ -11,7 +11,7 @@ import type * as schema from '../../../db/schema'
  */
 export const getPrimaryContactEmail = async (
   contactId: string,
-  tx?: PostgresJsDatabase<typeof schema>,
+  tx?: PostgresJsDatabase<typeof schema>
 ) => {
   const dbInstance = tx || db
 
@@ -21,8 +21,8 @@ export const getPrimaryContactEmail = async (
     .where(
       and(
         eq(contactEmail.contactId, contactId),
-        eq(contactEmail.isPrimary, true),
-      ),
+        eq(contactEmail.isPrimary, true)
+      )
     )
     .orderBy(desc(contactEmail.createdAt))
     .limit(1)

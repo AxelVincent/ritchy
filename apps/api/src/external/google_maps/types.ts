@@ -5,28 +5,28 @@ import {
   OpeningHoursSchema,
   PriceLevelEnum,
   PriceRangeSchema,
-  ReviewSchema,
+  ReviewSchema
 } from '@ritchy/types'
 import { z } from 'zod'
 
 const LocalizedTextSchema = z.object({
   text: z.string(),
-  languageCode: z.string(),
+  languageCode: z.string()
 })
 
 const PlusCodeSchema = z.object({
   globalCode: z.string(),
-  compoundCode: z.string().optional(),
+  compoundCode: z.string().optional()
 })
 
 const LatLngSchema = z.object({
   latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
+  longitude: z.number().min(-180).max(180)
 })
 
 const ViewportSchema = z.object({
   low: LatLngSchema,
-  high: LatLngSchema,
+  high: LatLngSchema
 })
 
 const PhotoSchema = z.object({
@@ -37,11 +37,11 @@ const PhotoSchema = z.object({
     z.object({
       displayName: z.string(),
       uri: z.string().optional(),
-      photoUri: z.string().optional(),
-    }),
+      photoUri: z.string().optional()
+    })
   ),
   flagContentUri: z.string().optional(),
-  googleMapsUri: z.string(),
+  googleMapsUri: z.string()
 })
 
 // First, define all known types as const arrays
@@ -65,7 +65,7 @@ const KNOWN_FUEL_TYPES = [
   'METHANE',
   'BIO_DIESEL',
   'TRUCK_DIESEL',
-  'DIESEL_PLUS',
+  'DIESEL_PLUS'
 ] as const
 
 const KNOWN_EV_CONNECTOR_TYPES = [
@@ -78,7 +78,7 @@ const KNOWN_EV_CONNECTOR_TYPES = [
   'EV_CONNECTOR_TYPE_CCS_COMBO_2',
   'EV_CONNECTOR_TYPE_TESLA',
   'EV_CONNECTOR_TYPE_UNSPECIFIED_GB_T',
-  'EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET',
+  'EV_CONNECTOR_TYPE_UNSPECIFIED_WALL_OUTLET'
 ] as const
 
 const KNOWN_SPATIAL_RELATIONSHIPS = [
@@ -88,14 +88,14 @@ const KNOWN_SPATIAL_RELATIONSHIPS = [
   'ACROSS_THE_ROAD',
   'DOWN_THE_ROAD',
   'AROUND_THE_CORNER',
-  'BEHIND',
+  'BEHIND'
 ] as const
 
 const KNOWN_CONTAINMENT_TYPES = [
   'CONTAINMENT_UNSPECIFIED',
   'WITHIN',
   'OUTSKIRTS',
-  'NEAR',
+  'NEAR'
 ] as const
 
 // Create types from the known values
@@ -111,8 +111,8 @@ const FuelTypeEnum = z.union([
     .string()
     .refine(
       (val): val is string => !KNOWN_FUEL_TYPES.includes(val as KnownFuelType),
-      'Unknown fuel type. This might be a new type from Google Maps API.',
-    ),
+      'Unknown fuel type. This might be a new type from Google Maps API.'
+    )
 ])
 
 const EVConnectorTypeEnum = z.union([
@@ -122,8 +122,8 @@ const EVConnectorTypeEnum = z.union([
     .refine(
       (val): val is string =>
         !KNOWN_EV_CONNECTOR_TYPES.includes(val as KnownEVConnectorType),
-      'Unknown EV connector type. This might be a new type from Google Maps API.',
-    ),
+      'Unknown EV connector type. This might be a new type from Google Maps API.'
+    )
 ])
 
 const SpatialRelationshipEnum = z.union([
@@ -133,8 +133,8 @@ const SpatialRelationshipEnum = z.union([
     .refine(
       (val): val is string =>
         !KNOWN_SPATIAL_RELATIONSHIPS.includes(val as KnownSpatialRelationship),
-      'Unknown spatial relationship. This might be a new type from Google Maps API.',
-    ),
+      'Unknown spatial relationship. This might be a new type from Google Maps API.'
+    )
 ])
 
 const ContainmentEnum = z.union([
@@ -144,14 +144,14 @@ const ContainmentEnum = z.union([
     .refine(
       (val): val is string =>
         !KNOWN_CONTAINMENT_TYPES.includes(val as KnownContainmentType),
-      'Unknown containment type. This might be a new type from Google Maps API.',
-    ),
+      'Unknown containment type. This might be a new type from Google Maps API.'
+    )
 ])
 
 const FuelPriceSchema = z.object({
   type: FuelTypeEnum,
   price: MoneySchema,
-  updateTime: z.string().datetime(),
+  updateTime: z.string().datetime()
 })
 
 const ConnectorAggregationSchema = z.object({
@@ -160,7 +160,7 @@ const ConnectorAggregationSchema = z.object({
   count: z.number().int(),
   availabilityLastUpdateTime: z.string().datetime(),
   availableCount: z.number().int(),
-  outOfServiceCount: z.number().int(),
+  outOfServiceCount: z.number().int()
 })
 
 const ContentBlockSchema = z.object({
@@ -168,8 +168,8 @@ const ContentBlockSchema = z.object({
   content: LocalizedTextSchema,
   references: z.object({
     reviews: z.array(ReviewSchema).optional(),
-    places: z.array(z.string()).optional(),
-  }),
+    places: z.array(z.string()).optional()
+  })
 })
 
 const LandmarkSchema = z.object({
@@ -179,14 +179,14 @@ const LandmarkSchema = z.object({
   types: z.array(z.string()),
   spatialRelationship: SpatialRelationshipEnum.optional(),
   straightLineDistanceMeters: z.number().optional(),
-  travelDistanceMeters: z.number().optional(),
+  travelDistanceMeters: z.number().optional()
 })
 
 const AreaSchema = z.object({
   name: z.string(),
   placeId: z.string(),
   displayName: LocalizedTextSchema,
-  containment: ContainmentEnum,
+  containment: ContainmentEnum
 })
 
 const GoogleMapsLinksSchema = z.object({
@@ -194,17 +194,17 @@ const GoogleMapsLinksSchema = z.object({
   placeUri: z.string().optional(),
   writeAReviewUri: z.string().optional(),
   reviewsUri: z.string().optional(),
-  photosUri: z.string().optional(),
+  photosUri: z.string().optional()
 })
 
 const AddressDescriptorSchema = z.object({
   landmarks: z.array(LandmarkSchema).optional(),
-  areas: z.array(AreaSchema).optional(),
+  areas: z.array(AreaSchema).optional()
 })
 
 const AreaSummarySchema = z.object({
   contentBlocks: z.array(ContentBlockSchema),
-  flagContentUri: z.string(),
+  flagContentUri: z.string()
 })
 
 // Stage 0 - Base Place Information
@@ -214,7 +214,7 @@ const IDSOnlyPlaceSchema = z.object({
   photos: z.array(PhotoSchema).optional(),
   attributions: z
     .array(z.object({ provider: z.string(), providerUri: z.string() }))
-    .optional(),
+    .optional()
 })
 
 // Stage 1 - Core Place Information
@@ -226,7 +226,7 @@ const LocationOnlyPlaceSchema = IDSOnlyPlaceSchema.extend({
   plusCode: PlusCodeSchema.optional(),
   shortFormattedAddress: z.string().optional(),
   types: z.array(z.string()).optional(),
-  viewport: ViewportSchema.optional(),
+  viewport: ViewportSchema.optional()
 })
 
 // Stage 2 - Basic Place Information
@@ -239,7 +239,7 @@ const BasicPlaceSchema = LocationOnlyPlaceSchema.extend({
       wheelchairAccessibleParking: z.boolean().optional(),
       wheelchairAccessibleEntrance: z.boolean().optional(),
       wheelchairAccessibleRestroom: z.boolean().optional(),
-      wheelchairAccessibleSeating: z.boolean().optional(),
+      wheelchairAccessibleSeating: z.boolean().optional()
     })
     .optional(),
   businessStatus: z
@@ -254,7 +254,7 @@ const BasicPlaceSchema = LocationOnlyPlaceSchema.extend({
     .array(z.object({ name: z.string(), id: z.string() }))
     .optional(),
   utcOffsetMinutes: z.number().optional(),
-  addressDescriptor: AddressDescriptorSchema.optional(),
+  addressDescriptor: AddressDescriptorSchema.optional()
 })
 
 // Stage 3 - Advanced Place Information
@@ -269,7 +269,7 @@ export const AdvancedPlaceSchema = BasicPlaceSchema.extend({
   regularOpeningHours: OpeningHoursSchema.optional(),
   regularSecondaryOpeningHours: z.array(OpeningHoursSchema).optional(),
   userRatingCount: z.number().optional(),
-  websiteUri: z.string().optional(),
+  websiteUri: z.string().optional()
 })
 
 // Stage 4 - Preferred (Complete) Place Information
@@ -282,12 +282,12 @@ const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
   evChargeOptions: z
     .object({
       connectorCount: z.number().int().optional(),
-      connectorAggregation: z.array(ConnectorAggregationSchema).optional(),
+      connectorAggregation: z.array(ConnectorAggregationSchema).optional()
     })
     .optional(),
   fuelOptions: z
     .object({
-      fuelPrices: z.array(FuelPriceSchema).optional(),
+      fuelPrices: z.array(FuelPriceSchema).optional()
     })
     .optional(),
   goodForChildren: z.boolean().optional(),
@@ -304,7 +304,7 @@ const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
       paidStreetParking: z.boolean().optional(),
       valetParking: z.boolean().optional(),
       freeGarageParking: z.boolean().optional(),
-      paidGarageParking: z.boolean().optional(),
+      paidGarageParking: z.boolean().optional()
     })
     .optional(),
   paymentOptions: z
@@ -312,7 +312,7 @@ const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
       acceptsCreditCards: z.boolean().optional(),
       acceptsDebitCards: z.boolean().optional(),
       acceptsCashOnly: z.boolean().optional(),
-      acceptsNfc: z.boolean().optional(),
+      acceptsNfc: z.boolean().optional()
     })
     .optional(),
   reservable: z.boolean().optional(),
@@ -329,7 +329,7 @@ const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
   servesVegetarianFood: z.boolean().optional(),
   servesWine: z.boolean().optional(),
   takeout: z.boolean().optional(),
-  areaSummary: AreaSummarySchema.optional(),
+  areaSummary: AreaSummarySchema.optional()
 })
 
 // API Request/Response Schemas
@@ -338,11 +338,11 @@ export const GooglePlacesTextSearchRequestBodySchema = z.object({
   locationRestriction: z.object({
     rectangle: z.object({
       low: LocationSchema,
-      high: LocationSchema,
-    }),
+      high: LocationSchema
+    })
   }),
   nextPageToken: z.string().optional(),
-  resultsQuantity: z.number().positive(),
+  resultsQuantity: z.number().positive()
 })
 
 export const GooglePlacesTextSearchResponseSchema = z.object({
@@ -350,17 +350,17 @@ export const GooglePlacesTextSearchResponseSchema = z.object({
   contextualContents: z
     .array(
       z.object({
-        photos: z.array(PhotoSchema).optional(),
-      }),
+        photos: z.array(PhotoSchema).optional()
+      })
     )
     .optional(),
   nextPageToken: z.string().optional(),
-  searchUri: z.string().optional(),
+  searchUri: z.string().optional()
 })
 
 const generatePlaceKeys = (
   schema: z.ZodObject<z.ZodRawShape>,
-  includePrefix = true,
+  includePrefix = true
 ) => {
   const prefix = includePrefix ? 'places.' : ''
   const placeKeys = Object.keys(schema.shape)
@@ -375,7 +375,7 @@ const generatePlaceKeys = (
 // Stage 4 keys
 export const PREFERRED_PLACE_KEYS = generatePlaceKeys(
   PreferredPlaceSchema,
-  false,
+  false
 )
 export const PREFERRED_PLACE_KEYS_TEXT_SEARCH =
   generatePlaceKeys(PreferredPlaceSchema)

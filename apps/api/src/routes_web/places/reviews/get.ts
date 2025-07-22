@@ -7,14 +7,14 @@ import { redisClient } from '../../../external/redis/redis'
 
 export const getPlaceReviews = async (
   req: Request<GetReviewsRequest>,
-  res: Response<GetReviewsApiResponse>,
+  res: Response<GetReviewsApiResponse>
 ) => {
   try {
-    const { placeId } = req.params
+    const { placeSourceId } = req.params
 
     // Try to get place details from cache first
     const cachedPlace = await redisClient.get<PreferredPlace>(
-      REDIS_KEYS.place(placeId),
+      REDIS_KEYS.place(placeSourceId)
     )
 
     const place = cachedPlace?.data
@@ -23,26 +23,26 @@ export const getPlaceReviews = async (
       logger.error({
         msg: 'Place reviews not found in cache',
         event: 'place_reviews_not_found_in_cache',
-        metadata: { placeId },
+        metadata: { placeSourceId }
       })
       res.status(404).json({
-        error: 'Place not found',
+        error: 'Place not found'
       })
       return
     }
 
     // Return reviews or empty array if no reviews exist
     res.json({
-      reviews: place.reviews || [],
+      reviews: place.reviews || []
     })
   } catch (error) {
     logger.error({
       msg: 'Failed to get place reviews',
       event: 'get_place_reviews_error',
-      metadata: { error },
+      metadata: { error }
     })
     res.status(500).json({
-      error: 'Failed to get place reviews',
+      error: 'Failed to get place reviews'
     })
   }
 }

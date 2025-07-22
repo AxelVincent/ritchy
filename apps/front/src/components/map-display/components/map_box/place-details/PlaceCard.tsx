@@ -33,7 +33,9 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
     useMapStore()
   const displayedIds = Array.from(displayedPlaceIds)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const currentPlace = places?.find((place) => place.id === selectedPlaceId)
+  const currentPlace = places?.find(
+    (place) => place.id === selectedPlaceId
+  )
   const [cardHeight, setCardHeight] = useState(() => {
     const savedHeight = localStorage.getItem('placeCardHeight')
     return savedHeight ? Number.parseInt(savedHeight, 10) : 350
@@ -159,9 +161,8 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusDropdown
-                    placeId={currentPlace.id}
-                    currentStatus={currentPlace.status?.status || 'NEW'}
-                    searchId={currentPlace.searchId}
+                    userPlaceId={currentPlace.id}
+                    currentStatus={currentPlace.status ?? 'NEW'}
                     listId={currentPlace.listId}
                   />
                   {currentPlace.website && (

@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
-import type { Place, PlaceBase } from '@ritchy/types'
+import type { PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { CACHE_THRESHOLDS } from '../../config/redis'
 
@@ -9,11 +9,15 @@ import { redisClient } from '../redis/redis'
 import {
   AdvancedPlaceSchema,
   PREFERRED_PLACE_KEYS,
-  type PreferredPlace,
+  type PreferredPlace
 } from './types'
 import { calculateOpenNow } from './utils/calculateOpenNow'
 import { mapToPlaceDetails } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
+import { place } from '../../db/schema'
+import { userPlace } from '../../db/schema'
+import { eq } from 'drizzle-orm'
+import { db } from '../../db/db'
 
 // Cache update thresholds imported from config
 const { PLACE_UPDATE_THRESHOLD } = CACHE_THRESHOLDS
@@ -42,8 +46,12 @@ function getAge(updatedAt: string): number {
   return (now.getTime() - updatedAtDate.getTime()) / 1000
 }
 
-async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
-  const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places/${placeId}`)
+async function fetchPlaceDetails(
+  googlePlaceId: string
+): Promise<PreferredPlace> {
+  const url = new URL(
+    `${GOOGLE_MAPS_CONFIG.PLACES_URL}/places/${googlePlaceId}`
+  )
 
   const startTime = Date.now()
 
@@ -52,8 +60,8 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
     headers: {
       'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
       'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
-      Referer: GOOGLE_MAPS_CONFIG.REFERRER,
-    },
+      Referer: GOOGLE_MAPS_CONFIG.REFERRER
+    }
   })
 
   if (!response.ok) {
@@ -65,13 +73,13 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
         msg: 'Place not found in Google API',
         event: 'google_place_not_found',
         metadata: {
-          placeId,
+          googlePlaceId,
           errorData,
           statusCode: response.status,
-          durationMs: Date.now() - startTime,
-        },
+          durationMs: Date.now() - startTime
+        }
       })
-      await redisClient.markAsDeleted(placeId)
+      await redisClient.markAsDeleted(googlePlaceId)
       throw new Error('PLACE_NOT_FOUND')
     }
 
@@ -80,13 +88,13 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
       event: 'google_api_error',
       metadata: {
         errorData,
-        placeId,
+        googlePlaceId,
         statusCode: response.status,
-        durationMs: Date.now() - startTime,
-      },
+        durationMs: Date.now() - startTime
+      }
     })
     throw new Error(
-      `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
+      `Google API error: ${response.status} - ${JSON.stringify(errorData)}`
     )
   }
 
@@ -96,18 +104,27 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
     msg: 'Google Place Details API call successful - BILLABLE REQUEST UNIT',
     event: 'google_place_details_api_billable',
     metadata: {
-      placeId,
-      durationMs: endTime - startTime,
-    },
+      googlePlaceId,
+      durationMs: endTime - startTime
+    }
   })
 
   return response.json()
 }
 
 export async function getPlaceDetailsV1(
-  placeId: string,
+  userPlaceId: string
 ): Promise<PlaceBase & { fromCache: boolean; is_deleted?: boolean }> {
-  const key = REDIS_KEYS.place(placeId)
+  const [placeId] = await db
+    .select({
+      sourceId: place.sourceId
+    })
+    .from(place)
+    .innerJoin(userPlace, eq(place.id, userPlace.placeId))
+    .where(eq(userPlace.id, userPlaceId))
+    .limit(1)
+
+  const key = REDIS_KEYS.place(placeId.sourceId)
 
   // Single Redis call to get both data and metadata
   const cachedData = await redisClient.get<PreferredPlace>(key)
@@ -121,7 +138,7 @@ export async function getPlaceDetailsV1(
       if (result.openingHours) {
         result.openingHours.openNow = calculateOpenNow(
           result.openingHours,
-          result.utcOffsetMinutes,
+          result.utcOffsetMinutes
         )
       }
 
@@ -130,21 +147,22 @@ export async function getPlaceDetailsV1(
         event: 'place_details_deleted_cache_hit',
         metadata: {
           placeId,
-          age: getAge(cachedData.updated_at),
-        },
+          age: getAge(cachedData.updated_at)
+        }
       })
 
       return {
         ...result,
+        id: userPlaceId,
         fromCache: true,
-        is_deleted: true,
+        is_deleted: true
       }
     }
 
     // For non-deleted places, check if cache needs update
     const shouldUpdate = needsUpdate(
       cachedData.updated_at,
-      PLACE_UPDATE_THRESHOLD,
+      PLACE_UPDATE_THRESHOLD
     )
 
     // If cache is fresh, return cached data
@@ -155,7 +173,7 @@ export async function getPlaceDetailsV1(
       if (result.openingHours) {
         result.openingHours.openNow = calculateOpenNow(
           result.openingHours,
-          result.utcOffsetMinutes,
+          result.utcOffsetMinutes
         )
       }
 
@@ -164,14 +182,15 @@ export async function getPlaceDetailsV1(
         event: 'place_details_cache_hit',
         metadata: {
           placeId,
-          age: getAge(cachedData.updated_at),
-        },
+          age: getAge(cachedData.updated_at)
+        }
       })
 
       return {
         ...result,
+        id: userPlaceId,
         fromCache: true,
-        is_deleted: false,
+        is_deleted: false
       }
     }
 
@@ -181,14 +200,14 @@ export async function getPlaceDetailsV1(
       event: 'place_details_cache_stale',
       metadata: {
         placeId,
-        age: getAge(cachedData.updated_at),
-      },
+        age: getAge(cachedData.updated_at)
+      }
     })
   }
 
   try {
     const data = await placesApiQueue.addToQueue(async () =>
-      fetchPlaceDetails(placeId),
+      fetchPlaceDetails(placeId.sourceId)
     )
     AdvancedPlaceSchema.parse(data)
 
@@ -201,15 +220,15 @@ export async function getPlaceDetailsV1(
     logger.info({
       msg: 'Successfully fetched and cached fresh place data',
       event: 'place_details_fresh_data',
-      metadata: { placeId },
+      metadata: { placeId }
     })
 
-    return { ...result, fromCache: false }
+    return { ...result, id: userPlaceId, fromCache: false }
   } catch (error) {
     logger.info({
       msg: 'Error fetching place details',
       event: 'place_details_fetch_error',
-      metadata: { placeId, error },
+      metadata: { placeId, error }
     })
 
     if (error instanceof Error && error.message === 'PLACE_NOT_FOUND') {
@@ -218,7 +237,7 @@ export async function getPlaceDetailsV1(
         logger.info({
           msg: 'Marked existing place as deleted',
           event: 'place_details_marked_deleted',
-          metadata: { placeId },
+          metadata: { placeId }
         })
       }
     }
@@ -229,22 +248,23 @@ export async function getPlaceDetailsV1(
         event: 'place_details_api_fallback',
         metadata: {
           placeId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        },
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
       })
 
       const result = mapToPlaceDetails(cachedData.data)
       if (result.openingHours) {
         result.openingHours.openNow = calculateOpenNow(
           result.openingHours,
-          result.utcOffsetMinutes,
+          result.utcOffsetMinutes
         )
       }
 
       return {
         ...result,
+        id: userPlaceId,
         fromCache: true,
-        is_deleted: cachedData.is_deleted,
+        is_deleted: cachedData.is_deleted
       }
     }
 

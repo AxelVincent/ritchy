@@ -7,7 +7,7 @@ import { list, listPlace } from '../../db/schema'
 
 export const getLists = async (
   req: Request,
-  res: Response<ListsApiResponse>,
+  res: Response<ListsApiResponse>
 ): Promise<void> => {
   try {
     const lists = await db
@@ -15,9 +15,9 @@ export const getLists = async (
         id: list.id,
         name: list.name,
         emoji: list.emoji,
-        itemCount: sql<number>`count(${listPlace.id})::int`,
+        itemCount: sql<number>`count(${listPlace.id})`,
         createdAt: list.createdAt,
-        updatedAt: list.updatedAt,
+        updatedAt: list.updatedAt
       })
       .from(list)
       .leftJoin(listPlace, eq(listPlace.listId, list.id))
@@ -30,19 +30,19 @@ export const getLists = async (
         ...list,
         id: String(list.id),
         createdAt: list.createdAt.toISOString(),
-        updatedAt: list.updatedAt.toISOString(),
-      })),
+        updatedAt: list.updatedAt.toISOString()
+      }))
     )
     return
   } catch (error) {
     logger.error({
       msg: 'Get lists error',
       event: 'get_lists_error',
-      metadata: { error },
+      metadata: { error }
     })
     res.status(500).json({
       error: 'Failed to fetch lists',
-      message: 'Failed to fetch lists',
+      message: 'Failed to fetch lists'
     })
     return
   }

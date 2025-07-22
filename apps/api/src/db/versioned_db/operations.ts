@@ -10,14 +10,14 @@ import type {
   InferSelect,
   InferTable,
   TableName,
-  VersionContext,
+  VersionContext
 } from './types'
 import {
   calculateChangedFields,
   chunkArray,
   createConflictWhereClause,
   createVersionEntry,
-  prepareVersionMetadata,
+  prepareVersionMetadata
 } from './utils/helpers'
 import { getLatestVersion, getRecordById } from './utils/helpers'
 import { validateVersionOperation } from './utils/validation'
@@ -26,7 +26,7 @@ const createOperations = (context: VersionContext) => ({
   insert: async <T extends TableName>(
     table: T,
     data: InferInsert<T>,
-    db: PostgresJsDatabase<typeof schema>,
+    db: PostgresJsDatabase<typeof schema>
   ): Promise<InferSelect<T>> => {
     const result = await db
       .insert(schema[table])
@@ -38,7 +38,7 @@ const createOperations = (context: VersionContext) => ({
     const currentState = result[0]
     const metadata = {
       changedFields: Object.keys(data),
-      bulkOperationId: context.bulkOperationId,
+      bulkOperationId: context.bulkOperationId
     }
     validateVersionOperation({
       operation: 'INSERT',
@@ -46,7 +46,7 @@ const createOperations = (context: VersionContext) => ({
       previousState: null,
       metadata,
       table,
-      recordId: result[0].id,
+      recordId: result[0].id
     })
     await db.insert(versionHistory).values({
       tableName: table,
@@ -56,7 +56,7 @@ const createOperations = (context: VersionContext) => ({
       previousState: null,
       userId: context.userId ?? '',
       operation: 'INSERT',
-      metadata,
+      metadata
     })
 
     return result[0] as InferSelect<T>
@@ -66,7 +66,7 @@ const createOperations = (context: VersionContext) => ({
     table: T,
     data: PgUpdateSetSource<InferTable<T>>,
     where: { id: string },
-    db: PostgresJsDatabase<typeof schema>,
+    db: PostgresJsDatabase<typeof schema>
   ): Promise<InferSelect<T>> => {
     const currentRecord = await getRecordById(db, table, where.id)
     if (!currentRecord) throw new Error('Record not found')
@@ -85,7 +85,7 @@ const createOperations = (context: VersionContext) => ({
     const metadata = prepareVersionMetadata('UPDATE', {
       userId: context.userId,
       bulkOperationId: context.bulkOperationId,
-      changedFields,
+      changedFields
     })
 
     await createVersionEntry(db, {
@@ -96,7 +96,7 @@ const createOperations = (context: VersionContext) => ({
       previousState: currentRecord,
       userId: context.userId ?? '',
       operation: 'UPDATE',
-      metadata,
+      metadata
     })
 
     return result[0] as InferSelect<T>
@@ -105,7 +105,7 @@ const createOperations = (context: VersionContext) => ({
   delete: async <T extends TableName>(
     table: T,
     where: { id: string },
-    db: PostgresJsDatabase<typeof schema>,
+    db: PostgresJsDatabase<typeof schema>
   ): Promise<InferSelect<T>> => {
     const [record] = (await db
       .select()
@@ -124,8 +124,8 @@ const createOperations = (context: VersionContext) => ({
         .where(
           and(
             eq(versionHistory.tableName, table),
-            eq(versionHistory.recordId, record.id),
-          ),
+            eq(versionHistory.recordId, record.id)
+          )
         )
         .orderBy(desc(versionHistory.version))
         .limit(1)
@@ -133,7 +133,7 @@ const createOperations = (context: VersionContext) => ({
       const currentState = record
       const metadata = {
         deletedAt: new Date(),
-        bulkOperationId: context.bulkOperationId,
+        bulkOperationId: context.bulkOperationId
       }
 
       validateVersionOperation({
@@ -142,7 +142,7 @@ const createOperations = (context: VersionContext) => ({
         previousState: null,
         metadata,
         table,
-        recordId: record.id,
+        recordId: record.id
       })
       await tx.insert(versionHistory).values({
         tableName: table,
@@ -152,7 +152,7 @@ const createOperations = (context: VersionContext) => ({
         previousState: null,
         userId: context.userId ?? '',
         operation: 'DELETE',
-        metadata,
+        metadata
       })
     })
 
@@ -170,7 +170,7 @@ const createOperations = (context: VersionContext) => ({
     table: T,
     data: (InferInsert<T> & { id?: string })[],
     conflictTarget: (keyof InferTable<T>)[],
-    db: PostgresJsDatabase<typeof schema>,
+    db: PostgresJsDatabase<typeof schema>
   ): Promise<BulkUpsertResult<T>> => {
     const bulkOperationId = crypto.randomUUID()
     const CHUNK_SIZE = 50
@@ -185,7 +185,7 @@ const createOperations = (context: VersionContext) => ({
             const whereClause = createConflictWhereClause(
               table,
               conflictTarget,
-              originalData,
+              originalData
             )
             const [previousState] = await tx
               .select()
@@ -193,7 +193,7 @@ const createOperations = (context: VersionContext) => ({
               .where(whereClause)
               .limit(1)
             return { originalData, previousState }
-          }),
+          })
         )
 
         const results = await tx
@@ -202,19 +202,17 @@ const createOperations = (context: VersionContext) => ({
           .onConflictDoUpdate({
             target: conflictTarget.map(
               (col) =>
-                (schema[table] as { [K in keyof InferTable<T>]: PgColumn })[
-                  col
-                ],
+                (schema[table] as { [K in keyof InferTable<T>]: PgColumn })[col]
             ),
             set: {
               ...Object.fromEntries(
                 Object.entries(chunk[0]).filter(
                   ([key]) =>
-                    !conflictTarget.includes(key as keyof InferTable<T>),
-                ),
+                    !conflictTarget.includes(key as keyof InferTable<T>)
+                )
               ),
-              updatedAt: new Date(),
-            } as unknown as PgUpdateSetSource<(typeof schema)[T]>,
+              updatedAt: new Date()
+            } as unknown as PgUpdateSetSource<(typeof schema)[T]>
           })
           .returning()
 
@@ -224,8 +222,8 @@ const createOperations = (context: VersionContext) => ({
             conflictTarget.every(
               (col) =>
                 item.originalData[col as keyof typeof item.originalData] ===
-                result[col as keyof typeof result],
-            ),
+                result[col as keyof typeof result]
+            )
           ) || { originalData: null, previousState: null }
 
           if (!originalData) continue
@@ -236,8 +234,8 @@ const createOperations = (context: VersionContext) => ({
             .where(
               and(
                 eq(versionHistory.tableName, table),
-                eq(versionHistory.recordId, result.id),
-              ),
+                eq(versionHistory.recordId, result.id)
+              )
             )
             .orderBy(desc(versionHistory.version))
             .limit(1)
@@ -246,9 +244,9 @@ const createOperations = (context: VersionContext) => ({
           const currentState = result
           const metadata = {
             changedFields: Object.keys(originalData).filter(
-              (key) => !conflictTarget.includes(key as keyof InferTable<T>),
+              (key) => !conflictTarget.includes(key as keyof InferTable<T>)
             ),
-            bulkOperationId,
+            bulkOperationId
           }
 
           const operation = previousState ? 'UPDATE' : 'INSERT'
@@ -259,7 +257,7 @@ const createOperations = (context: VersionContext) => ({
             previousState: previousState || null,
             metadata,
             table,
-            recordId: result.id,
+            recordId: result.id
           })
 
           await tx.insert(versionHistory).values({
@@ -270,7 +268,7 @@ const createOperations = (context: VersionContext) => ({
             previousState: previousState || null,
             userId: context.userId ?? '',
             operation,
-            metadata,
+            metadata
           })
         }
 
@@ -285,8 +283,8 @@ const createOperations = (context: VersionContext) => ({
             acc[result.id] = originalData?.id ? 'update' : 'insert'
             return acc
           },
-          {} as { [key: string]: 'insert' | 'update' },
-        ),
+          {} as { [key: string]: 'insert' | 'update' }
+        )
       }
     })
   },
@@ -302,7 +300,7 @@ const createOperations = (context: VersionContext) => ({
     table: T,
     data: (Record<string, unknown> & { id?: string })[],
     conflictTarget: (keyof InferTable<T>)[],
-    db: PostgresJsDatabase<typeof schema>,
+    db: PostgresJsDatabase<typeof schema>
   ): Promise<BulkDeleteResult> => {
     const bulkOperationId = crypto.randomUUID()
     const deleted: string[] = []
@@ -313,7 +311,7 @@ const createOperations = (context: VersionContext) => ({
         const whereClause = createConflictWhereClause(
           table,
           conflictTarget,
-          recordData,
+          recordData
         )
 
         const [existingRecord] = await db
@@ -333,8 +331,8 @@ const createOperations = (context: VersionContext) => ({
           .where(
             and(
               eq(versionHistory.tableName, table),
-              eq(versionHistory.recordId, existingRecord.id),
-            ),
+              eq(versionHistory.recordId, existingRecord.id)
+            )
           )
           .orderBy(desc(versionHistory.version))
           .limit(1)
@@ -344,7 +342,7 @@ const createOperations = (context: VersionContext) => ({
         const currentState = existingRecord
         const metadata = {
           deletedAt: new Date(),
-          bulkOperationId,
+          bulkOperationId
         }
 
         validateVersionOperation({
@@ -353,7 +351,7 @@ const createOperations = (context: VersionContext) => ({
           previousState: null,
           metadata,
           table,
-          recordId: existingRecord.id,
+          recordId: existingRecord.id
         })
         await db.insert(versionHistory).values({
           tableName: table,
@@ -363,15 +361,15 @@ const createOperations = (context: VersionContext) => ({
           previousState: null,
           userId: context.userId ?? '',
           operation: 'DELETE',
-          metadata,
+          metadata
         })
 
         deleted.push(existingRecord.id)
-      }),
+      })
     )
 
     return { deleted, notFound }
-  },
+  }
 })
 
 export default createOperations

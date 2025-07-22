@@ -1,9 +1,10 @@
 import { and, eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import { contactSocial } from '../../../db/schema'
+import { contactSocialMedia } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
 
-type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
+type SocialMediaPlatform =
+  (typeof contactSocialMedia.$inferInsert)['socialMediaPlatform']
 
 export interface InsertContactSocialData {
   contactId: string
@@ -20,7 +21,7 @@ export interface InsertContactSocialData {
  */
 export const upsertContactSocialsWithTransaction = async (
   tx: PostgresJsDatabase<typeof schema>,
-  socials: InsertContactSocialData[],
+  socials: InsertContactSocialData[]
 ) => {
   if (socials.length === 0) {
     return []
@@ -31,13 +32,13 @@ export const upsertContactSocialsWithTransaction = async (
     // Check if a primary social already exists for this contact+platform
     const existingPrimary = await tx
       .select()
-      .from(contactSocial)
+      .from(contactSocialMedia)
       .where(
         and(
-          eq(contactSocial.contactId, social.contactId),
-          eq(contactSocial.platform, social.platform),
-          eq(contactSocial.isPrimary, true),
-        ),
+          eq(contactSocialMedia.contactId, social.contactId),
+          eq(contactSocialMedia.socialMediaPlatform, social.platform),
+          eq(contactSocialMedia.isPrimary, true)
+        )
       )
       .limit(1)
 
@@ -47,32 +48,37 @@ export const upsertContactSocialsWithTransaction = async (
     // Check if this exact social already exists
     const existingSocial = await tx
       .select()
-      .from(contactSocial)
+      .from(contactSocialMedia)
       .where(
         and(
-          eq(contactSocial.contactId, social.contactId),
-          eq(contactSocial.platform, social.platform),
-          eq(contactSocial.profileUrl, social.profileUrl),
-        ),
+          eq(contactSocialMedia.contactId, social.contactId),
+          eq(contactSocialMedia.socialMediaPlatform, social.platform),
+          eq(contactSocialMedia.url, social.profileUrl)
+        )
       )
       .limit(1)
 
     if (existingSocial.length > 0) {
       // Update existing social
       const [updatedSocial] = await tx
-        .update(contactSocial)
+        .update(contactSocialMedia)
         .set({
-          profileUrl: social.profileUrl,
-          updatedAt: new Date(),
+          url: social.profileUrl,
+          updatedAt: new Date()
         })
-        .where(eq(contactSocial.id, existingSocial[0].id))
+        .where(eq(contactSocialMedia.id, existingSocial[0].id))
         .returning()
       results.push(updatedSocial)
     } else {
       // Insert new social
       const [insertedSocial] = await tx
-        .insert(contactSocial)
-        .values({ ...social, isPrimary })
+        .insert(contactSocialMedia)
+        .values({
+          contactId: social.contactId,
+          socialMediaPlatform: social.platform,
+          isPrimary,
+          url: social.profileUrl
+        })
         .returning()
       results.push(insertedSocial)
     }

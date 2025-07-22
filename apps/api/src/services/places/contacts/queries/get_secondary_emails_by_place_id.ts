@@ -4,46 +4,37 @@ import { db } from '../../../../db/db'
 import { contact } from '../../../../db/schema'
 import { contactEmail } from '../../../../db/schema'
 
-export const getSecondaryEmailsByPlaceIds = async (
-  placeIds: string[],
-  userId: string,
-) => {
-  if (placeIds.length === 0) {
+export const getSecondaryEmailsByPlaceIds = async (userPlaceIds: string[]) => {
+  if (userPlaceIds.length === 0) {
     return new Map<string, string[]>()
   }
 
   const secondaryEmails = await db
     .select({
       email: contactEmail.email,
-      placeId: contact.placeId,
+      userPlaceId: contact.userPlaceId
     })
     .from(contactEmail)
     .innerJoin(contact, eq(contactEmail.contactId, contact.id))
-    .where(
-      and(
-        inArray(contact.placeId, placeIds),
-        eq(contact.userId, userId),
-        eq(contactEmail.isPrimary, false),
-      ),
-    )
+    .where(inArray(contact.userPlaceId, userPlaceIds))
     .orderBy(desc(contactEmail.createdAt))
 
   const result = new Map<string, string[]>()
   for (const emailData of secondaryEmails) {
-    if (!result.has(emailData.placeId)) {
-      result.set(emailData.placeId, [])
+    if (!result.has(emailData.userPlaceId)) {
+      result.set(emailData.userPlaceId, [])
     }
-    result.get(emailData.placeId)?.push(emailData.email)
+    result.get(emailData.userPlaceId)?.push(emailData.email)
   }
 
   logger.info({
     msg: 'Secondary emails fetched for places',
     event: 'secondary_emails_fetched',
     metadata: {
-      placeIds,
+      userPlaceIds,
       secondaryEmailsCount: result.size,
-      secondaryEmailsData: Object.fromEntries(result),
-    },
+      secondaryEmailsData: Object.fromEntries(result)
+    }
   })
 
   return result

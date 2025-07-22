@@ -16,7 +16,7 @@ const getStorageKey = (listId?: string, searchId?: string): string => {
 
 const getStoredJobData = (
   listId?: string,
-  searchId?: string,
+  searchId?: string
 ): string | null => {
   try {
     const key = getStorageKey(listId, searchId)
@@ -35,7 +35,7 @@ const getStoredJobData = (
 const setStoredJobData = (
   jobId: string,
   listId?: string,
-  searchId?: string,
+  searchId?: string
 ): void => {
   try {
     const key = getStorageKey(listId, searchId)
@@ -43,8 +43,8 @@ const setStoredJobData = (
       key,
       JSON.stringify({
         jobId,
-        timestamp: Date.now(),
-      }),
+        timestamp: Date.now()
+      })
     )
   } catch {
     // Ignore localStorage errors
@@ -62,7 +62,7 @@ const clearStoredJobData = (listId?: string, searchId?: string): void => {
 
 export function useEnrichment<TData extends SearchResult>({
   listId,
-  searchId,
+  searchId
 }: {
   listId?: string
   searchId?: string
@@ -79,7 +79,7 @@ export function useEnrichment<TData extends SearchResult>({
   const batchEnrichmentMutation = useBatchEnrichment()
   const jobStatusQuery = useEnrichmentJobStatus(
     activeJobIdRef.current || '',
-    isInitialized && !!activeJobIdRef.current,
+    isInitialized && !!activeJobIdRef.current
   )
 
   // Initialize from localStorage on mount (page-specific)
@@ -122,11 +122,11 @@ export function useEnrichment<TData extends SearchResult>({
       // Poll content data to get updated enrichment results
       if (listId) {
         queryClient.invalidateQueries({
-          queryKey: listContentKeys.list(listId),
+          queryKey: listContentKeys.list(listId)
         })
       } else if (searchId) {
         queryClient.invalidateQueries({
-          queryKey: searchContentKeys.search(searchId),
+          queryKey: searchContentKeys.search(searchId)
         })
       }
 
@@ -147,12 +147,12 @@ export function useEnrichment<TData extends SearchResult>({
               if (errorCount > 0) {
                 toast.warning('⚠️ Enrichment Completed with Errors', {
                   description: `${successCount} items enriched successfully, ${errorCount} failed`,
-                  duration: 8000,
+                  duration: 8000
                 })
               } else {
                 toast('✅ Enrichment Complete!', {
                   description: `Successfully enriched ${totalMessages} items`,
-                  duration: 5000,
+                  duration: 5000
                 })
               }
             }
@@ -178,7 +178,7 @@ export function useEnrichment<TData extends SearchResult>({
         toast.error('❌ Enrichment Error', {
           description:
             'Failed to check enrichment status. Please refresh the page.',
-          duration: 6000,
+          duration: 6000
         })
         setLastKnownStatus('error')
       }
@@ -257,12 +257,12 @@ export function useEnrichment<TData extends SearchResult>({
         let currentData: TData[] = []
         if (listId) {
           const listData = queryClient.getQueryData(
-            listContentKeys.list(listId),
+            listContentKeys.list(listId)
           )
           currentData = (listData as unknown as { items: TData[] })?.items || []
         } else if (searchId) {
           const searchData = queryClient.getQueryData(
-            searchContentKeys.search(searchId),
+            searchContentKeys.search(searchId)
           )
           currentData = (searchData as TData[]) || []
         }
@@ -271,9 +271,11 @@ export function useEnrichment<TData extends SearchResult>({
         const enrichmentsToProcess = selectedIds
           .map((id) => {
             const item = currentData.find((d) => d.id === id)
-            return item?.website ? { placeId: id, website: item.website } : null
+            return item?.website
+              ? { userPlaceId: id, website: item.website }
+              : null
           })
-          .filter(Boolean) as Array<{ placeId: string; website: string }>
+          .filter(Boolean) as Array<{ userPlaceId: string; website: string }>
 
         if (enrichmentsToProcess.length === 0) {
           throw new Error('No valid websites found for enrichment')
@@ -281,7 +283,7 @@ export function useEnrichment<TData extends SearchResult>({
 
         // Start batch enrichment
         const response = await batchEnrichmentMutation.mutateAsync({
-          enrichments: enrichmentsToProcess,
+          enrichments: enrichmentsToProcess
         })
 
         if ('jobId' in response) {
@@ -292,19 +294,19 @@ export function useEnrichment<TData extends SearchResult>({
 
           // Show start toast
           toast('🚀 Enrichment Started', {
-            description: `Processing ${response.enrichmentCount} websites...`,
+            description: `Processing ${response.enrichmentCount} websites...`
           })
         }
       } catch (error) {
         toast.error('❌ Failed to Start Enrichment', {
           description:
             error instanceof Error ? error.message : 'Unknown error occurred',
-          duration: 5000,
+          duration: 5000
         })
         throw error
       }
     },
-    [batchEnrichmentMutation, listId, searchId, queryClient, startPolling],
+    [batchEnrichmentMutation, listId, searchId, queryClient, startPolling]
   )
 
   return {
@@ -323,6 +325,6 @@ export function useEnrichment<TData extends SearchResult>({
       batchEnrichmentMutation.error?.message ||
       (jobStatusQuery.data && 'error' in jobStatusQuery.data
         ? String(jobStatusQuery.data.error)
-        : null),
+        : null)
   }
 }

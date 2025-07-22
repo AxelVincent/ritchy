@@ -15,9 +15,9 @@ import { scrapeFromOptimizedUrls } from '../scraperEmailsAndSocials'
  * @returns The enrichment data or null if fetching fails
  */
 export const getOrFetchEnrichmentData = async (
-  placeId: string,
+  googlePlaceId: string,
   website: string,
-  maxRetries = 5,
+  maxRetries = 5
 ): Promise<EnrichResponse | null> => {
   const cacheKey = REDIS_KEYS.enrich(website)
   const cachedData = await redisClient.get<EnrichResponse>(cacheKey)
@@ -26,7 +26,7 @@ export const getOrFetchEnrichmentData = async (
     logger.debug({
       msg: 'Retrieved enrichment data from cache',
       event: 'enrichment_cache_hit',
-      metadata: { placeId, website },
+      metadata: { googlePlaceId, website }
     })
     return cachedData.data
   }
@@ -34,14 +34,14 @@ export const getOrFetchEnrichmentData = async (
   logger.info({
     msg: 'Beginning enrichment process',
     event: 'enrichment_process_start',
-    metadata: { placeId, website },
+    metadata: { googlePlaceId, website }
   })
 
   try {
     const enrichmentData = await scrapeFromOptimizedUrls(
-      placeId,
+      googlePlaceId,
       website,
-      maxRetries,
+      maxRetries
     )
 
     if (enrichmentData) {
@@ -55,17 +55,17 @@ export const getOrFetchEnrichmentData = async (
           msg: 'WHOIS data fetched successfully',
           event: 'whois_data_fetched',
           metadata: {
-            placeId,
+            googlePlaceId,
             domain,
-            registrationDate: whois?.registrationDate,
-          },
+            registrationDate: whois?.registrationDate
+          }
         })
       } catch (error) {
         enrichmentData.domainRegistration = undefined
         logger.warn({
           msg: 'WHOIS lookup failed, setting domainRegistration to undefined',
           event: 'whois_lookup_failed',
-          metadata: { placeId, website, error },
+          metadata: { googlePlaceId, website, error }
         })
       }
 
@@ -74,14 +74,13 @@ export const getOrFetchEnrichmentData = async (
         msg: 'Enrichment completed successfully',
         event: 'enrichment_complete',
         metadata: {
-          placeId,
+          googlePlaceId,
           website,
           stats: {
             emailsFound: enrichmentData.emails.length,
-            socialPlatformsFound: Object.keys(enrichmentData.socialLinks)
-              .length,
-          },
-        },
+            socialPlatformsFound: Object.keys(enrichmentData.socialLinks).length
+          }
+        }
       })
     }
 
@@ -91,10 +90,10 @@ export const getOrFetchEnrichmentData = async (
       msg: 'Enrichment process failed',
       event: 'enrichment_process_error',
       metadata: {
-        placeId,
+        googlePlaceId,
         website,
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
     return null
   }

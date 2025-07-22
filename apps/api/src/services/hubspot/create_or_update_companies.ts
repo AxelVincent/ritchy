@@ -11,9 +11,9 @@ import { upsertLeadMapping } from './queries/upsert_lead_mapping'
 import { createHubspotCompanyPropertiesWithMappings } from './utils/hubspot_properties_builder'
 
 export const createOrUpdateCompanies = async (
-  placeIds: string[],
+  userPlaceIds: string[],
   userId: string,
-  client: Client,
+  client: Client
 ): Promise<HubspotBase[]> => {
   const token = await getValidToken(userId)
   if (!token) {
@@ -23,12 +23,12 @@ export const createOrUpdateCompanies = async (
   logger.info({
     msg: 'Starting company batch processing',
     event: 'hubspot_company_batch_start',
-    metadata: { placeIds, tokenId: token.id },
+    metadata: { userPlaceIds, hubspotTokenId: token.id }
   })
 
   const [places, leadMappings] = await Promise.all([
-    getPlaces(placeIds),
-    getHubspotLeadMappings(token.id, placeIds),
+    getPlaces(userPlaceIds),
+    getHubspotLeadMappings(token.id, userPlaceIds)
   ])
 
   let fieldMappings = await getHubspotFieldMappings(token.id, 'company')
@@ -37,7 +37,7 @@ export const createOrUpdateCompanies = async (
     await manageHubspotFieldMappings({
       tokenId: token.id,
       fieldType: 'company',
-      mode: 'missing',
+      mode: 'missing'
     })
     fieldMappings = await getHubspotFieldMappings(token.id, 'company')
   }
@@ -46,50 +46,51 @@ export const createOrUpdateCompanies = async (
     places.map(async (place) => {
       const properties = await createHubspotCompanyPropertiesWithMappings(
         token.id,
-        place,
+        place
       )
       const existingMapping = leadMappings.find(
         (m): m is typeof m & { hubspotCompanyId: string } =>
-          m.placeId === place.id && typeof m.hubspotCompanyId === 'string',
+          m.userPlaceId === place.userPlaceId &&
+          typeof m.hubspotCompanyId === 'string'
       )
 
       return {
-        placeId: place.id,
+        userPlaceId: place.userPlaceId,
         id: existingMapping?.hubspotCompanyId,
         properties: {
           ...properties,
-          ritchy_place_id: place.id,
-        },
+          ritchy_place_id: place.userPlaceId
+        }
       }
-    }),
+    })
   )
 
   const results = await sendDataToHubspot(
     batchOperations,
     client,
     'companies',
-    crypto.randomUUID(),
+    crypto.randomUUID()
   )
 
   const newCompanies = results.filter(
-    (company) => !leadMappings.some((m) => m.hubspotCompanyId === company.id),
+    (company) => !leadMappings.some((m) => m.hubspotCompanyId === company.id)
   )
 
   logger.info({
     msg: 'New companies',
     event: 'hubspot_company_batch_new_companies',
-    metadata: { newCompanies },
+    metadata: { newCompanies }
   })
 
   if (newCompanies.length > 0) {
     await Promise.all(
       newCompanies.map((company) =>
         upsertLeadMapping({
-          placeId: company.placeId,
-          tokenId: token.id,
-          hubspotCompanyId: company.id,
-        }),
-      ),
+          userPlaceId: company.userPlaceId,
+          hubspotTokenId: token.id,
+          hubspotCompanyId: company.id
+        })
+      )
     )
   }
 

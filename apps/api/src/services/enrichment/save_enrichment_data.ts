@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import type { EnrichResponse } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
-import type { contactSocial } from '../../db/schema'
+import type { contactSocialMedia } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { getContactEmails } from '../contact/queries/get_contact_emails'
 import { getPrimaryContactEmail } from '../contact/queries/get_primary_contact_email'
@@ -12,7 +12,8 @@ import { extractSocialPlatformFromUrl } from '../contact/utils/extract_social_pl
 import { validateEmails } from '../contact/validators/validate_emails'
 import { validateSocials } from '../contact/validators/validate_socials'
 
-type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
+type SocialMediaPlatform =
+  (typeof contactSocialMedia.$inferInsert)['socialMediaPlatform']
 
 interface SaveEnrichmentDataOptions {
   contactId: string
@@ -45,7 +46,7 @@ export interface SaveEnrichmentDataResult {
  */
 export async function saveEnrichmentData({
   contactId,
-  enrichmentData,
+  enrichmentData
 }: SaveEnrichmentDataOptions): Promise<SaveEnrichmentDataResult> {
   const { emails, socialLinks } = enrichmentData
 
@@ -60,8 +61,8 @@ export async function saveEnrichmentData({
       emails,
       emailsCount: emails.length,
       socialLinks: socialLinks,
-      socialLinksCount: flattenedSocialLinks.length,
-    },
+      socialLinksCount: flattenedSocialLinks.length
+    }
   })
 
   // Use transaction for atomic operations
@@ -70,20 +71,20 @@ export async function saveEnrichmentData({
       const emailResults = await processEmailsWithTransaction(
         contactId,
         emails,
-        tx,
+        tx
       )
       const socialResults = await processSocialsWithTransaction(
         contactId,
         flattenedSocialLinks,
-        tx,
+        tx
       )
 
       return {
         emailResults,
-        socialResults,
+        socialResults
       }
     },
-    { isolationLevel: 'repeatable read' },
+    { isolationLevel: 'repeatable read' }
   )
 
   logger.info({
@@ -92,20 +93,20 @@ export async function saveEnrichmentData({
     metadata: {
       contactId,
       emailResults: result.emailResults,
-      socialResults: result.socialResults,
-    },
+      socialResults: result.socialResults
+    }
   })
 
   return {
     ...result,
-    contactId,
+    contactId
   }
 }
 
 async function processEmailsWithTransaction(
   contactId: string,
   emailList: string[],
-  tx: PostgresJsDatabase<typeof schema>,
+  tx: PostgresJsDatabase<typeof schema>
 ): Promise<EmailProcessResult> {
   // validate incoming new emails
   const validEmails = validateEmails(emailList)
@@ -116,8 +117,8 @@ async function processEmailsWithTransaction(
     metadata: {
       contactId,
       totalEmails: emailList.length,
-      validEmails: validEmails.length,
-    },
+      validEmails: validEmails.length
+    }
   })
 
   // Use non-transaction queries for reads
@@ -126,7 +127,7 @@ async function processEmailsWithTransaction(
 
   // Deduplication logic
   const newEmails = validEmails.filter(
-    (email: string) => !existingEmails.some((e) => e.email === email),
+    (email: string) => !existingEmails.some((e) => e.email === email)
   )
 
   const emailsDeduplicated = validEmails.length - newEmails.length
@@ -138,14 +139,14 @@ async function processEmailsWithTransaction(
       metadata: {
         contactId,
         totalEmails: emailList.length,
-        validEmails: validEmails.length,
-      },
+        validEmails: validEmails.length
+      }
     })
     return {
       emailsSaved: 0,
       emailsDeduplicated,
       primaryEmailSet: false,
-      emails: validEmails,
+      emails: validEmails
     }
   }
 
@@ -153,7 +154,7 @@ async function processEmailsWithTransaction(
   const emails = newEmails.map((email: string) => ({
     contactId,
     email,
-    isPrimary: false,
+    isPrimary: false
   }))
 
   // Case 1: No primary email exists - first new email received becomes primary
@@ -164,8 +165,8 @@ async function processEmailsWithTransaction(
       metadata: {
         contactId,
         totalEmails: emailList.length,
-        validEmails: validEmails.length,
-      },
+        validEmails: validEmails.length
+      }
     })
     const [primaryEmail, ...secondaryEmails] = emails
 
@@ -173,9 +174,9 @@ async function processEmailsWithTransaction(
     const emailsToInsert = [
       {
         ...primaryEmail,
-        isPrimary: true,
+        isPrimary: true
       },
-      ...secondaryEmails,
+      ...secondaryEmails
     ]
 
     // Use transaction-aware insert function
@@ -185,7 +186,7 @@ async function processEmailsWithTransaction(
       emailsSaved: newEmails.length,
       emailsDeduplicated,
       primaryEmailSet: true,
-      emails: validEmails,
+      emails: validEmails
     }
   }
 
@@ -196,21 +197,21 @@ async function processEmailsWithTransaction(
     emailsSaved: newEmails.length,
     emailsDeduplicated,
     primaryEmailSet: false,
-    emails: validEmails,
+    emails: validEmails
   }
 }
 
 async function processSocialsWithTransaction(
   contactId: string,
   socialLinkList: string[],
-  tx: PostgresJsDatabase<typeof schema>,
+  tx: PostgresJsDatabase<typeof schema>
 ): Promise<SocialProcessResult> {
   // validate incoming social links
   const validSocials = validateSocials(socialLinkList)
 
   // Additional business metrics
   const platformsFound = [
-    ...new Set(validSocials.map((url) => extractSocialPlatformFromUrl(url))),
+    ...new Set(validSocials.map((url) => extractSocialPlatformFromUrl(url)))
   ]
 
   logger.info({
@@ -220,8 +221,8 @@ async function processSocialsWithTransaction(
       contactId,
       totalSocials: socialLinkList.length,
       validSocials: validSocials.length,
-      platformsFound,
-    },
+      platformsFound
+    }
   })
 
   if (validSocials.length === 0) {
@@ -229,7 +230,7 @@ async function processSocialsWithTransaction(
       socialLinksSaved: 0,
       socialLinksDeduplicated: 0,
       primarySocialSet: false,
-      socials: [],
+      socials: []
     }
   }
 
@@ -241,13 +242,13 @@ async function processSocialsWithTransaction(
         contactId,
         platform,
         profileUrl: url,
-        isPrimary: true,
+        isPrimary: true
       }
     })
     .filter((social) => social.platform !== 'unknown')
     .map((social) => ({
       ...social,
-      platform: social.platform as SocialMediaPlatform,
+      platform: social.platform as SocialMediaPlatform
     }))
 
   // Let the upsert function handle all logic (deduplication, primary/secondary)
@@ -257,6 +258,6 @@ async function processSocialsWithTransaction(
     socialLinksSaved: validSocials.length,
     socialLinksDeduplicated: 0, // Let upsert handle deduplication
     primarySocialSet: true, // Upsert will handle the actual primary logic
-    socials: validSocials,
+    socials: validSocials
   }
 }

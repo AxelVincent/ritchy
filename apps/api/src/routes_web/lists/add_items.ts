@@ -4,7 +4,7 @@ import {
   type AddItemsToListRequestBody,
   AddItemsToListRequestBodySchema,
   type AddItemsToListRequestParams,
-  type AddItemsToListResponse,
+  type AddItemsToListResponse
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -19,7 +19,7 @@ export const addItemsToList = async (
     AddItemsToListResponse,
     AddItemsToListRequestBody
   >,
-  res: Response<AddItemsToListApiResponse>,
+  res: Response<AddItemsToListApiResponse>
 ): Promise<void> => {
   try {
     logger.info({
@@ -27,14 +27,14 @@ export const addItemsToList = async (
       event: 'add_items_to_list',
       metadata: {
         listId: req.params.id,
-        items: req.body.items,
-      },
+        items: req.body.items
+      }
     })
     const listId = req.params.id
     if (!listId) {
       res.status(400).json({
         error: 'Invalid list ID',
-        message: 'Invalid list ID',
+        message: 'Invalid list ID'
       })
       return
     }
@@ -53,7 +53,7 @@ export const addItemsToList = async (
     if (!result.length) {
       res.status(404).json({
         error: 'List not found',
-        message: 'List not found',
+        message: 'List not found'
       })
       return
     }
@@ -63,24 +63,23 @@ export const addItemsToList = async (
       'listPlace',
       items.map((item) => ({
         listId: listId,
-        placeId: item.placeId,
-        searchId: item.searchId,
+        userPlaceId: item.userPlaceId
       })),
-      ['listId', 'placeId'],
+      ['listId', 'userPlaceId']
     )
 
     const newPlaceIds = records
       .filter((record) => operations[record.id] === 'insert')
-      .map((record) => record.placeId)
+      .map((record) => record.userPlaceId)
 
     const duplicatePlaceIds = records
       .filter((record) => operations[record.id] === 'update')
-      .map((record) => record.placeId)
+      .map((record) => record.userPlaceId)
 
     res.json({
       success: true,
       duplicates: duplicatePlaceIds.map(Number),
-      added: newPlaceIds.map(Number),
+      added: newPlaceIds.map(Number)
     })
     logger.info({
       msg: 'Items added to list',
@@ -88,8 +87,8 @@ export const addItemsToList = async (
       metadata: {
         listId,
         added: newPlaceIds,
-        duplicates: duplicatePlaceIds,
-      },
+        duplicates: duplicatePlaceIds
+      }
     })
     return
   } catch (error) {
@@ -97,12 +96,12 @@ export const addItemsToList = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error },
+        metadata: { error }
       })
       res.status(400).json({
         error: 'Invalid request data',
         message: 'Invalid request data',
-        details: error.errors,
+        details: error.errors
       })
       return
     }
@@ -110,11 +109,11 @@ export const addItemsToList = async (
     logger.error({
       msg: 'Add items to list error',
       event: 'add_items_error',
-      metadata: { error },
+      metadata: { error }
     })
     res.status(500).json({
       error: 'Failed to add items to list',
-      message: 'Failed to add items to list',
+      message: 'Failed to add items to list'
     })
     return
   }

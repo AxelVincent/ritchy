@@ -1,15 +1,16 @@
 import { logger } from '@ritchy/logger'
 import type { EnrichResponse, EnrichmentJobResult } from '@ritchy/types'
 import { db } from '../../../db/db'
-import { enrichment as enrichmentTable } from '../../../db/schema'
+import { enrichment as enrichmentTable, userPlace } from '../../../db/schema'
 import { fetchOrCreateContact } from '../../contact/fetch_or_create_contact'
 import { extractSocialPlatformFromUrl } from '../../contact/utils/extract_social_platform_from_url'
 import { getOrFetchEnrichmentData } from '../get_or_fetch_enrichment_data'
 import { saveEnrichmentData } from '../save_enrichment_data'
+import { eq } from 'drizzle-orm'
 
 interface EnrichmentRequest {
-  placeId: string
-  website: string
+  userPlaceId: string
+  domain: string
 }
 
 /**
@@ -19,57 +20,49 @@ interface EnrichmentRequest {
 export const process_enrichment = async (
   enrichment: EnrichmentRequest,
   userId: string,
-  jobId: string,
+  jobId: string
 ): Promise<EnrichmentJobResult> => {
-  const { placeId, website } = enrichment
+  const { userPlaceId, domain } = enrichment
 
   logger.info({
     msg: 'Processing individual enrichment',
     event: 'individual_enrichment_start',
-    metadata: { jobId, placeId, website, userId },
+    metadata: { jobId, userPlaceId, domain, userId }
   })
 
   try {
     // Get or fetch enrichment data
-    const enrichedData = await getOrFetchEnrichmentData(placeId, website)
+    const enrichedData = await getOrFetchEnrichmentData(userPlaceId, domain)
 
     if (!enrichedData) {
       logger.warn({
         msg: 'Enrichment failed to produce data',
         event: 'individual_enrichment_no_data',
-        metadata: { jobId, placeId, website, userId },
+        metadata: { jobId, userPlaceId, domain, userId }
       })
 
       return {
-        placeId,
+        userPlaceId,
         success: false,
-        error: 'Failed to enrich website',
+        error: 'Failed to enrich website'
       }
     }
 
     try {
       // TODO: Use versioned DB
       await db
-        .insert(enrichmentTable)
-        .values({
-          userId,
-          placeId,
-          website,
+        .update(userPlace)
+        .set({
+          isEnriched: true
         })
-        .onConflictDoUpdate({
-          target: [enrichmentTable.userId, enrichmentTable.placeId],
-          set: {
-            website,
-            updatedAt: new Date(),
-          },
-        })
+        .where(eq(userPlace.id, userPlaceId))
 
       // Get or create contact for this place and user
-      const contact = await fetchOrCreateContact(placeId, userId)
+      const contact = await fetchOrCreateContact(userPlaceId, userId)
 
       const savedEnrichment = await saveEnrichmentData({
         contactId: contact.id,
-        enrichmentData: enrichedData,
+        enrichmentData: enrichedData
       })
 
       logger.info({
@@ -77,18 +70,18 @@ export const process_enrichment = async (
         event: 'individual_enrichment_success',
         metadata: {
           jobId,
-          placeId,
+          userPlaceId,
           userId,
           contactId: contact.id,
           stats: {
             emailsFound: enrichedData.emails.length,
-            socialPlatformsFound: Object.keys(enrichedData.socialLinks).length,
-          },
-        },
+            socialPlatformsFound: Object.keys(enrichedData.socialLinks).length
+          }
+        }
       })
 
       const data: EnrichResponse = {
-        id: placeId,
+        id: userPlaceId,
         emails: savedEnrichment.emailResults.emails,
         socialLinks: Object.fromEntries(
           savedEnrichment.socialResults.socials
@@ -96,9 +89,9 @@ export const process_enrichment = async (
               const platform = extractSocialPlatformFromUrl(url)
               return platform !== 'unknown' ? [platform, [url]] : null
             })
-            .filter(Boolean) as [string, string[]][],
+            .filter(Boolean) as [string, string[]][]
         ),
-        domainRegistration: enrichedData.domainRegistration,
+        domainRegistration: enrichedData.domainRegistration
       }
 
       logger.info({
@@ -106,22 +99,22 @@ export const process_enrichment = async (
         event: 'enrichment_data_saved',
         metadata: {
           jobId,
-          placeId,
+          userPlaceId,
           userId,
           contactId: contact.id,
           enrichmentData: enrichedData,
           enrichmentDataSaved: data,
           stats: {
             emailsSaved: savedEnrichment.emailResults.emailsSaved,
-            socialLinksSaved: savedEnrichment.socialResults.socialLinksSaved,
-          },
-        },
+            socialLinksSaved: savedEnrichment.socialResults.socialLinksSaved
+          }
+        }
       })
 
       return {
-        placeId,
+        userPlaceId,
         success: true,
-        data,
+        data
       }
     } catch (saveError) {
       logger.error({
@@ -129,19 +122,19 @@ export const process_enrichment = async (
         event: 'individual_enrichment_save_error',
         metadata: {
           jobId,
-          placeId,
+          userPlaceId,
           userId,
           error:
-            saveError instanceof Error ? saveError.message : String(saveError),
-        },
+            saveError instanceof Error ? saveError.message : String(saveError)
+        }
       })
 
       // Return success since enrichment worked, just database save failed
       return {
-        placeId,
+        userPlaceId,
         success: true,
         data: enrichedData,
-        warning: 'Data enriched but failed to save to database',
+        warning: 'Data enriched but failed to save to database'
       }
     }
   } catch (error) {
@@ -150,17 +143,17 @@ export const process_enrichment = async (
       event: 'individual_enrichment_error',
       metadata: {
         jobId,
-        placeId,
-        website,
+        userPlaceId,
+        domain,
         userId,
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
 
     return {
-      placeId,
+      userPlaceId,
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }

@@ -12,13 +12,13 @@ export default defineConfig({
     sentryVitePlugin({
       authToken: process.env.SENTRY_AUTH_TOKEN,
       org: 'ritchy-po',
-      project: 'javascript-react',
-    }),
+      project: 'javascript-react'
+    })
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+      '@': path.resolve(__dirname, './src')
+    }
   },
   build: {
     sourcemap: true,
@@ -26,15 +26,15 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-        },
-      },
-    },
+          vendor: ['react', 'react-dom']
+        }
+      }
+    }
   },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    css: false,
-  },
+    css: false
+  }
 } as ViteUserConfig)

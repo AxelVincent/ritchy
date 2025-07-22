@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import {
   type InternalField,
   type InternalLeadStatus,
-  LEAD_STATUS_MAPPING,
+  LEAD_STATUS_MAPPING
 } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../../../db/db'
@@ -18,12 +18,12 @@ type FieldUpdate = {
  */
 export const createHubspotProperties = async (
   tokenId: string,
-  updates: FieldUpdate[],
+  updates: FieldUpdate[]
 ): Promise<Record<string, string>> => {
   logger.info({
     msg: 'Creating Hubspot properties',
     event: 'hubspot_properties_create',
-    metadata: { updates, tokenId },
+    metadata: { updates, tokenId }
   })
 
   // Get all relevant field mappings
@@ -32,18 +32,18 @@ export const createHubspotProperties = async (
     .from(hubspotFieldMapping)
     .where(
       and(
-        eq(hubspotFieldMapping.tokenId, tokenId),
+        eq(hubspotFieldMapping.hubspotTokenId, tokenId),
         inArray(
           hubspotFieldMapping.internalField,
-          updates.map((update) => update.internalField),
-        ),
-      ),
+          updates.map((update) => update.internalField)
+        )
+      )
     )
 
   logger.info({
     msg: 'Hubspot field mappings',
     event: 'hubspot_field_mappings',
-    metadata: { mappings },
+    metadata: { mappings }
   })
 
   const properties: Record<string, string> = {}
@@ -55,7 +55,7 @@ export const createHubspotProperties = async (
       logger.warn({
         msg: 'No mapping found for field',
         event: 'hubspot_field_mapping_not_found',
-        metadata: { internalField, tokenId },
+        metadata: { internalField, tokenId }
       })
       continue
     }

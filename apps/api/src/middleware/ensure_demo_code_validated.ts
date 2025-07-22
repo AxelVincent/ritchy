@@ -9,7 +9,7 @@ import { getUserPlan } from '../services/payment/queries/get_user_plan' // Assum
 export const ensureDemoCodeValidated = async (
   req: Request,
   res: Response<ApiErrorResponse>,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const userId = req.auth?.userId
@@ -19,12 +19,12 @@ export const ensureDemoCodeValidated = async (
       logger.warn({
         msg: 'No user ID found in ensureDemoCodeValidated middleware',
         event: 'demo_code_middleware_no_userid',
-        metadata: { path: req.path },
+        metadata: { path: req.path }
       })
       // Sending a generic auth error as the issue is likely upstream
       res.status(401).json({
         error: 'unauthorized',
-        message: 'Authentication required.',
+        message: 'Authentication required.'
       })
       return
     }
@@ -40,7 +40,7 @@ export const ensureDemoCodeValidated = async (
     // User is on a FREE plan, check if their demo code is validated
     const [demoCodeRecord] = await db
       .select({
-        isValidated: userDemoCode.isValidated,
+        isValidated: userDemoCode.isValidated
       })
       .from(userDemoCode)
       .where(eq(userDemoCode.userId, userId))
@@ -51,23 +51,23 @@ export const ensureDemoCodeValidated = async (
       logger.info({
         msg: 'Access denied: Demo code not validated for free user',
         event: 'demo_code_not_validated_access_denied',
-        metadata: { userId, path: req.path, userPlan },
+        metadata: { userId, path: req.path, userPlan }
       })
       res.status(403).json({
         error: 'demo_code_required',
         message:
-          'Access to this feature requires demo code validation for free trial users.',
+          'Access to this feature requires demo code validation for free trial users.'
       })
     }
   } catch (error) {
     logger.error({
       msg: 'Error in ensureDemoCodeValidated middleware',
       event: 'demo_code_middleware_error',
-      metadata: { error, userId: req.auth?.userId, path: req.path },
+      metadata: { error, userId: req.auth?.userId, path: req.path }
     })
     res.status(500).json({
       error: 'internal_server_error',
-      message: 'An error occurred while verifying demo code status.',
+      message: 'An error occurred while verifying demo code status.'
     })
   }
 }

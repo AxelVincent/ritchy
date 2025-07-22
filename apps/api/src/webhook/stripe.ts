@@ -9,7 +9,7 @@ import { sendSlackNotification } from '../external/slack/slack'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia',
+  apiVersion: '2025-01-27.acacia'
 })
 
 type WebhookResponse = {
@@ -20,7 +20,7 @@ type WebhookResponse = {
 
 export const stripeWebhook = async (
   req: Request,
-  res: Response<WebhookResponse>,
+  res: Response<WebhookResponse>
 ): Promise<void> => {
   logger.info({
     msg: 'Stripe webhook received',
@@ -28,8 +28,8 @@ export const stripeWebhook = async (
     metadata: {
       body: req.body,
       eventType: req.body?.type,
-      webhookKey: res.locals.webhookKey,
-    },
+      webhookKey: res.locals.webhookKey
+    }
   })
 
   let event: Stripe.Event
@@ -40,11 +40,11 @@ export const stripeWebhook = async (
     if (!signature) {
       logger.error({
         msg: 'Missing stripe-signature header',
-        event: 'webhook_missing_signature',
+        event: 'webhook_missing_signature'
       })
       res.status(400).json({
         error: 'Missing signature',
-        message: 'Missing stripe-signature header',
+        message: 'Missing stripe-signature header'
       })
       return
     }
@@ -52,13 +52,13 @@ export const stripeWebhook = async (
     event = stripe.webhooks.constructEvent(
       req.rawBody,
       signature,
-      STRIPE_CONFIG.API_KEYS.WEBHOOK_SECRET,
+      STRIPE_CONFIG.API_KEYS.WEBHOOK_SECRET
     )
 
     const { isDuplicate } = await validateWebhookIdempotency(
       req.headers,
       event,
-      event.type,
+      event.type
     )
 
     if (isDuplicate) {
@@ -70,8 +70,8 @@ export const stripeWebhook = async (
       msg: 'Webhook signature verified successfully',
       event: 'webhook_signature_verified',
       metadata: {
-        eventType: event.type,
-      },
+        eventType: event.type
+      }
     })
   } catch (err) {
     logger.error({
@@ -83,14 +83,14 @@ export const stripeWebhook = async (
             ? {
                 message: err.message,
                 name: err.name,
-                stack: err.stack,
+                stack: err.stack
               }
-            : err,
-      },
+            : err
+      }
     })
     res.status(400).json({
       error: 'Invalid signature',
-      message: 'Webhook signature verification failed',
+      message: 'Webhook signature verification failed'
     })
     return
   }
@@ -106,8 +106,8 @@ export const stripeWebhook = async (
       event: 'webhook_event_received',
       metadata: {
         eventType,
-        eventObject,
-      },
+        eventObject
+      }
     })
 
     // Check if this is a subscription-related event
@@ -115,11 +115,11 @@ export const stripeWebhook = async (
       logger.warn({
         msg: 'Invalid webhook event structure',
         event: 'webhook_invalid_structure',
-        metadata: { eventType },
+        metadata: { eventType }
       })
       res.status(400).json({
         error: 'Invalid webhook data',
-        message: 'Invalid event structure',
+        message: 'Invalid event structure'
       })
       return
     }
@@ -133,12 +133,12 @@ export const stripeWebhook = async (
         event: 'webhook_missing_user_id',
         metadata: {
           eventType,
-          webhookKey: res.locals.webhookKey,
-        },
+          webhookKey: res.locals.webhookKey
+        }
       })
       res.status(400).json({
         error: 'Invalid webhook data',
-        message: 'Missing user_id in metadata',
+        message: 'Missing user_id in metadata'
       })
       return
     }
@@ -155,12 +155,12 @@ export const stripeWebhook = async (
         event: 'webhook_user_not_found',
         metadata: {
           userId,
-          eventType,
-        },
+          eventType
+        }
       })
       res.status(404).json({
         error: 'User not found',
-        message: 'No user found with the provided id',
+        message: 'No user found with the provided id'
       })
       return
     }
@@ -173,16 +173,16 @@ export const stripeWebhook = async (
           id: user.id,
           email: user.email,
           firstName: user.firstName ?? '',
-          lastName: user.lastName ?? '',
-        },
+          lastName: user.lastName ?? ''
+        }
       },
       async () => {
         logger.info({
           msg: 'Processing webhook event',
           event: 'webhook_event_processing',
           metadata: {
-            eventType: event.type,
-          },
+            eventType: event.type
+          }
         })
 
         // Remove the try-catch block entirely
@@ -196,10 +196,10 @@ export const stripeWebhook = async (
                 trialEnd: stripeEvent.trial_end,
                 daysUntilTrialEnd: stripeEvent.trial_end
                   ? Math.floor(
-                      (stripeEvent.trial_end - Date.now() / 1000) / 86400,
+                      (stripeEvent.trial_end - Date.now() / 1000) / 86400
                     )
-                  : null,
-              },
+                  : null
+              }
             })
             break
           }
@@ -211,8 +211,8 @@ export const stripeWebhook = async (
               metadata: {
                 subscriptionId: stripeEvent.id,
                 currentStatus: stripeEvent.status,
-                cancelReason: stripeEvent.cancellation_details?.reason,
-              },
+                cancelReason: stripeEvent.cancellation_details?.reason
+              }
             })
 
             await db
@@ -220,13 +220,13 @@ export const stripeWebhook = async (
               .set({
                 status: stripeEvent.status,
                 plan: 'FREE',
-                updatedAt: new Date(),
+                updatedAt: new Date()
               })
               .where(eq(subscription.stripeSubscriptionId, stripeEvent.id))
             logger.info({
               msg: 'Subscription deleted',
               event: 'subscription_deleted',
-              metadata: { subscriptionId: stripeEvent.id },
+              metadata: { subscriptionId: stripeEvent.id }
             })
             break
           }
@@ -238,8 +238,8 @@ export const stripeWebhook = async (
               event: 'subscription_update_started',
               metadata: {
                 subscriptionId: stripeEvent.id,
-                eventData: stripeEvent,
-              },
+                eventData: stripeEvent
+              }
             })
 
             // Safely extract the required data
@@ -258,12 +258,12 @@ export const stripeWebhook = async (
                 event: 'subscription_update_invalid_data',
                 metadata: {
                   subscriptionId: stripeSubscriptionId,
-                  items: stripeEvent.items,
-                },
+                  items: stripeEvent.items
+                }
               })
               res.status(400).json({
                 error: 'Invalid subscription data',
-                message: 'Missing required subscription fields',
+                message: 'Missing required subscription fields'
               })
               return
             }
@@ -282,7 +282,7 @@ export const stripeWebhook = async (
                 stripePriceId,
                 stripeCustomerId,
                 status,
-                plan: planType,
+                plan: planType
               })
               .onConflictDoUpdate({
                 target: subscription.userId,
@@ -292,8 +292,8 @@ export const stripeWebhook = async (
                   stripeCustomerId,
                   status,
                   plan: planType,
-                  updatedAt: new Date(),
-                },
+                  updatedAt: new Date()
+                }
               })
               .returning()
 
@@ -312,7 +312,7 @@ export const stripeWebhook = async (
 
             sendSlackNotification({
               text: notificationText,
-              channel: 'subscriptions',
+              channel: 'subscriptions'
             })
             logger.info({
               msg: stripeEvent.cancel_at_period_end
@@ -332,8 +332,8 @@ export const stripeWebhook = async (
                 cancelAt: stripeEvent.cancel_at
                   ? new Date(stripeEvent.cancel_at * 1000)
                   : undefined,
-                cancellationReason: stripeEvent.cancellation_details?.reason,
-              },
+                cancellationReason: stripeEvent.cancellation_details?.reason
+              }
             })
             break
           }
@@ -342,7 +342,7 @@ export const stripeWebhook = async (
             logger.warn({
               msg: 'Unhandled webhook event',
               event: 'webhook_unhandled_event',
-              metadata: { eventType },
+              metadata: { eventType }
             })
           }
         }
@@ -352,12 +352,12 @@ export const stripeWebhook = async (
           event: 'webhook_processed',
           metadata: {
             eventType,
-            webhookKey: res.locals.webhookKey,
-          },
+            webhookKey: res.locals.webhookKey
+          }
         })
 
         res.json({ received: true })
-      },
+      }
     )
   } catch (err) {
     logger.error({
@@ -369,14 +369,14 @@ export const stripeWebhook = async (
             ? {
                 message: err.message,
                 name: err.name,
-                stack: err.stack,
+                stack: err.stack
               }
-            : err,
-      },
+            : err
+      }
     })
     res.status(500).json({
       error: 'Webhook processing failed',
-      message: 'Error processing webhook',
+      message: 'Error processing webhook'
     })
   }
 }

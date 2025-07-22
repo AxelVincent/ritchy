@@ -137,8 +137,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
         <DialogContent className="max-w-md h-[60vh] flex flex-col overflow-hidden">
           <div className="flex-1 overflow-hidden">
             <Notes
-              placeId={place.id}
-              searchId={place.searchId}
+              userPlaceId={place.id}
               listId={place.listId}
             />
           </div>

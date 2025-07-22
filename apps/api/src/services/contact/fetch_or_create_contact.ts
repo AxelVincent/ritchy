@@ -3,22 +3,25 @@ import { db } from '../../db/db'
 import { contact } from '../../db/schema'
 import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
 
-export const fetchOrCreateContact = async (placeId: string, userId: string) => {
+export const fetchOrCreateContact = async (
+  userPlaceId: string,
+  userId: string
+) => {
   const [existingContact] = await db
     .select()
     .from(contact)
-    .where(and(eq(contact.placeId, placeId), eq(contact.userId, userId)))
+    .where(
+      and(eq(contact.userPlaceId, userPlaceId), eq(contact.userPlaceId, userId))
+    )
 
   if (!existingContact) {
-    const place = await getPlaceDetailsV1(placeId)
+    const place = await getPlaceDetailsV1(userPlaceId)
     const [newContact] = await db
       .insert(contact)
       .values({
-        placeId,
-        userId,
-        firstname: '',
-        lastname: place.name,
-        phone: place.phone,
+        userPlaceId,
+        firstName: '',
+        lastName: place.name
       })
       .returning()
 
@@ -30,10 +33,8 @@ export const fetchOrCreateContact = async (placeId: string, userId: string) => {
 
 export const fetchOrCreateContacts = async (
   placeIds: string[],
-  userId: string,
+  userId: string
 ) =>
   Promise.all(
-    placeIds.map(
-      async (placeId) => await fetchOrCreateContact(placeId, userId),
-    ),
+    placeIds.map(async (placeId) => await fetchOrCreateContact(placeId, userId))
   )

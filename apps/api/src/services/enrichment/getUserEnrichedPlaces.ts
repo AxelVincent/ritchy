@@ -1,17 +1,23 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { enrichment as enrichmentTable } from '../../db/schema'
+import {
+  enrichment as enrichmentTable,
+  place,
+  userPlace
+} from '../../db/schema'
 
 export const getUserEnrichedPlaces = async (
-  userId: string,
+  userPlaceIds: string[]
 ): Promise<Map<string, string>> => {
   const enrichments = await db
     .select({
-      placeId: enrichmentTable.placeId,
-      website: enrichmentTable.website,
+      placeId: place.sourceId,
+      website: enrichmentTable.domain
     })
     .from(enrichmentTable)
-    .where(eq(enrichmentTable.userId, userId))
+    .innerJoin(place, eq(enrichmentTable.placeId, place.id))
+    .innerJoin(userPlace, eq(place.id, userPlace.placeId))
+    .where(inArray(userPlace.id, userPlaceIds))
 
   // Create a map of placeId -> website
   const placeToWebsite = new Map<string, string>()

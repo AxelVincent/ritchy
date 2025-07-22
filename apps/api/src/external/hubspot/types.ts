@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 const HubspotBaseSchema = z.object({
   id: z.string(),
-  placeId: z.string(),
+  userPlaceId: z.string(),
   properties: z.record(z.string(), z.unknown()),
   createdAt: z
     .union([z.string(), z.date()])
@@ -10,13 +10,13 @@ const HubspotBaseSchema = z.object({
   updatedAt: z
     .union([z.string(), z.date()])
     .transform((val) => (val instanceof Date ? val.toISOString() : val)),
-  archived: z.boolean(),
+  archived: z.boolean()
 })
 
 const BatchOperationSchema = z.object({
-  placeId: z.string(),
+  userPlaceId: z.string(),
   id: z.string().optional(),
-  properties: z.record(z.string()),
+  properties: z.record(z.string())
 })
 
 export type HubspotBase = z.infer<typeof HubspotBaseSchema>

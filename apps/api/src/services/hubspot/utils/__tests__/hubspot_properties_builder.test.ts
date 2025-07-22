@@ -3,7 +3,7 @@ import type {
   CompanyMapping,
   ContactMapping,
   InternalLeadStatus,
-  PlaceBase,
+  PlaceBase
 } from '@ritchy/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Contact } from '../../../../db/schema'
@@ -12,7 +12,7 @@ import {
   createHubspotCompanyPropertiesWithMappings,
   createHubspotContactProperties,
   createHubspotContactPropertiesWithMappings,
-  createHubspotProperties,
+  createHubspotProperties
 } from '../hubspot_properties_builder'
 
 // Mock the database and external dependencies
@@ -20,12 +20,12 @@ vi.mock('../../../../db/db', () => ({
   db: {
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockResolvedValue([]),
-  },
+    where: vi.fn().mockResolvedValue([])
+  }
 }))
 
 vi.mock('../manage_hubspot_field_mapping', () => ({
-  manageHubspotFieldMappings: vi.fn().mockResolvedValue([]),
+  manageHubspotFieldMappings: vi.fn().mockResolvedValue([])
 }))
 
 /**
@@ -37,17 +37,18 @@ vi.mock('../manage_hubspot_field_mapping', () => ({
 
 // Helper functions to reduce test code duplication
 const createMockContactData = (
-  overrides = {},
-): Pick<Contact, 'firstname' | 'lastname' | 'email' | 'phone'> => ({
-  firstname: 'John',
-  lastname: 'Doe',
-  email: 'john.doe@example.com',
-  phone: '+1234567890',
-  ...overrides,
+  overrides = {}
+): Pick<Contact, 'firstName' | 'lastName'> => ({
+  firstName: 'John',
+  lastName: 'Doe',
+  ...overrides
 })
 
-const createMockPlace = (overrides = {}): PlaceBase => ({
+const createMockPlace = (
+  overrides = {}
+): PlaceBase & { userPlaceId: string } => ({
   id: 'place-123',
+  sourceId: 'source-123',
   name: 'Test Company',
   website: 'https://testcompany.com',
   phone: '+1234567890',
@@ -61,111 +62,112 @@ const createMockPlace = (overrides = {}): PlaceBase => ({
     locality: 'Test City',
     administrativeAreaLevel1: 'Test State',
     postalCode: '12345',
-    country: 'Test Country',
+    country: 'Test Country'
   },
-  ...overrides,
+  userPlaceId: 'user-place-123',
+  ...overrides
 })
 
 const createMockContactMappings = (): ContactMapping[] => [
   {
     id: 'test-id-1',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'contact.firstname',
     hubspotField: 'firstname',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-2',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'contact.lastname',
     hubspotField: 'lastname',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-3',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'contact.email',
     hubspotField: 'email',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-4',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'contact.phone',
     hubspotField: 'phone',
     createdAt: new Date(),
-    updatedAt: new Date(),
-  },
+    updatedAt: new Date()
+  }
 ]
 
 const createMockCompanyMappings = (): CompanyMapping[] => [
   {
     id: 'test-id-1',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.name',
     hubspotField: 'name',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-2',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.website',
     hubspotField: 'website',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-3',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.phone',
     hubspotField: 'phone',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-4',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.street',
     hubspotField: 'street',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-5',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.locality',
     hubspotField: 'city',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-6',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.region',
     hubspotField: 'state',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-7',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.postalCode',
     hubspotField: 'zip',
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   },
   {
     id: 'test-id-8',
-    tokenId: 'test-token',
+    hubspotTokenId: 'test-token',
     internalField: 'company.country',
     hubspotField: 'country',
     createdAt: new Date(),
-    updatedAt: new Date(),
-  },
+    updatedAt: new Date()
+  }
 ]
 
 interface MockDb {
@@ -186,7 +188,7 @@ describe('HubSpot Properties Builder', () => {
         const result = createHubspotContactProperties(
           createMockContactData(),
           createMockContactMappings(),
-          currentStatus,
+          currentStatus
         )
 
         expect(result).toEqual({
@@ -194,26 +196,26 @@ describe('HubSpot Properties Builder', () => {
           lastname: 'Doe',
           email: 'john.doe@example.com',
           phone: '+1234567890',
-          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus],
+          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus]
         })
       })
 
       it('should handle missing contact fields', () => {
         const partialContactData = createMockContactData({
           lastname: null,
-          phone: null,
+          phone: null
         })
         const currentStatus: InternalLeadStatus = 'INTERESTED'
         const result = createHubspotContactProperties(
           partialContactData,
           createMockContactMappings(),
-          currentStatus,
+          currentStatus
         )
 
         expect(result).toEqual({
           firstname: 'John',
           email: 'john.doe@example.com',
-          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus],
+          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus]
         })
       })
     })
@@ -224,32 +226,30 @@ describe('HubSpot Properties Builder', () => {
           firstname: '',
           lastname: '',
           email: '',
-          phone: '',
+          phone: ''
         })
         const currentStatus: InternalLeadStatus = 'NEW'
         const result = createHubspotContactProperties(
           emptyContactData,
           createMockContactMappings(),
-          currentStatus,
+          currentStatus
         )
 
         expect(result).toEqual({
-          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus],
+          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus]
         })
       })
 
       it('should handle special characters in contact fields', () => {
         const specialCharsData = createMockContactData({
-          firstname: 'José',
-          lastname: "O'Connor",
-          email: 'test+label@example.com',
-          phone: '+1 (555) 123-4567',
+          firstName: 'José',
+          lastName: "O'Connor"
         })
         const currentStatus: InternalLeadStatus = 'NEW'
         const result = createHubspotContactProperties(
           specialCharsData,
           createMockContactMappings(),
-          currentStatus,
+          currentStatus
         )
 
         expect(result).toEqual({
@@ -257,7 +257,7 @@ describe('HubSpot Properties Builder', () => {
           lastname: "O'Connor",
           email: 'test+label@example.com',
           phone: '+1 (555) 123-4567',
-          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus],
+          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus]
         })
       })
 
@@ -265,13 +265,13 @@ describe('HubSpot Properties Builder', () => {
         const internationalPhones = [
           '+44 20 7123 4567', // UK
           '+33 1 23 45 67 89', // France
-          '+81 3-1234-5678', // Japan
+          '+81 3-1234-5678' // Japan
         ]
         for (const phone of internationalPhones) {
           const result = createHubspotContactProperties(
             createMockContactData({ phone }),
             createMockContactMappings(),
-            'NEW',
+            'NEW'
           )
           expect(result.phone).toBe(phone)
         }
@@ -285,14 +285,14 @@ describe('HubSpot Properties Builder', () => {
           'INTERESTED',
           'CONTACTED',
           'NO_ANSWER',
-          'LOST',
+          'LOST'
         ]
 
         for (const status of statuses) {
           const result = createHubspotContactProperties(
             createMockContactData(),
             createMockContactMappings(),
-            status,
+            status
           )
           expect(result.hs_lead_status).toBe(LEAD_STATUS_MAPPING[status])
         }
@@ -303,18 +303,18 @@ describe('HubSpot Properties Builder', () => {
           ...createMockContactMappings(),
           {
             id: 'test-id-5',
-            tokenId: 'test-token',
+            hubspotTokenId: 'test-token',
             internalField: 'status.INTERESTED' as const,
             hubspotField: 'some_field',
             createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+            updatedAt: new Date()
+          }
         ]
         const currentStatus: InternalLeadStatus = 'NEW'
         const result = createHubspotContactProperties(
           createMockContactData(),
           mixedMappings,
-          currentStatus,
+          currentStatus
         )
 
         expect(result).toEqual({
@@ -322,7 +322,7 @@ describe('HubSpot Properties Builder', () => {
           lastname: 'Doe',
           email: 'john.doe@example.com',
           phone: '+1234567890',
-          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus],
+          hs_lead_status: LEAD_STATUS_MAPPING[currentStatus]
         })
       })
     })
@@ -333,7 +333,7 @@ describe('HubSpot Properties Builder', () => {
       it('should transform company data with all fields', () => {
         const result = createHubspotCompanyProperties(
           createMockPlace(),
-          createMockCompanyMappings(),
+          createMockCompanyMappings()
         )
 
         expect(result).toEqual({
@@ -345,7 +345,7 @@ describe('HubSpot Properties Builder', () => {
           city: 'Test City',
           state: 'Test State',
           zip: '12345',
-          country: 'Test Country',
+          country: 'Test Country'
         })
       })
     })
@@ -356,13 +356,13 @@ describe('HubSpot Properties Builder', () => {
           address: {
             street: 'Main St',
             locality: 'Test City',
-            country: 'Test Country',
-          },
+            country: 'Test Country'
+          }
         })
 
         const result = createHubspotCompanyProperties(
           partialPlace,
-          createMockCompanyMappings(),
+          createMockCompanyMappings()
         )
 
         expect(result).toEqual({
@@ -372,7 +372,7 @@ describe('HubSpot Properties Builder', () => {
           phone: '+1234567890',
           street: 'Main St',
           city: 'Test City',
-          country: 'Test Country',
+          country: 'Test Country'
         })
       })
 
@@ -384,13 +384,13 @@ describe('HubSpot Properties Builder', () => {
             locality: 'Paris',
             administrativeAreaLevel1: 'Île-de-France',
             postalCode: '75001',
-            country: 'France',
-          },
+            country: 'France'
+          }
         })
 
         const result = createHubspotCompanyProperties(
           internationalPlace,
-          createMockCompanyMappings(),
+          createMockCompanyMappings()
         )
 
         expect(result).toEqual({
@@ -402,7 +402,7 @@ describe('HubSpot Properties Builder', () => {
           city: 'Paris',
           state: 'Île-de-France',
           zip: '75001',
-          country: 'France',
+          country: 'France'
         })
       })
     })
@@ -410,12 +410,12 @@ describe('HubSpot Properties Builder', () => {
     describe('website handling', () => {
       it('should handle missing website', () => {
         const placeWithoutWebsite = createMockPlace({
-          website: undefined,
+          website: undefined
         })
 
         const result = createHubspotCompanyProperties(
           placeWithoutWebsite,
-          createMockCompanyMappings(),
+          createMockCompanyMappings()
         )
 
         expect(result).toEqual({
@@ -426,18 +426,18 @@ describe('HubSpot Properties Builder', () => {
           city: 'Test City',
           state: 'Test State',
           zip: '12345',
-          country: 'Test Country',
+          country: 'Test Country'
         })
       })
 
       it('should handle website with subdomains and paths', () => {
         const placeWithComplexWebsite = createMockPlace({
-          website: 'https://subdomain.testcompany.com/path?query=value',
+          website: 'https://subdomain.testcompany.com/path?query=value'
         })
 
         const result = createHubspotCompanyProperties(
           placeWithComplexWebsite,
-          createMockCompanyMappings(),
+          createMockCompanyMappings()
         )
 
         expect(result.website).toBe('subdomain.testcompany.com')
@@ -445,14 +445,14 @@ describe('HubSpot Properties Builder', () => {
 
       it('should handle invalid website URL', () => {
         const placeWithInvalidWebsite = createMockPlace({
-          website: 'invalid-url',
+          website: 'invalid-url'
         })
 
         expect(() =>
           createHubspotCompanyProperties(
             placeWithInvalidWebsite,
-            createMockCompanyMappings(),
-          ),
+            createMockCompanyMappings()
+          )
         ).toThrow('Invalid website URL: invalid-url')
       })
 
@@ -461,12 +461,12 @@ describe('HubSpot Properties Builder', () => {
           'http://test.com',
           'https://test.co.uk',
           'https://test-site.com',
-          'https://test.com/path?query=value#hash',
+          'https://test.com/path?query=value#hash'
         ]
         for (const website of websites) {
           const result = createHubspotCompanyProperties(
             createMockPlace({ website }),
-            createMockCompanyMappings(),
+            createMockCompanyMappings()
           )
           expect(result.website).toBe(new URL(website).hostname)
         }
@@ -479,14 +479,14 @@ describe('HubSpot Properties Builder', () => {
           '(123) 456-7890',
           '123-456-7890',
           '123.456.7890',
-          '+1 123-456-7890',
+          '+1 123-456-7890'
         ]
 
         for (const phone of formats) {
           const placeWithFormattedPhone = createMockPlace({ phone })
           const result = createHubspotCompanyProperties(
             placeWithFormattedPhone,
-            createMockCompanyMappings(),
+            createMockCompanyMappings()
           )
           expect(result.phone).toBe(phone)
         }
@@ -498,7 +498,7 @@ describe('HubSpot Properties Builder', () => {
     it('should retrieve mappings and create contact properties', async () => {
       // Mock the database to return contact mappings
       const { db: mockDb } = await vi.importMock<{ db: unknown }>(
-        '../../../../db/db',
+        '../../../../db/db'
       )
       const mockDbAsMockDb = mockDb as MockDb
       mockDbAsMockDb.where.mockResolvedValue(createMockContactMappings())
@@ -506,7 +506,7 @@ describe('HubSpot Properties Builder', () => {
       const result = await createHubspotContactPropertiesWithMappings(
         'token-123',
         createMockContactData(),
-        'NEW',
+        'NEW'
       )
 
       expect(result).toEqual({
@@ -514,7 +514,7 @@ describe('HubSpot Properties Builder', () => {
         lastname: 'Doe',
         email: 'john.doe@example.com',
         phone: '+1234567890',
-        hs_lead_status: LEAD_STATUS_MAPPING.NEW,
+        hs_lead_status: LEAD_STATUS_MAPPING.NEW
       })
 
       expect(mockDbAsMockDb.select).toHaveBeenCalled()
@@ -523,7 +523,7 @@ describe('HubSpot Properties Builder', () => {
     it('should create mappings if none exist', async () => {
       // Mock empty mappings first, then return mappings after creation
       const { db: mockDb } = await vi.importMock<{ db: unknown }>(
-        '../../../../db/db',
+        '../../../../db/db'
       )
       const mockDbAsMockDb = mockDb as MockDb
       mockDbAsMockDb.where
@@ -533,7 +533,7 @@ describe('HubSpot Properties Builder', () => {
       const result = await createHubspotContactPropertiesWithMappings(
         'token-123',
         createMockContactData(),
-        'INTERESTED',
+        'INTERESTED'
       )
 
       expect(result).toEqual({
@@ -541,7 +541,7 @@ describe('HubSpot Properties Builder', () => {
         lastname: 'Doe',
         email: 'john.doe@example.com',
         phone: '+1234567890',
-        hs_lead_status: LEAD_STATUS_MAPPING.INTERESTED,
+        hs_lead_status: LEAD_STATUS_MAPPING.INTERESTED
       })
     })
   })
@@ -550,14 +550,14 @@ describe('HubSpot Properties Builder', () => {
     it('should retrieve mappings and create company properties', async () => {
       // Mock the database to return company mappings
       const { db: mockDb } = await vi.importMock<{ db: unknown }>(
-        '../../../../db/db',
+        '../../../../db/db'
       )
       const mockDbAsMockDb = mockDb as MockDb
       mockDbAsMockDb.where.mockResolvedValue(createMockCompanyMappings())
 
       const result = await createHubspotCompanyPropertiesWithMappings(
         'token-123',
-        createMockPlace(),
+        createMockPlace()
       )
 
       expect(result).toEqual({
@@ -569,7 +569,7 @@ describe('HubSpot Properties Builder', () => {
         city: 'Test City',
         state: 'Test State',
         zip: '12345',
-        country: 'Test Country',
+        country: 'Test Country'
       })
 
       expect(mockDbAsMockDb.select).toHaveBeenCalled()
@@ -578,7 +578,7 @@ describe('HubSpot Properties Builder', () => {
     it('should create mappings if none exist', async () => {
       // Mock empty mappings first, then return mappings after creation
       const { db: mockDb } = await vi.importMock<{ db: unknown }>(
-        '../../../../db/db',
+        '../../../../db/db'
       )
       const mockDbAsMockDb = mockDb as MockDb
       mockDbAsMockDb.where
@@ -587,7 +587,7 @@ describe('HubSpot Properties Builder', () => {
 
       const result = await createHubspotCompanyPropertiesWithMappings(
         'token-123',
-        createMockPlace(),
+        createMockPlace()
       )
 
       expect(result.ritchy_place_id).toBe('place-123')
@@ -597,7 +597,7 @@ describe('HubSpot Properties Builder', () => {
   describe('createHubspotProperties', () => {
     it('should handle status field updates', async () => {
       const { db: mockDb } = await vi.importMock<{ db: unknown }>(
-        '../../../../db/db',
+        '../../../../db/db'
       )
       const mockDbAsMockDb = mockDb as MockDb
       const mockMappings = [
@@ -607,29 +607,29 @@ describe('HubSpot Properties Builder', () => {
           internalField: 'status.INTERESTED',
           hubspotField: 'hs_lead_status',
           createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+          updatedAt: new Date()
+        }
       ]
       mockDbAsMockDb.where.mockResolvedValue(mockMappings)
 
       const result = await createHubspotProperties('token-123', [
-        { internalField: 'status.INTERESTED', value: 'INTERESTED' },
+        { internalField: 'status.INTERESTED', value: 'INTERESTED' }
       ])
 
       expect(result).toEqual({
-        hs_lead_status: LEAD_STATUS_MAPPING.INTERESTED,
+        hs_lead_status: LEAD_STATUS_MAPPING.INTERESTED
       })
     })
 
     it('should return empty object when no mappings found', async () => {
       const { db: mockDb } = await vi.importMock<{ db: unknown }>(
-        '../../../../db/db',
+        '../../../../db/db'
       )
       const mockDbAsMockDb = mockDb as MockDb
       mockDbAsMockDb.where.mockResolvedValue([])
 
       const result = await createHubspotProperties('token-123', [
-        { internalField: 'status.NEW', value: 'NEW' },
+        { internalField: 'status.NEW', value: 'NEW' }
       ])
 
       expect(result).toEqual({})

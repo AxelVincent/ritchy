@@ -460,7 +460,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         {
           header: 'Status',
           field: 'status',
-          accessor: (row: SearchResult): string => row.status?.status || '',
+          accessor: (row: SearchResult): string => row.status || 'NEW',
         },
         {
           header: 'Emails',

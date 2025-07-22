@@ -3,12 +3,12 @@ import { EnrichResponseSchema } from '../enrich'
 import { SearchModelEnum } from '../payments/checkout'
 import { RectangleSchema } from '../searches/search'
 import { NoteSchema } from './notes'
-import { StatusSchema } from './status'
+import { StatusEnum } from './status'
 
 // Basic/Common Schemas
 export const LocationSchema = z.object({
   latitude: z.number(),
-  longitude: z.number(),
+  longitude: z.number()
 })
 
 // Time-related Schemas
@@ -20,25 +20,25 @@ export const TimeSlotSchema = z.object({
     .object({
       year: z.number(),
       month: z.number(),
-      day: z.number(),
+      day: z.number()
     })
-    .optional(),
+    .optional()
 })
 
 export const PeriodSchema = z.object({
   open: TimeSlotSchema.optional(),
-  close: TimeSlotSchema.optional(),
+  close: TimeSlotSchema.optional()
 })
 
 export const OpeningHoursSchema = z.object({
   openNow: z.boolean().optional(),
   periods: z.array(PeriodSchema).optional(),
-  weekdayDescriptions: z.array(z.string()).optional(),
+  weekdayDescriptions: z.array(z.string()).optional()
 })
 
 export const LocalizedTextSchema = z.object({
   text: z.string().optional(),
-  languageCode: z.string().optional(),
+  languageCode: z.string().optional()
 })
 
 export const AddressComponentSchema = z.object({
@@ -98,10 +98,10 @@ export const AddressComponentSchema = z.object({
       'street_number',
       'sublocality',
       'plus_code',
-      'beach',
-    ]),
+      'beach'
+    ])
   ),
-  languageCode: z.string(),
+  languageCode: z.string()
 })
 
 export const PriceLevelEnum = z.enum([
@@ -109,34 +109,35 @@ export const PriceLevelEnum = z.enum([
   'PRICE_LEVEL_INEXPENSIVE',
   'PRICE_LEVEL_MODERATE',
   'PRICE_LEVEL_EXPENSIVE',
-  'PRICE_LEVEL_VERY_EXPENSIVE',
+  'PRICE_LEVEL_VERY_EXPENSIVE'
 ])
 
 export const MoneySchema = z.object({
   currencyCode: z.string(),
   units: z.string().optional(),
-  nanos: z.number().optional(),
+  nanos: z.number().optional()
 })
 export const PriceRangeSchema = z.object({
   startPrice: MoneySchema.optional(),
-  endPrice: MoneySchema.optional(),
+  endPrice: MoneySchema.optional()
 })
 
 // API Request/Response Schemas
 export const PlacesSearchRequestBodySchema = z.object({
   textQuery: z.string().min(1),
   rectangle: RectangleSchema,
-  model: SearchModelEnum.default('BASIC'),
+  model: SearchModelEnum.default('BASIC')
 })
 
 export const PlaceListAssociationSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  emoji: z.string(),
+  emoji: z.string()
 })
 
 export const PlaceSchemaBase = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
+  sourceId: z.string(),
   name: z.string(),
   website: z.string().optional(),
   location: LocationSchema,
@@ -165,16 +166,15 @@ export const PlaceSchemaBase = z.object({
     neighborhood: z.string().optional(),
     administrativeAreaLevel1: z.string().optional(),
     administrativeAreaLevel2: z.string().optional(),
-    administrativeAreaLevel3: z.string().optional(),
-  }),
+    administrativeAreaLevel3: z.string().optional()
+  })
 })
 
 export const PlaceSchema = PlaceSchemaBase.extend({
-  searchId: z.string().uuid().nullable(),
   listId: z.string().uuid().nullable(),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional().nullable(),
-  status: StatusSchema.nullable(),
+  status: StatusEnum.nullable(),
   enrichment: EnrichResponseSchema.nullable(),
   primaryEmail: z.string().email().nullable(),
   primaryLinkedinSocial: z.string().url().nullable(),
@@ -186,7 +186,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   secondaryInstagramSocials: z.array(z.string().url()).optional().default([]),
   secondaryTwitterSocials: z.array(z.string().url()).optional().default([]),
   secondaryEmails: z.array(z.string().email()).optional(),
-  hubspotSynced: z.boolean(),
+  hubspotSynced: z.boolean()
 })
 
 // Type inference from schemas

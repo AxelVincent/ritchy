@@ -6,22 +6,22 @@ const createBatchOperations = (operations: BatchOperation[]) => {
   const createBatch = operations
     .filter(
       (op): op is BatchOperation & { properties: Record<string, string> } =>
-        !op.id,
+        !op.id
     )
     .map((op) => ({ properties: op.properties }))
 
   const updateBatch = operations
     .filter(
       (
-        op,
+        op
       ): op is BatchOperation & {
         id: string
         properties: Record<string, string>
-      } => typeof op.id === 'string',
+      } => typeof op.id === 'string'
     )
     .map((op) => ({
       id: op.id,
-      properties: op.properties,
+      properties: op.properties
     }))
 
   return { createBatch, updateBatch }
@@ -31,7 +31,7 @@ export const sendDataToHubspot = async (
   operations: BatchOperation[],
   client: Client,
   entityType: EntityType,
-  batchId: string,
+  batchId: string
 ): Promise<HubspotBase[]> => {
   const { createBatch, updateBatch } = createBatchOperations(operations)
 
@@ -42,17 +42,17 @@ export const sendDataToHubspot = async (
         : Promise.resolve({ results: [] }),
       updateBatch.length > 0
         ? client.crm[entityType].batchApi.update({ inputs: updateBatch })
-        : Promise.resolve({ results: [] }),
+        : Promise.resolve({ results: [] })
     ])
 
     const results = [...createResults.results, ...updateResults.results].map(
       (result) => ({
         ...result,
-        placeId: result.properties.ritchy_place_id as string,
+        userPlaceId: result.properties.ritchy_place_id as string,
         createdAt: result.createdAt.toISOString(),
         updatedAt: result.updatedAt.toISOString(),
-        archived: result.archived ?? false,
-      }),
+        archived: result.archived ?? false
+      })
     )
 
     logger.info({
@@ -61,8 +61,8 @@ export const sendDataToHubspot = async (
       metadata: {
         batchId,
         created: createResults.results.length,
-        updated: updateResults.results.length,
-      },
+        updated: updateResults.results.length
+      }
     })
 
     return results
@@ -72,8 +72,8 @@ export const sendDataToHubspot = async (
       event: `hubspot_${entityType}_batch_error`,
       metadata: {
         batchId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
     })
     throw error
   }

@@ -11,7 +11,7 @@ import type * as schema from '../../../db/schema'
  */
 export const getContactEmails = async (
   contactId: string,
-  tx?: PostgresJsDatabase<typeof schema>,
+  tx?: PostgresJsDatabase<typeof schema>
 ) => {
   const dbInstance = tx || db
 

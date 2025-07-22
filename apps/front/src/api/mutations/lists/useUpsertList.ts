@@ -4,7 +4,7 @@ import { useApiMutation } from '@/hooks/useApi'
 import type {
   Lists,
   UpsertListRequest,
-  UpsertListResponse,
+  UpsertListResponse
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -23,14 +23,14 @@ export const useUpsertList = () => {
       queryClient.setQueryData<Lists>(['lists'], (old) => {
         if (!old) return old
         const updatedLists = old.map((list) =>
-          list.id === newList.id ? { ...list, ...newList } : list,
+          list.id === newList.id ? { ...list, ...newList } : list
         )
         return updatedLists
       })
 
       if (newList.id) {
         const listContentQueries = queryClient.getQueryCache().findAll({
-          queryKey: listContentKeys.all,
+          queryKey: listContentKeys.all
         })
         for (const query of listContentQueries) {
           const listContent = query.state.data as {
@@ -42,20 +42,20 @@ export const useUpsertList = () => {
               items: listContent.items.map((place) => {
                 if (!place.lists) return place
                 const updatedList = place.lists.find(
-                  (list) => list.id === newList.id,
+                  (list) => list.id === newList.id
                 )
                 if (!updatedList) return place
                 const otherLists = place.lists.filter(
-                  (list) => list.id !== newList.id,
+                  (list) => list.id !== newList.id
                 )
                 return {
                   ...place,
                   lists: [
                     { ...updatedList, emoji: newList.emoji },
-                    ...otherLists,
-                  ],
+                    ...otherLists
+                  ]
                 }
-              }),
+              })
             })
           }
         }
@@ -73,12 +73,12 @@ export const useUpsertList = () => {
       queryClient.invalidateQueries({ queryKey: ['lists'] })
       if (data?.id) {
         queryClient.invalidateQueries({
-          queryKey: listContentKeys.list(data.id),
+          queryKey: listContentKeys.list(data.id)
         })
         queryClient.invalidateQueries({
-          queryKey: searchContentKeys.all,
+          queryKey: searchContentKeys.all
         })
       }
-    },
+    }
   })
 }

@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import {
   type HubspotLeadStatus,
   type InternalLeadStatus,
-  LEAD_STATUS_MAPPING,
+  LEAD_STATUS_MAPPING
 } from '@ritchy/types'
 import { and } from 'drizzle-orm'
 import { db } from '../../db/db'
@@ -15,7 +15,7 @@ export const updatePlaceStatus = async ({
   context,
   batchId,
   contactId,
-  event,
+  event
 }: {
   tokenId: string
   context: VersionContext
@@ -28,8 +28,8 @@ export const updatePlaceStatus = async ({
     where: (mapping, { eq }) =>
       and(
         eq(mapping.hubspotContactId, contactId),
-        eq(mapping.tokenId, tokenId),
-      ),
+        eq(mapping.hubspotTokenId, tokenId)
+      )
   })
 
   if (!leadMapping) {
@@ -38,15 +38,15 @@ export const updatePlaceStatus = async ({
       event: 'hubspot_lead_mapping_not_found',
       metadata: {
         contactId,
-        tokenId,
-      },
+        tokenId
+      }
     })
     return
   }
 
   // Get the user from the token
   const token = await db.query.hubspotToken.findFirst({
-    where: (token, { eq }) => eq(token.id, tokenId),
+    where: (token, { eq }) => eq(token.id, tokenId)
   })
 
   if (!token) {
@@ -54,8 +54,8 @@ export const updatePlaceStatus = async ({
       msg: 'No token found for HubSpot token',
       event: 'hubspot_token_not_found',
       metadata: {
-        tokenId,
-      },
+        tokenId
+      }
     })
     return
   }
@@ -64,8 +64,8 @@ export const updatePlaceStatus = async ({
   const reverseStatusMapping = Object.fromEntries(
     Object.entries(LEAD_STATUS_MAPPING).map(([internal, hubspot]) => [
       hubspot,
-      internal,
-    ]),
+      internal
+    ])
   ) as Record<HubspotLeadStatus, InternalLeadStatus>
 
   const newStatus =
@@ -78,25 +78,25 @@ export const updatePlaceStatus = async ({
       sessionId: context.sessionId,
       changeSource: 'integration',
       metadata: {
-        ...context.metadata,
+        ...context.metadata
       },
       additionalContext: {
-        hubspotEvent: event,
+        hubspotEvent: event
       },
-      bulkOperationId: batchId,
+      bulkOperationId: batchId
     },
-    leadMapping.placeId,
-    newStatus,
+    leadMapping.userPlaceId,
+    newStatus
   )
 
   logger.info({
     msg: 'Updated place status from HubSpot webhook',
     event: 'hubspot_status_update',
     metadata: {
-      placeId: leadMapping.placeId,
+      userPlaceId: leadMapping.userPlaceId,
       userId: token.userId,
       oldStatus: event.propertyValue,
-      newStatus,
-    },
+      newStatus
+    }
   })
 }

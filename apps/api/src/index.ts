@@ -19,9 +19,10 @@ import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import {
   initialize_enrichment_queue,
-  shutdown_enrichment_queue,
+  shutdown_enrichment_queue
 } from './services/enrichment/queue/batch_enrichment_queue'
 import webhookRoutes from './webhook'
+import { initQdrantCollection } from './external/qdrant'
 
 // Validate RabbitMQ at startup
 await validateRabbitMQAtStartup()
@@ -35,15 +36,15 @@ app.use(
     limit: '10mb',
     verify: (req: express.Request, _res, buf) => {
       req.rawBody = buf
-    },
-  }),
+    }
+  })
 )
 
 app.use(
   express.urlencoded({
     extended: true,
-    limit: '10mb',
-  }),
+    limit: '10mb'
+  })
 )
 
 // Clerk middleware - this handles session management
@@ -56,7 +57,7 @@ app.use(addRequestMetadata)
 const isAuthenticated = async (
   req: express.Request,
   res: express.Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const { userId, sessionId, getToken } = getAuth(req)
@@ -65,7 +66,7 @@ const isAuthenticated = async (
     if (!userId || !sessionId) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Authentication required',
+        message: 'Authentication required'
       })
       return
     }
@@ -78,7 +79,7 @@ const isAuthenticated = async (
         firstName: userTable.firstName,
         lastName: userTable.lastName,
         createdAt: userTable.createdAt,
-        updatedAt: userTable.updatedAt,
+        updatedAt: userTable.updatedAt
       })
       .from(userTable)
       .where(eq(userTable.clerkId, userId))
@@ -86,7 +87,7 @@ const isAuthenticated = async (
     if (!user) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'User not found',
+        message: 'User not found'
       })
       return
     }
@@ -98,7 +99,7 @@ const isAuthenticated = async (
       lastName: user.lastName ?? '',
       sessionId,
       clerkId: userId,
-      token: token ?? '',
+      token: token ?? ''
     }
 
     // Wrap the rest of the request handling in a context with user information
@@ -108,20 +109,20 @@ const isAuthenticated = async (
           id: user.id,
           email: user.email,
           firstName: user.firstName ?? '',
-          lastName: user.lastName ?? '',
-        },
+          lastName: user.lastName ?? ''
+        }
       },
-      () => next(),
+      () => next()
     )
   } catch (error) {
     logger.error({
       msg: 'Authentication error',
       event: 'authentication_error',
-      metadata: { error },
+      metadata: { error }
     })
     res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to process authentication',
+      message: 'Failed to process authentication'
     })
     return
   }
@@ -132,7 +133,7 @@ app.use(
   pinoHttp({
     logger: baseLogger,
     autoLogging: {
-      ignore: (req) => req.method === 'OPTIONS',
+      ignore: (req) => req.method === 'OPTIONS'
     },
     // Minimal request serialization
     serializers: {
@@ -144,9 +145,9 @@ app.use(
           body: req.raw.body
             ? JSON.stringify(req.raw.body).slice(0, 1000)
             : undefined,
-          query: req.raw.query,
+          query: req.raw.query
         }
-      },
+      }
     },
     // Only include essential custom props
     customProps: (req) => ({
@@ -155,8 +156,8 @@ app.use(
         sessionId: req.auth?.sessionId,
         firstName: req.auth?.firstName,
         lastName: req.auth?.lastName,
-        email: req.auth?.email,
-      },
+        email: req.auth?.email
+      }
     }),
     // Redact sensitive data
     redact: ['req.headers'],
@@ -164,16 +165,16 @@ app.use(
     customSuccessMessage: (req, res) =>
       `${req.method} ${req.baseUrl}${req.url} - ${res.statusCode}`,
     customErrorMessage: (req, res, err) =>
-      `${req.method} ${req.baseUrl}${req.url} - ${res.statusCode} - ${err.message}`,
-  }),
+      `${req.method} ${req.baseUrl}${req.url} - ${res.statusCode} - ${err.message}`
+  })
 )
 
 // Cors middleware
 app.use(
   cors({
     origin: process.env.FRONTEND_BASE_URL,
-    credentials: true,
-  }),
+    credentials: true
+  })
 )
 
 // Add near the top of your middleware stack
@@ -206,8 +207,8 @@ app.use((req, res, next) => {
         metadata: {
           duration: `${duration}ms`,
           path: req.path,
-          method: req.method,
-        },
+          method: req.method
+        }
       })
     }
   })
@@ -234,8 +235,8 @@ setInterval(() => {
       external: `${Math.round(used.external / 1024 / 1024)}MB`,
       arrayBuffers: `${Math.round(used.arrayBuffers / 1024 / 1024)}MB`,
       delta: `${heapDelta}MB`,
-      timestamp: new Date().toISOString(),
-    },
+      timestamp: new Date().toISOString()
+    }
   })
 
   // Alert on significant increases
@@ -243,12 +244,20 @@ setInterval(() => {
     logger.warn({
       msg: 'Significant memory increase detected',
       event: 'memory_spike',
-      metadata: { increase: `${heapDelta}MB` },
+      metadata: { increase: `${heapDelta}MB` }
     })
   }
 
   lastHeapUsed = heapUsedMB
 }, 900000) // Check every 15 minutes
+
+// Initialize Qdrant collection
+initQdrantCollection().then(() => {
+  logger.info({
+    msg: 'Qdrant collection initialized successfully',
+    event: 'qdrant_collection_initialized'
+  })
+})
 
 // Start Redis health monitor
 redisHealthMonitor.start(1000 * 60 * 15) // Check every 15 minutes
@@ -260,7 +269,7 @@ initialize_enrichment_queue()
   .then(() => {
     logger.info({
       msg: 'Enrichment queue initialized successfully',
-      event: 'enrichment_queue_initialized',
+      event: 'enrichment_queue_initialized'
     })
   })
   .catch((error) => {
@@ -268,8 +277,8 @@ initialize_enrichment_queue()
       msg: 'Failed to initialize enrichment queue',
       event: 'enrichment_queue_init_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   })
 
@@ -279,7 +288,7 @@ rabbitMQService
   .then(() => {
     logger.info({
       msg: 'RabbitMQ service started successfully',
-      event: 'rabbitmq_service_started',
+      event: 'rabbitmq_service_started'
     })
   })
   .catch((error) => {
@@ -287,8 +296,8 @@ rabbitMQService
       msg: 'Failed to start RabbitMQ service',
       event: 'rabbitmq_service_start_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   })
 
@@ -297,7 +306,7 @@ const PORT = Number.parseInt(process.env.PORT || '3030', 10)
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 100 // limit each IP to 100 requests per windowMs
 })
 
 app.use(limiter)
@@ -308,7 +317,7 @@ app.use(haltOnTimedout)
 function haltOnTimedout(
   req: express.Request,
   _res: express.Response,
-  next: NextFunction,
+  next: NextFunction
 ) {
   if (!req.timedout) next()
 }
@@ -316,7 +325,7 @@ function haltOnTimedout(
 server.listen(PORT, '::', () => {
   logger.info({
     msg: `Server running on port ${PORT} (IPv4/IPv6) with WebSocket support`,
-    event: 'server_started',
+    event: 'server_started'
   })
 })
 
@@ -324,7 +333,7 @@ process.on('uncaughtException', (error) => {
   logger.error({
     msg: 'Uncaught Exception',
     event: 'uncaught_exception',
-    metadata: { error },
+    metadata: { error }
   })
   process.exit(1)
 })
@@ -333,7 +342,7 @@ process.on('unhandledRejection', (reason, promise) => {
   logger.error({
     msg: 'Unhandled Rejection',
     event: 'unhandled_rejection',
-    metadata: { reason, promise },
+    metadata: { reason, promise }
   })
 })
 
@@ -341,7 +350,7 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('SIGTERM', async () => {
   logger.info({
     msg: 'Shutting down services',
-    event: 'graceful_shutdown_start',
+    event: 'graceful_shutdown_start'
   })
 
   // Shutdown Redis health monitor
@@ -357,8 +366,8 @@ process.on('SIGTERM', async () => {
       msg: 'Error shutting down enrichment queue',
       event: 'enrichment_queue_shutdown_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   }
 
@@ -370,8 +379,8 @@ process.on('SIGTERM', async () => {
       msg: 'Error shutting down RabbitMQ service',
       event: 'rabbitmq_service_shutdown_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   }
 
@@ -381,7 +390,7 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   logger.info({
     msg: 'Shutting down services',
-    event: 'graceful_shutdown_start',
+    event: 'graceful_shutdown_start'
   })
 
   // Shutdown Redis health monitor
@@ -397,8 +406,8 @@ process.on('SIGINT', async () => {
       msg: 'Error shutting down enrichment queue',
       event: 'enrichment_queue_shutdown_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   }
 
@@ -410,8 +419,8 @@ process.on('SIGINT', async () => {
       msg: 'Error shutting down RabbitMQ service',
       event: 'rabbitmq_service_shutdown_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   }
 

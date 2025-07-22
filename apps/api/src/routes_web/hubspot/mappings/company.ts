@@ -5,7 +5,7 @@ import {
   type DEFAULT_COMPANY_FIELDS,
   FIELD_CONFIGS,
   type GetCompanyMappingsResponse,
-  type GetCompanyPropertiesResponse,
+  type GetCompanyPropertiesResponse
 } from '@ritchy/types'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -16,21 +16,21 @@ import { withHubspotClient } from '../../../external/hubspot/token_manager'
 import { getHubspotToken } from '../../../services/hubspot/queries/get_hubspot_token'
 
 type CompanyMapping = {
-  tokenId: string
+  hubspotTokenId: string
   internalField: CompanyField
   hubspotField: string
 }
 
-const createDefaultMappings = (tokenId: string): CompanyMapping[] =>
+const createDefaultMappings = (hubspotTokenId: string): CompanyMapping[] =>
   Object.entries(FIELD_CONFIGS.company).map(([field, config]) => ({
-    tokenId,
+    hubspotTokenId,
     internalField: `company.${field}` as CompanyField,
-    hubspotField: config.defaultHubspotField,
+    hubspotField: config.defaultHubspotField
   }))
 
 export const getCompanyProperties = async (
   req: Request,
-  res: Response<GetCompanyPropertiesResponse>,
+  res: Response<GetCompanyPropertiesResponse>
 ) => {
   try {
     const properties = await withHubspotClient(
@@ -46,18 +46,18 @@ export const getCompanyProperties = async (
             archived: prop.archived ?? false,
             options: prop.options?.map((opt) => ({
               label: opt.label,
-              value: opt.value,
-            })),
-          })),
+              value: opt.value
+            }))
+          }))
         }
-      },
+      }
     )
     res.json(properties)
   } catch (error) {
     logger.error({
       msg: 'Failed to fetch HubSpot company properties',
       event: 'hubspot_company_properties_fetch_error',
-      metadata: { error, userId: req.auth.userId },
+      metadata: { error, userId: req.auth.userId }
     })
     res.status(500).json({ error: 'Failed to fetch company properties' })
   }
@@ -65,7 +65,7 @@ export const getCompanyProperties = async (
 
 export const getCompanyMappings = async (
   req: Request,
-  res: Response<GetCompanyMappingsResponse>,
+  res: Response<GetCompanyMappingsResponse>
 ): Promise<void> => {
   try {
     const userId = req.auth?.userId
@@ -87,16 +87,13 @@ export const getCompanyMappings = async (
         .from(hubspotFieldMapping)
         .where(
           and(
-            eq(hubspotFieldMapping.tokenId, token.id),
-            inArray(
-              hubspotFieldMapping.internalField,
-              CompanyFieldEnum.options,
-            ),
-          ),
+            eq(hubspotFieldMapping.hubspotTokenId, token.id),
+            inArray(hubspotFieldMapping.internalField, CompanyFieldEnum.options)
+          )
         )
     ).map((m) => ({
       ...m,
-      internalField: m.internalField as keyof typeof DEFAULT_COMPANY_FIELDS,
+      internalField: m.internalField as keyof typeof DEFAULT_COMPANY_FIELDS
     }))
 
     // If no mappings exist, create default ones
@@ -109,16 +106,13 @@ export const getCompanyMappings = async (
         .from(hubspotFieldMapping)
         .where(
           and(
-            eq(hubspotFieldMapping.tokenId, token.id),
-            inArray(
-              hubspotFieldMapping.internalField,
-              CompanyFieldEnum.options,
-            ),
-          ),
+            eq(hubspotFieldMapping.hubspotTokenId, token.id),
+            inArray(hubspotFieldMapping.internalField, CompanyFieldEnum.options)
+          )
         )
       const companyOnlyMappings = newMappings.map((m) => ({
         ...m,
-        internalField: m.internalField as keyof typeof DEFAULT_COMPANY_FIELDS,
+        internalField: m.internalField as keyof typeof DEFAULT_COMPANY_FIELDS
       }))
       res.json(companyOnlyMappings)
       return
@@ -129,7 +123,7 @@ export const getCompanyMappings = async (
     logger.error({
       msg: 'Failed to get company mappings',
       event: 'hubspot_company_mappings_get_error',
-      metadata: { error, userId: req.auth?.userId },
+      metadata: { error, userId: req.auth?.userId }
     })
     res.status(500).json([])
   }
@@ -137,7 +131,7 @@ export const getCompanyMappings = async (
 
 export const updateCompanyMapping = async (
   req: Request<{ internalField: string; hubspotField: string }>,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const userId = req.auth?.userId
@@ -163,16 +157,16 @@ export const updateCompanyMapping = async (
       .update(hubspotFieldMapping)
       .set({
         hubspotField,
-        updatedAt: new Date(),
+        updatedAt: new Date()
       })
       .where(
         and(
-          eq(hubspotFieldMapping.tokenId, token.id),
+          eq(hubspotFieldMapping.hubspotTokenId, token.id),
           eq(
             hubspotFieldMapping.internalField,
-            internalField as keyof typeof DEFAULT_COMPANY_FIELDS,
-          ),
-        ),
+            internalField as keyof typeof DEFAULT_COMPANY_FIELDS
+          )
+        )
       )
       .returning()
 
@@ -181,7 +175,7 @@ export const updateCompanyMapping = async (
     logger.error({
       msg: 'Failed to update company mapping',
       event: 'hubspot_company_mapping_update_error',
-      metadata: { error, userId: req.auth?.userId },
+      metadata: { error, userId: req.auth?.userId }
     })
     res.status(500).json({ error: 'Internal server error' })
   }
@@ -189,7 +183,7 @@ export const updateCompanyMapping = async (
 
 export const resetCompanyMappings = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const userId = req.auth?.userId
@@ -212,13 +206,13 @@ export const resetCompanyMappings = async (
       .values(defaultMappings)
       .onConflictDoUpdate({
         target: [
-          hubspotFieldMapping.tokenId,
-          hubspotFieldMapping.internalField,
+          hubspotFieldMapping.hubspotTokenId,
+          hubspotFieldMapping.internalField
         ],
         set: {
           hubspotField: sql`EXCLUDED.hubspot_field`,
-          updatedAt: new Date(),
-        },
+          updatedAt: new Date()
+        }
       })
 
     res.json({ success: true })
@@ -226,7 +220,7 @@ export const resetCompanyMappings = async (
     logger.error({
       msg: 'Failed to reset company mappings',
       event: 'hubspot_company_mappings_reset_error',
-      metadata: { error, userId: req.auth?.userId },
+      metadata: { error, userId: req.auth?.userId }
     })
     res.status(500).json({ error: 'Internal server error' })
   }

@@ -2,12 +2,13 @@ import { logger } from '@ritchy/logger'
 import type {
   EnrichmentJob,
   EnrichmentJobResult,
-  EnrichmentJobStatus,
+  EnrichmentJobStatus
 } from '@ritchy/types'
 import { ENRICHMENT_STATUS } from '@ritchy/types'
 import { QUEUE_CONFIG } from '../../../config/rabbitmq'
 import { rabbitMQClient } from '../../../external/rabbitmq/rabbitmq'
 import { redisClient } from '../../../external/redis/redis'
+import { getMainDomain } from '../../scraper/utils/get_main_domain'
 
 const CONCURRENT_ITEMS = QUEUE_CONFIG.CONCURRENT_ITEMS
 const CHUNK_DELAY_MS = QUEUE_CONFIG.CHUNK_DELAY_MS
@@ -40,7 +41,7 @@ const create_enrichment_queue = async (): Promise<void> => {
   await rabbitMQClient.processJobs<EnrichmentJob>(
     QUEUE_CONFIG.ENRICHMENT_QUEUE,
     process_enrichment_batch,
-    { concurrency: CONCURRENT_JOBS },
+    { concurrency: CONCURRENT_JOBS }
   )
 
   isQueueInitialized = true
@@ -51,8 +52,8 @@ const create_enrichment_queue = async (): Promise<void> => {
     metadata: {
       queueName: QUEUE_CONFIG.ENRICHMENT_QUEUE,
       batchSize: CONCURRENT_ITEMS,
-      concurrency: CONCURRENT_JOBS,
-    },
+      concurrency: CONCURRENT_JOBS
+    }
   })
 }
 
@@ -61,7 +62,7 @@ const create_enrichment_queue = async (): Promise<void> => {
  */
 const process_enrichment_batch = async (
   jobData: EnrichmentJob,
-  messageId: string,
+  messageId: string
 ): Promise<void> => {
   const { userId, enrichments } = jobData
   const jobId = messageId
@@ -79,37 +80,44 @@ const process_enrichment_batch = async (
         const { process_enrichment } = await import(
           '../worker/process_enrichment'
         )
-        const result = await process_enrichment(enrichment, userId, messageId)
+        const result = await process_enrichment(
+          {
+            userPlaceId: enrichment.userPlaceId,
+            domain: getMainDomain(enrichment.website)
+          },
+          userId,
+          messageId
+        )
 
         // Atomically increment processed count
         processedCount++
         await updateJobProgress(jobId, {
           processedMessages: processedCount,
           status:
-            processedCount === enrichments.length ? 'completed' : 'processing',
+            processedCount === enrichments.length ? 'completed' : 'processing'
         })
 
         return result
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error)
-        errors.push(`${enrichment.placeId}: ${errorMessage}`)
+        errors.push(`${enrichment.userPlaceId}: ${errorMessage}`)
 
         logger.error({
           msg: 'Individual enrichment failed in batch',
           event: 'batch_enrichment_item_failed',
           metadata: {
             messageId,
-            placeId: enrichment.placeId,
-            error: errorMessage,
-          },
+            userPlaceId: enrichment.userPlaceId,
+            error: errorMessage
+          }
         })
 
         processedCount++
         await updateJobProgress(jobId, {
           processedMessages: processedCount,
           status:
-            processedCount === enrichments.length ? 'completed' : 'processing',
+            processedCount === enrichments.length ? 'completed' : 'processing'
         })
 
         return null
@@ -129,7 +137,7 @@ const process_enrichment_batch = async (
   await updateJobProgress(jobId, {
     status: 'completed',
     completedAt: new Date().toISOString(),
-    errors,
+    errors
   })
 
   logger.info({
@@ -141,8 +149,8 @@ const process_enrichment_batch = async (
       toProcess: enrichments.length,
       totalProcessed: processedCount,
       successful: processedCount - errors.length,
-      failed: errors.length,
-    },
+      failed: errors.length
+    }
   })
 }
 
@@ -151,18 +159,18 @@ const process_enrichment_batch = async (
  */
 export const add_enrichment_batch = async (
   userId: string,
-  enrichments: Array<{ placeId: string; website: string }>,
+  enrichments: Array<{ userPlaceId: string; website: string }>
 ): Promise<string> => {
   // Create a single job with all enrichments instead of splitting into batches
   const jobData: EnrichmentJob = {
     userId,
-    enrichments, // All enrichments in one job
+    enrichments // All enrichments in one job
   }
 
   // Add single job to the queue
   const jobId = await rabbitMQClient.addJob(
     QUEUE_CONFIG.ENRICHMENT_QUEUE,
-    jobData,
+    jobData
   )
 
   logger.info({
@@ -171,8 +179,8 @@ export const add_enrichment_batch = async (
     metadata: {
       userId,
       totalEnrichments: enrichments.length,
-      jobId,
-    },
+      jobId
+    }
   })
 
   // Initialize job progress tracking in Redis
@@ -183,12 +191,12 @@ export const add_enrichment_batch = async (
     remainingMessages: enrichments.length,
     status: 'processing',
     startedAt: new Date().toISOString(),
-    errors: [],
+    errors: []
   }
 
   await redisClient.set(jobId, initialProgress, {
     prefix: JOB_PROGRESS_PREFIX,
-    ttl: JOB_PROGRESS_TTL,
+    ttl: JOB_PROGRESS_TTL
   })
 
   return jobId
@@ -198,13 +206,13 @@ export const add_enrichment_batch = async (
  * Gets the status of a specific job
  */
 export const get_job_status = async (
-  jobId: string,
+  jobId: string
 ): Promise<EnrichmentJobStatus> => {
   try {
     // Get job progress from Redis
     const progressData = await redisClient.get<JobProgress>(
       jobId,
-      JOB_PROGRESS_PREFIX,
+      JOB_PROGRESS_PREFIX
     )
 
     if (!progressData) {
@@ -217,8 +225,8 @@ export const get_job_status = async (
           processedMessages: 0,
           remainingMessages: 0,
           startedAt: '',
-          errors: [],
-        },
+          errors: []
+        }
       }
     }
 
@@ -226,7 +234,7 @@ export const get_job_status = async (
     const progressPercentage =
       progress.totalMessages > 0
         ? Math.round(
-            (progress.processedMessages / progress.totalMessages) * 100,
+            (progress.processedMessages / progress.totalMessages) * 100
           )
         : 0
 
@@ -240,8 +248,8 @@ export const get_job_status = async (
         remainingMessages: progress.remainingMessages, // ✅ Messages to process
         startedAt: progress.startedAt,
         completedAt: progress.completedAt,
-        errors: progress.errors,
-      },
+        errors: progress.errors
+      }
     }
   } catch (error) {
     logger.error({
@@ -249,8 +257,8 @@ export const get_job_status = async (
       event: 'job_status_error',
       metadata: {
         jobId,
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
 
     return {
@@ -262,8 +270,8 @@ export const get_job_status = async (
         processedMessages: 0,
         remainingMessages: 0,
         startedAt: '',
-        errors: [],
-      },
+        errors: []
+      }
     }
   }
 }
@@ -278,15 +286,15 @@ export const shutdown_enrichment_queue = async (): Promise<void> => {
 
     logger.info({
       msg: 'Enrichment queue shut down successfully',
-      event: 'enrichment_queue_shutdown',
+      event: 'enrichment_queue_shutdown'
     })
   } catch (error) {
     logger.error({
       msg: 'Error shutting down enrichment queue',
       event: 'enrichment_queue_shutdown_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   }
 }
@@ -300,12 +308,12 @@ export const initialize_enrichment_queue = async (): Promise<void> => {
 
 const updateJobProgress = async (
   jobId: string,
-  updates: Partial<JobProgress>,
+  updates: Partial<JobProgress>
 ): Promise<void> => {
   try {
     const existingProgress = await redisClient.get<JobProgress>(
       jobId,
-      JOB_PROGRESS_PREFIX,
+      JOB_PROGRESS_PREFIX
     )
 
     if (!existingProgress) return
@@ -315,12 +323,12 @@ const updateJobProgress = async (
       ...updates,
       remainingMessages:
         existingProgress.data.totalMessages -
-        (updates.processedMessages || existingProgress.data.processedMessages),
+        (updates.processedMessages || existingProgress.data.processedMessages)
     }
 
     await redisClient.set(jobId, updatedProgress, {
       prefix: JOB_PROGRESS_PREFIX,
-      ttl: JOB_PROGRESS_TTL,
+      ttl: JOB_PROGRESS_TTL
     })
   } catch (error) {
     logger.error({
@@ -328,8 +336,8 @@ const updateJobProgress = async (
       event: 'job_progress_update_error',
       metadata: {
         jobId,
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
   }
 }

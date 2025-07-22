@@ -1,0 +1,66 @@
+import { describe, it, expect } from 'vitest'
+import { cleanUrl } from '../clean_url'
+
+describe('cleanUrl', () => {
+  it('should remove hash fragments from URLs', () => {
+    const input = 'https://example.com/page#section'
+    const expected = 'https://example.com/page'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should remove trailing slashes from paths', () => {
+    const input = 'https://example.com/page/'
+    const expected = 'https://example.com/page'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should handle URLs with both hash and trailing slash', () => {
+    const input = 'https://example.com/page/#section'
+    const expected = 'https://example.com/page'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should preserve query parameters', () => {
+    const input = 'https://example.com/page?param=value#section'
+    const expected = 'https://example.com/page?param=value'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should preserve path segments', () => {
+    const input = 'https://example.com/path/to/page#section'
+    const expected = 'https://example.com/path/to/page'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should return original string for invalid URLs', () => {
+    const invalidUrls = ['not-a-url', 'http://', 'javascript:void(0)', '', '#']
+
+    for (const url of invalidUrls) {
+      expect(cleanUrl(url)).toBe(url)
+    }
+  })
+
+  it('should handle URLs with ports', () => {
+    const input = 'http://localhost:3000/page/#section'
+    const expected = 'http://localhost:3000/page'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should preserve URL encoded characters', () => {
+    const input = 'https://example.com/path%20with%20spaces#section'
+    const expected = 'https://example.com/path%20with%20spaces'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should handle URLs with authentication', () => {
+    const input = 'https://user:pass@example.com/page#section'
+    const expected = 'https://user:pass@example.com/page'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+
+  it('should handle URLs with multiple hash fragments', () => {
+    const input = 'https://example.com/page#section#another'
+    const expected = 'https://example.com/page'
+    expect(cleanUrl(input)).toBe(expected)
+  })
+})

@@ -2,12 +2,12 @@ import { useApiQuery } from '@/hooks/useApi'
 import type { GetReviewsApiResponse } from '@ritchy/types'
 
 const reviewsKeys = {
-  place: (placeId: string) => ['reviews', 'place', placeId] as const,
+  place: (placeSourceId: string) => ['reviews', 'place', placeSourceId] as const
 }
 
-export const usePlaceReviewsQuery = (placeId: string) => {
+export const usePlaceReviewsQuery = (placeSourceId: string) => {
   return useApiQuery<GetReviewsApiResponse>(
-    `/places/${placeId}/reviews`,
-    reviewsKeys.place(placeId),
+    `/places/${placeSourceId}/reviews`,
+    reviewsKeys.place(placeSourceId)
   )
 }

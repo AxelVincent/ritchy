@@ -15,18 +15,18 @@ const versionMetadataSchema = z.object({
   bulkOperationType: z.enum(['INSERT', 'UPDATE', 'DELETE']).optional(),
   affectedRecords: z.array(z.string()).optional(),
   // Rollback context
-  rollbackFromVersion: z.number().int().positive().optional(),
+  rollbackFromVersion: z.number().int().positive().optional()
 })
 
 const versionStateSchema = z
   .object({
-    id: z.string().uuid(),
+    id: z.string().uuid()
   })
   .passthrough()
 
 const baseOperationSchema = z.object({
   table: z.string(),
-  recordId: z.string().uuid(),
+  recordId: z.string().uuid()
 })
 
 const versionOperationSchema = z.discriminatedUnion('operation', [
@@ -36,7 +36,7 @@ const versionOperationSchema = z.discriminatedUnion('operation', [
     currentState: versionStateSchema,
     previousState: z.null(),
     metadata: versionMetadataSchema,
-    ...baseOperationSchema.shape,
+    ...baseOperationSchema.shape
   }),
   // UPDATE/UPSERT (existing record)
   z.object({
@@ -44,9 +44,9 @@ const versionOperationSchema = z.discriminatedUnion('operation', [
     currentState: versionStateSchema,
     previousState: versionStateSchema,
     metadata: versionMetadataSchema.extend({
-      changedFields: z.array(z.string()),
+      changedFields: z.array(z.string())
     }),
-    ...baseOperationSchema.shape,
+    ...baseOperationSchema.shape
   }),
   // DELETE
   z.object({
@@ -54,9 +54,9 @@ const versionOperationSchema = z.discriminatedUnion('operation', [
     currentState: versionStateSchema,
     previousState: z.null(),
     metadata: versionMetadataSchema.extend({
-      deletedAt: z.date(),
+      deletedAt: z.date()
     }),
-    ...baseOperationSchema.shape,
+    ...baseOperationSchema.shape
   }),
   // ROLLBACK
   z.object({
@@ -64,10 +64,10 @@ const versionOperationSchema = z.discriminatedUnion('operation', [
     currentState: versionStateSchema,
     previousState: versionStateSchema,
     metadata: versionMetadataSchema.extend({
-      rollbackFromVersion: z.number().int().positive(),
+      rollbackFromVersion: z.number().int().positive()
     }),
-    ...baseOperationSchema.shape,
-  }),
+    ...baseOperationSchema.shape
+  })
 ])
 
 type VersionOperationInput = {
@@ -84,6 +84,6 @@ export const validateVersionOperation = (input: VersionOperationInput) => {
 
   return versionOperationSchema.parse({
     ...input,
-    operation,
+    operation
   })
 }

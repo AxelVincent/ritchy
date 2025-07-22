@@ -7,7 +7,7 @@ import {
   type LucideIcon,
   MessageCircle,
   Twitter,
-  Youtube,
+  Youtube
 } from 'lucide-react'
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../common'
@@ -20,6 +20,22 @@ type SocialMediaConfigType = {
   }
 }
 
+export const PLATFORM_DOMAINS = [
+  'twitter.com',
+  'youtube.com',
+  'tiktok.com',
+  'pinterest.com',
+  'reddit.com',
+  'tumblr.com',
+  'medium.com'
+]
+
+export const SOCIAL_MEDIA_DOMAINS = [
+  'facebook.com',
+  'instagram.com',
+  'linkedin.com'
+]
+
 export const SOCIAL_MEDIA_CONFIG: SocialMediaConfigType = {
   facebook: { domain: 'facebook.com', icon: Facebook },
   twitter: { domain: 'twitter.com', icon: Twitter },
@@ -29,47 +45,54 @@ export const SOCIAL_MEDIA_CONFIG: SocialMediaConfigType = {
   tiktok: { domain: 'tiktok.com', icon: MessageCircle },
   pinterest: { domain: 'pinterest.com', icon: Camera },
   reddit: { domain: 'reddit.com', icon: Globe },
-  snapchat: { domain: 'snapchat.com', icon: Camera },
+  snapchat: { domain: 'snapchat.com', icon: Camera }
 } as const
 
 export const SocialMediaPlatformEnum = z.enum([
-  'linkedin',
+  'LINKEDIN',
+  'FACEBOOK',
+  'INSTAGRAM'
+])
+
+export type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
+
+export const PlatformPlatformEnum = z.enum([
   'twitter',
-  'facebook',
-  'instagram',
   'youtube',
   'tiktok',
   'pinterest',
   'reddit',
   'snapchat',
+  'booking',
+  'tripadvisor'
 ])
 
 // Domain registration data schema
 export const DomainRegistrationSchema = z.object({
   registrationDate: z.string().nullable(),
-  lastUpdated: z.string(),
+  lastUpdated: z.string()
 })
 
 // API Request/Response Schemas
 export const EnrichRequestSchema = z.object({
   id: z.string(),
-  website: UrlSchema,
+  website: UrlSchema
 })
 
 export const EnrichResponseSchema = z.object({
   id: z.string(),
   emails: z.array(z.string().email()),
   socialLinks: z.record(SocialMediaPlatformEnum, z.array(UrlSchema)),
-  domainRegistration: DomainRegistrationSchema.optional(),
+  domainRegistration: DomainRegistrationSchema.optional()
 })
 
 export const EnrichApiResponseSchema = z.union([
   EnrichResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export const EnrichmentJobStatusParamsSchema = z.object({
-  jobId: z.string(),
+  jobId: z.string()
 })
 
 export const EnrichmentJobStatusSchema = z.object({
@@ -82,13 +105,13 @@ export const EnrichmentJobStatusSchema = z.object({
     remainingMessages: z.number().min(0),
     startedAt: z.string(),
     completedAt: z.string().optional(),
-    errors: z.array(z.string()),
-  }),
+    errors: z.array(z.string())
+  })
 })
 
 export const EnrichmentJobStatusApiResponseSchema = z.union([
   EnrichmentJobStatusSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 // Type inference from schemas
@@ -105,7 +128,7 @@ export type EnrichmentJobStatusApiResponse = z.infer<
 >
 
 // Add type for the config
-export type SocialMediaPlatform = keyof typeof SOCIAL_MEDIA_CONFIG
+export type SocialMediaPlatformLegacy = keyof typeof SOCIAL_MEDIA_CONFIG
 export type SocialMediaConfig =
   (typeof SOCIAL_MEDIA_CONFIG)[SocialMediaPlatform]
 
@@ -115,20 +138,20 @@ export const EnrichmentJobSchema = z.object({
   enrichments: z
     .array(
       z.object({
-        placeId: z.string(),
-        website: UrlSchema,
-      }),
+        userPlaceId: z.string(),
+        website: UrlSchema
+      })
     )
     .min(1)
-    .max(500), // Limit batch size
+    .max(500) // Limit batch size
 })
 
 export const EnrichmentJobResultSchema = z.object({
-  placeId: z.string(),
+  userPlaceId: z.string(),
   success: z.boolean(),
   data: EnrichResponseSchema.optional(),
   error: z.string().optional(),
-  warning: z.string().optional(),
+  warning: z.string().optional()
 })
 
 export const EnrichmentProgressSchema = z.object({
@@ -136,35 +159,35 @@ export const EnrichmentProgressSchema = z.object({
   placeId: z.string(),
   status: z.enum(['pending', 'processing', 'completed', 'failed']),
   progress: z.number().min(0).max(100),
-  error: z.string().optional(),
+  error: z.string().optional()
 })
 
 export const BatchEnrichmentRequestBodySchema = z.object({
   enrichments: z
     .array(
       z.object({
-        placeId: z.string(),
-        website: UrlSchema,
-      }),
+        userPlaceId: z.string(),
+        website: UrlSchema
+      })
     )
     .min(1)
-    .max(500),
+    .max(500)
 })
 
 export const BatchEnrichmentResponseSchema = z.object({
   jobId: z.string(),
   message: z.string(),
-  enrichmentCount: z.number().positive(),
+  enrichmentCount: z.number().positive()
 })
 
 export const BatchEnrichmentResponseApiResponseSchema = z.union([
   BatchEnrichmentResponseSchema,
-  ApiErrorResponseSchema,
+  ApiErrorResponseSchema
 ])
 
 export const EnrichmentCompleteSchema = z.object({
   jobId: z.string(),
-  results: z.array(EnrichmentJobResultSchema),
+  results: z.array(EnrichmentJobResultSchema)
 })
 
 // WebSocket Event Type Constants
@@ -187,7 +210,7 @@ export const WEBSOCKET_EVENT_TYPES = {
   // Test Events
   PING: 'ping',
   PONG: 'pong',
-  TEST: 'test',
+  TEST: 'test'
 } as const
 
 // WebSocket Event Status Constants
@@ -195,7 +218,7 @@ export const ENRICHMENT_STATUS = {
   PENDING: 'pending',
   PROCESSING: 'processing',
   COMPLETED: 'completed',
-  FAILED: 'failed',
+  FAILED: 'failed'
 } as const
 
 // Enhanced WebSocket Event Schemas (using constants)
@@ -207,9 +230,9 @@ export const WebSocketEnrichmentStartedSchema = z.object({
     batchInfo: z.object({
       batchSize: z.number().positive(),
       totalBatches: z.number().positive(),
-      currentBatch: z.number().positive(),
-    }),
-  }),
+      currentBatch: z.number().positive()
+    })
+  })
 })
 
 export const WebSocketEnrichmentProgressSchema = z.object({
@@ -221,15 +244,15 @@ export const WebSocketEnrichmentProgressSchema = z.object({
       ENRICHMENT_STATUS.PENDING,
       ENRICHMENT_STATUS.PROCESSING,
       ENRICHMENT_STATUS.COMPLETED,
-      ENRICHMENT_STATUS.FAILED,
+      ENRICHMENT_STATUS.FAILED
     ]),
     progress: z.object({
       current: z.number().min(0),
-      total: z.number().positive(),
+      total: z.number().positive()
     }),
     data: EnrichResponseSchema.optional(),
-    error: z.string().optional(),
-  }),
+    error: z.string().optional()
+  })
 })
 
 export const WebSocketEnrichmentCompleteSchema = z.object({
@@ -242,9 +265,9 @@ export const WebSocketEnrichmentCompleteSchema = z.object({
       successful: z.number().min(0),
       failed: z.number().min(0),
       totalEmails: z.number().min(0),
-      totalSocialLinks: z.number().min(0),
-    }),
-  }),
+      totalSocialLinks: z.number().min(0)
+    })
+  })
 })
 
 export const WebSocketEnrichmentErrorSchema = z.object({
@@ -253,35 +276,35 @@ export const WebSocketEnrichmentErrorSchema = z.object({
     jobId: z.string(),
     placeId: z.string().optional(),
     error: z.string(),
-    timestamp: z.string(),
-  }),
+    timestamp: z.string()
+  })
 })
 
 export const WebSocketEventSchema = z.union([
   WebSocketEnrichmentStartedSchema,
   WebSocketEnrichmentProgressSchema,
   WebSocketEnrichmentCompleteSchema,
-  WebSocketEnrichmentErrorSchema,
+  WebSocketEnrichmentErrorSchema
 ])
 
 // Client → Server Event Schemas (using constants)
 export const WebSocketEnrichmentSubscribeSchema = z.object({
   type: z.literal(WEBSOCKET_EVENT_TYPES.ENRICHMENT_SUBSCRIBE),
   payload: z.object({
-    jobId: z.string(),
-  }),
+    jobId: z.string()
+  })
 })
 
 export const WebSocketEnrichmentUnsubscribeSchema = z.object({
   type: z.literal(WEBSOCKET_EVENT_TYPES.ENRICHMENT_UNSUBSCRIBE),
   payload: z.object({
-    jobId: z.string(),
-  }),
+    jobId: z.string()
+  })
 })
 
 export const WebSocketClientEventSchema = z.union([
   WebSocketEnrichmentSubscribeSchema,
-  WebSocketEnrichmentUnsubscribeSchema,
+  WebSocketEnrichmentUnsubscribeSchema
 ])
 
 // Type inference from schemas

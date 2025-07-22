@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     environment:
       - POSTGRES_USER=${PGUSER}
       - POSTGRES_PASSWORD=${PGPASSWORD}
@@ -10,7 +10,26 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${PGPORT}:5432"
+  
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    container_name: qdrant
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    ports:
+      - "${QDRANT_PORT}:6333"
+      - "${QDRANT_MANAGEMENT_PORT}:6334"
+    expose:
+      - "${QDRANT_PORT}"
+      - "${QDRANT_MANAGEMENT_PORT}"
+      - "${QDRANT_API_PORT}"
+    configs:
+      - source: qdrant_config
+        target: /qdrant/config/production.yaml
+    volumes:
+      - ./qdrant_data:/qdrant/storage
 
   redis:
     image: redis/redis-stack-server:7.2.0-v17
@@ -54,5 +73,11 @@ services:
 
 volumes:
   postgres_data:
-  redis_data: 
+  qdrant_data:
+  redis_data:
   rabbitmq_data:
+
+configs:
+  qdrant_config:
+    content: |
+      log_level: INFO

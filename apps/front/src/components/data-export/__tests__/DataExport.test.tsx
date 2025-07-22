@@ -82,6 +82,7 @@ describe('DataExport', () => {
     const mockData: SearchResult[] = [
       {
         id: '1',
+        sourceId: '1',
         name: 'Test Place',
         website: 'https://test.com',
         types: ['restaurant'],
@@ -112,7 +113,6 @@ describe('DataExport', () => {
         openingHours: undefined,
         utcOffsetMinutes: 0,
         status: null,
-        searchId: null,
         listId: null,
         enrichment: null,
         primaryEmail: 'test@example.com',
@@ -161,6 +161,7 @@ describe('DataExport', () => {
     const mockData: SearchResult[] = [
       {
         id: '1',
+        sourceId: '1',
         name: 'Test Place',
         website: 'https://test.com',
         types: ['restaurant'],
@@ -189,7 +190,6 @@ describe('DataExport', () => {
         openingHours: undefined,
         utcOffsetMinutes: 0,
         status: null,
-        searchId: null,
         listId: null,
         enrichment: null,
         primaryEmail: 'test@example.com',

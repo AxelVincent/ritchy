@@ -7,7 +7,7 @@ import {
   type GetContactMappingsResponse,
   type GetContactPropertiesResponse,
   type StatusField,
-  StatusFieldEnum,
+  StatusFieldEnum
 } from '@ritchy/types'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -19,7 +19,7 @@ import { getHubspotToken } from '../../../services/hubspot/queries/get_hubspot_t
 
 type ContactMapping = {
   id: string
-  tokenId: string
+  hubspotTokenId: string
   internalField: ContactField | StatusField
   hubspotField: string
   createdAt: Date
@@ -27,35 +27,37 @@ type ContactMapping = {
 }
 
 type ContactMappingInput = {
-  tokenId: string
+  hubspotTokenId: string
   internalField: ContactField | StatusField
   hubspotField: string
   createdAt: Date
   updatedAt: Date
 }
 
-const createDefaultMappings = (tokenId: string): ContactMappingInput[] => [
+const createDefaultMappings = (
+  hubspotTokenId: string
+): ContactMappingInput[] => [
   // Contact fields
   ...Object.entries(FIELD_CONFIGS.contact).map(([field, config]) => ({
-    tokenId,
+    hubspotTokenId,
     internalField: `contact.${field}` as ContactField,
     hubspotField: config.defaultHubspotField,
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: new Date()
   })),
   // Status fields
   ...Object.entries(FIELD_CONFIGS.status).map(([field, config]) => ({
-    tokenId,
+    hubspotTokenId,
     internalField: `status.${field}` as StatusField,
     hubspotField: config.defaultHubspotField,
     createdAt: new Date(),
-    updatedAt: new Date(),
-  })),
+    updatedAt: new Date()
+  }))
 ]
 
 export const getContactProperties = async (
   req: Request,
-  res: Response<GetContactPropertiesResponse>,
+  res: Response<GetContactPropertiesResponse>
 ) => {
   try {
     const properties = await withHubspotClient(
@@ -71,18 +73,18 @@ export const getContactProperties = async (
             archived: prop.archived ?? false,
             options: prop.options?.map((opt) => ({
               label: opt.label,
-              value: opt.value,
-            })),
-          })),
+              value: opt.value
+            }))
+          }))
         }
-      },
+      }
     )
     res.json(properties)
   } catch (error) {
     logger.error({
       msg: 'Failed to fetch HubSpot contact properties',
       event: 'hubspot_contact_properties_fetch_error',
-      metadata: { error, userId: req.auth.userId },
+      metadata: { error, userId: req.auth.userId }
     })
     res.status(500).json({ error: 'Failed to fetch contact properties' })
   }
@@ -90,7 +92,7 @@ export const getContactProperties = async (
 
 export const getContactMappings = async (
   req: Request,
-  res: Response<GetContactMappingsResponse>,
+  res: Response<GetContactMappingsResponse>
 ): Promise<void> => {
   try {
     const userId = req.auth?.userId
@@ -99,8 +101,8 @@ export const getContactMappings = async (
       return
     }
 
-    const token = await getHubspotToken(userId)
-    if (!token) {
+    const hubspotToken = await getHubspotToken(userId)
+    if (!hubspotToken) {
       res.status(404).json([])
       return
     }
@@ -110,29 +112,29 @@ export const getContactMappings = async (
       .from(hubspotFieldMapping)
       .where(
         and(
-          eq(hubspotFieldMapping.tokenId, token.id),
+          eq(hubspotFieldMapping.hubspotTokenId, hubspotToken.id),
           inArray(hubspotFieldMapping.internalField, [
             ...ContactFieldEnum.options,
-            ...StatusFieldEnum.options,
-          ]),
-        ),
+            ...StatusFieldEnum.options
+          ])
+        )
       )) as ContactMapping[]
 
     // If no mappings exist, create default ones
     if (mappings.length === 0) {
-      const defaultMappings = createDefaultMappings(token.id)
+      const defaultMappings = createDefaultMappings(hubspotToken.id)
       await db.insert(hubspotFieldMapping).values(defaultMappings).returning()
       const createdMappings = (await db
         .select()
         .from(hubspotFieldMapping)
         .where(
           and(
-            eq(hubspotFieldMapping.tokenId, token.id),
+            eq(hubspotFieldMapping.hubspotTokenId, hubspotToken.id),
             inArray(hubspotFieldMapping.internalField, [
               ...ContactFieldEnum.options,
-              ...StatusFieldEnum.options,
-            ]),
-          ),
+              ...StatusFieldEnum.options
+            ])
+          )
         )) as ContactMapping[]
 
       res.json(createdMappings)
@@ -144,7 +146,7 @@ export const getContactMappings = async (
     logger.error({
       msg: 'Failed to get contact mappings',
       event: 'hubspot_contact_mappings_get_error',
-      metadata: { error, userId: req.auth?.userId },
+      metadata: { error, userId: req.auth?.userId }
     })
     res.status(500).json([])
   }
@@ -152,7 +154,7 @@ export const getContactMappings = async (
 
 export const updateContactMapping = async (
   req: Request<{ internalField: string; hubspotField: string }>,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const userId = req.auth?.userId
@@ -178,13 +180,13 @@ export const updateContactMapping = async (
       .update(hubspotFieldMapping)
       .set({
         hubspotField,
-        updatedAt: new Date(),
+        updatedAt: new Date()
       })
       .where(
         and(
-          eq(hubspotFieldMapping.tokenId, token.id),
-          eq(hubspotFieldMapping.internalField, internalField as ContactField),
-        ),
+          eq(hubspotFieldMapping.hubspotTokenId, hubspotToken.id),
+          eq(hubspotFieldMapping.internalField, internalField as ContactField)
+        )
       )
       .returning()
 
@@ -193,7 +195,7 @@ export const updateContactMapping = async (
     logger.error({
       msg: 'Failed to update contact mapping',
       event: 'hubspot_contact_mapping_update_error',
-      metadata: { error, userId: req.auth?.userId },
+      metadata: { error, userId: req.auth?.userId }
     })
     res.status(500).json({ error: 'Internal server error' })
   }
@@ -201,7 +203,7 @@ export const updateContactMapping = async (
 
 export const resetContactMappings = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   try {
     const userId = req.auth?.userId
@@ -224,13 +226,13 @@ export const resetContactMappings = async (
       .values(defaultMappings)
       .onConflictDoUpdate({
         target: [
-          hubspotFieldMapping.tokenId,
-          hubspotFieldMapping.internalField,
+          hubspotFieldMapping.hubspotTokenId,
+          hubspotFieldMapping.internalField
         ],
         set: {
           hubspotField: sql`EXCLUDED.hubspot_field`,
-          updatedAt: new Date(),
-        },
+          updatedAt: new Date()
+        }
       })
 
     res.json({ success: true })
@@ -238,7 +240,7 @@ export const resetContactMappings = async (
     logger.error({
       msg: 'Failed to reset contact mappings',
       event: 'hubspot_contact_mappings_reset_error',
-      metadata: { error, userId: req.auth?.userId },
+      metadata: { error, userId: req.auth?.userId }
     })
     res.status(500).json({ error: 'Internal server error' })
   }

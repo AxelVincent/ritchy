@@ -3,12 +3,12 @@ import type { NotesApiResponse } from '@ritchy/types'
 
 const notesKeys = {
   all: ['notes'] as const,
-  place: (placeId: string) => [...notesKeys.all, 'place', placeId] as const,
+  place: (placeId: string) => [...notesKeys.all, 'place', placeId] as const
 }
 
-export const usePlaceNotesQuery = (placeId: string) => {
+export const usePlaceNotesQuery = (userPlaceId: string) => {
   return useApiQuery<NotesApiResponse>(
-    `/places/${placeId}/notes`,
-    notesKeys.place(placeId),
+    `/places/${userPlaceId}/notes`,
+    notesKeys.place(userPlaceId)
   )
 }

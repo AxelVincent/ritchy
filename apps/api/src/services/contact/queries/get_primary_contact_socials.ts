@@ -1,7 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../db/db'
-import { contactSocial } from '../../../db/schema'
+import { contactSocialMedia } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
 
 /**
@@ -11,20 +11,20 @@ import type * as schema from '../../../db/schema'
  */
 export const getPrimaryContactSocialsByContact = async (
   contactId: string,
-  tx?: PostgresJsDatabase<typeof schema>,
+  tx?: PostgresJsDatabase<typeof schema>
 ) => {
   const dbInstance = tx || db
 
   const primarySocials = await dbInstance
     .select()
-    .from(contactSocial)
+    .from(contactSocialMedia)
     .where(
       and(
-        eq(contactSocial.contactId, contactId),
-        eq(contactSocial.isPrimary, true),
-      ),
+        eq(contactSocialMedia.contactId, contactId),
+        eq(contactSocialMedia.isPrimary, true)
+      )
     )
-    .orderBy(desc(contactSocial.createdAt))
+    .orderBy(desc(contactSocialMedia.createdAt))
 
   return primarySocials
 }

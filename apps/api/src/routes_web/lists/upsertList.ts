@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import {
   type UpsertListApiResponse,
   type UpsertListRequest,
-  UpsertListRequestSchema,
+  UpsertListRequestSchema
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -13,14 +13,14 @@ import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 
 export const upsertList = async (
   req: Request<Record<string, never>, UpsertListApiResponse, UpsertListRequest>,
-  res: Response<UpsertListApiResponse>,
+  res: Response<UpsertListApiResponse>
 ): Promise<void> => {
   logger.info({
     msg: 'Upserting list',
     event: 'upsert_list',
     metadata: {
-      listId: req.body.id,
-    },
+      listId: req.body.id
+    }
   })
   const userId = req.auth.userId
   try {
@@ -44,7 +44,7 @@ export const upsertList = async (
       if (existingList.length === 0) {
         res.status(404).json({
           error: 'List not found',
-          message: 'List not found or you do not have permission to update it',
+          message: 'List not found or you do not have permission to update it'
         })
         return
       }
@@ -54,11 +54,11 @@ export const upsertList = async (
         emoji: parsedBody.emoji,
         userId: userId,
         updatedAt: new Date(),
-        ...(parsedBody.id && { id: parsedBody.id }),
+        ...(parsedBody.id && { id: parsedBody.id })
       }
 
       const updateResult = await versionedDb.update('list', values, {
-        id: parsedBody.id,
+        id: parsedBody.id
       })
 
       result = updateResult
@@ -66,7 +66,7 @@ export const upsertList = async (
       const createResult = await versionedDb.insert('list', {
         name: parsedBody.name,
         emoji: parsedBody.emoji,
-        userId: userId,
+        userId: userId
       })
 
       result = createResult
@@ -77,14 +77,14 @@ export const upsertList = async (
       name: result.name,
       emoji: result.emoji,
       createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString()
     })
     logger.info({
       msg: 'List upserted',
       event: 'list_upserted',
       metadata: {
-        listId: result.id,
-      },
+        listId: result.id
+      }
     })
     return
   } catch (error) {
@@ -92,12 +92,12 @@ export const upsertList = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error },
+        metadata: { error }
       })
       res.status(400).json({
         error: 'Invalid request data',
         message: 'Invalid request data',
-        details: error.errors,
+        details: error.errors
       })
       return
     }
@@ -111,16 +111,16 @@ export const upsertList = async (
             ? {
                 message: error.message,
                 name: error.name,
-                stack: error.stack,
+                stack: error.stack
               }
             : error,
         body: req.body,
-        userId: userId,
-      },
+        userId: userId
+      }
     })
     res.status(500).json({
       error: 'Failed to create or update list',
-      message: 'Failed to create or update list',
+      message: 'Failed to create or update list'
     })
     return
   }

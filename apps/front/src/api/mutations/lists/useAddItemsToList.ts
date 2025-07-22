@@ -1,7 +1,7 @@
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   AddItemsToListApiResponse,
-  AddItemsToListRequest,
+  AddItemsToListRequest
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -15,16 +15,16 @@ export const useAddItemsToList = () => {
       onSuccess: (_, { id }) => {
         queryClient.invalidateQueries({
           queryKey: ['lists'],
-          exact: true,
+          exact: true
         })
         queryClient.invalidateQueries({
           queryKey: ['listContent', id],
-          exact: true,
+          exact: true
         })
         queryClient.invalidateQueries({
-          queryKey: ['searchContent'],
+          queryKey: ['searchContent']
         })
-      },
-    },
+      }
+    }
   )
 }

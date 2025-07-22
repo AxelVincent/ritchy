@@ -61,22 +61,22 @@ function generateDemoCode(length = 8): string {
 
 export const clerkWebhook = async (
   req: Request,
-  res: Response<WebhookResponse>,
+  res: Response<WebhookResponse>
 ): Promise<void> => {
   logger.info({
     msg: 'Clerk webhook received',
     event: 'webhook_received',
     metadata: {
       eventType: req.body?.type,
-      webhookKey: res.locals.webhookKey,
-    },
+      webhookKey: res.locals.webhookKey
+    }
   })
 
   const payload = JSON.stringify(req.body)
   const headers = {
     'svix-id': req.headers['svix-id'] as string,
     'svix-signature': req.headers['svix-signature'] as string,
-    'svix-timestamp': req.headers['svix-timestamp'] as string,
+    'svix-timestamp': req.headers['svix-timestamp'] as string
   }
 
   const wh = new Webhook(CLERK_CONFIG.API_KEYS.WEBHOOK_SECRET)
@@ -89,14 +89,14 @@ export const clerkWebhook = async (
       event: 'webhook_signature_verified',
       metadata: {
         eventType: msg.type,
-        webhookKey: res.locals.webhookKey,
-      },
+        webhookKey: res.locals.webhookKey
+      }
     })
 
     const { record, isDuplicate } = await validateWebhookIdempotency(
       req.headers,
       msg.data,
-      msg.type,
+      msg.type
     )
 
     if (isDuplicate) {
@@ -114,7 +114,7 @@ export const clerkWebhook = async (
         email: msg.data.email_addresses?.[0]?.email_address || '',
         firstName: msg.data.first_name || '',
         lastName: msg.data.last_name || '',
-        phoneNumber: msg.data.phone_numbers?.[0]?.phone_number || '',
+        phoneNumber: msg.data.phone_numbers?.[0]?.phone_number || ''
       }
 
       logger.info({
@@ -122,8 +122,8 @@ export const clerkWebhook = async (
         event: 'webhook_data_received',
         metadata: {
           dataReceived: JSON.stringify(msg.data),
-          eventType: msg.type,
-        },
+          eventType: msg.type
+        }
       })
 
       await logger.runWithContext(
@@ -132,8 +132,8 @@ export const clerkWebhook = async (
             id: '',
             email: userData.email,
             firstName: userData.firstName,
-            lastName: userData.lastName,
-          },
+            lastName: userData.lastName
+          }
         },
         async () => {
           switch (msg.type) {
@@ -144,8 +144,8 @@ export const clerkWebhook = async (
                 metadata: {
                   clerkId: userData.clerkId,
                   email: userData.email,
-                  name: `${userData.firstName} ${userData.lastName}`.trim(),
-                },
+                  name: `${userData.firstName} ${userData.lastName}`.trim()
+                }
               })
 
               const [createdUser] = await db
@@ -158,27 +158,27 @@ export const clerkWebhook = async (
               if (createdUser) {
                 await db.insert(userDemoCode).values({
                   userId: createdUser.id,
-                  code: demoCodeString,
+                  code: demoCodeString
                 })
                 logger.info({
                   msg: 'Demo code generated and stored for new user',
                   event: 'demo_code_generated',
                   metadata: {
                     userId: createdUser.id,
-                    demoCode: demoCodeString,
-                  },
+                    demoCode: demoCodeString
+                  }
                 })
               } else {
                 logger.error({
                   msg: 'Failed to retrieve created user ID for demo code generation',
                   event: 'user_creation_no_id_for_demo_code',
-                  metadata: { clerkId: userData.clerkId },
+                  metadata: { clerkId: userData.clerkId }
                 })
               }
 
               sendSlackNotification({
                 text: `🎉 New user registered!\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nPhone: ${userData.phoneNumber}\nDemo Code: ${demoCodeString}`,
-                channel: 'users',
+                channel: 'users'
               })
 
               logger.info({
@@ -187,8 +187,8 @@ export const clerkWebhook = async (
                 metadata: {
                   clerkId: userData.clerkId,
                   email: userData.email,
-                  name: `${userData.firstName} ${userData.lastName}`.trim(),
-                },
+                  name: `${userData.firstName} ${userData.lastName}`.trim()
+                }
               })
               res.json({ received: true, message: 'User created successfully' })
               break
@@ -200,8 +200,8 @@ export const clerkWebhook = async (
                 metadata: {
                   clerkId: userData.clerkId,
                   email: userData.email,
-                  name: `${userData.firstName} ${userData.lastName}`.trim(),
-                },
+                  name: `${userData.firstName} ${userData.lastName}`.trim()
+                }
               })
 
               await db
@@ -215,8 +215,8 @@ export const clerkWebhook = async (
                 metadata: {
                   clerkId: userData.clerkId,
                   email: userData.email,
-                  name: `${userData.firstName} ${userData.lastName}`.trim(),
-                },
+                  name: `${userData.firstName} ${userData.lastName}`.trim()
+                }
               })
               res.json({ received: true, message: 'User updated successfully' })
               break
@@ -232,8 +232,8 @@ export const clerkWebhook = async (
                 event: 'unhandled_webhook_event',
                 metadata: {
                   clerkId: userData.clerkId,
-                  eventType: msg.type,
-                },
+                  eventType: msg.type
+                }
               })
               res.json({ received: true, message: 'Unhandled webhook event' })
           }
@@ -243,10 +243,10 @@ export const clerkWebhook = async (
             event: 'webhook_processed',
             metadata: {
               eventType: msg.type,
-              webhookKey: res.locals.webhookKey,
-            },
+              webhookKey: res.locals.webhookKey
+            }
           })
-        },
+        }
       )
     } catch (processingError) {
       await db
@@ -256,7 +256,7 @@ export const clerkWebhook = async (
           error:
             processingError instanceof Error
               ? processingError.message
-              : String(processingError),
+              : String(processingError)
         })
         .where(eq(webhookEvent.id, record.id))
 
@@ -272,10 +272,10 @@ export const clerkWebhook = async (
             ? {
                 message: err.message,
                 name: err.name,
-                stack: err.stack,
+                stack: err.stack
               }
-            : err,
-      },
+            : err
+      }
     })
     res.status(400).json({ error: 'Invalid webhook signature' })
   }

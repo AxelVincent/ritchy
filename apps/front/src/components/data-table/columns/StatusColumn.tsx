@@ -9,7 +9,7 @@ export const statusColumn: ColumnDef<SearchResult> = {
   id: 'status',
   accessorKey: 'status',
   accessorFn: (row) => {
-    const status = row.status?.status || 'NEW'
+    const status = row.status || 'NEW'
     return getStatusLabel(status)
   },
   size: 200,
@@ -23,9 +23,8 @@ export const statusColumn: ColumnDef<SearchResult> = {
         id={row.original.id}
         content={
           <StatusDropdown
-            placeId={row.original.id}
-            currentStatus={row.original.status?.status || 'NEW'}
-            searchId={row.original.searchId}
+            userPlaceId={row.original.id}
+            currentStatus={row.original.status || 'NEW'}
             listId={row.original.listId}
           />
         }

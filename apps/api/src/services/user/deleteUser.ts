@@ -7,21 +7,21 @@ import { subscription, user } from '../../db/schema'
 import type { ClerkUserData } from '../../webhook/clerk'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia',
+  apiVersion: '2025-01-27.acacia'
 })
 
 export const deleteUser = async (userData: ClerkUserData) => {
   logger.info({
     msg: 'Processing user deletion',
     event: 'user_deletion_started',
-    metadata: { clerkId: userData.clerkId },
+    metadata: { clerkId: userData.clerkId }
   })
 
   try {
     const [userWithSubscription] = await db
       .select({
         user: user,
-        sub: subscription,
+        sub: subscription
       })
       .from(user)
       .leftJoin(subscription, eq(user.id, subscription.userId))
@@ -36,14 +36,14 @@ export const deleteUser = async (userData: ClerkUserData) => {
         metadata: {
           clerkId: userData.clerkId,
           subscriptionId,
-          userId: userWithSubscription.user.id,
-        },
+          userId: userWithSubscription.user.id
+        }
       })
 
       try {
         await stripe.subscriptions.cancel(subscriptionId, {
           invoice_now: true,
-          prorate: false,
+          prorate: false
         })
 
         logger.info({
@@ -51,8 +51,8 @@ export const deleteUser = async (userData: ClerkUserData) => {
           event: 'subscription_cancelled',
           metadata: {
             clerkId: userData.clerkId,
-            subscriptionId,
-          },
+            subscriptionId
+          }
         })
       } catch (stripeError) {
         logger.error({
@@ -65,8 +65,8 @@ export const deleteUser = async (userData: ClerkUserData) => {
             error:
               stripeError instanceof Error
                 ? stripeError.message
-                : String(stripeError),
-          },
+                : String(stripeError)
+          }
         })
       }
     }
@@ -82,14 +82,14 @@ export const deleteUser = async (userData: ClerkUserData) => {
           metadata: {
             user_id: userWithSubscription.user.id,
             deleted: 'true',
-            deleted_at: new Date().toISOString(),
-          },
+            deleted_at: new Date().toISOString()
+          }
         })
 
         logger.info({
           msg: 'Stripe customer updated after account deletion',
           event: 'stripe_customer_anonymized',
-          metadata: { customerId },
+          metadata: { customerId }
         })
       } catch (stripeCustomerError) {
         logger.error({
@@ -100,8 +100,8 @@ export const deleteUser = async (userData: ClerkUserData) => {
             error:
               stripeCustomerError instanceof Error
                 ? stripeCustomerError.message
-                : String(stripeCustomerError),
-          },
+                : String(stripeCustomerError)
+          }
         })
       }
     }
@@ -111,13 +111,13 @@ export const deleteUser = async (userData: ClerkUserData) => {
       event: 'user_deleted',
       metadata: {
         clerkId: userData.clerkId,
-        hadSubscription: !!userWithSubscription?.sub,
-      },
+        hadSubscription: !!userWithSubscription?.sub
+      }
     })
 
     return {
       received: true,
-      message: 'User deleted successfully',
+      message: 'User deleted successfully'
     }
   } catch (error) {
     logger.error({
@@ -125,13 +125,13 @@ export const deleteUser = async (userData: ClerkUserData) => {
       event: 'user_deletion_error',
       metadata: {
         clerkId: userData.clerkId,
-        error: error instanceof Error ? error.message : String(error),
-      },
+        error: error instanceof Error ? error.message : String(error)
+      }
     })
 
     return {
       received: true,
-      message: 'User deletion processed with errors',
+      message: 'User deletion processed with errors'
     }
   }
 }

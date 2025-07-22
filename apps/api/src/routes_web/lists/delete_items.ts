@@ -4,7 +4,7 @@ import {
   type DeleteItemsFromListRequestBody,
   DeleteItemsFromListRequestBodySchema,
   type DeleteItemsFromListRequestParams,
-  type DeleteItemsFromListResponse,
+  type DeleteItemsFromListResponse
 } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -19,7 +19,7 @@ export const deleteItemsFromList = async (
     DeleteItemsFromListResponse,
     DeleteItemsFromListRequestBody
   >,
-  res: Response<DeleteItemsFromListApiResponse>,
+  res: Response<DeleteItemsFromListApiResponse>
 ): Promise<void> => {
   try {
     logger.info({
@@ -27,15 +27,15 @@ export const deleteItemsFromList = async (
       event: 'delete_items_from_list',
       metadata: {
         listId: req.params.id,
-        items: req.body.items,
-      },
+        items: req.body.items
+      }
     })
 
     const listId = req.params.id
     if (!listId) {
       res.status(400).json({
         error: 'Invalid list ID',
-        message: 'Invalid list ID',
+        message: 'Invalid list ID'
       })
       return
     }
@@ -53,7 +53,7 @@ export const deleteItemsFromList = async (
     if (!result.length) {
       res.status(404).json({
         error: 'List not found',
-        message: 'List not found',
+        message: 'List not found'
       })
       return
     }
@@ -67,14 +67,14 @@ export const deleteItemsFromList = async (
       .where(
         and(
           eq(listPlace.listId, listId),
-          inArray(listPlace.placeId, parsedBody.items),
-        ),
+          inArray(listPlace.userPlaceId, parsedBody.items)
+        )
       )
 
     // Delete with version history
     const { notFound } = await versionedDb.bulkDelete('listPlace', listPlaces, [
       'listId',
-      'placeId',
+      'userPlaceId'
     ])
 
     // Log any items that weren't found
@@ -84,21 +84,21 @@ export const deleteItemsFromList = async (
         event: 'items_not_found',
         metadata: {
           listId,
-          notFound,
-        },
+          notFound
+        }
       })
     }
 
     res.json({
-      success: true,
+      success: true
     })
     logger.info({
       msg: 'Items deleted from list',
       event: 'items_deleted_from_list',
       metadata: {
         listId,
-        items: parsedBody.items,
-      },
+        items: parsedBody.items
+      }
     })
     return
   } catch (error) {
@@ -106,12 +106,12 @@ export const deleteItemsFromList = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error },
+        metadata: { error }
       })
       res.status(400).json({
         error: 'Invalid request data',
         message: 'Invalid request data',
-        details: error.errors,
+        details: error.errors
       })
       return
     }
@@ -119,11 +119,11 @@ export const deleteItemsFromList = async (
     logger.error({
       msg: 'Delete items from list error',
       event: 'delete_items_error',
-      metadata: { error },
+      metadata: { error }
     })
     res.status(500).json({
       error: 'Failed to delete items from list',
-      message: 'Failed to delete items from list',
+      message: 'Failed to delete items from list'
     })
     return
   }

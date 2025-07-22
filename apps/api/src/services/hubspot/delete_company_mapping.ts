@@ -5,13 +5,13 @@ import { hubspotLeadMapping } from '../../db/schema'
 
 export const deleteCompanyMapping = async (
   companyId: string,
-  tokenId: string,
+  hubspotTokenId: string
 ): Promise<void> => {
   // Input validation
   if (!companyId?.trim()) {
     throw new Error('Company ID is required')
   }
-  if (!tokenId?.trim()) {
+  if (!hubspotTokenId?.trim()) {
     throw new Error('Token ID is required')
   }
 
@@ -21,8 +21,8 @@ export const deleteCompanyMapping = async (
     .where(
       and(
         eq(hubspotLeadMapping.hubspotCompanyId, companyId),
-        eq(hubspotLeadMapping.tokenId, tokenId),
-      ),
+        eq(hubspotLeadMapping.hubspotTokenId, hubspotTokenId)
+      )
     )
     .returning()
 
@@ -31,8 +31,8 @@ export const deleteCompanyMapping = async (
       msg: 'No lead mappings found for deleted HubSpot company',
       event: 'hubspot_company_deletion_no_mappings',
       metadata: {
-        hubspotCompanyId: companyId,
-      },
+        hubspotCompanyId: companyId
+      }
     })
     return
   }
@@ -45,10 +45,10 @@ export const deleteCompanyMapping = async (
       deletedMappingsCount: deletedMappings.length,
       deletedMappings: deletedMappings.map((mapping) => ({
         id: mapping.id,
-        placeId: mapping.placeId,
-        tokenId: mapping.tokenId,
-      })),
-    },
+        userPlaceId: mapping.userPlaceId,
+        hubspotTokenId: mapping.hubspotTokenId
+      }))
+    }
   })
   return
 }

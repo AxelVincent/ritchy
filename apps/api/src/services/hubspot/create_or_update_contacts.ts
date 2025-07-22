@@ -18,9 +18,9 @@ import { createHubspotContactPropertiesWithMappings } from './utils/hubspot_prop
  * This is a more efficient version of createOrUpdateContacts that uses HubSpot's batch APIs.
  */
 export const createOrUpdateContacts = async (
-  placeIds: string[],
+  userPlaceIds: string[],
   userId: string,
-  client: Client,
+  client: Client
 ): Promise<HubspotBase[]> => {
   const token = await getValidToken(userId)
   if (!token) {
@@ -33,74 +33,75 @@ export const createOrUpdateContacts = async (
     event: 'hubspot_contact_batch_start',
     metadata: {
       batchId,
-      placeCount: placeIds.length,
+      placeCount: userPlaceIds.length,
       tokenId: token.id,
-      userId,
-    },
+      userId
+    }
   })
 
   const [contacts, statusData, leadMappings] = await Promise.all([
-    fetchOrCreateContacts(placeIds, userId),
-    getPlacesStatus(placeIds, userId),
-    getHubspotLeadMappings(token.id, placeIds),
+    fetchOrCreateContacts(userPlaceIds, userId),
+    getPlacesStatus(userPlaceIds, userId),
+    getHubspotLeadMappings(token.id, userPlaceIds)
   ])
 
-  const statusMap = new Map(statusData.map((s) => [s.placeId, s.status]))
+  const statusMap = new Map(statusData.map((s) => [s.user_place.id, s.status]))
   const companyMap = new Map(
-    leadMappings.map((m) => [m.placeId, m.hubspotCompanyId]),
+    leadMappings.map((m) => [m.userPlaceId, m.hubspotCompanyId])
   )
 
   const batchOperations: BatchOperation[] = await Promise.all(
-    placeIds.map(async (placeId, index) => {
+    userPlaceIds.map(async (userPlaceId, index) => {
       const contactData = contacts[index]
-      const currentStatus = statusMap.get(placeId) || 'NEW'
+      const currentStatus = statusMap.get(userPlaceId)?.status || 'NEW'
 
       const properties = await createHubspotContactPropertiesWithMappings(
         token.id,
         contactData,
-        currentStatus,
+        currentStatus
       )
 
       const existingMapping = leadMappings.find(
         (m): m is typeof m & { hubspotContactId: string } =>
-          m.placeId === placeId && typeof m.hubspotContactId === 'string',
+          m.userPlaceId === userPlaceId &&
+          typeof m.hubspotContactId === 'string'
       )
 
       return {
-        placeId,
+        userPlaceId,
         id: existingMapping?.hubspotContactId,
         properties: {
           ...properties,
-          ritchy_place_id: placeId,
-          ...(companyMap.get(placeId) && {
-            associatedcompanyid: companyMap.get(placeId) as string,
-          }),
-        },
+          ritchy_place_id: userPlaceId,
+          ...(companyMap.get(userPlaceId) && {
+            associatedcompanyid: companyMap.get(userPlaceId) as string
+          })
+        }
       }
-    }),
+    })
   )
 
   const results = await sendDataToHubspot(
     batchOperations,
     client,
     'contacts',
-    batchId,
+    batchId
   )
 
   const newContacts = results.filter(
-    (contact) => !leadMappings.some((m) => m.hubspotContactId === contact.id),
+    (contact) => !leadMappings.some((m) => m.hubspotContactId === contact.id)
   )
 
   if (newContacts.length > 0) {
     await Promise.all(
       newContacts.map((contact) =>
         upsertLeadMapping({
-          placeId: contact.placeId,
-          tokenId: token.id,
+          userPlaceId: contact.userPlaceId,
+          hubspotTokenId: token.id,
           hubspotContactId: contact.id,
-          hubspotCompanyId: companyMap.get(contact.placeId) as string,
-        }),
-      ),
+          hubspotCompanyId: companyMap.get(contact.userPlaceId) as string
+        })
+      )
     )
   }
 

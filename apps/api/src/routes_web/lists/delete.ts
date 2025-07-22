@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import type {
   DeleteListApiResponse,
-  DeleteListRequestParams,
+  DeleteListRequestParams
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -11,21 +11,21 @@ import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 
 export const deleteList = async (
   req: Request<DeleteListRequestParams>,
-  res: Response<DeleteListApiResponse>,
+  res: Response<DeleteListApiResponse>
 ): Promise<void> => {
   try {
     logger.info({
       msg: 'Deleting list',
       event: 'delete_list',
       metadata: {
-        listId: req.params.id,
-      },
+        listId: req.params.id
+      }
     })
     const listId = req.params.id
     if (Number.isNaN(listId)) {
       res.status(400).json({
         error: 'Invalid list ID',
-        message: 'Invalid list ID',
+        message: 'Invalid list ID'
       })
       return
     }
@@ -42,7 +42,7 @@ export const deleteList = async (
     if (!result.length) {
       res.status(404).json({
         error: 'List not found',
-        message: 'List not found',
+        message: 'List not found'
       })
       return
     }
@@ -58,19 +58,19 @@ export const deleteList = async (
       msg: 'List deleted',
       event: 'list_deleted',
       metadata: {
-        listId,
-      },
+        listId
+      }
     })
     return
   } catch (error) {
     logger.error({
       msg: 'Delete list error',
       event: 'delete_list_error',
-      metadata: { error },
+      metadata: { error }
     })
     res.status(500).json({
       error: 'Failed to delete list',
-      message: 'Failed to delete list',
+      message: 'Failed to delete list'
     })
     return
   }

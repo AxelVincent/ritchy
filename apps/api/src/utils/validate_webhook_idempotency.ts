@@ -31,7 +31,7 @@ interface IdempotencyResult {
  * Determines the webhook provider from headers
  */
 const getWebhookProvider = (
-  headers: IncomingHttpHeaders,
+  headers: IncomingHttpHeaders
 ): 'clerk' | 'stripe' | 'hubspot' => {
   if (headers['svix-id']) return 'clerk'
   if (headers['x-hubspot-signature-v3']) return 'hubspot'
@@ -44,7 +44,7 @@ const getWebhookProvider = (
  */
 const generateIdempotencyKey = (
   headers: IncomingHttpHeaders,
-  event: unknown,
+  event: unknown
 ): IdempotencyResult => {
   const provider = getWebhookProvider(headers)
 
@@ -54,7 +54,7 @@ const generateIdempotencyKey = (
       if (!svixId) throw new Error('Missing svix-id header')
       return {
         idempotencyKey: `clerk_${svixId}`,
-        provider,
+        provider
       }
     }
 
@@ -65,7 +65,7 @@ const generateIdempotencyKey = (
       }
       return {
         idempotencyKey: `hubspot_${hubspotEvent.eventId}`,
-        provider,
+        provider
       }
     }
 
@@ -78,7 +78,7 @@ const generateIdempotencyKey = (
         idempotencyKey: stripeEvent.request?.idempotency_key
           ? `stripe_${stripeEvent.id}_${stripeEvent.request.idempotency_key}`
           : `stripe_${stripeEvent.id}`,
-        provider,
+        provider
       }
     }
   }
@@ -90,12 +90,12 @@ const generateIdempotencyKey = (
 export const validateWebhookIdempotency = async (
   headers: IncomingHttpHeaders,
   event: unknown,
-  type: string,
+  type: string
 ) => {
   const { idempotencyKey, provider } = generateIdempotencyKey(headers, event)
 
   const existing = await db.query.webhookEvent.findFirst({
-    where: eq(webhookEvent.idempotencyKey, idempotencyKey),
+    where: eq(webhookEvent.idempotencyKey, idempotencyKey)
   })
 
   if (existing) {
@@ -106,8 +106,8 @@ export const validateWebhookIdempotency = async (
         idempotencyKey,
         eventType: type,
         processedAt: existing.processedAt,
-        provider,
-      },
+        provider
+      }
     })
     return { record: existing, isDuplicate: true, provider }
   }
@@ -120,7 +120,7 @@ export const validateWebhookIdempotency = async (
       payload: event,
       idempotencyKey,
       status: 'processed',
-      processedAt: new Date(),
+      processedAt: new Date()
     })
     .returning()
 
@@ -131,14 +131,14 @@ export const validateWebhookIdempotency = async (
       webhookId: webhookRecord.id,
       eventType: type,
       idempotencyKey,
-      provider,
-    },
+      provider
+    }
   })
 
   return {
     record: webhookRecord,
     idempotencyKey,
     isDuplicate: false,
-    provider,
+    provider
   }
 }

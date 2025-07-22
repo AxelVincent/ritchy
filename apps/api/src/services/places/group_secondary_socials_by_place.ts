@@ -1,8 +1,9 @@
 import { logger } from '@ritchy/logger'
-import type { contactSocial } from '../../db/schema'
+import type { contactSocialMedia } from '../../db/schema'
 import { getSecondarySocialsByPlaceIds } from './contacts/queries/get_secondary_socials_by_place_ids'
 
-type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
+type SocialMediaPlatform =
+  (typeof contactSocialMedia.$inferInsert)['socialMediaPlatform']
 
 /**
  * Groups secondary social media profiles by place ID and platform
@@ -12,18 +13,14 @@ type SocialMediaPlatform = (typeof contactSocial.$inferInsert)['platform']
  * @returns Promise resolving to a Map where keys are place IDs and values are Maps of platform to profile URL
  */
 export const groupSecondarySocialsByPlace = async (
-  placeIds: string[],
-  userId: string,
+  userPlaceIds: string[]
 ): Promise<Map<string, Map<SocialMediaPlatform, string[]>>> => {
-  if (placeIds.length === 0) {
+  if (userPlaceIds.length === 0) {
     return new Map<string, Map<SocialMediaPlatform, string[]>>()
   }
 
   try {
-    const secondarySocials = await getSecondarySocialsByPlaceIds(
-      placeIds,
-      userId,
-    )
+    const secondarySocials = await getSecondarySocialsByPlaceIds(userPlaceIds)
 
     // Group by place and platform using functional approach
     const result = secondarySocials.reduce((acc, socialData) => {
@@ -52,13 +49,13 @@ export const groupSecondarySocialsByPlace = async (
       msg: 'Secondary socials grouped by place',
       event: 'secondary_socials_grouped',
       metadata: {
-        placeIds,
+        userPlaceIds,
         placesCount: result.size,
         totalSecondarySocials: Array.from(result.values()).reduce(
           (sum, map) => sum + map.size,
-          0,
-        ),
-      },
+          0
+        )
+      }
     })
     return result
   } catch (error) {
@@ -66,10 +63,9 @@ export const groupSecondarySocialsByPlace = async (
       msg: 'Failed to group secondary socials by place',
       event: 'secondary_socials_group_error',
       metadata: {
-        placeIds,
-        userId,
-        errorMessage: error instanceof Error ? error.message : String(error),
-      },
+        userPlaceIds,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      }
     })
     throw error
   }

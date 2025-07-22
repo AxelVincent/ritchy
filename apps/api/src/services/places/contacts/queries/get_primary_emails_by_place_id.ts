@@ -1,39 +1,30 @@
 import { logger } from '@ritchy/logger'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { desc, eq, inArray } from 'drizzle-orm'
 import { db } from '../../../../db/db'
 import { contact } from '../../../../db/schema'
 import { contactEmail } from '../../../../db/schema'
 
-export const getPrimaryEmailsByPlaceIds = async (
-  placeIds: string[],
-  userId: string,
-) => {
+export const getPrimaryEmailsByPlaceIds = async (userPlaceIds: string[]) => {
   // If there are no placeIds, return empty map immediately
-  if (placeIds.length === 0) {
+  if (userPlaceIds.length === 0) {
     return new Map<string, string>()
   }
 
   const primaryEmails = await db
     .select({
       email: contactEmail.email,
-      placeId: contact.placeId,
+      userPlaceId: contact.userPlaceId
     })
     .from(contactEmail)
     .innerJoin(contact, eq(contactEmail.contactId, contact.id))
-    .where(
-      and(
-        inArray(contact.placeId, placeIds),
-        eq(contact.userId, userId),
-        eq(contactEmail.isPrimary, true),
-      ),
-    )
+    .where(inArray(contact.userPlaceId, userPlaceIds))
     .orderBy(desc(contactEmail.createdAt))
 
   // Process results to get only the first email per place
   const result = new Map<string, string>()
   for (const emailData of primaryEmails) {
-    if (!result.has(emailData.placeId)) {
-      result.set(emailData.placeId, emailData.email)
+    if (!result.has(emailData.userPlaceId)) {
+      result.set(emailData.userPlaceId, emailData.email)
     }
   }
 
@@ -41,10 +32,10 @@ export const getPrimaryEmailsByPlaceIds = async (
     msg: 'Primary emails fetched for places',
     event: 'primary_emails_fetched',
     metadata: {
-      placeIds,
+      userPlaceIds,
       primaryEmailsCount: result.size,
-      primaryEmailsData: Object.fromEntries(result),
-    },
+      primaryEmailsData: Object.fromEntries(result)
+    }
   })
 
   return result

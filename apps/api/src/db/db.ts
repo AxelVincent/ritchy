@@ -4,26 +4,36 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 
 import * as schema from './schema'
 
+import { DRIZZLE_CONFIG } from '../config/drizzle'
+
 const isDevelopment = process.env.NODE_ENV === 'development'
 
 const connectionData = {
-  host: process.env.PGHOST,
-  port: Number(process.env.PGPORT),
-  database: process.env.PGDATABASE,
-  username: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
+  host: DRIZZLE_CONFIG.HOST,
+  port: DRIZZLE_CONFIG.PORT,
+  database: DRIZZLE_CONFIG.DATABASE,
+  username: DRIZZLE_CONFIG.USER,
+  password: DRIZZLE_CONFIG.PASSWORD,
   max: 1,
   ...(isDevelopment && {
     debug: true,
     onnotice: (notice: unknown) => console.log('Postgres Notice:', notice),
     onparameter: (key: unknown, value: unknown) =>
       console.log('Query Parameter:', key, value),
-    onquery: (query: unknown) => console.log('Executing Query:', query),
-  }),
+    onquery: (query: unknown) => console.log('Executing Query:', query)
+  })
 }
 
 const queryConnection = postgres(connectionData)
 
 export const db = drizzle(queryConnection, {
-  schema,
+  schema
+})
+
+export const publicDb = drizzle({
+  connection: {
+    url: DRIZZLE_CONFIG.PUBLIC_URL,
+    max: 1
+  },
+  schema
 })

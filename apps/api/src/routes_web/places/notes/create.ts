@@ -6,7 +6,7 @@ import { createVersionedDbFromRequest } from '../../../db/versioned_db/client'
 
 export const addPlaceNote = async (
   req: Request<AddNoteRequest>,
-  res: Response<AddNoteApiResponse>,
+  res: Response<AddNoteApiResponse>
 ): Promise<void> => {
   try {
     logger.info({
@@ -14,35 +14,35 @@ export const addPlaceNote = async (
       event: 'add_place_note',
       metadata: {
         userId: req.auth.userId,
-        placeId: req.params.placeId,
-        note: req.body.note,
-      },
+        userPlaceId: req.params.userPlaceId,
+        note: req.body.note
+      }
     })
     const { note } = req.body
-    const { placeId } = req.params
+    const { userPlaceId } = req.params
 
     const db = createVersionedDbFromRequest(req)
     const result = await db.insert('note', {
-      placeId,
+      userPlaceId,
       note,
-      userId: req.auth.userId,
+      userId: req.auth.userId
     })
 
     res.json({
       id: result.id,
-      placeId: result.placeId,
+      userPlaceId: result.userPlaceId,
       note: result.note,
       userId: result.userId,
       createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
+      updatedAt: result.updatedAt.toISOString()
     })
 
     logger.info({
       msg: 'Place note added',
       event: 'place_note_added',
       metadata: {
-        placeId,
-      },
+        userPlaceId
+      }
     })
     return
   } catch (error) {
@@ -50,12 +50,12 @@ export const addPlaceNote = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error },
+        metadata: { error }
       })
       res.status(400).json({
         error: 'Invalid request data',
         message: 'Invalid request data',
-        details: error.errors,
+        details: error.errors
       })
       return
     }
@@ -66,12 +66,12 @@ export const addPlaceNote = async (
       metadata: {
         error: error instanceof Error ? error : { error },
         body: req.body,
-        userId: req.auth.userId,
-      },
+        userId: req.auth.userId
+      }
     })
     res.status(500).json({
       error: 'Failed to add note',
-      message: 'Failed to add note',
+      message: 'Failed to add note'
     })
     return
   }

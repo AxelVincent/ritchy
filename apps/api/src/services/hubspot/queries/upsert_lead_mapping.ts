@@ -4,27 +4,30 @@ import type { LeadMapping } from '../../../external/hubspot/types'
 
 export const upsertLeadMapping = async (
   mapping: Partial<LeadMapping> & {
-    placeId: string
-    tokenId: string
+    userPlaceId: string
+    hubspotTokenId: string
     hubspotCompanyId: string
     hubspotContactId?: string | null
-  },
+  }
 ) =>
   db
     .insert(hubspotLeadMapping)
     .values({
-      placeId: mapping.placeId,
-      tokenId: mapping.tokenId,
+      userPlaceId: mapping.userPlaceId,
+      hubspotTokenId: mapping.hubspotTokenId,
       hubspotCompanyId: mapping.hubspotCompanyId,
       hubspotContactId: mapping.hubspotContactId ?? null,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      updatedAt: new Date()
     })
     .onConflictDoUpdate({
-      target: [hubspotLeadMapping.placeId, hubspotLeadMapping.tokenId],
+      target: [
+        hubspotLeadMapping.userPlaceId,
+        hubspotLeadMapping.hubspotTokenId
+      ],
       set: {
         hubspotCompanyId: mapping.hubspotCompanyId,
         hubspotContactId: mapping.hubspotContactId ?? null,
-        updatedAt: new Date(),
-      },
+        updatedAt: new Date()
+      }
     })

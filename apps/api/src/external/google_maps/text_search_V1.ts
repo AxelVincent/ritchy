@@ -11,13 +11,13 @@ import {
   GooglePlacesTextSearchRequestBodySchema,
   type GooglePlacesTextSearchResponse,
   GooglePlacesTextSearchResponseSchema,
-  PREFERRED_PLACE_KEYS_TEXT_SEARCH,
+  PREFERRED_PLACE_KEYS_TEXT_SEARCH
 } from './types'
 import { mapToPlacesSearchResult } from './utils/mapper'
 import { placesApiQueue } from './utils/places_api_queue'
 
 async function fetchSinglePage(
-  formattedRequest: GooglePlacesTextSearchRequestBody,
+  formattedRequest: GooglePlacesTextSearchRequestBody
 ): Promise<GooglePlacesTextSearchResponse> {
   const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places:searchText`)
 
@@ -25,7 +25,7 @@ async function fetchSinglePage(
     textQuery: formattedRequest.textQuery,
     locationRestriction: formattedRequest.locationRestriction,
     pageToken: formattedRequest.nextPageToken,
-    pageSize: 20,
+    pageSize: 20
   }
 
   const startTime = Date.now()
@@ -37,9 +37,9 @@ async function fetchSinglePage(
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
         'X-Goog-FieldMask': PREFERRED_PLACE_KEYS_TEXT_SEARCH,
-        Referer: GOOGLE_MAPS_CONFIG.REFERRER,
+        Referer: GOOGLE_MAPS_CONFIG.REFERRER
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(body)
     })
 
     if (!response.ok) {
@@ -51,11 +51,11 @@ async function fetchSinglePage(
           errorData,
           textQuery: formattedRequest.textQuery,
           statusCode: response.status,
-          durationMs: Date.now() - startTime,
-        },
+          durationMs: Date.now() - startTime
+        }
       })
       throw new Error(
-        `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
+        `Google API error: ${response.status} - ${JSON.stringify(errorData)}`
       )
     }
 
@@ -67,8 +67,8 @@ async function fetchSinglePage(
       metadata: {
         textQuery: formattedRequest.textQuery,
         pageToken: formattedRequest.nextPageToken ? 'present' : 'none',
-        durationMs: endTime - startTime,
-      },
+        durationMs: endTime - startTime
+      }
     })
 
     return response.json()
@@ -81,8 +81,8 @@ async function fetchSinglePage(
       metadata: {
         textQuery: formattedRequest.textQuery,
         durationMs: endTime - startTime,
-        error,
-      },
+        error
+      }
     })
 
     throw error
@@ -90,8 +90,8 @@ async function fetchSinglePage(
 }
 
 export async function postTextSearchV1(
-  requestBody: PlacesSearchRequestBody,
-): Promise<PlaceBase[]> {
+  requestBody: PlacesSearchRequestBody
+): Promise<Omit<PlaceBase, 'id'>[]> {
   const ratio = 1
   // 60 potential results
   // 1 * 3 = 3 requests
@@ -108,14 +108,14 @@ export async function postTextSearchV1(
   // 48 * 0.04 = 1.92 $
   // 1.92 / 2 = 0.96 $
   const squares960 = squares240.flatMap((square) =>
-    divideRectangleIntoFour(square, ratio),
+    divideRectangleIntoFour(square, ratio)
   )
   // 960 * 4 = 3840 potential results
   // 48 * 4 = 192 requests
   // 192 * 0.04 = 7.68 $
   // 7.68 / 2 = 3.84 $
   const squares3840 = squares960.flatMap((square) =>
-    divideRectangleIntoFour(square, ratio),
+    divideRectangleIntoFour(square, ratio)
   )
 
   const squares = (() => {
@@ -149,18 +149,18 @@ export async function postTextSearchV1(
           locationRestriction: {
             rectangle: {
               low: square.southWest,
-              high: square.northEast,
-            },
+              high: square.northEast
+            }
           },
           nextPageToken,
-          resultsQuantity,
+          resultsQuantity
         }
 
         const validatedRequest =
           GooglePlacesTextSearchRequestBodySchema.parse(formattedRequest)
 
         const data = await placesApiQueue.addToQueue(async () =>
-          fetchSinglePage(validatedRequest),
+          fetchSinglePage(validatedRequest)
         )
         GooglePlacesTextSearchResponseSchema.parse(data)
 
@@ -202,8 +202,8 @@ export async function postTextSearchV1(
         totalPlaces: allResults.length,
         uniquePlaces: uniqueResults.length,
         duplicatesRemoved: duplicates.size,
-        duplicateIds: Array.from(duplicates),
-      },
+        duplicateIds: Array.from(duplicates)
+      }
     })
 
     // Cache each unique place
@@ -212,7 +212,7 @@ export async function postTextSearchV1(
         const key = REDIS_KEYS.place(place.id)
         // Cache the raw Google API response
         await redisClient.set(key, place)
-      }),
+      })
     )
 
     const results = mapToPlacesSearchResult({ places: uniqueResults })
@@ -227,8 +227,8 @@ export async function postTextSearchV1(
         resultCount: results.length,
         apiRequestCount,
         squareCount: squares.length,
-        totalDurationMs: endTime - startTime,
-      },
+        totalDurationMs: endTime - startTime
+      }
     })
 
     return results
@@ -238,8 +238,8 @@ export async function postTextSearchV1(
       event: 'google_places_api_failure',
       metadata: {
         error,
-        query: requestBody.textQuery,
-      },
+        query: requestBody.textQuery
+      }
     })
     throw error
   }

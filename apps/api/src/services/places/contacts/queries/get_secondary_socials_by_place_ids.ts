@@ -1,45 +1,39 @@
 import { logger } from '@ritchy/logger'
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import { db } from '../../../../db/db'
-import { contactSocial } from '../../../../db/schema'
+import { contactSocialMedia, userPlace } from '../../../../db/schema'
 import { contact } from '../../../../db/schema'
 
 export const getSecondarySocialsByPlaceIds = async (
-  placeIds: string[],
-  userId: string,
+  userPlaceIds: string[]
 ): Promise<
   Array<{ placeId: string; platform: string; profileUrl: string }>
 > => {
-  if (placeIds.length === 0) {
+  if (userPlaceIds.length === 0) {
     return []
   }
 
   // get all secondary socials for the places
   const secondarySocials = await db
     .select({
-      placeId: contact.placeId,
-      platform: contactSocial.platform,
-      profileUrl: contactSocial.profileUrl,
+      placeId: userPlace.placeId,
+      platform: contactSocialMedia.socialMediaPlatform,
+      profileUrl: contactSocialMedia.url
     })
-    .from(contactSocial)
-    .innerJoin(contact, eq(contactSocial.contactId, contact.id))
-    .where(
-      and(
-        inArray(contact.placeId, placeIds),
-        eq(contact.userId, userId),
-        eq(contactSocial.isPrimary, false),
-      ),
-    )
-    .orderBy(desc(contactSocial.createdAt))
+    .from(contactSocialMedia)
+    .innerJoin(contact, eq(contactSocialMedia.contactId, contact.id))
+    .innerJoin(userPlace, eq(contact.userPlaceId, userPlace.id))
+    .where(inArray(userPlace.id, userPlaceIds))
+    .orderBy(desc(contactSocialMedia.createdAt))
 
   logger.info({
     msg: 'Secondary socials fetched for places',
     event: 'secondary_socials_fetched',
     metadata: {
-      placeIds,
+      userPlaceIds,
       secondarySocialsCount: secondarySocials.length,
-      secondarySocialsData: secondarySocials,
-    },
+      secondarySocialsData: secondarySocials
+    }
   })
 
   return secondarySocials

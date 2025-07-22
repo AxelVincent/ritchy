@@ -5,14 +5,14 @@ import {
   type BatchEnrichmentResponse,
   BatchEnrichmentResponseSchema,
   type EnrichmentJobStatusApiResponse,
-  type EnrichmentJobStatusParams,
+  type EnrichmentJobStatusParams
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
 import {
   add_enrichment_batch,
-  get_job_status,
+  get_job_status
 } from '../../services/enrichment/queue/batch_enrichment_queue'
 
 /**
@@ -26,7 +26,7 @@ export const batchEnrichWebsites = async (
     BatchEnrichmentResponse,
     BatchEnrichmentRequestBody
   >,
-  res: Response<BatchEnrichmentResponse>,
+  res: Response<BatchEnrichmentResponse>
 ): Promise<void> => {
   try {
     // Validate request body
@@ -37,7 +37,7 @@ export const batchEnrichWebsites = async (
       res.status(400).json({
         jobId: '',
         message: 'No enrichments provided',
-        enrichmentCount: 0,
+        enrichmentCount: 0
       })
       return
     }
@@ -46,7 +46,7 @@ export const batchEnrichWebsites = async (
       res.status(400).json({
         jobId: '',
         message: 'Too many enrichments requested. Maximum 500 per batch.',
-        enrichmentCount: 0,
+        enrichmentCount: 0
       })
       return
     }
@@ -54,7 +54,7 @@ export const batchEnrichWebsites = async (
     logger.info({
       msg: 'Processing batch enrichment request',
       event: 'batch_enrichment_request',
-      metadata: { userId, enrichmentCount: enrichments.length },
+      metadata: { userId, enrichmentCount: enrichments.length }
     })
 
     // Add enrichments to the job queue
@@ -63,13 +63,13 @@ export const batchEnrichWebsites = async (
     logger.info({
       msg: 'Batch enrichment job queued successfully',
       event: 'batch_enrichment_queued',
-      metadata: { userId, jobId, enrichmentCount: enrichments.length },
+      metadata: { userId, jobId, enrichmentCount: enrichments.length }
     })
 
     const response: BatchEnrichmentResponse = {
       jobId,
       message: `Enrichment job started. Processing ${enrichments.length} websites.`,
-      enrichmentCount: enrichments.length,
+      enrichmentCount: enrichments.length
     }
 
     // Validate response
@@ -83,13 +83,13 @@ export const batchEnrichWebsites = async (
         event: 'batch_enrichment_validation_error',
         metadata: {
           error: error.errors,
-          body: req.body,
-        },
+          body: req.body
+        }
       })
       res.status(400).json({
         jobId: '',
         message: 'Invalid request parameters',
-        enrichmentCount: 0,
+        enrichmentCount: 0
       })
       return
     }
@@ -99,13 +99,13 @@ export const batchEnrichWebsites = async (
       event: 'batch_enrichment_error',
       metadata: {
         error: error instanceof Error ? error.message : String(error),
-        userId: req.auth.userId,
-      },
+        userId: req.auth.userId
+      }
     })
     res.status(500).json({
       jobId: '',
       message: 'Failed to start batch enrichment',
-      enrichmentCount: 0,
+      enrichmentCount: 0
     })
   }
 }
@@ -118,7 +118,7 @@ export const getEnrichmentJobStatus = async (
     unknown,
     EnrichmentJobStatusParams
   >,
-  res: Response<EnrichmentJobStatusApiResponse>,
+  res: Response<EnrichmentJobStatusApiResponse>
 ): Promise<void> => {
   try {
     const { jobId } = req.params
@@ -126,7 +126,7 @@ export const getEnrichmentJobStatus = async (
 
     if (!jobId) {
       res.status(400).json({
-        error: 'Job ID is required',
+        error: 'Job ID is required'
       })
       return
     }
@@ -134,7 +134,7 @@ export const getEnrichmentJobStatus = async (
     logger.info({
       msg: 'Getting enrichment job status',
       event: 'enrichment_job_status_request',
-      metadata: { userId, jobId },
+      metadata: { userId, jobId }
     })
 
     const status = await get_job_status(jobId)
@@ -146,8 +146,8 @@ export const getEnrichmentJobStatus = async (
       event: 'enrichment_job_status_error',
       metadata: {
         error: error instanceof Error ? error.message : String(error),
-        jobId: req.params.jobId,
-      },
+        jobId: req.params.jobId
+      }
     })
     res.status(500).json({ error: 'Failed to get job status' })
   }

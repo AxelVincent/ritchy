@@ -17,15 +17,15 @@ export interface InsertContactEmailData {
  */
 export const insertContactEmailsWithTransaction = async (
   tx: PostgresJsDatabase<typeof schema>,
-  emails: InsertContactEmailData[],
+  emails: InsertContactEmailData[]
 ) => {
   if (emails.length === 0) {
     logger.debug({
       msg: 'No emails to insert',
       event: 'no_emails_to_insert',
       metadata: {
-        totalEmails: emails.length,
-      },
+        totalEmails: emails.length
+      }
     })
     return []
   }
