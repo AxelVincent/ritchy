@@ -49,7 +49,7 @@ export const firecrawlApiQueue = createApiQueue({
     capacity: 500,
     name: firecrawlName,
   }),
-  concurrency: 25,
+  concurrency: 50,
 })
 
 /**
