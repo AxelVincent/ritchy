@@ -407,5 +407,16 @@ ALTER TABLE "list_place" DROP COLUMN IF EXISTS "place_id";--> statement-breakpoi
 ALTER TABLE "note" DROP COLUMN IF EXISTS "place_id";--> statement-breakpoint
 ALTER TABLE "status" DROP COLUMN IF EXISTS "place_id";--> statement-breakpoint
 ALTER TABLE "status" DROP COLUMN IF EXISTS "user_id";--> statement-breakpoint
+WITH duplicates AS (
+  SELECT id,
+         ROW_NUMBER() OVER (PARTITION BY place_id ORDER BY updated_at DESC) as rn
+  FROM enrichment
+)
+DELETE FROM enrichment
+WHERE id IN (
+  SELECT id 
+  FROM duplicates 
+  WHERE rn > 1
+);
 ALTER TABLE "enrichment" ADD CONSTRAINT "enrichment_place_id_unique" UNIQUE("place_id");--> statement-breakpoint
 ALTER TABLE "hubspot_field_mapping" ADD CONSTRAINT "hubspot_field_mapping_hubspot_token_id_internal_field_unique" UNIQUE("hubspot_token_id","internal_field");--> statement-breakpoint
