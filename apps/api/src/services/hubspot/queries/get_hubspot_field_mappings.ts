@@ -3,7 +3,7 @@ import { db } from '../../../db/db'
 import { hubspotFieldMapping } from '../../../db/schema'
 
 export const getHubspotFieldMappings = async (
-  tokenId: string,
+  hubspotTokenId: string,
   fieldType: 'contact' | 'company',
 ) => {
   const mappings = await db
@@ -11,7 +11,7 @@ export const getHubspotFieldMappings = async (
     .from(hubspotFieldMapping)
     .where(
       and(
-        eq(hubspotFieldMapping.tokenId, tokenId),
+        eq(hubspotFieldMapping.hubspotTokenId, hubspotTokenId),
         like(sql`${hubspotFieldMapping.internalField}::text`, `${fieldType}.%`),
       ),
     )

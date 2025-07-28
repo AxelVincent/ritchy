@@ -21,8 +21,7 @@ interface HubspotSyncItemsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedItems: {
-    placeId: string
-    searchId: string | null
+    userPlaceId: string
   }[]
 }
 
@@ -40,7 +39,7 @@ export function HubspotSyncItemsDialog({
 
   const handleSyncToHubspot = () => {
     hubspotSyncPlaceMutation.mutate(
-      { placeIds: selectedItems.map((item) => item.placeId) },
+      { userPlaceIds: selectedItems.map((item) => item.userPlaceId) },
       {
         onSuccess: (response) => {
           if ('success' in response && response.success) {

@@ -67,14 +67,14 @@ export const deleteItemsFromList = async (
       .where(
         and(
           eq(listPlace.listId, listId),
-          inArray(listPlace.placeId, parsedBody.items),
+          inArray(listPlace.userPlaceId, parsedBody.items),
         ),
       )
 
     // Delete with version history
     const { notFound } = await versionedDb.bulkDelete('listPlace', listPlaces, [
       'listId',
-      'placeId',
+      'userPlaceId',
     ])
 
     // Log any items that weren't found

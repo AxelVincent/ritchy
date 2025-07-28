@@ -53,7 +53,7 @@ export const manageHubspotFieldMappings = async ({
 
     const resetMappings = Object.entries(config).map(
       ([field, fieldConfig]) => ({
-        tokenId,
+        hubspotTokenId: tokenId,
         internalField: `${fieldType}.${field}` as
           | ContactField
           | CompanyField
@@ -69,7 +69,7 @@ export const manageHubspotFieldMappings = async ({
       .values(resetMappings)
       .onConflictDoUpdate({
         target: [
-          hubspotFieldMapping.tokenId,
+          hubspotFieldMapping.hubspotTokenId,
           hubspotFieldMapping.internalField,
         ],
         set: {
@@ -94,7 +94,7 @@ export const manageHubspotFieldMappings = async ({
     .from(hubspotFieldMapping)
     .where(
       and(
-        eq(hubspotFieldMapping.tokenId, tokenId),
+        eq(hubspotFieldMapping.hubspotTokenId, tokenId),
         like(hubspotFieldMapping.internalField, `${fieldType}.%`),
       ),
     )
@@ -114,7 +114,7 @@ export const manageHubspotFieldMappings = async ({
         ),
     )
     .map(([field, fieldConfig]) => ({
-      tokenId,
+      hubspotTokenId: tokenId,
       internalField: `${fieldType}.${field}` as
         | ContactField
         | CompanyField

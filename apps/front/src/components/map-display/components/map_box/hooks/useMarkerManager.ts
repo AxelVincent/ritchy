@@ -79,9 +79,7 @@ const computeMarkerState = (
 ): MarkerState => ({
   isDisplayed,
   isSelectedPlace: place.id === selectedPlaceId,
-  color: place.status
-    ? getColorWithCache(place.status.status)
-    : MARKER_COLORS.DEFAULT,
+  color: place.status ? getColorWithCache(place.status) : MARKER_COLORS.DEFAULT,
   emoji: place.lists?.[0]?.emoji,
   hasBadge: Boolean(place.lists && place.lists.length > 1),
 })
@@ -169,7 +167,10 @@ export const useMarkerManager = ({
           // Create new marker
           const marker = createMarker(place, handleMarkerClick)
           marker.addTo(map)
-          markersRef.current.set(place.id, { marker, currentState: newState })
+          markersRef.current.set(place.id, {
+            marker,
+            currentState: newState,
+          })
           updateMarkerVisuals(marker, newState, {} as MarkerState, place)
         } else {
           // Update existing marker

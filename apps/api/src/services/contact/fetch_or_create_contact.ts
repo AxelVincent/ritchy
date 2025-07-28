@@ -1,31 +1,61 @@
+import { logger } from '@ritchy/logger'
 import { and, eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { contact } from '../../db/schema'
-import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
+import { getEnrichmentByUserPlaceId } from '../enrichment/queries/get_enrichment_by_user_place_id'
+import { populateContactFromEnrichment } from './populate_contact_from_enrichment'
+import { getOrCreatePrimaryContact } from './queries/insert_primary_contact'
 
-export const fetchOrCreateContact = async (placeId: string, userId: string) => {
-  const [existingContact] = await db
+const fetchOrCreateContact = async (userPlaceId: string, userId: string) => {
+  logger.info({
+    msg: 'Fetching or creating contact',
+    event: 'fetch_or_create_contact',
+    metadata: { userPlaceId, userId },
+  })
+  const [existingPrimaryContact] = await db
     .select()
     .from(contact)
-    .where(and(eq(contact.placeId, placeId), eq(contact.userId, userId)))
+    .where(
+      and(
+        eq(contact.userPlaceId, userPlaceId),
+        eq(contact.userPlaceId, userId),
+        eq(contact.isPrimary, true),
+      ),
+    )
 
-  if (!existingContact) {
-    const place = await getPlaceDetailsV1(placeId)
-    const [newContact] = await db
-      .insert(contact)
-      .values({
-        placeId,
-        userId,
-        firstname: '',
-        lastname: place.name,
-        phone: place.phone,
+  if (!existingPrimaryContact) {
+    const enrichment = await getEnrichmentByUserPlaceId(userPlaceId)
+
+    if (!enrichment) {
+      const newContact = await getOrCreatePrimaryContact(userPlaceId)
+      logger.info({
+        msg: 'No enrichment found, creating new contact',
+        event: 'no_enrichment_found',
+        metadata: { userPlaceId, userId },
       })
-      .returning()
+      return newContact
+    }
+
+    const newContact = await populateContactFromEnrichment({
+      enrichmentId: enrichment.enrichment.id,
+      userPlaceId,
+    })
+
+    logger.info({
+      msg: 'Enrichment found, populating contact',
+      event: 'enrichment_found',
+      metadata: { userPlaceId, userId, newContact },
+    })
 
     return newContact
   }
 
-  return existingContact
+  logger.info({
+    msg: 'Contact already exists',
+    event: 'contact_already_exists',
+    metadata: { userPlaceId, userId, existingPrimaryContact },
+  })
+  return existingPrimaryContact
 }
 
 export const fetchOrCreateContacts = async (

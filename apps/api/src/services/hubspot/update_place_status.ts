@@ -28,7 +28,7 @@ export const updatePlaceStatus = async ({
     where: (mapping, { eq }) =>
       and(
         eq(mapping.hubspotContactId, contactId),
-        eq(mapping.tokenId, tokenId),
+        eq(mapping.hubspotTokenId, tokenId),
       ),
   })
 
@@ -85,7 +85,7 @@ export const updatePlaceStatus = async ({
       },
       bulkOperationId: batchId,
     },
-    leadMapping.placeId,
+    leadMapping.userPlaceId,
     newStatus,
   )
 
@@ -93,7 +93,7 @@ export const updatePlaceStatus = async ({
     msg: 'Updated place status from HubSpot webhook',
     event: 'hubspot_status_update',
     metadata: {
-      placeId: leadMapping.placeId,
+      userPlaceId: leadMapping.userPlaceId,
       userId: token.userId,
       oldStatus: event.propertyValue,
       newStatus,

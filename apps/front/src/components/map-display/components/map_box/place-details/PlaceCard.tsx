@@ -159,9 +159,8 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusDropdown
-                    placeId={currentPlace.id}
-                    currentStatus={currentPlace.status?.status || 'NEW'}
-                    searchId={currentPlace.searchId}
+                    userPlaceId={currentPlace.id}
+                    currentStatus={currentPlace.status ?? 'NEW'}
                     listId={currentPlace.listId}
                   />
                   {currentPlace.website && (

@@ -33,8 +33,7 @@ export const UpsertListRequestSchema = z.object({
 export const AddItemsToListRequestBodySchema = z.object({
   items: z.array(
     z.object({
-      placeId: z.string(),
-      searchId: z.string().uuid().nullable(),
+      userPlaceId: z.string(),
     }),
   ),
 })

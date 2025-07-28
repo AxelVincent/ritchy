@@ -14,23 +14,23 @@ export const addPlaceNote = async (
       event: 'add_place_note',
       metadata: {
         userId: req.auth.userId,
-        placeId: req.params.placeId,
+        userPlaceId: req.params.userPlaceId,
         note: req.body.note,
       },
     })
     const { note } = req.body
-    const { placeId } = req.params
+    const { userPlaceId } = req.params
 
     const db = createVersionedDbFromRequest(req)
     const result = await db.insert('note', {
-      placeId,
+      userPlaceId,
       note,
       userId: req.auth.userId,
     })
 
     res.json({
       id: result.id,
-      placeId: result.placeId,
+      userPlaceId: result.userPlaceId,
       note: result.note,
       userId: result.userId,
       createdAt: result.createdAt.toISOString(),
@@ -41,7 +41,7 @@ export const addPlaceNote = async (
       msg: 'Place note added',
       event: 'place_note_added',
       metadata: {
-        placeId,
+        userPlaceId,
       },
     })
     return

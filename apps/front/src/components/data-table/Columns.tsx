@@ -22,20 +22,20 @@ import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { priceLevelColumn } from './columns/PriceLevelColumn'
 import { priceRangeColumn } from './columns/PriceRangeColumn'
-import { primaryEmailColumn } from './columns/PrimaryEmailColumn'
 import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
-import { secondaryEmailsColumn } from './columns/SecondaryEmailsColumn'
+
 import { selectColumn } from './columns/SelectColumn'
-import { socialEmailColumn } from './columns/SocialEmailColumn'
 
 import { domainRegistrationDateColumn } from './columns/DomainRegistrationDateColumn'
+import { emailsColumn } from './columns/EmailsColumn'
+import { facebookSocialsColumn } from './columns/FacebookSocialsColumn'
+import { instagramSocialsColumn } from './columns/InstagramSocialsColumn'
+import { linkedinSocialsColumn } from './columns/LinkedinSocialsColumn'
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
-import { createPrimarySocialColumn } from './columns/utils/createPrimarySocialColumnFactory'
-import { createSecondarySocialColumn } from './columns/utils/createSecondarySocialColumnFactory'
 
 // Compose the columns array
 export const columns: ColumnDef<SearchResult>[] = [
@@ -44,17 +44,10 @@ export const columns: ColumnDef<SearchResult>[] = [
   statusColumn,
   websiteColumn,
   phoneColumn,
-  primaryEmailColumn,
-  secondaryEmailsColumn,
-  createPrimarySocialColumn('linkedin'),
-  createPrimarySocialColumn('facebook'),
-  createPrimarySocialColumn('instagram'),
-  createPrimarySocialColumn('twitter'),
-  createSecondarySocialColumn('facebook'),
-  createSecondarySocialColumn('linkedin'),
-  createSecondarySocialColumn('instagram'),
-  createSecondarySocialColumn('twitter'),
-  socialEmailColumn,
+  emailsColumn,
+  instagramSocialsColumn,
+  linkedinSocialsColumn,
+  facebookSocialsColumn,
   domainRegistrationDateColumn,
   notesColumn,
   associatedListsColumn,

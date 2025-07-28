@@ -2,13 +2,13 @@ import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
 export const NotesParamsSchema = z.object({
-  placeId: z.string(),
+  userPlaceId: z.string(),
 })
 
 // Basic Schema
 export const NoteSchema = z.object({
   id: z.string().uuid(),
-  placeId: z.string(),
+  userPlaceId: z.string(),
   note: z.string(),
   userId: z.string(),
   createdAt: z.string(),

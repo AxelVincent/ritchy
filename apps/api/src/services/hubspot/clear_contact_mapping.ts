@@ -5,7 +5,7 @@ import { hubspotLeadMapping } from '../../db/schema'
 
 export const clearContactMapping = async (
   contactId: string,
-  tokenId: string,
+  hubspotTokenId: string,
   value: string,
 ): Promise<void> => {
   // Input validation
@@ -21,7 +21,7 @@ export const clearContactMapping = async (
     .where(
       and(
         eq(hubspotLeadMapping.hubspotContactId, contactId),
-        eq(hubspotLeadMapping.tokenId, tokenId),
+        eq(hubspotLeadMapping.hubspotTokenId, hubspotTokenId),
       ),
     )
     .returning()
@@ -45,8 +45,8 @@ export const clearContactMapping = async (
       updatedMappingsCount: updatedMappings.length,
       updatedMappings: updatedMappings.map((mapping) => ({
         id: mapping.id,
-        placeId: mapping.placeId,
-        tokenId: mapping.tokenId,
+        userPlaceId: mapping.userPlaceId,
+        hubspotTokenId: mapping.hubspotTokenId,
       })),
     },
   })

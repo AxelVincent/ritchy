@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
 export const StatusParamsSchema = z.object({
-  placeId: z.string(),
+  userPlaceId: z.string(),
 })
 
 export const StatusEnum = z.enum([

@@ -3,7 +3,7 @@ import { ApiErrorResponseSchema } from '../../common'
 
 // Schema for the request
 export const syncPlaceBodySchema = z.object({
-  placeIds: z.array(z.string()),
+  userPlaceIds: z.array(z.string()),
 })
 
 // Schema for the response

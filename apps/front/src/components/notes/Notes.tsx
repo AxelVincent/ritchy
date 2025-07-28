@@ -92,27 +92,20 @@ const NoteEditor = ({
 }
 
 interface NotesProps {
-  placeId: string
-  searchId: string | null
+  userPlaceId: string
   listId: string | null
   onNoteAdded?: (note: Note) => void
 }
 
-export const Notes = ({
-  placeId,
-  searchId,
-  listId,
-  onNoteAdded,
-}: NotesProps) => {
-  const { data, isLoading, error } = usePlaceNotesQuery(placeId)
+export const Notes = ({ userPlaceId, listId, onNoteAdded }: NotesProps) => {
+  const { data, isLoading, error } = usePlaceNotesQuery(userPlaceId)
   const { mutateAsync, isPending } = useAddPlaceNote()
 
   const handleAddNote = async (content: string) => {
     try {
       const result = await mutateAsync({
-        placeId,
+        userPlaceId,
         note: content,
-        searchId,
         listId,
       })
       if (onNoteAdded) {

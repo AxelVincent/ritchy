@@ -4,8 +4,9 @@ import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
-import { REDIS_KEYS } from '../redis/keys'
-import { redisClient } from '../redis/redis'
+import { placesApiQueue } from '../../internal/rate_limiter/config'
+import { REDIS_KEYS } from '../../internal/redis/keys'
+import { redisClient } from '../../internal/redis/redis'
 import {
   type GooglePlacesTextSearchRequestBody,
   GooglePlacesTextSearchRequestBodySchema,
@@ -14,7 +15,6 @@ import {
   PREFERRED_PLACE_KEYS_TEXT_SEARCH,
 } from './types'
 import { mapToPlacesSearchResult } from './utils/mapper'
-import { placesApiQueue } from './utils/places_api_queue'
 
 async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
@@ -91,7 +91,7 @@ async function fetchSinglePage(
 
 export async function postTextSearchV1(
   requestBody: PlacesSearchRequestBody,
-): Promise<PlaceBase[]> {
+): Promise<Omit<PlaceBase, 'id'>[]> {
   const ratio = 1
   // 60 potential results
   // 1 * 3 = 3 requests

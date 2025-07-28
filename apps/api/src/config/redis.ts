@@ -5,6 +5,7 @@ const envSchema = z.object({
   REDISPORT: z.string().default('6379'),
   REDISUSER: z.string().min(1),
   REDISPASSWORD: z.string().min(1),
+  REDIS_PUBLIC_URL: z.string(),
 })
 
 const env = envSchema.parse(process.env)
@@ -14,6 +15,7 @@ export const REDIS_CONFIG = {
   PORT: Number.parseInt(env.REDISPORT),
   USER: env.REDISUSER,
   PASSWORD: env.REDISPASSWORD,
+  PUBLIC_URL: env.REDIS_PUBLIC_URL,
 } as const
 
 // Cache update thresholds (in seconds)

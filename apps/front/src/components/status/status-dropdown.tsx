@@ -13,16 +13,14 @@ import { useEffect, useState } from 'react'
 import { StatusBadge } from './status-badge'
 
 interface StatusDropdownProps {
-  placeId: string
+  userPlaceId: string
   currentStatus: StatusType
-  searchId: string | null
   listId: string | null
 }
 
 export const StatusDropdown = ({
-  placeId,
+  userPlaceId,
   currentStatus,
-  searchId,
   listId,
 }: StatusDropdownProps) => {
   const [status, setStatus] = useState<StatusType>(currentStatus)
@@ -47,12 +45,12 @@ export const StatusDropdown = ({
     setStatus(newStatus)
 
     updateStatus(
-      { placeId, status: newStatus, searchId, listId },
+      { userPlaceId, status: newStatus, listId },
       {
         onSuccess: () => {
           posthog.capture('change_place_status', {
             property: 'value',
-            place_id: placeId,
+            place_id: userPlaceId,
             new_status: newStatus,
           })
         },

@@ -1,33 +1,11 @@
 import { logger } from '@ritchy/logger'
 import type { DomainRegistration } from '@ritchy/types'
 import { WHOIS_CONFIG } from '../../config/whois'
-import { createApiQueue } from '../utils/api_queue'
-import { createTokenBucket } from '../utils/rate_limiter/rate_limiter'
+import { whoisApiQueue } from '../../internal/rate_limiter/config'
 import {
   isWhoisApiError,
   validateWhoisApiResponse,
 } from './validators/whois_api_schema'
-
-// Rate limiter: 50 requests per second with burst capacity of 50
-const whoisRateLimiter = createTokenBucket(
-  WHOIS_CONFIG.RATE_LIMIT.REQUESTS_PER_SECOND,
-  WHOIS_CONFIG.RATE_LIMIT.BURST_CAPACITY,
-)
-
-// API queue for managing requests
-const whoisApiQueue = createApiQueue(whoisRateLimiter, {
-  maxRetries: 3,
-  defaultPriority: 0,
-  onError: (error) => {
-    logger.error({
-      msg: 'WHOIS API queue error',
-      event: 'whois_api_queue_error',
-      metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  },
-})
 
 /**
  * Performs WHOIS lookup using the WHOIS API

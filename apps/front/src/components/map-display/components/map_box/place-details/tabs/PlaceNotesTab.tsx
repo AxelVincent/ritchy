@@ -3,6 +3,6 @@ import type { Place } from '@ritchy/types'
 
 export const PlaceNotesTab = ({ place }: { place: Place }) => (
   <div className="h-full">
-    <Notes placeId={place.id} searchId={place.searchId} listId={place.listId} />
+    <Notes userPlaceId={place.id} listId={place.listId} />
   </div>
 )

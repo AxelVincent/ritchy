@@ -32,8 +32,7 @@ export const HubspotSyncManagementButtons = <TData extends SearchResult>({
           open={showSyncDialog}
           onOpenChange={setShowSyncDialog}
           selectedItems={selectedRows.map((row) => ({
-            placeId: row.original.id,
-            searchId: row.original.searchId,
+            userPlaceId: row.original.id,
           }))}
         />
         <Button variant="default" onClick={() => setShowSyncDialog(true)}>
@@ -52,8 +51,7 @@ export const HubspotSyncManagementButtons = <TData extends SearchResult>({
         open={showSyncDialog}
         onOpenChange={setShowSyncDialog}
         selectedItems={filteredRows.map((row) => ({
-          placeId: row.original.id,
-          searchId: row.original.searchId,
+          userPlaceId: row.original.id,
         }))}
       />
       <Button variant="default" onClick={() => setShowSyncDialog(true)}>

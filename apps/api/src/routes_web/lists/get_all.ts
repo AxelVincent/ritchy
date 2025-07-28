@@ -15,7 +15,7 @@ export const getLists = async (
         id: list.id,
         name: list.name,
         emoji: list.emoji,
-        itemCount: sql<number>`count(${listPlace.id})::int`,
+        itemCount: sql<number>`count(${listPlace.id})`,
         createdAt: list.createdAt,
         updatedAt: list.updatedAt,
       })

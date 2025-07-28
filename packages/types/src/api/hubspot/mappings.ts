@@ -289,7 +289,7 @@ export const DEFAULT_CONTACT_FIELDS = Object.fromEntries(
 // Mapping schemas
 export const CompanyMappingSchema = z.object({
   id: z.string().uuid(),
-  tokenId: z.string().uuid(),
+  hubspotTokenId: z.string().uuid(),
   internalField: CompanyFieldEnum,
   hubspotField: z.string(),
   createdAt: z.date(),
@@ -298,7 +298,7 @@ export const CompanyMappingSchema = z.object({
 
 export const ContactMappingSchema = z.object({
   id: z.string().uuid(),
-  tokenId: z.string().uuid(),
+  hubspotTokenId: z.string().uuid(),
   internalField: z.union([ContactFieldEnum, StatusFieldEnum]),
   hubspotField: z.string(),
   createdAt: z.date(),

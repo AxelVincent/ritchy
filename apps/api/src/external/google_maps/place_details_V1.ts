@@ -1,11 +1,16 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
-import type { Place, PlaceBase } from '@ritchy/types'
+import type { PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { CACHE_THRESHOLDS } from '../../config/redis'
 
-import { REDIS_KEYS } from '../redis/keys'
-import { redisClient } from '../redis/redis'
+import { eq } from 'drizzle-orm'
+import { db } from '../../db/db'
+import { place } from '../../db/schema'
+import { userPlace } from '../../db/schema'
+import { placesApiQueue } from '../../internal/rate_limiter/config'
+import { REDIS_KEYS } from '../../internal/redis/keys'
+import { redisClient } from '../../internal/redis/redis'
 import {
   AdvancedPlaceSchema,
   PREFERRED_PLACE_KEYS,
@@ -13,7 +18,6 @@ import {
 } from './types'
 import { calculateOpenNow } from './utils/calculateOpenNow'
 import { mapToPlaceDetails } from './utils/mapper'
-import { placesApiQueue } from './utils/places_api_queue'
 
 // Cache update thresholds imported from config
 const { PLACE_UPDATE_THRESHOLD } = CACHE_THRESHOLDS
@@ -42,8 +46,12 @@ function getAge(updatedAt: string): number {
   return (now.getTime() - updatedAtDate.getTime()) / 1000
 }
 
-async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
-  const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places/${placeId}`)
+async function fetchPlaceDetails(
+  googlePlaceId: string,
+): Promise<PreferredPlace> {
+  const url = new URL(
+    `${GOOGLE_MAPS_CONFIG.PLACES_URL}/places/${googlePlaceId}`,
+  )
 
   const startTime = Date.now()
 
@@ -65,13 +73,13 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
         msg: 'Place not found in Google API',
         event: 'google_place_not_found',
         metadata: {
-          placeId,
+          googlePlaceId,
           errorData,
           statusCode: response.status,
           durationMs: Date.now() - startTime,
         },
       })
-      await redisClient.markAsDeleted(placeId)
+      await redisClient.markAsDeleted(googlePlaceId)
       throw new Error('PLACE_NOT_FOUND')
     }
 
@@ -80,7 +88,7 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
       event: 'google_api_error',
       metadata: {
         errorData,
-        placeId,
+        googlePlaceId,
         statusCode: response.status,
         durationMs: Date.now() - startTime,
       },
@@ -96,7 +104,7 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
     msg: 'Google Place Details API call successful - BILLABLE REQUEST UNIT',
     event: 'google_place_details_api_billable',
     metadata: {
-      placeId,
+      googlePlaceId,
       durationMs: endTime - startTime,
     },
   })
@@ -105,9 +113,18 @@ async function fetchPlaceDetails(placeId: string): Promise<PreferredPlace> {
 }
 
 export async function getPlaceDetailsV1(
-  placeId: string,
+  userPlaceId: string,
 ): Promise<PlaceBase & { fromCache: boolean; is_deleted?: boolean }> {
-  const key = REDIS_KEYS.place(placeId)
+  const [placeId] = await db
+    .select({
+      sourceId: place.sourceId,
+    })
+    .from(place)
+    .innerJoin(userPlace, eq(place.id, userPlace.placeId))
+    .where(eq(userPlace.id, userPlaceId))
+    .limit(1)
+
+  const key = REDIS_KEYS.place(placeId.sourceId)
 
   // Single Redis call to get both data and metadata
   const cachedData = await redisClient.get<PreferredPlace>(key)
@@ -136,6 +153,7 @@ export async function getPlaceDetailsV1(
 
       return {
         ...result,
+        id: userPlaceId,
         fromCache: true,
         is_deleted: true,
       }
@@ -170,6 +188,7 @@ export async function getPlaceDetailsV1(
 
       return {
         ...result,
+        id: userPlaceId,
         fromCache: true,
         is_deleted: false,
       }
@@ -188,7 +207,7 @@ export async function getPlaceDetailsV1(
 
   try {
     const data = await placesApiQueue.addToQueue(async () =>
-      fetchPlaceDetails(placeId),
+      fetchPlaceDetails(placeId.sourceId),
     )
     AdvancedPlaceSchema.parse(data)
 
@@ -204,7 +223,7 @@ export async function getPlaceDetailsV1(
       metadata: { placeId },
     })
 
-    return { ...result, fromCache: false }
+    return { ...result, id: userPlaceId, fromCache: false }
   } catch (error) {
     logger.info({
       msg: 'Error fetching place details',
@@ -243,6 +262,7 @@ export async function getPlaceDetailsV1(
 
       return {
         ...result,
+        id: userPlaceId,
         fromCache: true,
         is_deleted: cachedData.is_deleted,
       }

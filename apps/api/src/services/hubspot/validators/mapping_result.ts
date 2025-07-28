@@ -6,7 +6,7 @@ import {
 import { z } from 'zod'
 
 export const MappingResultSchema = z.object({
-  tokenId: z.string(),
+  hubspotTokenId: z.string(),
   internalField: z.union([ContactFieldEnum, CompanyFieldEnum, StatusFieldEnum]),
   hubspotField: z.string(),
   createdAt: z.date(),
