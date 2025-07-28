@@ -101,23 +101,23 @@ export const websiteEnrichmentManager = async ({
       })
       .returning()
 
-    logger.info({
-      msg: 'Getting website vectors',
-      event: 'getting_website_vectors',
-      metadata: { domain, userPlaceId },
-    })
-    const websiteVectors = await getWebsiteVectors(domain)
+    // logger.info({
+    //   msg: 'Getting website vectors',
+    //   event: 'getting_website_vectors',
+    //   metadata: { domain, userPlaceId },
+    // })
+    // const websiteVectors = await getWebsiteVectors(domain)
 
-    if (websiteVectors.length > 0) {
-      logger.info({
-        msg: 'Website already exists in qdrant',
-        event: 'website_already_exists',
-        metadata: {
-          website,
-        },
-      })
-      return
-    }
+    // if (websiteVectors.length > 0) {
+    //   logger.info({
+    //     msg: 'Website already exists in qdrant',
+    //     event: 'website_already_exists',
+    //     metadata: {
+    //       website,
+    //     },
+    //   })
+    //   return
+    // }
 
     const scrapeResult = await scrapeWebsiteManager(
       website,

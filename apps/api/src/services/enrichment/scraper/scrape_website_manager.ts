@@ -207,7 +207,7 @@ export const scrapeWebsiteManager = async (
       (internalUrl) => internalUrl !== cleanUrl(url),
     )
 
-    await websiteRagIndexingPipeline(mainDomain, url, markdown)
+    // await websiteRagIndexingPipeline(mainDomain, url, markdown)
 
     const responseTime = Date.now() - time
     logger.info({
