@@ -53,8 +53,6 @@ export const createRedisClient = ({
     ? `${REDIS_CONFIG.PUBLIC_URL}?family=0`
     : `redis://${REDIS_CONFIG.USER}:${REDIS_CONFIG.PASSWORD}@${REDIS_CONFIG.HOST}:${REDIS_CONFIG.PORT}?family=0`
 
-  console.log('URL', isPublic, URL)
-
   const redis = new Redis(URL, {
     retryStrategy: (times) => {
       const delay = Math.min(times * 50, 2000)

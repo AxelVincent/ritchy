@@ -49,7 +49,6 @@ export function NavUser() {
 
   const { data: me } = useUserMe()
   const userPlan = me?.plan || 'FREE'
-  console.log('me', me)
   const hasActiveSubscription = userPlan !== 'FREE'
 
   return (

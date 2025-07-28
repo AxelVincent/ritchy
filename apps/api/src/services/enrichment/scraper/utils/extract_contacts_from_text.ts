@@ -9,7 +9,6 @@ const extractEmails = (text: string): string[] => {
 const extractPhones = (text: string): string[] => {
   const phoneObjects = findPhoneNumbersInText(text)
   const phones = phoneObjects.map((phone) => {
-    console.log(phone.number.getType())
     return phone.number.number
   })
   return phones.filter((phone) => phone.length > 5)
