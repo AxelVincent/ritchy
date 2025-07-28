@@ -1,31 +1,20 @@
-import { pgEnum } from 'drizzle-orm/pg-core'
 import {
   CompanyFieldEnum,
   ContactFieldEnum,
+  PhoneTypeEnum,
   PlanEnum,
   SearchModelEnum,
   SocialMediaPlatformEnum,
-  StatusFieldEnum
+  StatusFieldEnum,
 } from '@ritchy/types'
+import { pgEnum } from 'drizzle-orm/pg-core'
 
 export const socialPlatformEnum = pgEnum(
   'social_platform',
-  SocialMediaPlatformEnum.options
+  SocialMediaPlatformEnum.options,
 )
 
-export const phoneTypeEnum = pgEnum('phone_type', [
-  'MOBILE',
-  'FIXED_LINE',
-  'FIXED_LINE_OR_MOBILE',
-  'PREMIUM_RATE',
-  'TOLL_FREE',
-  'SHARED_COST',
-  'VOIP',
-  'PERSONAL_NUMBER',
-  'PAGER',
-  'UAN',
-  'VOICEMAIL'
-])
+export const phoneTypeEnum = pgEnum('phone_type', PhoneTypeEnum.options)
 
 export const placeSourceEnum = pgEnum('place_source', ['google'])
 
@@ -34,7 +23,7 @@ export const searchModelEnum = pgEnum('search_model', SearchModelEnum.options)
 export const webhookServiceEnum = pgEnum('webhook_service', [
   'clerk',
   'stripe',
-  'hubspot'
+  'hubspot',
 ])
 
 export const subscriptionStatusEnum = pgEnum('subscription_status', [
@@ -45,12 +34,12 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', [
   'past_due', // Payment failed for an active subscription
   'canceled', // Subscription has been canceled
   'unpaid', // Payment failed and subscription entered dunning
-  'paused' // Subscription is paused (if pause feature enabled)
+  'paused', // Subscription is paused (if pause feature enabled)
 ])
 
 export const subscriptionPlanEnum = pgEnum(
   'subscription_plan',
-  PlanEnum.options
+  PlanEnum.options,
 )
 
 export const leadStatusEnum = pgEnum('lead_status', [
@@ -61,12 +50,12 @@ export const leadStatusEnum = pgEnum('lead_status', [
   'MEETING',
   'INTERESTED',
   'WON',
-  'LOST'
+  'LOST',
 ])
 
 // Update the enum to include status fields
 export const internalFieldEnum = pgEnum('internal_field', [
   ...CompanyFieldEnum.options,
   ...ContactFieldEnum.options,
-  ...StatusFieldEnum.options
+  ...StatusFieldEnum.options,
 ])

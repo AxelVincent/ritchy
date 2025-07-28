@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
-import { timestamp, uniqueIndex, index, check } from 'drizzle-orm/pg-core'
-import { pgTable, uuid, integer, jsonb, text } from 'drizzle-orm/pg-core'
+import { check, index, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { integer, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { user } from './user'
 
 export type VersionOperation = 'INSERT' | 'UPDATE' | 'DELETE' | 'ROLLBACK'
@@ -35,25 +35,25 @@ export const versionHistory = pgTable(
     userId: uuid('user_id').references(() => user.id, { onDelete: 'set null' }),
     operation: text('operation').notNull().$type<VersionOperation>(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-    metadata: jsonb('metadata').$type<VersionMetadata>()
+    metadata: jsonb('metadata').$type<VersionMetadata>(),
   },
   (table) => ({
     // Existing indexes
     uniqRecordVersion: uniqueIndex('uniq_record_version').on(
       table.tableName,
       table.recordId,
-      table.version
+      table.version,
     ),
     tableRecordIdx: index('idx_version_history_table_record').on(
       table.tableName,
-      table.recordId
+      table.recordId,
     ),
     userIdIdx: index('idx_version_history_user_id').on(table.userId),
     createdAtIdx: index('idx_version_history_created_at').on(table.createdAt),
     versionCheck: check('version_positive', sql`${table.version} > 0`),
     operationCheck: check(
       'valid_operation',
-      sql`${table.operation} IN ('INSERT', 'UPDATE', 'DELETE', 'ROLLBACK')`
-    )
-  })
+      sql`${table.operation} IN ('INSERT', 'UPDATE', 'DELETE', 'ROLLBACK')`,
+    ),
+  }),
 )

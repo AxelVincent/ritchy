@@ -20,20 +20,20 @@ const connectionData = {
     onnotice: (notice: unknown) => console.log('Postgres Notice:', notice),
     onparameter: (key: unknown, value: unknown) =>
       console.log('Query Parameter:', key, value),
-    onquery: (query: unknown) => console.log('Executing Query:', query)
-  })
+    onquery: (query: unknown) => console.log('Executing Query:', query),
+  }),
 }
 
 const queryConnection = postgres(connectionData)
 
 export const db = drizzle(queryConnection, {
-  schema
+  schema,
 })
 
 export const publicDb = drizzle({
   connection: {
     url: DRIZZLE_CONFIG.PUBLIC_URL,
-    max: 1
+    max: 1,
   },
-  schema
+  schema,
 })

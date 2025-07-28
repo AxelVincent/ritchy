@@ -53,29 +53,27 @@ services:
       timeout: 3s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:4.1.1-management-alpine
+  loki:
+    image: grafana/loki:latest
     ports:
-      - "5672:${RABBITMQ_PORT}"
-      - "15672:${RABBITMQ_MANAGEMENT_PORT}"
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3200:3000"
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-      - RABBITMQ_DEFAULT_VHOST=${RABBITMQ_VHOST}
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    user: "472"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+      - grafana-data:/var/lib/grafana
 
 volumes:
   postgres_data:
   qdrant_data:
   redis_data:
-  rabbitmq_data:
+  grafana-data:
 
 configs:
   qdrant_config:

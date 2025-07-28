@@ -12,10 +12,10 @@ export const status = pgTable(
       .references(() => userPlace.id, { onDelete: 'cascade' }),
     status: leadStatusEnum('status').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow()
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     unique().on(table.userPlaceId, table.status),
-    index('idx_user_place_status').on(table.userPlaceId)
-  ]
+    index('idx_user_place_status').on(table.userPlaceId),
+  ],
 )

@@ -7,12 +7,12 @@ export const getPlaces = (userPlaceIds: string[]) =>
       logger.info({
         msg: 'Getting place details',
         event: 'get_places',
-        metadata: { userPlaceId }
+        metadata: { userPlaceId },
       })
       const place = await getPlaceDetailsV1(userPlaceId)
       return {
         ...place,
-        userPlaceId
+        userPlaceId,
       }
-    })
+    }),
   )

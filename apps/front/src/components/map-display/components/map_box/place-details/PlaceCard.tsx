@@ -33,9 +33,7 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
     useMapStore()
   const displayedIds = Array.from(displayedPlaceIds)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const currentPlace = places?.find(
-    (place) => place.id === selectedPlaceId
-  )
+  const currentPlace = places?.find((place) => place.id === selectedPlaceId)
   const [cardHeight, setCardHeight] = useState(() => {
     const savedHeight = localStorage.getItem('placeCardHeight')
     return savedHeight ? Number.parseInt(savedHeight, 10) : 350

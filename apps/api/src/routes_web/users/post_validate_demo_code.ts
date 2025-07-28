@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import {
   type ValidateDemoCodeApiResponse,
   type ValidateDemoCodeRequest,
-  ValidateDemoCodeRequestSchema
+  ValidateDemoCodeRequestSchema,
 } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -16,7 +16,7 @@ export const validateDemoCodeHandler = async (
     ValidateDemoCodeApiResponse,
     ValidateDemoCodeRequest
   >,
-  res: Response<ValidateDemoCodeApiResponse>
+  res: Response<ValidateDemoCodeApiResponse>,
 ): Promise<void> => {
   try {
     const parsedBody = ValidateDemoCodeRequestSchema.parse(req.body)
@@ -26,12 +26,12 @@ export const validateDemoCodeHandler = async (
     if (!userId) {
       logger.warn({
         msg: 'User ID missing in validateDemoCodeHandler',
-        event: 'validate_demo_code_no_userid'
+        event: 'validate_demo_code_no_userid',
       })
       res.status(401).json({
         success: false,
         error: 'unauthorized',
-        message: 'User not authenticated.'
+        message: 'User not authenticated.',
       })
       return
     }
@@ -45,12 +45,12 @@ export const validateDemoCodeHandler = async (
       logger.warn({
         msg: 'No demo code record found for user',
         event: 'validate_demo_code_no_record',
-        metadata: { userId }
+        metadata: { userId },
       })
       res.status(404).json({
         success: false,
         error: 'not_found',
-        message: 'Demo code record not found for this user.'
+        message: 'Demo code record not found for this user.',
       })
       return
     }
@@ -59,11 +59,11 @@ export const validateDemoCodeHandler = async (
       logger.info({
         msg: 'Demo code already validated for user',
         event: 'demo_code_already_validated',
-        metadata: { userId }
+        metadata: { userId },
       })
       res.json({
         success: true,
-        message: 'Demo code has already been validated.'
+        message: 'Demo code has already been validated.',
       })
       return
     }
@@ -77,19 +77,19 @@ export const validateDemoCodeHandler = async (
       logger.info({
         msg: 'Demo code validated successfully',
         event: 'demo_code_validated',
-        metadata: { userId }
+        metadata: { userId },
       })
       res.json({ success: true })
     } else {
       logger.warn({
         msg: 'Invalid demo code attempt',
         event: 'invalid_demo_code_attempt',
-        metadata: { userId, submittedCode }
+        metadata: { userId, submittedCode },
       })
       res.status(400).json({
         success: false,
         error: 'invalid_code',
-        message: 'The submitted code is incorrect.'
+        message: 'The submitted code is incorrect.',
       })
     }
   } catch (error) {
@@ -97,12 +97,12 @@ export const validateDemoCodeHandler = async (
       logger.info({
         msg: 'Validation error for demo code endpoint',
         event: 'validation_error_demo_code_endpoint',
-        metadata: { error: error.flatten(), userId: req.auth?.userId }
+        metadata: { error: error.flatten(), userId: req.auth?.userId },
       })
       res.status(400).json({
         error: 'bad_request',
         message: 'Invalid request data.',
-        details: error.errors
+        details: error.errors,
       })
       return
     }
@@ -110,11 +110,11 @@ export const validateDemoCodeHandler = async (
     logger.error({
       msg: 'Error validating demo code',
       event: 'validate_demo_code_error_handler',
-      metadata: { error, userId: req.auth?.userId }
+      metadata: { error, userId: req.auth?.userId },
     })
     res.status(500).json({
       error: 'internal_server_error',
-      message: 'An unexpected error occurred while validating the demo code.'
+      message: 'An unexpected error occurred while validating the demo code.',
     })
   }
 }

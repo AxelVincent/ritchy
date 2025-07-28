@@ -1,6 +1,11 @@
 CREATE TYPE "public"."phone_type" AS ENUM('mobile', 'home', 'work');--> statement-breakpoint
 CREATE TYPE "public"."place_source" AS ENUM('google');--> statement-breakpoint
-CREATE TYPE "public"."social_platform" AS ENUM('LINKEDIN', 'FACEBOOK', 'INSTAGRAM');--> statement-breakpoint
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'social_platform') THEN
+        CREATE TYPE "public"."social_platform" AS ENUM('LINKEDIN', 'FACEBOOK', 'INSTAGRAM');
+    END IF;
+END $$;
 CREATE TABLE IF NOT EXISTS "contact_phone" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"contact_id" uuid NOT NULL,
@@ -233,6 +238,8 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
+ALTER TABLE "hubspot_lead_mapping" RENAME COLUMN "token_id" TO "hubspot_token_id";
+--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "hubspot_lead_mapping" ADD CONSTRAINT "hubspot_lead_mapping_hubspot_token_id_hubspot_token_id_fk" FOREIGN KEY ("hubspot_token_id") REFERENCES "public"."hubspot_token"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
@@ -274,7 +281,6 @@ ALTER TABLE "contact_social_media" RENAME COLUMN "platform" TO "social_media_pla
 ALTER TABLE "contact_social_media" RENAME COLUMN "profile_url" TO "url";--> statement-breakpoint
 ALTER TABLE "enrichment" RENAME COLUMN "website" TO "domain";--> statement-breakpoint
 ALTER TABLE "hubspot_field_mapping" RENAME COLUMN "token_id" TO "hubspot_token_id";--> statement-breakpoint
-ALTER TABLE "hubspot_lead_mapping" RENAME COLUMN "token_id" TO "hubspot_token_id";--> statement-breakpoint
 ALTER TABLE "contact" DROP CONSTRAINT "contact_user_id_user_id_fk";
 --> statement-breakpoint
 ALTER TABLE "contact_social_media" DROP CONSTRAINT "contact_social_contact_id_contact_id_fk";

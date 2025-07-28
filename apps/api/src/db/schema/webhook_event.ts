@@ -1,5 +1,5 @@
-import { timestamp, uniqueIndex, text, unique } from 'drizzle-orm/pg-core'
-import { pgTable, uuid, jsonb } from 'drizzle-orm/pg-core'
+import { text, timestamp, unique, uniqueIndex } from 'drizzle-orm/pg-core'
+import { jsonb, pgTable, uuid } from 'drizzle-orm/pg-core'
 import { webhookServiceEnum } from './enum'
 
 export const webhookEvent = pgTable('webhook_event', {
@@ -14,5 +14,5 @@ export const webhookEvent = pgTable('webhook_event', {
     .default('processed')
     .$type<'processed' | 'failed'>(),
   error: text('error'),
-  createdAt: timestamp('created_at').notNull().defaultNow()
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 })

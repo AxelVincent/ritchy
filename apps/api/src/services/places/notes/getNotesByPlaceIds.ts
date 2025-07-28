@@ -22,7 +22,7 @@ export const getNotesByPlaceIds = async (userPlaceIds: string[]) => {
       note: dbNote.note,
       userId: dbNote.userId,
       createdAt: dbNote.createdAt.toISOString(),
-      updatedAt: dbNote.updatedAt.toISOString()
+      updatedAt: dbNote.updatedAt.toISOString(),
     }
 
     const placeNotes = acc.get(dbNote.userPlaceId) ?? []

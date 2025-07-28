@@ -9,7 +9,7 @@ describe('isSubPage', () => {
       'https://example.com/path',
       'http://example.com/path/to/page',
       '/relative/path',
-      'subdomain.example.com/path'
+      'subdomain.example.com/path',
     ]
 
     for (const url of testCases) {
@@ -23,7 +23,7 @@ describe('isSubPage', () => {
       'subdomain.example.com',
       'localhost',
       'test.local',
-      'internalsite'
+      'internalsite',
     ]
 
     for (const url of testCases) {

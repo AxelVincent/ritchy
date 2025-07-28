@@ -4,22 +4,9 @@ import { and, eq, sql } from 'drizzle-orm'
 import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
-import { createApiQueue } from '../utils/api_queue'
-import { hubspotRateLimiter } from '../utils/rate_limiter/config'
-import type { HubspotToken } from './oauth'
 
-// Create API queue for HubSpot operations
-const hubspotQueue = createApiQueue(hubspotRateLimiter, {
-  maxRetries: 3,
-  defaultPriority: 0,
-  onError: (error) => {
-    logger.error({
-      msg: 'HubSpot API queue error',
-      event: 'hubspot_api_queue_error',
-      metadata: { error }
-    })
-  }
-})
+import { hubspotApiQueue } from '../../internal/rate_limiter/config'
+import type { HubspotToken } from './oauth'
 
 // Token Management Functions
 const getHubspotClient = async (userId: string): Promise<Client> => {
@@ -31,7 +18,7 @@ const getHubspotClient = async (userId: string): Promise<Client> => {
 }
 
 export const getValidToken = async (
-  userId: string
+  userId: string,
 ): Promise<HubspotToken | null> => {
   const [token] = await db
     .select()
@@ -39,15 +26,15 @@ export const getValidToken = async (
     .where(
       and(
         eq(hubspotToken.userId, userId),
-        sql`${hubspotToken.accessToken} NOT LIKE 'oauth_state:%'`
-      )
+        sql`${hubspotToken.accessToken} NOT LIKE 'oauth_state:%'`,
+      ),
     )
 
   if (!token) {
     logger.error({
       msg: 'No valid HubSpot token found for user',
       event: 'hubspot_token_not_found',
-      metadata: { userId }
+      metadata: { userId },
     })
     return null
   }
@@ -63,7 +50,7 @@ export const getValidToken = async (
       logger.error({
         msg: 'Failed to refresh token during validation',
         event: 'hubspot_token_refresh_error',
-        metadata: { error, userId }
+        metadata: { error, userId },
       })
       return null
     }
@@ -86,20 +73,20 @@ const refreshToken = async (userId: string): Promise<HubspotToken> => {
     const response = await fetch(HUBSPOT_CONFIG.API.TOKEN_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
         client_id: HUBSPOT_CONFIG.CLIENT_ID,
         client_secret: HUBSPOT_CONFIG.CLIENT_SECRET,
-        refresh_token: currentToken.refreshToken
-      }).toString()
+        refresh_token: currentToken.refreshToken,
+      }).toString(),
     })
 
     if (!response.ok) {
       const error = await response.json()
       throw new Error(
-        `Failed to refresh token: ${error.message || response.statusText}`
+        `Failed to refresh token: ${error.message || response.statusText}`,
       )
     }
 
@@ -109,7 +96,7 @@ const refreshToken = async (userId: string): Promise<HubspotToken> => {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       expiresAt: new Date(Date.now() + data.expires_in * 1000),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     }
 
     // Update database
@@ -119,7 +106,7 @@ const refreshToken = async (userId: string): Promise<HubspotToken> => {
         accessToken: newToken.accessToken,
         refreshToken: newToken.refreshToken,
         expiresAt: newToken.expiresAt,
-        updatedAt: newToken.updatedAt
+        updatedAt: newToken.updatedAt,
       })
       .where(eq(hubspotToken.userId, userId))
 
@@ -133,9 +120,9 @@ const refreshToken = async (userId: string): Promise<HubspotToken> => {
         userId,
         config: {
           baseUrl: HUBSPOT_CONFIG.API.BASE_URL,
-          tokenUrl: HUBSPOT_CONFIG.API.TOKEN_URL
-        }
-      }
+          tokenUrl: HUBSPOT_CONFIG.API.TOKEN_URL,
+        },
+      },
     })
     throw error
   }
@@ -148,12 +135,11 @@ export const withHubspotClient = async <T>(
   options: {
     retries?: number
     onRetry?: (error: unknown, attempt: number) => void
-    priority?: number
-  } = {}
+  } = {},
 ): Promise<T> => {
-  const { retries = 2, onRetry, priority = 0 } = options
+  const { retries = 2, onRetry } = options
 
-  return hubspotQueue.addToQueue(async () => {
+  return hubspotApiQueue.addToQueue(async () => {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const client = await getHubspotClient(userId)
@@ -164,7 +150,7 @@ export const withHubspotClient = async <T>(
           (error as { body?: { category?: string } }).body?.category ===
             'EXPIRED_AUTHENTICATION' ||
           (error as { body?: { message?: string } }).body?.message?.includes(
-            'OAuth token used to make this call expired'
+            'OAuth token used to make this call expired',
           )
         const hasRetriesLeft = attempt < retries
 
@@ -181,8 +167,8 @@ export const withHubspotClient = async <T>(
                 error: refreshError,
                 originalError: error,
                 userId,
-                attempt
-              }
+                attempt,
+              },
             })
             throw error
           }
@@ -199,14 +185,14 @@ export const withHubspotClient = async <T>(
             hasRetriesLeft,
             config: {
               baseUrl: HUBSPOT_CONFIG.API.BASE_URL,
-              scopes: HUBSPOT_CONFIG.SCOPES
-            }
-          }
+              scopes: HUBSPOT_CONFIG.SCOPES,
+            },
+          },
         })
         throw error
       }
     }
 
     throw new Error('Max retries exceeded')
-  }, priority)
+  })
 }

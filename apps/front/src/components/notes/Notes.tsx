@@ -97,11 +97,7 @@ interface NotesProps {
   onNoteAdded?: (note: Note) => void
 }
 
-export const Notes = ({
-  userPlaceId,
-  listId,
-  onNoteAdded,
-}: NotesProps) => {
+export const Notes = ({ userPlaceId, listId, onNoteAdded }: NotesProps) => {
   const { data, isLoading, error } = usePlaceNotesQuery(userPlaceId)
   const { mutateAsync, isPending } = useAddPlaceNote()
 

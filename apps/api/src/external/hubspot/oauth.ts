@@ -17,7 +17,7 @@ export const getAuthUrl = (state: string): string => {
     client_id: HUBSPOT_CONFIG.CLIENT_ID,
     scope: HUBSPOT_CONFIG.SCOPES.join(' '),
     redirect_uri: HUBSPOT_CONFIG.REDIRECT_URI,
-    state
+    state,
   })
 
   return `${HUBSPOT_CONFIG.API.AUTH_URL}?${params.toString()}`
@@ -27,23 +27,23 @@ export const getAuthUrl = (state: string): string => {
 const HubSpotAccountInfoSchema = z.object({
   portalId: z
     .union([z.number(), z.string()])
-    .transform((val) => (typeof val === 'string' ? val : val.toString()))
+    .transform((val) => (typeof val === 'string' ? val : val.toString())),
 })
 
 const getPortalIdFromAccountInfo = async (
-  accessToken: string
+  accessToken: string,
 ): Promise<string> => {
   try {
     const response = await fetch(
       'https://api.hubapi.com/account-info/v3/details',
       {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
     )
 
     if (!response.ok) {
       throw new Error(
-        `HubSpot account info API failed: ${response.status} ${response.statusText}`
+        `HubSpot account info API failed: ${response.status} ${response.statusText}`,
       )
     }
 
@@ -58,13 +58,13 @@ const getPortalIdFromAccountInfo = async (
       msg: 'Failed to fetch portal ID from HubSpot account info',
       event: 'hubspot_portal_id_fetch_error',
       metadata: {
-        error: error instanceof Error ? error.message : String(error)
-      }
+        error: error instanceof Error ? error.message : String(error),
+      },
     })
 
     if (error instanceof z.ZodError) {
       throw new Error(
-        `Invalid HubSpot account info response structure: ${error.message}`
+        `Invalid HubSpot account info response structure: ${error.message}`,
       )
     }
 
@@ -74,27 +74,27 @@ const getPortalIdFromAccountInfo = async (
 
 export const exchangeCodeForToken = async (
   code: string,
-  userId: string
+  userId: string,
 ): Promise<HubspotToken> => {
   try {
     const response = await fetch(HUBSPOT_CONFIG.API.TOKEN_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: HUBSPOT_CONFIG.CLIENT_ID,
         client_secret: HUBSPOT_CONFIG.CLIENT_SECRET,
         redirect_uri: HUBSPOT_CONFIG.REDIRECT_URI,
-        code
-      }).toString()
+        code,
+      }).toString(),
     })
 
     if (!response.ok) {
       const error = await response.json()
       throw new Error(
-        `Failed to exchange code: ${error.message || response.statusText}`
+        `Failed to exchange code: ${error.message || response.statusText}`,
       )
     }
 
@@ -104,8 +104,8 @@ export const exchangeCodeForToken = async (
       msg: 'HubSpot OAuth response',
       event: 'hubspot_oauth_response',
       metadata: {
-        data
-      }
+        data,
+      },
     })
     const portalId = await getPortalIdFromAccountInfo(data.access_token)
     const mappedToken = {
@@ -116,7 +116,7 @@ export const exchangeCodeForToken = async (
       portalId,
       userId,
       createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
+      updatedAt: new Date(data.updated_at),
     }
 
     // Use upsert instead of insert and capture the returned token
@@ -127,7 +127,7 @@ export const exchangeCodeForToken = async (
         accessToken: mappedToken.accessToken,
         refreshToken: mappedToken.refreshToken,
         expiresAt: mappedToken.expiresAt,
-        portalId: portalId
+        portalId: portalId,
       })
       .onConflictDoUpdate({
         target: hubspotToken.userId,
@@ -136,8 +136,8 @@ export const exchangeCodeForToken = async (
           refreshToken: mappedToken.refreshToken,
           portalId: mappedToken.portalId,
           expiresAt: mappedToken.expiresAt,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       })
       .returning()
 
@@ -154,9 +154,9 @@ export const exchangeCodeForToken = async (
         userId,
         config: {
           tokenUrl: HUBSPOT_CONFIG.API.TOKEN_URL,
-          redirectUri: HUBSPOT_CONFIG.REDIRECT_URI
-        }
-      }
+          redirectUri: HUBSPOT_CONFIG.REDIRECT_URI,
+        },
+      },
     })
     throw error
   }

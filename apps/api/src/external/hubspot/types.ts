@@ -10,13 +10,13 @@ const HubspotBaseSchema = z.object({
   updatedAt: z
     .union([z.string(), z.date()])
     .transform((val) => (val instanceof Date ? val.toISOString() : val)),
-  archived: z.boolean()
+  archived: z.boolean(),
 })
 
 const BatchOperationSchema = z.object({
   userPlaceId: z.string(),
   id: z.string().optional(),
-  properties: z.record(z.string())
+  properties: z.record(z.string()),
 })
 
 export type HubspotBase = z.infer<typeof HubspotBaseSchema>

@@ -1,10 +1,10 @@
 import {
   AutocompleteApiResponseSchema,
-  AutocompleteRequestBodySchema
+  AutocompleteRequestBodySchema,
 } from '@ritchy/types'
 import {
   GeocodeApiResponseSchema,
-  GeocodeRequestParamsSchema
+  GeocodeRequestParamsSchema,
 } from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../middleware/zodValidation'
@@ -26,18 +26,18 @@ placesRouter.post(
   '/autocomplete',
   validateRequest({
     bodySchema: AutocompleteRequestBodySchema,
-    responseSchema: AutocompleteApiResponseSchema
+    responseSchema: AutocompleteApiResponseSchema,
   }),
-  postAutocomplete
+  postAutocomplete,
 )
 
 placesRouter.get(
   '/:placeId/geocode',
   validateRequest({
     paramsSchema: GeocodeRequestParamsSchema,
-    responseSchema: GeocodeApiResponseSchema
+    responseSchema: GeocodeApiResponseSchema,
   }),
-  getGeocode
+  getGeocode,
 )
 
 export default placesRouter

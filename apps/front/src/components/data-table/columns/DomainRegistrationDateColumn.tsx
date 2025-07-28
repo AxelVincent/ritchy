@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import type { EnrichmentWithStatus, SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import React from 'react'
@@ -26,31 +25,7 @@ const DomainRegistrationDateCell = React.memo(
     id,
     place,
   }: { id: string; place: SearchResult }) {
-    const enrichment = place.enrichment as EnrichmentWithStatus | undefined
-    const domainRegistration = enrichment?.domainRegistration
-
-    // Loading state
-    if (enrichment?.isLoading) {
-      return (
-        <div className="px-2 py-1">
-          <Skeleton className="h-4 w-28" />
-        </div>
-      )
-    }
-
-    // Error state
-    if (enrichment?.error) {
-      return (
-        <ColumnPinCell
-          id={id}
-          content={
-            <span className="text-xs text-muted-foreground">
-              Error loading data
-            </span>
-          }
-        />
-      )
-    }
+    const domainRegistration = place.domainRegisteredAt
 
     // No website
     if (!place.website) {
@@ -65,7 +40,7 @@ const DomainRegistrationDateCell = React.memo(
     }
 
     // No domain registration data
-    if (!domainRegistration?.registrationDate) {
+    if (!domainRegistration) {
       return (
         <ColumnPinCell
           id={id}
@@ -78,8 +53,9 @@ const DomainRegistrationDateCell = React.memo(
       )
     }
 
-    const registrationDate = domainRegistration.registrationDate
-    const formattedDate = formatRegistrationDate(registrationDate)
+    const formattedDate = formatRegistrationDate(
+      new Date(String(domainRegistration)).toISOString(),
+    )
 
     // Handle invalid date format
     if (!formattedDate) {
@@ -102,7 +78,7 @@ const DomainRegistrationDateCell = React.memo(
           <div className="flex items-center gap-1.5 text-sm w-full">
             <span className="truncate">{formattedDate}</span>
             <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
-              {formatDistanceToNow(new Date(registrationDate), {
+              {formatDistanceToNow(new Date(domainRegistration), {
                 addSuffix: true,
               })}
             </span>
@@ -121,9 +97,7 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
     filterVariant: 'date-range',
   },
   accessorFn: (row) => {
-    const registrationDate =
-      row.enrichment?.domainRegistration?.registrationDate
-    return registrationDate ? new Date(registrationDate) : null
+    return row.domainRegisteredAt
   },
   filterFn: (row, columnId, value: [Date | undefined, Date | undefined]) => {
     const [from, to] = value

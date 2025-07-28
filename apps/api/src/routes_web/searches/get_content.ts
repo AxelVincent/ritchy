@@ -6,13 +6,11 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { place, search, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
-import { REDIS_KEYS } from '../../external/redis/keys'
-import { createRedisClient, redisClient } from '../../external/redis/redis'
 import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
-  res: Response<GetSearchContentApiResponse>
+  res: Response<GetSearchContentApiResponse>,
 ): Promise<void> => {
   try {
     const searchId = req.params.id
@@ -25,7 +23,7 @@ export const getSearchContent = async (
 
     if (!result) {
       res.status(404).json({
-        error: 'Search not found'
+        error: 'Search not found',
       })
       return
     }
@@ -44,13 +42,13 @@ export const getSearchContent = async (
           userId,
           model: result.model,
           keyword: result.keyword,
-          rectangle: result.rectangle
-        }
+          rectangle: result.rectangle,
+        },
       })
       const freshResults = await postTextSearchV1({
         model: result.model,
         textQuery: result.keyword,
-        rectangle: result.rectangle
+        rectangle: result.rectangle,
       })
 
       const places = await db
@@ -58,53 +56,53 @@ export const getSearchContent = async (
         .values(
           freshResults.map((place) => ({
             source: 'google' as const,
-            sourceId: place.sourceId
-          }))
+            sourceId: place.sourceId,
+          })),
         )
         .returning({ id: place.id })
         .onConflictDoUpdate({
           target: place.sourceId,
           set: {
             source: sql`excluded.source`,
-            sourceId: sql`excluded.source_id`
-          }
+            sourceId: sql`excluded.source_id`,
+          },
         })
       logger.info({
         msg: 'Places inserted',
         event: 'places_inserted',
         metadata: {
-          places: places.length
-        }
+          places: places.length,
+        },
       })
       const userPlaces = await db
         .insert(userPlace)
         .values(
           places.map((place) => ({
             userId,
-            placeId: place.id
-          }))
+            placeId: place.id,
+          })),
         )
         .returning({ id: userPlace.id })
         .onConflictDoUpdate({
           target: [userPlace.userId, userPlace.placeId],
           set: {
             placeId: sql`excluded.place_id`,
-            userId: sql`excluded.user_id`
-          }
+            userId: sql`excluded.user_id`,
+          },
         })
 
       logger.info({
         msg: 'User places inserted',
         event: 'user_places_inserted',
         metadata: {
-          userPlaces: userPlaces.length
-        }
+          userPlaces: userPlaces.length,
+        },
       })
       await db.insert(searchPlace).values(
         userPlaces.map((userPlace) => ({
           searchId,
-          userPlaceId: userPlace.id
-        }))
+          userPlaceId: userPlace.id,
+        })),
       )
     }
 
@@ -123,8 +121,8 @@ export const getSearchContent = async (
           userId,
           retryAttempt: 'second_attempt_after_fetch',
           searchModel: result.model,
-          searchKeyword: result.keyword
-        }
+          searchKeyword: result.keyword,
+        },
       })
       res.status(500).json({ error: 'Failed to get search content' })
       return
@@ -138,16 +136,16 @@ export const getSearchContent = async (
       userPlaceIds,
       {
         userId,
-        includeEnrichment: true
-      }
+        includeEnrichment: true,
+      },
     )
 
     logger.info({
       msg: 'Get search content',
       event: 'get_search_content',
       metadata: {
-        results: aggregatedResults.length
-      }
+        results: aggregatedResults.length,
+      },
     })
     res.json(aggregatedResults)
     return
@@ -156,11 +154,11 @@ export const getSearchContent = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error }
+        metadata: { error },
       })
       res.status(400).json({
         error: 'Invalid request data',
-        details: error.errors
+        details: error.errors,
       })
       return
     }
@@ -174,8 +172,8 @@ export const getSearchContent = async (
         searchId: req.params.id,
         userId: req.auth.userId,
         errorType: error?.constructor?.name,
-        errorKeys: error ? Object.keys(error) : []
-      }
+        errorKeys: error ? Object.keys(error) : [],
+      },
     })
     res.status(500).json({ error: 'Failed to get search content' })
     return

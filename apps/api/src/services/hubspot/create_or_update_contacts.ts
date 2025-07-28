@@ -20,7 +20,7 @@ import { createHubspotContactPropertiesWithMappings } from './utils/hubspot_prop
 export const createOrUpdateContacts = async (
   userPlaceIds: string[],
   userId: string,
-  client: Client
+  client: Client,
 ): Promise<HubspotBase[]> => {
   const token = await getValidToken(userId)
   if (!token) {
@@ -35,19 +35,19 @@ export const createOrUpdateContacts = async (
       batchId,
       placeCount: userPlaceIds.length,
       tokenId: token.id,
-      userId
-    }
+      userId,
+    },
   })
 
   const [contacts, statusData, leadMappings] = await Promise.all([
     fetchOrCreateContacts(userPlaceIds, userId),
     getPlacesStatus(userPlaceIds, userId),
-    getHubspotLeadMappings(token.id, userPlaceIds)
+    getHubspotLeadMappings(token.id, userPlaceIds),
   ])
 
   const statusMap = new Map(statusData.map((s) => [s.user_place.id, s.status]))
   const companyMap = new Map(
-    leadMappings.map((m) => [m.userPlaceId, m.hubspotCompanyId])
+    leadMappings.map((m) => [m.userPlaceId, m.hubspotCompanyId]),
   )
 
   const batchOperations: BatchOperation[] = await Promise.all(
@@ -58,13 +58,13 @@ export const createOrUpdateContacts = async (
       const properties = await createHubspotContactPropertiesWithMappings(
         token.id,
         contactData,
-        currentStatus
+        currentStatus,
       )
 
       const existingMapping = leadMappings.find(
         (m): m is typeof m & { hubspotContactId: string } =>
           m.userPlaceId === userPlaceId &&
-          typeof m.hubspotContactId === 'string'
+          typeof m.hubspotContactId === 'string',
       )
 
       return {
@@ -74,22 +74,22 @@ export const createOrUpdateContacts = async (
           ...properties,
           ritchy_place_id: userPlaceId,
           ...(companyMap.get(userPlaceId) && {
-            associatedcompanyid: companyMap.get(userPlaceId) as string
-          })
-        }
+            associatedcompanyid: companyMap.get(userPlaceId) as string,
+          }),
+        },
       }
-    })
+    }),
   )
 
   const results = await sendDataToHubspot(
     batchOperations,
     client,
     'contacts',
-    batchId
+    batchId,
   )
 
   const newContacts = results.filter(
-    (contact) => !leadMappings.some((m) => m.hubspotContactId === contact.id)
+    (contact) => !leadMappings.some((m) => m.hubspotContactId === contact.id),
   )
 
   if (newContacts.length > 0) {
@@ -99,9 +99,9 @@ export const createOrUpdateContacts = async (
           userPlaceId: contact.userPlaceId,
           hubspotTokenId: token.id,
           hubspotContactId: contact.id,
-          hubspotCompanyId: companyMap.get(contact.userPlaceId) as string
-        })
-      )
+          hubspotCompanyId: companyMap.get(contact.userPlaceId) as string,
+        }),
+      ),
     )
   }
 

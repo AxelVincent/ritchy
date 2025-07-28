@@ -1,15 +1,15 @@
 import 'dotenv/config'
+import { logger } from '@ritchy/logger'
+import { Command } from 'commander'
 import { publicDb } from '../db/db'
 import {
   place,
   search,
   searchPlace,
-  userPlace as userPlaceTable
+  userPlace as userPlaceTable,
 } from '../db/schema'
-import { REDIS_KEYS } from '../external/redis/keys'
-import { createRedisClient } from '../external/redis/redis'
-import { logger } from '@ritchy/logger'
-import { Command } from 'commander'
+import { REDIS_KEYS } from '../internal/redis/keys'
+import { createRedisClient } from '../internal/redis/redis'
 
 const program = new Command()
 
@@ -31,7 +31,7 @@ const fillSearchPlaceTable = async (run: boolean) => {
   logger.info({
     msg: `Filling search_place table ${isDryRun ? '(dry run)' : ''}`,
     event: 'fill_search_place_table',
-    metadata: { run }
+    metadata: { run },
   })
   const limit = 100
   let offset = 0
@@ -48,7 +48,7 @@ const fillSearchPlaceTable = async (run: boolean) => {
     logger.info({
       msg: `Filling search_place table ${isDryRun ? '(dry run)' : ''}`,
       event: 'fill_search_place_table',
-      metadata: { offset, limit, totalCount, hasMore, run }
+      metadata: { offset, limit, totalCount, hasMore, run },
     })
 
     for (const searchResult of searchResults) {
@@ -57,31 +57,31 @@ const fillSearchPlaceTable = async (run: boolean) => {
       logger.info({
         msg: `Fetched places from redis ${isDryRun ? '(dry run)' : ''}`,
         event: 'fill_search_place_table',
-        metadata: { searchId: searchResult.id, places: places?.data }
+        metadata: { searchId: searchResult.id, places: places?.data },
       })
       if (places) {
         if (isDryRun) {
           logger.info({
             msg: `Skipping place migration ${isDryRun ? '(dry run)' : ''}`,
             event: 'fill_search_place_table',
-            metadata: { searchId: searchResult.id, places: places.data }
+            metadata: { searchId: searchResult.id, places: places.data },
           })
         } else {
           logger.info({
             msg: `Migrating places ${isDryRun ? '(dry run)' : ''}`,
             event: 'fill_search_place_table',
-            metadata: { searchId: searchResult.id }
+            metadata: { searchId: searchResult.id },
           })
           for (const redisPlace of places.data) {
             const [placeResult] = await publicDb
               .insert(place)
               .values({
                 source: 'google',
-                sourceId: redisPlace
+                sourceId: redisPlace,
               })
               .onConflictDoUpdate({
                 target: place.sourceId,
-                set: {}
+                set: {},
               })
               .returning({ id: place.id })
 
@@ -89,13 +89,13 @@ const fillSearchPlaceTable = async (run: boolean) => {
               .insert(userPlaceTable)
               .values({
                 userId: searchResult.userId,
-                placeId: placeResult.id
+                placeId: placeResult.id,
               })
               .returning({ id: userPlaceTable.id })
 
             await publicDb.insert(searchPlace).values({
               userPlaceId: userPlace.id,
-              searchId: searchResult.id
+              searchId: searchResult.id,
             })
           }
         }
@@ -106,7 +106,7 @@ const fillSearchPlaceTable = async (run: boolean) => {
   logger.info({
     msg: `Filled search_place table ${isDryRun ? '(dry run)' : ''}`,
     event: 'fill_search_place_table',
-    metadata: { duration: endTime - startTime, totalCount, run }
+    metadata: { duration: endTime - startTime, totalCount, run },
   })
 }
 

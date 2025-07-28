@@ -7,7 +7,7 @@ import { updateHubspotContactStatus } from '../../hubspot/update_hubspot_contact
 export const upsertStatus = async (
   context: VersionContext,
   userPlaceId: string,
-  status: StatusType
+  status: StatusType,
 ): Promise<Status> => {
   try {
     logger.info({
@@ -17,8 +17,8 @@ export const upsertStatus = async (
         userPlaceId,
         status,
         changeSource: context.changeSource,
-        ...context.metadata
-      }
+        ...context.metadata,
+      },
     })
 
     const db = createVersionedDb(context)
@@ -27,9 +27,9 @@ export const upsertStatus = async (
       {
         userPlaceId,
         status,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
-      ['userPlaceId']
+      ['userPlaceId'],
     )
     if (context.changeSource === 'user') {
       updateHubspotContactStatus(context.userId, userPlaceId, status)
@@ -38,7 +38,7 @@ export const upsertStatus = async (
     return {
       status: result.status,
       createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString()
+      updatedAt: result.updatedAt.toISOString(),
     }
   } catch (error) {
     logger.error({
@@ -47,8 +47,8 @@ export const upsertStatus = async (
       metadata: {
         error: error instanceof Error ? error : { error },
         userPlaceId,
-        status
-      }
+        status,
+      },
     })
     throw error
   }

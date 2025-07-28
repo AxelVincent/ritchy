@@ -1,0 +1,1 @@
+ALTER TABLE "enrichment" ALTER COLUMN "domain" DROP NOT NULL;

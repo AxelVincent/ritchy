@@ -8,7 +8,7 @@ export const upsertLeadMapping = async (
     hubspotTokenId: string
     hubspotCompanyId: string
     hubspotContactId?: string | null
-  }
+  },
 ) =>
   db
     .insert(hubspotLeadMapping)
@@ -18,16 +18,16 @@ export const upsertLeadMapping = async (
       hubspotCompanyId: mapping.hubspotCompanyId,
       hubspotContactId: mapping.hubspotContactId ?? null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     })
     .onConflictDoUpdate({
       target: [
         hubspotLeadMapping.userPlaceId,
-        hubspotLeadMapping.hubspotTokenId
+        hubspotLeadMapping.hubspotTokenId,
       ],
       set: {
         hubspotCompanyId: mapping.hubspotCompanyId,
         hubspotContactId: mapping.hubspotContactId ?? null,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     })

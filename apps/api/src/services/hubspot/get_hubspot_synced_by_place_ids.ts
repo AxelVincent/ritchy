@@ -5,7 +5,7 @@ import { getHubspotToken } from './queries/get_hubspot_token'
 
 export const getHubspotSyncedByPlaceIds = async (
   userPlaceIds: string[],
-  userId: string
+  userId: string,
 ): Promise<Map<string, boolean>> => {
   const token = await getHubspotToken(userId)
   if (!token) {
@@ -21,7 +21,7 @@ export const getHubspotSyncedByPlaceIds = async (
   for (const userPlaceId of userPlaceIds) {
     hubspotSyncedMap.set(
       userPlaceId,
-      hubspotSyncedPlaces.some((p) => p.userPlaceId === userPlaceId)
+      hubspotSyncedPlaces.some((p) => p.userPlaceId === userPlaceId),
     )
   }
 

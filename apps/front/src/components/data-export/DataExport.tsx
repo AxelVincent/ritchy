@@ -32,6 +32,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
   }[],
 ) => {
   const excludedFields = [
+    'sourceId',
     'utcOffsetMinutes',
     'addressComponents',
     'notes',
@@ -94,12 +95,6 @@ export const validateAllSearchResultFieldsHaveColumns = (
   }
 }
 
-const ensureArray = (value: string | string[] | undefined | null): string[] => {
-  if (Array.isArray(value)) return value
-  if (value === null || value === undefined) return []
-  return [value]
-}
-
 /**
  * Component that handles exporting search results to CSV format.
  * Includes enrichment data from website scraping if available.
@@ -139,11 +134,6 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
       // Create a copy of the data with properly structured fields
       const exportData = selectedRows.map((row) => ({
         ...row,
-        secondaryFacebookSocials: ensureArray(row.secondaryFacebookSocials),
-        secondaryInstagramSocials: ensureArray(row.secondaryInstagramSocials),
-        secondaryLinkedinSocials: ensureArray(row.secondaryLinkedinSocials),
-        secondaryTwitterSocials: ensureArray(row.secondaryTwitterSocials),
-        secondaryEmails: ensureArray(row.secondaryEmails),
       }))
 
       // Create a Map of website URIs to enrichment data
@@ -160,22 +150,9 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
               error: undefined,
             }
 
-            const enrichData = row.enrichment as
-              | EnrichmentWithStatus
-              | undefined
-
-            if (!enrichData || enrichData.error) {
-              const state = {
-                ...baseEnrichmentState,
-                error: enrichData?.error,
-              }
-              return [row.website, state] as [string, EnrichmentWithStatus]
-            }
-
             const state = {
               ...baseEnrichmentState,
-              emails: enrichData.emails,
-              socialLinks: enrichData.socialLinks,
+              domainRegisteredAt: row.domainRegisteredAt,
             }
             return [row.website, state] as [string, EnrichmentWithStatus]
           }),
@@ -219,64 +196,52 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         },
         {
           header: 'Primary Email',
-          field: 'primaryEmail',
-          accessor: (row: SearchResult): string => row.primaryEmail || '',
+          field: 'emails.email',
+          accessor: (row: SearchResult): string => row.emails?.[0]?.email || '',
         },
         {
           header: 'Secondary Emails',
-          field: 'secondaryEmails',
+          field: 'emails.email',
           accessor: (row: SearchResult): string =>
-            (row.secondaryEmails || []).join(', '),
+            (row.emails || []).join(', '),
         },
         {
           header: 'Primary LinkedIn Social',
-          field: 'primaryLinkedinSocial',
+          field: 'linkedinSocials.url',
           accessor: (row: SearchResult): string =>
-            row.primaryLinkedinSocial || '',
+            row.linkedinSocials?.[0]?.url || '',
         },
         {
           header: 'Primary Facebook Social',
-          field: 'primaryFacebookSocial',
+          field: 'facebookSocials.url',
           accessor: (row: SearchResult): string =>
-            row.primaryFacebookSocial || '',
+            row.facebookSocials?.[0]?.url || '',
         },
         {
           header: 'Primary Instagram Social',
-          field: 'primaryInstagramSocial',
+          field: 'instagramSocials.url',
           accessor: (row: SearchResult): string =>
-            row.primaryInstagramSocial || '',
-        },
-        {
-          header: 'Primary Twitter Social',
-          field: 'primaryTwitterSocial',
-          accessor: (row: SearchResult): string =>
-            row.primaryTwitterSocial || '',
+            row.instagramSocials?.[0]?.url || '',
         },
         {
           header: 'Secondary LinkedIn Socials',
-          field: 'secondaryLinkedinSocials',
+          field: 'linkedinSocials.url',
           accessor: (row: SearchResult): string =>
-            (row.secondaryLinkedinSocials || []).join(', '),
+            (row.linkedinSocials || []).join(', '),
         },
 
         {
           header: 'Secondary Facebook Socials',
-          field: 'secondaryFacebookSocials',
+          field: 'facebookSocials.url',
           accessor: (row: SearchResult): string =>
-            (row.secondaryFacebookSocials || []).join(', '),
+            (row.facebookSocials || []).join(', '),
         },
 
         {
           header: 'Secondary Instagram Socials',
-          field: 'secondaryInstagramSocials',
+          field: 'instagramSocials.url',
           accessor: (row: SearchResult): string =>
-            (row.secondaryInstagramSocials || []).join(', '),
-        },
-        {
-          header: 'Secondary Twitter Socials',
-          field: 'secondaryTwitterSocials',
-          accessor: (row: SearchResult): string =>
-            (row.secondaryTwitterSocials || []).join(', '),
+            (row.instagramSocials || []).join(', '),
         },
         {
           header: 'Rating',
@@ -488,10 +453,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           header: 'Domain Registration Date',
           field: 'domainRegistrationDate',
           accessor: (row: SearchResult): string => {
-            const enrichment = row.enrichment as
-              | EnrichmentWithStatus
-              | undefined
-            return enrichment?.domainRegistration?.registrationDate || ''
+            return row.domainRegisteredAt?.toISOString() || ''
           },
         },
       ]

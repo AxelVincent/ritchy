@@ -1,5 +1,5 @@
 import type { CountryCode } from 'libphonenumber-js'
-import { isValidPhoneNumber, parsePhoneNumber } from 'libphonenumber-js'
+import { parsePhoneNumber } from 'libphonenumber-js'
 import { COUNTRY_NAMES } from './country-names'
 
 /**
@@ -31,13 +31,5 @@ export const formatPhoneNumberWithCountry = (
     return countryName ? `${countryName}: ${formattedNumber}` : formattedNumber
   } catch {
     return phoneNumber
-  }
-}
-
-export const isValidPhone = (phone: string, country?: string): boolean => {
-  try {
-    return isValidPhoneNumber(phone, country as CountryCode)
-  } catch {
-    return false
   }
 }

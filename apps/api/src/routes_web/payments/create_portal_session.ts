@@ -9,7 +9,7 @@ import { db } from '../../db/db'
 import { subscription } from '../../db/schema'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia'
+  apiVersion: '2025-01-27.acacia',
 })
 
 export const createPortalSession = async (
@@ -19,11 +19,11 @@ export const createPortalSession = async (
     never,
     never
   >,
-  res: Response<CreatePortalSessionApiResponse>
+  res: Response<CreatePortalSessionApiResponse>,
 ): Promise<void> => {
   logger.info({
     msg: 'Portal session creation initiated',
-    event: 'portal_session_started'
+    event: 'portal_session_started',
   })
 
   try {
@@ -39,14 +39,14 @@ export const createPortalSession = async (
       metadata: {
         hasSubscription: userSubscription.length > 0,
         subscriptionStatus: userSubscription[0]?.status,
-        stripeCustomerId: userSubscription[0]?.stripeCustomerId
-      }
+        stripeCustomerId: userSubscription[0]?.stripeCustomerId,
+      },
     })
 
     if (!userSubscription.length) {
       logger.warn({
         msg: 'No subscription found for user',
-        event: 'subscription_not_found'
+        event: 'subscription_not_found',
       })
       throw new Error('User has no subscription')
     }
@@ -57,13 +57,13 @@ export const createPortalSession = async (
 
       metadata: {
         stripeCustomerId: userSubscription[0].stripeCustomerId,
-        returnUrl: `${process.env.FRONTEND_BASE_URL}/search?portal_return=true`
-      }
+        returnUrl: `${process.env.FRONTEND_BASE_URL}/search?portal_return=true`,
+      },
     })
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: userSubscription[0].stripeCustomerId,
-      return_url: `${process.env.FRONTEND_BASE_URL}/search?portal_return=true`
+      return_url: `${process.env.FRONTEND_BASE_URL}/search?portal_return=true`,
     })
 
     logger.info({
@@ -72,12 +72,12 @@ export const createPortalSession = async (
 
       metadata: {
         portalSessionId: portalSession.id,
-        portalSessionUrl: portalSession.url
-      }
+        portalSessionUrl: portalSession.url,
+      },
     })
 
     res.json({
-      url: portalSession.url
+      url: portalSession.url,
     })
     return
   } catch (error) {
@@ -85,11 +85,11 @@ export const createPortalSession = async (
       logger.info({
         msg: 'Portal session validation error',
         event: 'portal_session_validation_error',
-        metadata: { error }
+        metadata: { error },
       })
       res.status(400).json({
         error: 'Invalid request data',
-        message: 'Invalid request data'
+        message: 'Invalid request data',
       })
       return
     }
@@ -104,14 +104,14 @@ export const createPortalSession = async (
             ? {
                 message: error.message,
                 name: error.name,
-                stack: error.stack
+                stack: error.stack,
               }
-            : error
-      }
+            : error,
+      },
     })
     res.status(500).json({
       error: 'Failed to create portal session',
-      message: 'Failed to create portal session'
+      message: 'Failed to create portal session',
     })
     return
   }

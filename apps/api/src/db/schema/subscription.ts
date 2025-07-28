@@ -1,9 +1,9 @@
-import { timestamp, uniqueIndex, text, unique } from 'drizzle-orm/pg-core'
+import { text, timestamp, unique, uniqueIndex } from 'drizzle-orm/pg-core'
 import { pgTable, uuid } from 'drizzle-orm/pg-core'
 import {
-  subscriptionStatusEnum,
+  searchModelEnum,
   subscriptionPlanEnum,
-  searchModelEnum
+  subscriptionStatusEnum,
 } from './enum'
 import { user } from './user'
 
@@ -20,5 +20,5 @@ export const subscription = pgTable('subscription', {
   plan: subscriptionPlanEnum('plan').notNull().default('FREE'),
   searchModel: searchModelEnum('search_model').notNull().default('BASIC'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

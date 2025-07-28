@@ -6,7 +6,7 @@ import type {
   AddNoteRequest,
   GetListContentResponse,
   GetSearchContentResponse,
-  Note
+  Note,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -23,11 +23,11 @@ export const useAddPlaceNote = () => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: ['notes', 'place', userPlaceId],
-        exact: true
+        exact: true,
       })
       if (listId) {
         await queryClient.cancelQueries({
-          queryKey: listContentKeys.list(listId)
+          queryKey: listContentKeys.list(listId),
         })
       }
 
@@ -35,11 +35,11 @@ export const useAddPlaceNote = () => {
       const previousNotes = queryClient.getQueryData<Note[]>([
         'notes',
         'place',
-        userPlaceId
+        userPlaceId,
       ])
       const previousList = listId
         ? queryClient.getQueryData<GetListContentResponse>(
-            listContentKeys.list(listId)
+            listContentKeys.list(listId),
           )
         : undefined
 
@@ -50,13 +50,13 @@ export const useAddPlaceNote = () => {
         note,
         userId: 'current-user',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       }
 
       // Update notes query
       queryClient.setQueryData<Note[]>(
         ['notes', 'place', userPlaceId],
-        (old = []) => [optimisticNote, ...old]
+        (old = []) => [optimisticNote, ...old],
       )
 
       // Update list content if applicable
@@ -70,13 +70,13 @@ export const useAddPlaceNote = () => {
                 if (place.id === userPlaceId) {
                   return {
                     ...place,
-                    notes: [optimisticNote, ...(place.notes || [])]
+                    notes: [optimisticNote, ...(place.notes || [])],
                   }
                 }
                 return place
-              })
+              }),
             }
-          }
+          },
         )
       }
 
@@ -95,19 +95,19 @@ export const useAddPlaceNote = () => {
       if (typedContext.previousNotes) {
         queryClient.setQueryData(
           ['notes', 'place', variables.userPlaceId],
-          typedContext.previousNotes
+          typedContext.previousNotes,
         )
       }
       if (typedContext.searchId) {
         queryClient.setQueryData(
           searchContentKeys.search(typedContext.searchId),
-          typedContext.previousSearch
+          typedContext.previousSearch,
         )
       }
       if (typedContext.listId) {
         queryClient.setQueryData(
           listContentKeys.list(typedContext.listId),
-          typedContext.previousList
+          typedContext.previousList,
         )
       }
     },
@@ -115,8 +115,8 @@ export const useAddPlaceNote = () => {
       // Invalidate the notes query to get the real server data
       queryClient.invalidateQueries({
         queryKey: ['notes', 'place', userPlaceId],
-        exact: true
+        exact: true,
       })
-    }
+    },
   })
 }

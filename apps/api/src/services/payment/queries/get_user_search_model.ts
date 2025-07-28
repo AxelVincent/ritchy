@@ -4,7 +4,7 @@ import { db } from '../../../db/db'
 import { subscription } from '../../../db/schema'
 
 export const getUserSearchModel = async (
-  userId: string
+  userId: string,
 ): Promise<SearchModel> => {
   const [result] = await db
     .select()

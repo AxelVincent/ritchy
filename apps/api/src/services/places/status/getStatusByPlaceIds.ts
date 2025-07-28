@@ -4,7 +4,7 @@ import { db } from '../../../db/db'
 import { status as statusTable, userPlace } from '../../../db/schema'
 
 export const getStatusByPlaceIds = async (
-  userPlaceIds: string[]
+  userPlaceIds: string[],
 ): Promise<Map<string, Status>> => {
   if (userPlaceIds.length === 0) {
     return new Map()
@@ -24,7 +24,7 @@ export const getStatusByPlaceIds = async (
     statusMap.set(userPlaceId, {
       status: 'NEW',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     })
   }
 
@@ -33,7 +33,7 @@ export const getStatusByPlaceIds = async (
     const formattedStatus: Status = {
       status: dbStatus.status.status,
       createdAt: dbStatus.status.createdAt.toISOString(),
-      updatedAt: dbStatus.status.updatedAt.toISOString()
+      updatedAt: dbStatus.status.updatedAt.toISOString(),
     }
 
     statusMap.set(dbStatus.status.userPlaceId, formattedStatus)

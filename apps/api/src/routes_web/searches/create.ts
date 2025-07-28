@@ -3,7 +3,7 @@ import {
   type CreateSearchApiResponse,
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
-  hasModelAccess
+  hasModelAccess,
 } from '@ritchy/types'
 import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
@@ -19,14 +19,14 @@ export const createSearch = async (
     CreateSearchApiResponse,
     CreateSearchRequestBody
   >,
-  res: Response<CreateSearchApiResponse>
+  res: Response<CreateSearchApiResponse>,
 ): Promise<void> => {
   logger.info({
     msg: 'Search creation initiated',
     event: 'search_creation_started',
     metadata: {
-      requestBody: req.body
-    }
+      requestBody: req.body,
+    },
   })
 
   try {
@@ -38,8 +38,8 @@ export const createSearch = async (
       event: 'search_validation_passed',
       metadata: {
         userSearchModel,
-        requestedModel: parsedBody.model
-      }
+        requestedModel: parsedBody.model,
+      },
     })
 
     // Check if user's search model allows the requested model
@@ -49,12 +49,12 @@ export const createSearch = async (
         event: 'search_model_access_denied',
         metadata: {
           userSearchModel,
-          requestedModel: parsedBody.model
-        }
+          requestedModel: parsedBody.model,
+        },
       })
       res.status(403).json({
         error: 'Forbidden',
-        message: `Your current subscription allows up to ${userSearchModel} searches. Please upgrade to access ${parsedBody.model} searches.`
+        message: `Your current subscription allows up to ${userSearchModel} searches. Please upgrade to access ${parsedBody.model} searches.`,
       })
       return
     }
@@ -76,8 +76,8 @@ export const createSearch = async (
         event: 'search_count_checked',
         metadata: {
           currentSearchCount: searchCount,
-          limit: 3
-        }
+          limit: 3,
+        },
       })
 
       if (searchCount >= 3) {
@@ -86,13 +86,13 @@ export const createSearch = async (
           event: 'search_limit_reached',
           metadata: {
             searchCount,
-            limit: 3
-          }
+            limit: 3,
+          },
         })
         res.status(403).json({
           error: 'Search limit reached',
           message:
-            'Basic plan users are limited to 3 searches. Please upgrade your plan for unlimited searches.'
+            'Basic plan users are limited to 3 searches. Please upgrade your plan for unlimited searches.',
         })
         return
       }
@@ -104,7 +104,7 @@ export const createSearch = async (
       placeName: parsedBody.placeName,
       keyword: parsedBody.keyword,
       model: parsedBody.model,
-      rectangle: parsedBody.rectangle
+      rectangle: parsedBody.rectangle,
     })
 
     logger.info({
@@ -114,12 +114,12 @@ export const createSearch = async (
         searchId: result.id,
         userSearchModel,
         requestedModel: parsedBody.model,
-        rectangle: parsedBody.rectangle
-      }
+        rectangle: parsedBody.rectangle,
+      },
     })
 
     res.json({
-      id: result.id
+      id: result.id,
     })
     return
   } catch (error) {
@@ -129,12 +129,12 @@ export const createSearch = async (
         event: 'search_validation_error',
         metadata: {
           validationErrors: error.errors,
-          requestBody: req.body
-        }
+          requestBody: req.body,
+        },
       })
       res.status(400).json({
         error: 'Invalid request data',
-        message: 'Invalid request data'
+        message: 'Invalid request data',
       })
       return
     }
@@ -148,15 +148,15 @@ export const createSearch = async (
             ? {
                 message: error.message,
                 name: error.name,
-                stack: error.stack
+                stack: error.stack,
               }
             : error,
-        requestBody: req.body
-      }
+        requestBody: req.body,
+      },
     })
     res.status(500).json({
       error: 'Failed to create search',
-      message: 'Failed to create search'
+      message: 'Failed to create search',
     })
     return
   }

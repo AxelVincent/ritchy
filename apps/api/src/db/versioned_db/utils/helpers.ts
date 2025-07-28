@@ -5,14 +5,14 @@ import type { Request } from 'express'
 import {
   type VersionMetadata,
   type VersionOperation,
-  versionHistory
+  versionHistory,
 } from '../../schema'
 import * as schema from '../../schema'
 import type {
   InferSelect,
   InferTable,
   TableName,
-  VersionContext
+  VersionContext,
 } from '../types'
 
 export const getContextFromRequest = (req: Request): VersionContext => ({
@@ -23,9 +23,9 @@ export const getContextFromRequest = (req: Request): VersionContext => ({
     ipAddress: req.metadata.ipAddress,
     userAgent: req.metadata.userAgent,
     requestId: req.metadata.requestId,
-    timestamp: req.metadata.timestamp
+    timestamp: req.metadata.timestamp,
   },
-  bulkOperationId: req.body?.bulkOperationId
+  bulkOperationId: req.body?.bulkOperationId,
 })
 
 /**
@@ -35,7 +35,7 @@ export const getLatestVersion = async (
   db: PostgresJsDatabase<typeof schema>,
   table: string,
   recordId: string,
-  options?: { forUpdate?: boolean }
+  options?: { forUpdate?: boolean },
 ) => {
   const query = db
     .select({ version: versionHistory.version })
@@ -43,8 +43,8 @@ export const getLatestVersion = async (
     .where(
       and(
         eq(versionHistory.tableName, table),
-        eq(versionHistory.recordId, recordId)
-      )
+        eq(versionHistory.recordId, recordId),
+      ),
     )
     .orderBy(desc(versionHistory.version))
     .limit(1)
@@ -71,7 +71,7 @@ export const createVersionEntry = async (
     userId: string
     operation: VersionOperation
     metadata: VersionMetadata
-  }
+  },
 ) => {
   const {
     table,
@@ -81,7 +81,7 @@ export const createVersionEntry = async (
     previousState,
     userId,
     operation,
-    metadata
+    metadata,
   } = params
 
   await db.insert(versionHistory).values({
@@ -92,7 +92,7 @@ export const createVersionEntry = async (
     previousState,
     userId,
     operation,
-    metadata
+    metadata,
   })
 }
 
@@ -102,7 +102,7 @@ export const createVersionEntry = async (
 export const calculateChangedFields = (
   currentState: Record<string, unknown>,
   previousState: Record<string, unknown>,
-  excludeFields: string[] = ['id']
+  excludeFields: string[] = ['id'],
 ) => {
   return Object.keys(currentState).filter((key) => {
     if (excludeFields.includes(key)) return false
@@ -122,10 +122,10 @@ export const prepareVersionMetadata = (
     bulkOperationId?: string
     changedFields?: string[]
     deletedAt?: Date
-  }
+  },
 ): VersionMetadata => {
   const metadata: VersionMetadata = {
-    bulkOperationId: context.bulkOperationId
+    bulkOperationId: context.bulkOperationId,
   }
 
   if (operation === 'UPDATE' && context.changedFields) {
@@ -145,7 +145,7 @@ export const prepareVersionMetadata = (
 export const getRecordById = async <T extends TableName>(
   db: PostgresJsDatabase<typeof schema>,
   table: T,
-  id: string
+  id: string,
 ): Promise<InferSelect<T> | undefined> => {
   const [record] = await db
     .select()
@@ -161,14 +161,14 @@ export const getRecordById = async <T extends TableName>(
 export const createConflictWhereClause = <T extends TableName>(
   table: T,
   conflictTarget: (keyof InferTable<T>)[],
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
 ) => {
   return and(
     ...conflictTarget.map((col) => {
       const tableSchema = schema[table]
       const column = tableSchema[col as keyof typeof tableSchema] as PgColumn
       return eq(column, data[col as keyof typeof data])
-    })
+    }),
   )
 }
 

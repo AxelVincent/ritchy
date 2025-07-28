@@ -1,25 +1,25 @@
+import { logger } from '@ritchy/logger'
 import type { PlaceListAssociation } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { listPlace, place, userPlace } from '../../db/schema'
 import { list } from '../../db/schema'
-import { logger } from '@ritchy/logger'
 
 export const getListAssociationsByPlaceIds = async (
   userPlaceIds: string[],
   userId: string,
-  listId?: string
+  listId?: string,
 ): Promise<Map<string, PlaceListAssociation[]>> => {
   const userPlaceIdSet = new Set(userPlaceIds)
 
-  logger.info({
+  logger.debug({
     msg: 'Getting list associations by place ids',
     event: 'get_list_associations_by_place_ids',
     metadata: {
       userPlaceIds,
       userId,
-      listId
-    }
+      listId,
+    },
   })
 
   const associations = await db
@@ -28,7 +28,7 @@ export const getListAssociationsByPlaceIds = async (
       listId: list.id,
       listName: list.name,
       listEmoji: list.emoji,
-      createdAt: listPlace.createdAt
+      createdAt: listPlace.createdAt,
     })
     .from(list)
     .leftJoin(listPlace, eq(list.id, listPlace.listId))
@@ -37,22 +37,22 @@ export const getListAssociationsByPlaceIds = async (
     .where(
       and(
         inArray(userPlace.id, [...userPlaceIdSet]),
-        eq(userPlace.userId, userId)
-      )
+        eq(userPlace.userId, userId),
+      ),
     )
 
   // Initialize the Map with empty arrays for all placeIds
   const resultMap = new Map<string, PlaceListAssociation[]>(
-    [...userPlaceIdSet].map((userPlaceId) => [userPlaceId, []])
+    [...userPlaceIdSet].map((userPlaceId) => [userPlaceId, []]),
   )
 
-  logger.info({
+  logger.debug({
     msg: 'List associations by place ids',
     event: 'list_associations_by_place_ids',
     metadata: {
       associations,
-      resultMap
-    }
+      resultMap,
+    },
   })
 
   // Add associations where they exist
@@ -63,7 +63,7 @@ export const getListAssociationsByPlaceIds = async (
     const newAssociation = {
       id: association.listId.toString(),
       name: association.listName,
-      emoji: association.listEmoji
+      emoji: association.listEmoji,
     }
 
     currentAssociations.push(newAssociation)
@@ -74,7 +74,7 @@ export const getListAssociationsByPlaceIds = async (
   if (listId) {
     for (const [placeId, associations] of resultMap) {
       const sorted = associations.sort((a, b) =>
-        a.id === listId.toString() ? -1 : b.id === listId.toString() ? 1 : 0
+        a.id === listId.toString() ? -1 : b.id === listId.toString() ? 1 : 0,
       )
       resultMap.set(placeId, sorted)
     }

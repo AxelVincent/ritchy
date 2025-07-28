@@ -1,10 +1,10 @@
 import {
-  timestamp,
-  uniqueIndex,
-  text,
-  index,
   boolean,
-  unique
+  index,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { pgTable, uuid } from 'drizzle-orm/pg-core'
 
@@ -15,7 +15,7 @@ export const user = pgTable('user', {
   firstName: text('first_name'),
   lastName: text('last_name'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
 export const userDemoCode = pgTable(
@@ -29,10 +29,10 @@ export const userDemoCode = pgTable(
     code: text('code').notNull(),
     isValidated: boolean('is_validated').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-    validatedAt: timestamp('validated_at')
+    validatedAt: timestamp('validated_at'),
   },
   (table) => [
     index('idx_user_demo_code_user_id').on(table.userId),
-    index('idx_user_demo_code_code').on(table.code)
-  ]
+    index('idx_user_demo_code_code').on(table.code),
+  ],
 )

@@ -1,8 +1,8 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
+import { type Action, TextWrapper } from '@/components/common/TextWrapper'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { formatPhoneNumberWithCountry } from '@/lib/utils/phone-utils'
 import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
-import type { Note, SearchResult } from '@ritchy/types'
+import type { Note, SearchResult, SocialMediaPlatform } from '@ritchy/types'
 import React from 'react'
 import {
   createColumnPinActions,
@@ -136,10 +136,7 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
         </div>
         <DialogContent className="max-w-md h-[60vh] flex flex-col overflow-hidden">
           <div className="flex-1 overflow-hidden">
-            <Notes
-              userPlaceId={place.id}
-              listId={place.listId}
-            />
+            <Notes userPlaceId={place.id} listId={place.listId} />
           </div>
         </DialogContent>
       </Dialog>
@@ -209,14 +206,26 @@ export const PhoneCell = ({
 export const ContactEmailCell = ({
   id,
   content,
+  isPin = true,
 }: {
   id: string
   content: string
+  isPin?: boolean
 }) => {
-  const actions = React.useMemo(
-    () => createColumnPinMailtoActions(id, content),
-    [id, content],
-  )
+  const actions = React.useMemo(() => {
+    if (isPin) {
+      return createColumnPinMailtoActions(id, content)
+    }
+    return [
+      {
+        icon: 'Copy' as const,
+        onClick: () => {
+          navigator.clipboard.writeText(content)
+        },
+        label: 'Copy',
+      },
+    ]
+  }, [id, content, isPin])
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -228,6 +237,131 @@ export const ContactEmailCell = ({
     <TextWrapper id={id} actions={actions}>
       <span
         className="text-blue-600 hover:text-blue-800 hover:underline"
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick(e as unknown as React.MouseEvent)
+          }
+        }}
+      >
+        {content}
+      </span>
+    </TextWrapper>
+  )
+}
+
+export const ContactSocialCell = ({
+  id,
+  content,
+  socialType,
+  isPin = true,
+}: {
+  id: string
+  content: string
+  socialType: SocialMediaPlatform
+  isPin?: boolean
+}) => {
+  const actions = React.useMemo(() => {
+    const baseActions: Action[] = [
+      {
+        icon: 'Copy',
+        onClick: () => {
+          navigator.clipboard.writeText(content)
+        },
+        label: 'Copy',
+      },
+    ]
+
+    if (isPin) {
+      return createColumnPinCopyActions(id, content)
+    }
+
+    return baseActions
+  }, [id, content, isPin])
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    posthog.capture(`click_${socialType}_link`, { property: 'value' })
+    window.open(content, '_blank')
+  }
+
+  const displayUrl = getCleanUrlDisplay(content)
+
+  return (
+    <TextWrapper id={id} actions={actions}>
+      <span
+        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick(e as unknown as React.MouseEvent)
+          }
+        }}
+        title={content}
+      >
+        {displayUrl}
+      </span>
+    </TextWrapper>
+  )
+}
+
+export const ContactPhoneCell = ({
+  id,
+  content,
+  isPin = true,
+}: {
+  id: string
+  content: string
+  isPin?: boolean
+}) => {
+  const actions = React.useMemo(() => {
+    if (isPin) {
+      return createColumnPinCopyActions(id, content)
+    }
+    return [
+      {
+        icon: 'Copy' as const,
+        onClick: () => {
+          navigator.clipboard.writeText(content)
+        },
+        label: 'Copy',
+      },
+      {
+        icon: 'Phone' as const,
+        onClick: () => {
+          posthog.capture('click_phone_button', { property: 'value' })
+          window.open(`tel:${content}`, '_blank')
+        },
+        label: 'Call',
+      },
+      {
+        icon: 'faWhatsapp' as const,
+        onClick: () => {
+          const formattedPhone = content.replace(/\D/g, '')
+          posthog.capture('click_whatsapp_button', { property: 'value' })
+          window.open(`https://wa.me/${formattedPhone}`, '_blank')
+        },
+        label: 'WhatsApp',
+      },
+    ]
+  }, [id, content, isPin])
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    posthog.capture('click_phone_button', { property: 'value' })
+    window.open(`tel:${content}`, '_blank')
+  }
+
+  const formattedPhoneWithCountry = formatPhoneNumberWithCountry(content)
+
+  return (
+    <TextWrapper
+      id={id}
+      actions={actions}
+      customTooltipContent={formattedPhoneWithCountry}
+    >
+      <span
+        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
         onClick={handleClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {

@@ -1,10 +1,5 @@
 import { logger } from '@ritchy/logger'
-import type {
-  Place,
-  PlaceBase,
-  PlacesSearchRequestBody,
-  Status
-} from '@ritchy/types'
+import type { Place, PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { eq, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import {
@@ -13,10 +8,9 @@ import {
   search,
   searchPlace,
   userPlace,
-  status as statusTable
 } from '../../db/schema'
-import { REDIS_KEYS } from '../redis/keys'
-import { redisClient } from '../redis/redis'
+import { REDIS_KEYS } from '../../internal/redis/keys'
+import { redisClient } from '../../internal/redis/redis'
 import { getPlaceDetailsV1 } from './place_details_V1'
 import { postTextSearchV1 } from './text_search_V1'
 import type { PreferredPlace } from './types'
@@ -59,7 +53,7 @@ export type PlaceDetailsOptimized = PlaceBase & {
 }
 
 export async function getPlaceDetailsOptimized(
-  userPlaceId: string
+  userPlaceId: string,
 ): Promise<PlaceDetailsOptimized> {
   const startTime = Date.now()
   let scenario = 'unknown'
@@ -69,7 +63,7 @@ export async function getPlaceDetailsOptimized(
   const [placeResult] = await db
     .select({
       sourceId: place.sourceId,
-      isEnriched: userPlace.isEnriched
+      isEnriched: userPlace.isEnriched,
     })
     .from(place)
     .innerJoin(userPlace, eq(place.id, userPlace.placeId))
@@ -87,19 +81,33 @@ export async function getPlaceDetailsOptimized(
       ...place,
       id: userPlaceId,
       fromCache: true,
-      isEnriched: placeResult.isEnriched
+      isEnriched: placeResult.isEnriched,
     }
   }
 
+  logger.info({
+    msg: 'No cached place found, checking for search',
+    event: 'no_cached_place_found',
+    metadata: {
+      userPlaceId,
+    },
+  })
   const [searchPlaceResult] = await db
     .select({ searchId: searchPlace.searchId })
     .from(searchPlace)
-    .innerJoin(userPlace, eq(searchPlace.userPlaceId, userPlace.id))
-    .where(eq(userPlace.placeId, userPlaceId))
+    .where(eq(searchPlace.userPlaceId, userPlaceId))
     .limit(1)
 
   // If we have a searchId, check if we should refresh the search
   if (searchPlaceResult) {
+    logger.info({
+      msg: 'Search place result found',
+      event: 'search_place_result_found',
+      metadata: {
+        userPlaceId,
+        searchPlaceResult,
+      },
+    })
     // Get search details
     const searchDetails = await db
       .select()
@@ -135,7 +143,7 @@ export async function getPlaceDetailsOptimized(
 
           // Check if this search is already being refreshed by another request
           const existingRefresh = activeSearchRefreshes.get(
-            searchPlaceResult.searchId
+            searchPlaceResult.searchId,
           )
 
           if (existingRefresh) {
@@ -145,8 +153,8 @@ export async function getPlaceDetailsOptimized(
               metadata: {
                 userPlaceId,
                 searchId: searchPlaceResult.searchId,
-                model: searchData.model
-              }
+                model: searchData.model,
+              },
             })
 
             // Wait for the existing refresh to complete
@@ -160,7 +168,7 @@ export async function getPlaceDetailsOptimized(
                 ...place,
                 id: userPlaceId,
                 fromCache: true,
-                isEnriched: placeResult.isEnriched
+                isEnriched: placeResult.isEnriched,
               }
             }
           } else {
@@ -176,15 +184,15 @@ export async function getPlaceDetailsOptimized(
                 timeSinceRefresh: `${Math.round((currentTime - lastRefreshTime) / 1000 / 60 / 60 / 24)} days`,
                 placeCount,
                 estimatedApiCalls,
-                costEfficiency: (placeCount / estimatedApiCalls).toFixed(2)
-              }
+                costEfficiency: (placeCount / estimatedApiCalls).toFixed(2),
+              },
             })
 
             // Create search request
             const searchRequestBody: PlacesSearchRequestBody = {
               textQuery: searchData.keyword,
               rectangle: searchData.rectangle,
-              model: searchData.model
+              model: searchData.model,
             }
 
             // Store the refresh promise
@@ -211,9 +219,9 @@ export async function getPlaceDetailsOptimized(
                     potentialCostSavings: Math.max(
                       0,
                       (results.length - estimatedApiCalls) *
-                        COST_PER_PLACE_DETAILS_CALL
-                    )
-                  }
+                        COST_PER_PLACE_DETAILS_CALL,
+                    ),
+                  },
                 })
 
                 return results
@@ -226,7 +234,7 @@ export async function getPlaceDetailsOptimized(
             // Store the promise
             activeSearchRefreshes.set(
               searchPlaceResult.searchId,
-              refreshPromise
+              refreshPromise,
             )
 
             // Wait for the refresh to complete
@@ -240,7 +248,7 @@ export async function getPlaceDetailsOptimized(
                 ...place,
                 id: userPlaceId,
                 fromCache: true,
-                isEnriched: placeResult.isEnriched
+                isEnriched: placeResult.isEnriched,
               }
             }
           }
@@ -258,8 +266,10 @@ export async function getPlaceDetailsOptimized(
               placeCount,
               estimatedApiCalls,
               costEfficiency:
-                placeCount > 0 ? (placeCount / estimatedApiCalls).toFixed(2) : 0
-            }
+                placeCount > 0
+                  ? (placeCount / estimatedApiCalls).toFixed(2)
+                  : 0,
+            },
           })
         }
       } else {
@@ -273,8 +283,8 @@ export async function getPlaceDetailsOptimized(
             searchId: searchPlaceResult.searchId,
             lastRefreshTime: searchData.updatedAt.toISOString(),
             timeSinceRefresh: `${Math.round((currentTime - lastRefreshTime) / 1000 / 60 / 60 / 24)} days`,
-            model: searchData.model
-          }
+            model: searchData.model,
+          },
         })
       }
     }
@@ -288,9 +298,10 @@ export async function getPlaceDetailsOptimized(
     event: 'fetch_individual_place',
     metadata: {
       userPlaceId,
-      searchId: searchPlaceResult.searchId,
-      estimatedCost: COST_PER_PLACE_DETAILS_CALL
-    }
+      // Only include searchId if we have a searchPlaceResult
+      ...(searchPlaceResult && { searchId: searchPlaceResult.searchId }),
+      estimatedCost: COST_PER_PLACE_DETAILS_CALL,
+    },
   })
 
   try {
@@ -309,15 +320,15 @@ export async function getPlaceDetailsOptimized(
         apiCallsMade,
         estimatedCost,
         durationMs: endTime - startTime,
-        fromCache: result.fromCache
-      }
+        fromCache: result.fromCache,
+      },
     })
 
     return {
       ...result,
       id: userPlaceId,
       fromCache: false,
-      isEnriched: placeResult.isEnriched
+      isEnriched: placeResult.isEnriched,
     }
   } catch (error) {
     const endTime = Date.now()
@@ -331,8 +342,8 @@ export async function getPlaceDetailsOptimized(
         apiCallsMade,
         estimatedCost,
         durationMs: endTime - startTime,
-        error
-      }
+        error,
+      },
     })
     throw error
   }

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
 export const StatusParamsSchema = z.object({
-  userPlaceId: z.string()
+  userPlaceId: z.string(),
 })
 
 export const StatusEnum = z.enum([
@@ -13,29 +13,29 @@ export const StatusEnum = z.enum([
   'MEETING',
   'INTERESTED',
   'WON',
-  'LOST'
+  'LOST',
 ])
 
 export const StatusSchema = z.object({
   status: StatusEnum,
   createdAt: z.string(),
-  updatedAt: z.string()
+  updatedAt: z.string(),
 })
 
 export const UpdateStatusBodySchema = z.object({
-  status: StatusEnum
+  status: StatusEnum,
 })
 
 // Request Schemas
 export const UpdateStatusRequestSchema = z.intersection(
   StatusParamsSchema,
-  UpdateStatusBodySchema
+  UpdateStatusBodySchema,
 )
 
 // Response Schemas with Error Handling
 export const UpdateStatusApiResponseSchema = z.union([
   StatusSchema,
-  ApiErrorResponseSchema
+  ApiErrorResponseSchema,
 ])
 
 export type Status = z.infer<typeof StatusSchema>

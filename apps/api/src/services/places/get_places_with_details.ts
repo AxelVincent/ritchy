@@ -3,8 +3,8 @@ import type { Place, PlaceBase } from '@ritchy/types'
 import { PlaceSchema } from '@ritchy/types'
 import { z } from 'zod'
 import {
+  type PlaceDetailsOptimized,
   getPlaceDetailsOptimized,
-  type PlaceDetailsOptimized
 } from '../../external/google_maps/place_details_optimized'
 import { aggregatePlaceData } from './aggregate_place_data'
 
@@ -29,32 +29,32 @@ interface GetPlacesWithDetailsResult {
  */
 export const getPlacesWithDetails = async (
   userPlaceIds: string[],
-  options: AggregatePlaceDataOptions
+  options: AggregatePlaceDataOptions,
 ): Promise<GetPlacesWithDetailsResult> => {
   const { userId, listId, excludeListId, includeEnrichment = false } = options
 
   // Get place details with rate limiting and optimization
   const placeDetailsResults = await Promise.allSettled(
     userPlaceIds.map(async (userPlaceId) =>
-      getPlaceDetailsOptimized(userPlaceId)
-    )
+      getPlaceDetailsOptimized(userPlaceId),
+    ),
   )
 
   // Analyze results
   const cacheHits = placeDetailsResults.filter(
-    (result) => result.status === 'fulfilled' && result.value.fromCache
+    (result) => result.status === 'fulfilled' && result.value.fromCache,
   ).length
   const cacheMisses = placeDetailsResults.filter(
-    (result) => result.status === 'fulfilled' && !result.value.fromCache
+    (result) => result.status === 'fulfilled' && !result.value.fromCache,
   ).length
   const errors = placeDetailsResults.filter(
-    (result) => result.status === 'rejected'
+    (result) => result.status === 'rejected',
   ).length
 
   const placeDetails = placeDetailsResults
     .filter(
       (result): result is PromiseFulfilledResult<PlaceDetailsOptimized> =>
-        result.status === 'fulfilled'
+        result.status === 'fulfilled',
     )
     .map((result) => result.value)
 
@@ -68,8 +68,8 @@ export const getPlacesWithDetails = async (
       cacheHits,
       cacheMisses,
       errors,
-      context: listId ? 'list' : 'search'
-    }
+      context: listId ? 'list' : 'search',
+    },
   })
 
   // Aggregate data for the place details
@@ -77,7 +77,7 @@ export const getPlacesWithDetails = async (
     userId,
     excludeListId,
     includeEnrichment,
-    listId
+    listId,
   })
 
   // Validate individual places and collect validation errors
@@ -107,10 +107,10 @@ export const getPlacesWithDetails = async (
           errors: error.errors.map((e) => ({
             path: e.path.join('.'),
             message: e.message,
-            code: e.code
-          }))
-        }))
-      }
+            code: e.code,
+          })),
+        })),
+      },
     })
   }
 
@@ -119,6 +119,6 @@ export const getPlacesWithDetails = async (
     cacheHits,
     cacheMisses,
     errors,
-    validationErrors
+    validationErrors,
   }
 }

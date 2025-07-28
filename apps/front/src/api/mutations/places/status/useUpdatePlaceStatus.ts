@@ -5,7 +5,7 @@ import type {
   GetListContentResponse,
   GetSearchContentResponse,
   UpdateStatusApiResponse,
-  UpdateStatusRequest
+  UpdateStatusRequest,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -21,11 +21,11 @@ export const useUpdatePlaceStatus = () => {
     getBody: ({ status, listId }) => ({ status, listId }),
     onMutate: async ({ listId }) => {
       queryClient.invalidateQueries({
-        queryKey: listContentKeys.all
+        queryKey: listContentKeys.all,
       })
 
       queryClient.invalidateQueries({
-        queryKey: searchContentKeys.all
+        queryKey: searchContentKeys.all,
       })
 
       // Return a context object with the snapshotted values
@@ -42,15 +42,15 @@ export const useUpdatePlaceStatus = () => {
       if (typedContext?.searchId) {
         queryClient.setQueryData(
           searchContentKeys.search(typedContext.searchId),
-          typedContext.previousSearch
+          typedContext.previousSearch,
         )
       }
       if (typedContext?.listId) {
         queryClient.setQueryData(
           listContentKeys.list(typedContext.listId),
-          typedContext.previousList
+          typedContext.previousList,
         )
       }
-    }
+    },
   })
 }

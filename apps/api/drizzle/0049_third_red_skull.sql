@@ -1,0 +1,2 @@
+ALTER TABLE "contact" ADD COLUMN "is_primary" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "one_primary_per_place" ON "contact" USING btree ("user_place_id") WHERE "contact"."is_primary" = true;

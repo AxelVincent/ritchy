@@ -21,7 +21,6 @@
     "start": "NODE_ENV=production node dist/index.js",
     "clean": "rm -rf dist",
     "test": "vitest run",
-    "langchain": "tsx src/external/langchain/index.ts",
     "script:data-migration": "tsx src/scripts/data_migration.ts -- fill-search-place-table"
   },
   "dependencies": {
@@ -31,6 +30,9 @@
     "@langchain/community": "0.3.48",
     "@langchain/core": "0.3.62",
     "@langchain/mistralai": "0.2.1",
+    "@langchain/openai": "0.6.2",
+    "@langchain/qdrant": "0.1.2",
+    "@langchain/textsplitters": "0.1.0",
     "@mendable/firecrawl-js": "1.29.1",
     "@qdrant/js-client-rest": "1.14.1",
     "@ritchy/logger": "workspace:*",
@@ -39,6 +41,7 @@
     "@types/cors": "2.8.17",
     "amqplib": "0.10.8",
     "axios": "1.8.2",
+    "bullmq": "5.56.8",
     "cheerio": "1.0.0",
     "commander": "14.0.0",
     "connect-timeout": "1.9.0",

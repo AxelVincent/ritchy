@@ -15,19 +15,18 @@ export function validateAndExportToCsv<T>({
   data,
   filename = 'export.csv',
   columns,
-  schema
+  schema,
 }: ExportOptions<SearchResult>) {
   // Validate all data
   const validatedData = data.map((item) =>
     schema.parse({
       ...item,
-      enrichment: {
-        ...item.enrichment,
-        id: item.id,
-        emails: item.enrichment?.emails ?? [],
-        socialLinks: item.enrichment?.socialLinks ?? {}
-      }
-    })
+      emails: item.emails ?? [],
+      linkedinSocials: item.linkedinSocials ?? [],
+      facebookSocials: item.facebookSocials ?? [],
+      instagramSocials: item.instagramSocials ?? [],
+      hubspotSynced: item.hubspotSynced ?? false,
+    }),
   )
 
   // If no columns provided, use default object keys
@@ -35,7 +34,7 @@ export function validateAndExportToCsv<T>({
     columns ||
     Object.keys(validatedData[0]).map((key) => ({
       header: key,
-      accessor: (row: T) => row[key as keyof T]
+      accessor: (row: T) => row[key as keyof T],
     }))
 
   // Generate CSV content
@@ -85,8 +84,8 @@ export function validateAndExportToCsv<T>({
           // within the field must be escaped by doubling them
           return `"${value.replace(/"/g, '""')}"`
         })
-        .join(';')
-    )
+        .join(';'),
+    ),
   ]
 
   // Join rows with Windows-style line endings for better Excel compatibility

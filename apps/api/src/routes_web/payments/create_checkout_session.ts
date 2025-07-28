@@ -5,7 +5,7 @@ import Stripe from 'stripe'
 import {
   STRIPE_CONFIG,
   STRIPE_PLANS,
-  type StripePlan
+  type StripePlan,
 } from '../../config/stripe'
 import { db } from '../../db/db'
 import { subscription } from '../../db/schema'
@@ -13,12 +13,12 @@ import { subscription } from '../../db/schema'
 import {
   type CreateCheckoutSessionApiResponse,
   type CreateCheckoutSessionRequestBody,
-  CreateCheckoutSessionRequestBodySchema
+  CreateCheckoutSessionRequestBodySchema,
 } from '@ritchy/types'
 import { z } from 'zod'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia'
+  apiVersion: '2025-01-27.acacia',
 })
 
 export const createCheckoutSession = async (
@@ -28,15 +28,15 @@ export const createCheckoutSession = async (
     CreateCheckoutSessionRequestBody,
     never
   >,
-  res: Response<CreateCheckoutSessionApiResponse>
+  res: Response<CreateCheckoutSessionApiResponse>,
 ): Promise<void> => {
   logger.info({
     msg: 'Checkout session creation initiated',
     event: 'checkout_session_started',
 
     metadata: {
-      requestedPlan: req.body.plan
-    }
+      requestedPlan: req.body.plan,
+    },
   })
 
   try {
@@ -50,8 +50,8 @@ export const createCheckoutSession = async (
       metadata: {
         plan: req.body.plan,
         billingInterval: req.body.billingInterval,
-        currency: req.body.currency
-      }
+        currency: req.body.currency,
+      },
     })
 
     // Check subscription status in database
@@ -59,8 +59,8 @@ export const createCheckoutSession = async (
       where: eq(subscription.userId, req.auth.userId),
       columns: {
         stripeCustomerId: true,
-        status: true
-      }
+        status: true,
+      },
     })
 
     logger.info({
@@ -69,8 +69,8 @@ export const createCheckoutSession = async (
 
       metadata: {
         hasExistingSubscription: !!userSubscription,
-        subscriptionStatus: userSubscription?.status
-      }
+        subscriptionStatus: userSubscription?.status,
+      },
     })
 
     if (
@@ -82,27 +82,27 @@ export const createCheckoutSession = async (
         event: 'redirect_to_customer_portal',
         metadata: {
           stripeCustomerId: userSubscription.stripeCustomerId,
-          subscriptionStatus: userSubscription.status
-        }
+          subscriptionStatus: userSubscription.status,
+        },
       })
 
       // Create customer portal session using the stored customer ID
       const portalSession = await stripe.billingPortal.sessions.create({
         customer: userSubscription.stripeCustomerId,
-        return_url: `${process.env.FRONTEND_BASE_URL}/search`
+        return_url: `${process.env.FRONTEND_BASE_URL}/search`,
       })
 
       logger.info({
         msg: 'Customer portal session created',
         event: 'customer_portal_created',
         metadata: {
-          portalSessionId: portalSession.id
-        }
+          portalSessionId: portalSession.id,
+        },
       })
 
       res.json({
         portalUrl: portalSession.url,
-        clientSecret: null
+        clientSecret: null,
       })
       return
     }
@@ -126,11 +126,11 @@ export const createCheckoutSession = async (
         metadata: {
           requestedPlan: plan,
           requestedBillingInterval: billingInterval,
-          availablePlans: Object.keys(STRIPE_PLANS)
-        }
+          availablePlans: Object.keys(STRIPE_PLANS),
+        },
       })
       throw new Error(
-        `Invalid plan: ${plan} or billing interval: ${billingInterval}`
+        `Invalid plan: ${plan} or billing interval: ${billingInterval}`,
       )
     }
 
@@ -141,8 +141,8 @@ export const createCheckoutSession = async (
       metadata: {
         plan,
         billingInterval,
-        priceId
-      }
+        priceId,
+      },
     })
 
     const session = await stripe.checkout.sessions.create({
@@ -151,21 +151,21 @@ export const createCheckoutSession = async (
       line_items: [
         {
           price: priceId,
-          quantity: 1
-        }
+          quantity: 1,
+        },
       ],
       metadata: {
-        user_id: req.auth.userId
+        user_id: req.auth.userId,
       },
       subscription_data: {
         metadata: {
-          user_id: req.auth.userId
-        }
+          user_id: req.auth.userId,
+        },
       },
       ui_mode: 'embedded',
       return_url: `${process.env.FRONTEND_BASE_URL}/search?checkout_return=true`,
       allow_promotion_codes: true,
-      client_reference_id: req.auth.userId
+      client_reference_id: req.auth.userId,
     })
 
     logger.info({
@@ -176,13 +176,13 @@ export const createCheckoutSession = async (
         checkoutSessionId: session.id,
         plan,
         billingInterval,
-        priceId
-      }
+        priceId,
+      },
     })
 
     res.json({
       clientSecret: session.client_secret,
-      portalUrl: null
+      portalUrl: null,
     })
     return
   } catch (error) {
@@ -192,12 +192,12 @@ export const createCheckoutSession = async (
         event: 'checkout_validation_error',
         metadata: {
           validationErrors: error.errors,
-          requestBody: req.body
-        }
+          requestBody: req.body,
+        },
       })
       res.status(400).json({
         error: 'Invalid request data',
-        message: 'Invalid request data'
+        message: 'Invalid request data',
       })
       return
     }
@@ -212,15 +212,15 @@ export const createCheckoutSession = async (
             ? {
                 message: error.message,
                 name: error.name,
-                stack: error.stack
+                stack: error.stack,
               }
             : error,
-        requestBody: req.body
-      }
+        requestBody: req.body,
+      },
     })
     res.status(500).json({
       error: 'Failed to create checkout session',
-      message: 'Failed to create checkout session'
+      message: 'Failed to create checkout session',
     })
     return
   }

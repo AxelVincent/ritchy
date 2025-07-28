@@ -1,6 +1,6 @@
 import { QdrantClient } from '@qdrant/js-client-rest'
-import { QDRANT_CONFIG } from '../../config/qdrant'
 import { logger } from '@ritchy/logger'
+import { QDRANT_CONFIG } from '../../config/qdrant'
 
 export const COLLECTION_NAME = 'website_scraping'
 const VECTOR_SIZE = 1536
@@ -8,7 +8,7 @@ const VECTOR_SIZE = 1536
 export function getQdrantClient(): QdrantClient {
   return new QdrantClient({
     url: `http://${QDRANT_CONFIG.HOST}:${QDRANT_CONFIG.PORT}`,
-    apiKey: QDRANT_CONFIG.API_KEY
+    apiKey: QDRANT_CONFIG.API_KEY,
   })
 }
 
@@ -18,24 +18,24 @@ export async function initQdrantCollection(): Promise<void> {
   try {
     const collections = await client.getCollections()
     const collectionExists = collections.collections.some(
-      (collection) => collection.name === COLLECTION_NAME
+      (collection) => collection.name === COLLECTION_NAME,
     )
 
     if (!collectionExists) {
       await client.createCollection(COLLECTION_NAME, {
         vectors: {
           size: VECTOR_SIZE,
-          distance: 'Cosine'
+          distance: 'Cosine',
         },
         optimizers_config: {
-          default_segment_number: 2
+          default_segment_number: 2,
         },
-        replication_factor: 1
+        replication_factor: 1,
       })
 
       await client.createPayloadIndex(COLLECTION_NAME, {
         field_name: 'domain_name',
-        field_schema: 'keyword'
+        field_schema: 'keyword',
       })
     }
   } catch (error) {
@@ -46,9 +46,9 @@ export async function initQdrantCollection(): Promise<void> {
         error: error instanceof Error ? error.message : String(error),
         config: {
           url: `http://${QDRANT_CONFIG.USER}:${QDRANT_CONFIG.PORT}`,
-          hasApiKey: !!QDRANT_CONFIG.API_KEY
-        }
-      }
+          hasApiKey: !!QDRANT_CONFIG.API_KEY,
+        },
+      },
     })
     throw new Error('Failed to connect to Qdrant server')
   }

@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import type {
   UpdateStatusApiResponse,
-  UpdateStatusRequest
+  UpdateStatusRequest,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -9,15 +9,15 @@ import { upsertStatus } from '../../../services/places/status/upsert_status'
 
 export const updateStatus = async (
   req: Request<UpdateStatusRequest>,
-  res: Response<UpdateStatusApiResponse>
+  res: Response<UpdateStatusApiResponse>,
 ): Promise<void> => {
   logger.info({
     msg: 'Updating status',
     event: 'update_status',
     metadata: {
       userPlaceId: req.params.userPlaceId,
-      status: req.body.status
-    }
+      status: req.body.status,
+    },
   })
 
   try {
@@ -30,11 +30,11 @@ export const updateStatus = async (
         sessionId: req.auth.sessionId,
         changeSource: 'user',
         metadata: {
-          ...req.metadata
-        }
+          ...req.metadata,
+        },
       },
       userPlaceId,
-      status
+      status,
     )
 
     res.json(result)
@@ -42,8 +42,8 @@ export const updateStatus = async (
       msg: 'Status updated',
       event: 'status_updated',
       metadata: {
-        userPlaceId: req.params.userPlaceId
-      }
+        userPlaceId: req.params.userPlaceId,
+      },
     })
     return
   } catch (error) {
@@ -51,12 +51,12 @@ export const updateStatus = async (
       logger.info({
         msg: 'Validation error',
         event: 'validation_error',
-        metadata: { error }
+        metadata: { error },
       })
       res.status(400).json({
         error: 'Invalid request data',
         message: 'Invalid request data',
-        details: error.errors
+        details: error.errors,
       })
       return
     }
@@ -67,12 +67,12 @@ export const updateStatus = async (
       metadata: {
         error: error instanceof Error ? error : { error },
         body: req.body,
-        userId: req.auth.userId
-      }
+        userId: req.auth.userId,
+      },
     })
     res.status(500).json({
       error: 'Failed to update status',
-      message: 'Failed to update status'
+      message: 'Failed to update status',
     })
     return
   }

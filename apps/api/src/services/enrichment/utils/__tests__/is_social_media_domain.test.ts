@@ -1,5 +1,5 @@
 import { SocialMediaPlatformEnum } from '@ritchy/types'
-import { describe, test, expect } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { isSocialMediaDomain } from '../is_social_media_domain'
 
 describe('isSocialMediaDomain', () => {
@@ -7,14 +7,14 @@ describe('isSocialMediaDomain', () => {
     'should return true for exact social media domain: %s',
     (domain) => {
       expect(isSocialMediaDomain(domain)).toBe(true)
-    }
+    },
   )
 
   test.each(['business.facebook', 'developer.linkedin', 'about.instagram'])(
     'should return true for subdomain: %s',
     (domain) => {
       expect(isSocialMediaDomain(domain)).toBe(true)
-    }
+    },
   )
 
   test.each([
@@ -26,7 +26,7 @@ describe('isSocialMediaDomain', () => {
     'myfacebook.com',
     'facebook.fake.com',
     'notreal.com',
-    ''
+    '',
   ])('should return false for non-social media domain: %s', (domain) => {
     expect(isSocialMediaDomain(domain)).toBe(false)
   })
@@ -38,7 +38,7 @@ describe('isSocialMediaDomain', () => {
     'LINKEDIN',
     'LinkedIn',
     'INSTAGRAM',
-    'Instagram'
+    'Instagram',
   ])('should handle different cases correctly for: %s', (domain) => {
     expect(isSocialMediaDomain(domain)).toBe(true)
   })

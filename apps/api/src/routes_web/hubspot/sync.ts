@@ -14,7 +14,7 @@ syncRouter.post(
   '/places',
   validateRequest({
     bodySchema: syncPlaceBodySchema,
-    responseSchema: syncPlaceApiResponseSchema
+    responseSchema: syncPlaceApiResponseSchema,
   }),
   async (req, res) => {
     try {
@@ -34,7 +34,7 @@ syncRouter.post(
             const companies = await createOrUpdateCompanies(
               batchUserPlaceIds,
               userId,
-              client
+              client,
             )
             allCompanies.push(...companies)
 
@@ -42,7 +42,7 @@ syncRouter.post(
             const contacts = await createOrUpdateContacts(
               batchUserPlaceIds,
               userId,
-              client
+              client,
             )
             allContacts.push(...contacts)
 
@@ -54,15 +54,15 @@ syncRouter.post(
                 batchSize: batchUserPlaceIds.length,
                 companiesCreated: companies.length,
                 contactsCreated: contacts.length,
-                userPlaceIds: batchUserPlaceIds
-              }
+                userPlaceIds: batchUserPlaceIds,
+              },
             })
           }
 
           return {
             success: true,
             companyIds: allCompanies.map((c) => c.id),
-            contactIds: allContacts.map((c) => c.id)
+            contactIds: allContacts.map((c) => c.id),
           }
         } catch (error) {
           logger.error({
@@ -74,11 +74,11 @@ syncRouter.post(
                   ? {
                       message: error.message,
                       cause: (error as Error & { cause?: unknown }).cause,
-                      stack: error.stack
+                      stack: error.stack,
                     }
                   : error,
-              userId
-            }
+              userId,
+            },
           })
           throw error
         }
@@ -89,7 +89,7 @@ syncRouter.post(
       if (error instanceof z.ZodError) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request data'
+          error: 'Invalid request data',
         })
         return
       }
@@ -97,15 +97,15 @@ syncRouter.post(
       logger.error({
         msg: 'Failed to process sync request',
         event: 'hubspot_sync_request_error',
-        metadata: { error, userId: req.auth.userId }
+        metadata: { error, userId: req.auth.userId },
       })
 
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
       })
     }
-  }
+  },
 )
 
 export default syncRouter

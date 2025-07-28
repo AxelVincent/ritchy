@@ -7,7 +7,7 @@ import { search } from '../../db/schema'
 
 export const getSearches = async (
   req: Request,
-  res: Response<GetSearchesApiResponse>
+  res: Response<GetSearchesApiResponse>,
 ): Promise<void> => {
   try {
     const userId = req.auth.userId
@@ -25,19 +25,19 @@ export const getSearches = async (
         keyword: search.keyword,
         locationFormatted: search.placeName,
         createdAt: search.createdAt,
-        updatedAt: search.updatedAt
-      }))
+        updatedAt: search.updatedAt,
+      })),
     })
     return
   } catch (error) {
     logger.error({
       msg: 'Get searches error',
       event: 'get_searches_error',
-      metadata: { error }
+      metadata: { error },
     })
     res.status(500).json({
       error: 'Failed to get searches',
-      message: 'Failed to get searches'
+      message: 'Failed to get searches',
     })
     return
   }

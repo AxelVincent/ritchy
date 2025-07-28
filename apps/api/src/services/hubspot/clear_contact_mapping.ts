@@ -6,7 +6,7 @@ import { hubspotLeadMapping } from '../../db/schema'
 export const clearContactMapping = async (
   contactId: string,
   hubspotTokenId: string,
-  value: string
+  value: string,
 ): Promise<void> => {
   // Input validation
   if (!contactId?.trim()) {
@@ -16,13 +16,13 @@ export const clearContactMapping = async (
   const updatedMappings = await db
     .update(hubspotLeadMapping)
     .set({
-      hubspotContactId: value
+      hubspotContactId: value,
     })
     .where(
       and(
         eq(hubspotLeadMapping.hubspotContactId, contactId),
-        eq(hubspotLeadMapping.hubspotTokenId, hubspotTokenId)
-      )
+        eq(hubspotLeadMapping.hubspotTokenId, hubspotTokenId),
+      ),
     )
     .returning()
 
@@ -31,8 +31,8 @@ export const clearContactMapping = async (
       msg: 'No lead mappings found for deleted HubSpot contact',
       event: 'hubspot_contact_deletion_no_mappings',
       metadata: {
-        hubspotContactId: contactId
-      }
+        hubspotContactId: contactId,
+      },
     })
     return
   }
@@ -46,9 +46,9 @@ export const clearContactMapping = async (
       updatedMappings: updatedMappings.map((mapping) => ({
         id: mapping.id,
         userPlaceId: mapping.userPlaceId,
-        hubspotTokenId: mapping.hubspotTokenId
-      }))
-    }
+        hubspotTokenId: mapping.hubspotTokenId,
+      })),
+    },
   })
   return
 }

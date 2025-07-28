@@ -4,7 +4,7 @@ import { hubspotLeadMapping } from '../../../db/schema'
 
 export const getHubspotLeadMappings = async (
   tokenId: string,
-  userPlaceIds: string[]
+  userPlaceIds: string[],
 ) =>
   db
     .select()
@@ -12,6 +12,6 @@ export const getHubspotLeadMappings = async (
     .where(
       and(
         eq(hubspotLeadMapping.hubspotTokenId, tokenId),
-        inArray(hubspotLeadMapping.userPlaceId, userPlaceIds)
-      )
+        inArray(hubspotLeadMapping.userPlaceId, userPlaceIds),
+      ),
     )

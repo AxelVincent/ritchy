@@ -8,12 +8,12 @@ export const getWebsiteVectors = async (domain: string) => {
         {
           key: 'domain_name',
           match: {
-            value: domain
-          }
-        }
-      ]
+            value: domain,
+          },
+        },
+      ],
     },
-    with_payload: true
+    with_payload: true,
   })
 
   return qdrantResponse.points

@@ -1,8 +1,8 @@
-import { timestamp, text } from 'drizzle-orm/pg-core'
-import { pgTable, uuid, jsonb } from 'drizzle-orm/pg-core'
+import { text, timestamp } from 'drizzle-orm/pg-core'
+import { jsonb, pgTable, uuid } from 'drizzle-orm/pg-core'
 import { searchModelEnum } from './enum'
-import { user } from './user'
 import { place, userPlace } from './place'
+import { user } from './user'
 
 export const search = pgTable('search', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -17,7 +17,7 @@ export const search = pgTable('search', {
     southWest: { latitude: number; longitude: number }
   }>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
 export const searchPlace = pgTable('search_place', {
@@ -29,5 +29,5 @@ export const searchPlace = pgTable('search_place', {
     .notNull()
     .references(() => userPlace.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

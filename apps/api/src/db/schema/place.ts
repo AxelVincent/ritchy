@@ -1,9 +1,9 @@
 import {
-  timestamp,
-  text,
-  uniqueIndex,
   boolean,
-  unique
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { pgTable, uuid } from 'drizzle-orm/pg-core'
 import { placeSourceEnum } from './enum'
@@ -14,7 +14,7 @@ export const place = pgTable('place', {
   source: placeSourceEnum('source').notNull(),
   sourceId: text('source_id').notNull().unique(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
 export const userPlace = pgTable(
@@ -29,10 +29,10 @@ export const userPlace = pgTable(
       .references(() => place.id, { onDelete: 'cascade' }),
     isEnriched: boolean('is_enriched').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow()
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex('uniq_user_place').on(table.userId, table.placeId),
-    unique().on(table.placeId, table.userId)
-  ]
+    unique().on(table.placeId, table.userId),
+  ],
 )

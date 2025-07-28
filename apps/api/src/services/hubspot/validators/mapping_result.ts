@@ -1,7 +1,7 @@
 import {
   CompanyFieldEnum,
   ContactFieldEnum,
-  StatusFieldEnum
+  StatusFieldEnum,
 } from '@ritchy/types'
 import { z } from 'zod'
 
@@ -10,7 +10,7 @@ export const MappingResultSchema = z.object({
   internalField: z.union([ContactFieldEnum, CompanyFieldEnum, StatusFieldEnum]),
   hubspotField: z.string(),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
 })
 
 export type MappingResult = z.infer<typeof MappingResultSchema>

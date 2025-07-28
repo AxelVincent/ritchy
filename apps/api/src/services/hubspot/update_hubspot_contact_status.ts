@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import type { InternalLeadStatus } from '@ritchy/types'
 import {
   getValidToken,
-  withHubspotClient
+  withHubspotClient,
 } from '../../external/hubspot/token_manager'
 import { getHubspotLeadMapping } from './queries/get_hubspot_lead_mapping'
 import { createHubspotProperties } from './utils/create_hubspot_properties'
@@ -16,14 +16,14 @@ import { createHubspotProperties } from './utils/create_hubspot_properties'
 export const updateHubspotContactStatus = async (
   userId: string,
   userPlaceId: string,
-  statusValue: InternalLeadStatus
+  statusValue: InternalLeadStatus,
 ): Promise<void> => {
   const token = await getValidToken(userId)
   if (!token) {
     logger.info({
       msg: 'No HubSpot token found for user',
       event: 'hubspot_token_not_found',
-      metadata: { userId }
+      metadata: { userId },
     })
     return
   }
@@ -33,7 +33,7 @@ export const updateHubspotContactStatus = async (
     logger.info({
       msg: 'Hubspot contact mapping not found',
       event: 'hubspot_contact_mapping_not_found',
-      metadata: { userPlaceId, hubspotTokenId: token.id }
+      metadata: { userPlaceId, hubspotTokenId: token.id },
     })
     return
   }
@@ -41,21 +41,21 @@ export const updateHubspotContactStatus = async (
   const properties = await createHubspotProperties(token.id, [
     {
       internalField: `status.${statusValue}`,
-      value: statusValue
-    }
+      value: statusValue,
+    },
   ])
 
   logger.info({
     msg: 'Hubspot properties',
     event: 'hubspot_properties',
-    metadata: { properties }
+    metadata: { properties },
   })
   await withHubspotClient(userId, async (client) => {
     await client.crm.contacts.basicApi.update(
       String(contactMapping.hubspotContactId),
       {
-        properties
-      }
+        properties,
+      },
     )
   })
 }

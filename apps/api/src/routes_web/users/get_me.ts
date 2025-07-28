@@ -8,14 +8,14 @@ import { getUserPlan } from '../../services/payment/queries/get_user_plan'
 
 export const getMe = async (
   req: Request,
-  res: Response<UserMeApiResponse>
+  res: Response<UserMeApiResponse>,
 ): Promise<void> => {
   const userId = req.auth?.userId
 
   if (!userId) {
     logger.warn({
       msg: 'User ID missing in getMeHandler',
-      event: 'get_me_no_userid'
+      event: 'get_me_no_userid',
     })
     res
       .status(401)
@@ -29,7 +29,7 @@ export const getMe = async (
     let isDemoValidated = false
     const [demoCodeRecord] = await db
       .select({
-        isValidated: userDemoCode.isValidated
+        isValidated: userDemoCode.isValidated,
       })
       .from(userDemoCode)
       .where(eq(userDemoCode.userId, userId))
@@ -40,14 +40,14 @@ export const getMe = async (
       logger.info({
         msg: 'No demo code record found for user in getMe. Assuming not validated.',
         event: 'get_me_no_demo_record',
-        metadata: { userId }
+        metadata: { userId },
       })
     }
 
     logger.info({
       msg: 'Successfully retrieved consolidated user data for /me endpoint',
       event: 'get_me_success',
-      metadata: { userId, plan, isDemoValidated }
+      metadata: { userId, plan, isDemoValidated },
     })
 
     res.json({ plan, isDemoValidated })
@@ -55,11 +55,11 @@ export const getMe = async (
     logger.error({
       msg: 'Error fetching user data for /me endpoint',
       event: 'get_me_error',
-      metadata: { error, userId: req.auth?.userId }
+      metadata: { error, userId: req.auth?.userId },
     })
     res.status(500).json({
       error: 'internal_server_error',
-      message: 'An unexpected error occurred while fetching user data.'
+      message: 'An unexpected error occurred while fetching user data.',
     })
   }
 }
