@@ -152,11 +152,11 @@ export const websiteEnrichmentManager = async ({
       })
     }
 
-    await Promise.all(
-      crawlStrategy.map((url) =>
-        scrapeWebsiteManager(url, enrichment.id, true, userPlaceId),
-      ),
-    )
+    for (const url of crawlStrategy) {
+      await scrapeWebsiteManager(url, enrichment.id, true, userPlaceId)
+      // wait 500ms to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
 
     logger.info({
       msg: 'Scraped website',
