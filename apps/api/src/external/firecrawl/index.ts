@@ -18,10 +18,10 @@ export const scrapeWebsite = async (
     formats: ['markdown', 'html', 'rawHtml'],
     excludeTags: ['img'],
     location: {
-      country: 'US',
+      country: 'US'
     },
-    onlyMainContent: false,
-  },
+    onlyMainContent: false
+  }
 ) => {
   try {
     logger.info({
@@ -29,13 +29,13 @@ export const scrapeWebsite = async (
       event: 'firecrawl_scrape_start',
       metadata: {
         url,
-        options,
-      },
+        options
+      }
     })
 
     const app = getFirecrawlClient()
     const scrapeResult = await firecrawlApiQueue.addToQueue(() =>
-      app.scrapeUrl(url, options),
+      app.scrapeUrl(url, options)
     )
 
     if (!scrapeResult.success) {
@@ -45,8 +45,8 @@ export const scrapeWebsite = async (
         metadata: {
           url,
           error: scrapeResult.error,
-          rawResult: scrapeResult,
-        },
+          rawResult: scrapeResult
+        }
       })
       throw new Error(`Failed to scrape: ${scrapeResult.error}`)
     }
@@ -62,10 +62,10 @@ export const scrapeWebsite = async (
           name: error instanceof Error ? error.name : 'Unknown',
           message: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
-          raw: error,
+          raw: error
         },
-        options,
-      },
+        options
+      }
     })
     throw error
   }

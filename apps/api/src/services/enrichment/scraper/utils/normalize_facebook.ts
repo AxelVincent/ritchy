@@ -24,7 +24,9 @@ export function normalizeFacebook(url: string): {
     lowercaseUrl.includes('facebook.com/photos/') ||
     lowercaseUrl.includes('facebook.com/pages/') ||
     lowercaseUrl.includes('facebook.com/groups/') ||
-    lowercaseUrl.includes('facebook.com/events/')
+    lowercaseUrl.includes('facebook.com/events/') ||
+    lowercaseUrl.includes('facebook.com/help/') ||
+    lowercaseUrl.includes('facebook.com/sharer.php/')
   ) {
     return null
   }
