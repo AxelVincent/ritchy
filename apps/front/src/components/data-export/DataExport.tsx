@@ -15,7 +15,7 @@ import { Download } from 'lucide-react'
 import posthog from 'posthog-js'
 import { useState } from 'react'
 import React from 'react'
-import type { z } from 'zod'
+import { z } from 'zod'
 
 type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
@@ -134,6 +134,74 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
       // Create a copy of the data with properly structured fields
       const exportData = selectedRows.map((row) => ({
         ...row,
+        // Convert string dates back to Date objects for schema validation
+        domainRegisteredAt: row.domainRegisteredAt
+          ? new Date(row.domainRegisteredAt)
+          : null,
+        facebookSocials: row.facebookSocials
+          ?.filter((social) => social.url && social.url.trim() !== '')
+          ?.map((social) => ({
+            ...social,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : social.createdAt,
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : social.updatedAt,
+          })),
+        instagramSocials: row.instagramSocials
+          ?.filter((social) => social.url && social.url.trim() !== '')
+          ?.map((social) => ({
+            ...social,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : social.createdAt,
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : social.updatedAt,
+          })),
+        linkedinSocials: row.linkedinSocials
+          ?.filter((social) => social.url && social.url.trim() !== '')
+          ?.map((social) => ({
+            ...social,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : social.createdAt,
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : social.updatedAt,
+          })),
+        emails: row.emails
+          ?.filter((email) => {
+            if (!email.email || email.email.trim() === '') return false
+            try {
+              // Use Zod's email validation directly
+              z.string().email().parse(email.email.trim())
+              return true
+            } catch {
+              return false
+            }
+          })
+          ?.map((email) => ({
+            ...email,
+            createdAt: email.createdAt
+              ? new Date(email.createdAt)
+              : email.createdAt,
+            updatedAt: email.updatedAt
+              ? new Date(email.updatedAt)
+              : email.updatedAt,
+          })),
+        phones: row.phones
+          ?.filter((phone) => phone.phone && phone.phone.trim() !== '')
+          ?.map((phone) => ({
+            ...phone,
+            createdAt: phone.createdAt
+              ? new Date(phone.createdAt)
+              : phone.createdAt,
+            updatedAt: phone.updatedAt
+              ? new Date(phone.updatedAt)
+              : phone.updatedAt,
+          })),
       }))
 
       // Create a Map of website URIs to enrichment data
@@ -195,53 +263,65 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.phone || '',
         },
         {
+          header: 'Phones',
+          field: 'phones',
+          accessor: (row: SearchResult): string =>
+            (row.phones || []).join(', '),
+        },
+        {
           header: 'Primary Email',
-          field: 'emails.email',
+          field: 'emails',
           accessor: (row: SearchResult): string => row.emails?.[0]?.email || '',
         },
         {
           header: 'Secondary Emails',
-          field: 'emails.email',
           accessor: (row: SearchResult): string =>
-            (row.emails || []).join(', '),
+            (row.emails || [])
+              .slice(1)
+              .map((e) => e.email)
+              .join(', '),
         },
         {
           header: 'Primary LinkedIn Social',
-          field: 'linkedinSocials.url',
+          field: 'linkedinSocials',
           accessor: (row: SearchResult): string =>
             row.linkedinSocials?.[0]?.url || '',
         },
         {
           header: 'Primary Facebook Social',
-          field: 'facebookSocials.url',
+          field: 'facebookSocials',
           accessor: (row: SearchResult): string =>
             row.facebookSocials?.[0]?.url || '',
         },
         {
           header: 'Primary Instagram Social',
-          field: 'instagramSocials.url',
+          field: 'instagramSocials',
           accessor: (row: SearchResult): string =>
             row.instagramSocials?.[0]?.url || '',
         },
         {
           header: 'Secondary LinkedIn Socials',
-          field: 'linkedinSocials.url',
           accessor: (row: SearchResult): string =>
-            (row.linkedinSocials || []).join(', '),
+            (row.linkedinSocials || [])
+              .slice(1)
+              .map((s) => s.url)
+              .join(', '),
         },
-
         {
           header: 'Secondary Facebook Socials',
-          field: 'facebookSocials.url',
           accessor: (row: SearchResult): string =>
-            (row.facebookSocials || []).join(', '),
+            (row.facebookSocials || [])
+              .slice(1)
+              .map((s) => s.url)
+              .join(', '),
         },
-
         {
           header: 'Secondary Instagram Socials',
-          field: 'instagramSocials.url',
           accessor: (row: SearchResult): string =>
-            (row.instagramSocials || []).join(', '),
+            (row.instagramSocials || [])
+              .slice(1)
+              .map((s) => s.url)
+              .join(', '),
         },
         {
           header: 'Rating',
@@ -451,7 +531,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         })),
         {
           header: 'Domain Registration Date',
-          field: 'domainRegistrationDate',
+          field: 'domainRegisteredAt',
           accessor: (row: SearchResult): string => {
             return row.domainRegisteredAt?.toISOString() || ''
           },

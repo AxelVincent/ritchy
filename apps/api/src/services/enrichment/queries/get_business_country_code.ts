@@ -1,3 +1,4 @@
+import { logger } from '@ritchy/logger'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import {
@@ -11,6 +12,11 @@ import { redisClient } from '../../../internal/redis/redis'
 export const getBusinessCountryCodeByEnrichmentId = async (
   enrichmentId: string,
 ) => {
+  logger.info({
+    msg: 'Getting business country code by enrichment id',
+    event: 'getting_business_country_code_by_enrichment_id',
+    metadata: { enrichmentId },
+  })
   const [place] = await db
     .select()
     .from(enrichmentTable)
@@ -21,13 +27,22 @@ export const getBusinessCountryCodeByEnrichmentId = async (
   if (!place) {
     return null
   }
+  logger.info({
+    msg: 'Getting place from enrichment',
+    event: 'getting_place_from_enrichment',
+    metadata: { place },
+  })
   const key = REDIS_KEYS.place(place.place.sourceId)
   const sourcePlace = await redisClient.get<PreferredPlace>(key)
 
   if (!sourcePlace) {
     return null
   }
-
+  logger.info({
+    msg: 'Getting source place from redis',
+    event: 'getting_source_place_from_redis',
+    metadata: { sourcePlace },
+  })
   return (
     sourcePlace.data.addressComponents?.find((component) =>
       component.types?.includes('country'),

@@ -1,22 +1,21 @@
-import { findPhoneNumbersInText } from 'libphonenumber-js'
+import { extractEmail } from 'extract-email-address'
+import { extractPhonesFromText } from '../../../../utils/phone_utils'
 
-const EMAIL_REGEX = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}/g
+const BANNED_EMAIL_PATTERNS = [
+  /@sentry\./i, // Matches any @sentry.* domain
+  /@sentry-.*\./, // Matches @sentry-*.* domains
+]
 
 const extractEmails = (text: string): string[] => {
-  return Array.from(text.matchAll(EMAIL_REGEX), (match) => match[0])
-}
-
-const extractPhones = (text: string): string[] => {
-  const phoneObjects = findPhoneNumbersInText(text)
-  const phones = phoneObjects.map((phone) => {
-    return phone.number.number
-  })
-  return phones.filter((phone) => phone.length > 5)
+  const emails = extractEmail(text).map((email) => email.email)
+  return emails.filter(
+    (email) => !BANNED_EMAIL_PATTERNS.some((pattern) => pattern.test(email)),
+  )
 }
 
 export const extractContactsFromText = (text: string) => {
   return {
     emails: extractEmails(text),
-    phones: extractPhones(text),
+    phones: extractPhonesFromText(text),
   }
 }

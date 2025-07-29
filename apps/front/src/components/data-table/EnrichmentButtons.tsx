@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import type { Table } from '@tanstack/react-table'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface EnrichmentButtonsProps<TData extends SearchResult> {
   table: Table<TData>
@@ -17,7 +17,6 @@ interface EnrichmentButtonsProps<TData extends SearchResult> {
     completedAt?: string
     errors: string[]
   } | null
-  enrichmentError: string | null
   handleFetchEnrichment: (ids: string[]) => Promise<void>
 }
 
@@ -26,7 +25,6 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   isEnriching,
   enrichmentProgress,
   enrichmentData,
-  enrichmentError,
   handleFetchEnrichment,
 }: EnrichmentButtonsProps<TData>) => {
   const selectedRows = table.getSelectedRowModel().rows
@@ -93,12 +91,6 @@ export const EnrichmentButtons = <TData extends SearchResult>({
             'Enrich Selected',
           )}
         </Button>
-        {enrichmentError && (
-          <div className="flex items-center gap-2 text-sm text-destructive">
-            <AlertCircle className="h-4 w-4" />
-            <span>Error: {enrichmentError}</span>
-          </div>
-        )}
       </div>
     ) : null
   }
@@ -118,12 +110,6 @@ export const EnrichmentButtons = <TData extends SearchResult>({
           'Enrich All',
         )}
       </Button>
-      {enrichmentError && (
-        <div className="flex items-center gap-2 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4" />
-          <span>Error: {enrichmentError}</span>
-        </div>
-      )}
     </div>
   )
 }

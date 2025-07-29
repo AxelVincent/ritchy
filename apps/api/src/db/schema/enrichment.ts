@@ -1,4 +1,10 @@
-import { text, timestamp, unique, uniqueIndex } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
 import { pgTable, uuid } from 'drizzle-orm/pg-core'
 import { phoneTypeEnum } from './enum'
 import { place } from './place'
@@ -17,6 +23,8 @@ export const enrichment = pgTable('enrichment', {
   keywords: text('keywords'),
   favicon: text('favicon'),
   robots: text('robots'),
+  success: boolean('success').notNull().default(false),
+  error: text('error'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -29,6 +37,7 @@ export const enrichmentFacebook = pgTable(
       .notNull()
       .references(() => enrichment.id, { onDelete: 'cascade' }),
     url: text('url').notNull(),
+    source: text('source'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -43,6 +52,7 @@ export const enrichmentInstagram = pgTable(
       .notNull()
       .references(() => enrichment.id, { onDelete: 'cascade' }),
     url: text('url').notNull(),
+    source: text('source'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -57,6 +67,7 @@ export const enrichmentLinkedin = pgTable(
       .notNull()
       .references(() => enrichment.id, { onDelete: 'cascade' }),
     url: text('url').notNull(),
+    source: text('source'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -71,6 +82,7 @@ export const enrichmentEmail = pgTable(
       .notNull()
       .references(() => enrichment.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
+    source: text('source'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -86,6 +98,7 @@ export const enrichmentPhone = pgTable(
       .references(() => enrichment.id, { onDelete: 'cascade' }),
     phone: text('phone').notNull(),
     type: phoneTypeEnum('type').notNull(),
+    source: text('source'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

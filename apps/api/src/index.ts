@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { createServer } from 'node:http'
 import { clerkMiddleware, getAuth } from '@clerk/express'
+import { createQueueDashExpressMiddleware } from '@queuedash/api'
 import { baseLogger, logger } from '@ritchy/logger'
 import timeout from 'connect-timeout'
 import cors from 'cors'
@@ -19,6 +20,9 @@ import webhookRoutes from './webhook'
 
 // Import the worker
 import './internal/bullmq/jobs/enrichment/worker'
+import './internal/bullmq/jobs/firecrawl/worker'
+import { enrichmentQueue } from './internal/bullmq/jobs/enrichment/queue'
+import { firecrawlQueue } from './internal/bullmq/jobs/firecrawl/queue'
 
 const app = express()
 const server = createServer(app)
@@ -37,6 +41,26 @@ app.use(
   express.urlencoded({
     extended: true,
     limit: '10mb',
+  }),
+)
+
+app.use(
+  '/queuedash',
+  createQueueDashExpressMiddleware({
+    ctx: {
+      queues: [
+        {
+          queue: enrichmentQueue,
+          displayName: 'Enrichment',
+          type: 'bull' as const,
+        },
+        {
+          queue: firecrawlQueue,
+          displayName: 'Firecrawl',
+          type: 'bull' as const,
+        },
+      ],
+    },
   }),
 )
 

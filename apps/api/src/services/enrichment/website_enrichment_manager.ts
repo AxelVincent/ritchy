@@ -1,5 +1,4 @@
 import { logger } from '@ritchy/logger'
-import { getWebsiteVectors } from './queries/get_website_vectors'
 import { scrapeWebsiteManager } from './scraper/scrape_website_manager'
 import { getMainDomain } from './scraper/utils/get_main_domain'
 import { isSubPage } from './utils/is_sub_page'
@@ -119,23 +118,36 @@ export const websiteEnrichmentManager = async ({
     //   return
     // }
 
+    logger.info({
+      msg: 'Scraping main page of the website',
+      event: 'scraping_main_page_of_the_website',
+      metadata: { website, userPlaceId },
+    })
     const scrapeResult = await scrapeWebsiteManager(
       website,
       enrichment.id,
       false,
       userPlaceId,
     )
-    if (!scrapeResult) {
+    if (!scrapeResult || 'error' in scrapeResult) {
       logger.error({
         msg: 'Failed to scrape website',
         event: 'failed_to_scrape_website',
         metadata: { website, userPlaceId },
       })
+      await db
+        .update(enrichmentTable)
+        .set({
+          error: scrapeResult.error.message,
+          success: false,
+        })
+        .where(eq(enrichmentTable.id, enrichment.id))
       return
     }
+
     const { metadata, links } = scrapeResult
     let crawlStrategy = links.internal
-    if (links.internal.length > 30) {
+    if (links.internal.length > 10) {
       const businessName = await getBusinessName(userPlaceId)
       crawlStrategy = await getCrawlStrategy(
         links.internal,
@@ -153,9 +165,9 @@ export const websiteEnrichmentManager = async ({
     }
 
     for (const url of crawlStrategy) {
-      await scrapeWebsiteManager(url, enrichment.id, true, userPlaceId)
       // wait 500ms to avoid rate limiting
       await new Promise((resolve) => setTimeout(resolve, 500))
+      await scrapeWebsiteManager(url, enrichment.id, true, userPlaceId)
     }
 
     logger.info({
@@ -197,7 +209,6 @@ export const websiteEnrichmentManager = async ({
       message: 'Website enriched successfully',
     }
   } catch (error) {
-    // Determine the error type and provide more specific error information
     const errorDetails = {
       msg: 'Error enriching website',
       event: 'error_enriching_website',

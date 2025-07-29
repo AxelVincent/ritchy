@@ -1,24 +1,28 @@
 import { logger } from '@ritchy/logger'
 import * as cheerio from 'cheerio'
-import { scrapeWebsite } from '../../../external/firecrawl'
-import { websiteRagIndexingPipeline } from '../../../external/langchain/website_rag_indexing_pipeline'
-import { isValidUrl } from '../../../utils/is_valid_url'
+import { scrapeWithRetry } from '../../../external/firecrawl'
 
 import type { FirecrawlDocumentMetadata } from '@mendable/firecrawl-js'
 import { getBusinessCountryCodeByEnrichmentId } from '../../enrichment/queries/get_business_country_code'
-import { insertEnrichmentFacebook } from '../../enrichment/queries/insert_enrichment_facebook'
-import { insertEnrichmentInstagram } from '../../enrichment/queries/insert_enrichment_instagram'
-import { insertEnrichmentLinkedin } from '../../enrichment/queries/insert_enrichment_linkedin'
 import { insertEnrichmentEmail } from '../queries/insert_enrichment_email'
+import { insertEnrichmentFacebookBatch } from '../queries/insert_enrichment_facebook_batch'
+import { insertEnrichmentInstagramBatch } from '../queries/insert_enrichment_instagram_batch'
+import { insertEnrichmentLinkedinBatch } from '../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../queries/insert_enrichment_phone'
 import { cleanUrl } from './utils/clean_url'
 import { extractContactsFromText } from './utils/extract_contacts_from_text'
-import { getMainDomain } from './utils/get_main_domain'
-import { isFile } from './utils/is_file'
-import { isImage } from './utils/is_image'
-import { normalizeFacebook } from './utils/normalize_facebook'
-import { normalizeInstagram } from './utils/normalize_instagram'
-import { normalizeLinkedin } from './utils/normalize_linkedin'
+import {
+  type NormalizedFacebook,
+  normalizeFacebook,
+} from './utils/normalize_facebook'
+import {
+  type NormalizedInstagram,
+  normalizeInstagram,
+} from './utils/normalize_instagram'
+import {
+  type NormalizedLinkedin,
+  normalizeLinkedin,
+} from './utils/normalize_linkedin'
 import { resolveUrl } from './utils/resolve_url'
 
 type ScrapeResult = {
@@ -27,17 +31,15 @@ type ScrapeResult = {
 }
 
 type Links = {
-  emails: string[]
-  phones: string[]
-  external: string[]
   internal: string[]
-  socials: {
-    facebook: string[]
-    instagram: string[]
-    linkedin: string[]
+}
+
+type ScrapeError = {
+  error: {
+    name: string
+    message: string
+    stack: string
   }
-  files: string[]
-  images: string[]
 }
 
 export const scrapeWebsiteManager = async (
@@ -45,7 +47,18 @@ export const scrapeWebsiteManager = async (
   enrichmentId: string,
   onlyMainContent: boolean,
   userPlaceId: string,
-): Promise<ScrapeResult | undefined> => {
+): Promise<ScrapeResult | ScrapeError> => {
+  // Modify the uniqueLinks structure
+  const uniqueLinks = {
+    emails: new Set<string>(),
+    phones: new Set<string>(),
+    socials: {
+      instagram: new Set<NormalizedInstagram>(),
+      facebook: new Set<NormalizedFacebook>(),
+      linkedin: new Set<NormalizedLinkedin>(),
+    },
+    internal: new Set<string>(),
+  }
   try {
     const time = Date.now()
     logger.info({
@@ -54,18 +67,17 @@ export const scrapeWebsiteManager = async (
       metadata: { url, userPlaceId },
     })
     const countryCode = await getBusinessCountryCodeByEnrichmentId(enrichmentId)
-    const { rawHtml, markdown, metadata, success, error } = await scrapeWebsite(
-      url,
-      {
-        formats: ['markdown', 'html', 'rawHtml'],
-        excludeTags: ['img'],
+
+    const { rawHtml, markdown, metadata, success, error } =
+      await scrapeWithRetry(url, {
+        formats: ['markdown', 'rawHtml'],
+        excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
         location: {
           country: countryCode ?? 'US',
         },
         proxy: 'auto',
         onlyMainContent,
-      },
-    )
+      })
 
     if (!success) {
       logger.error({
@@ -85,23 +97,11 @@ export const scrapeWebsiteManager = async (
       throw new Error('No response returned from scrape')
     }
 
-    const mainDomain = getMainDomain(url)
-    const $ = cheerio.load(rawHtml)
-
-    // Use Sets to ensure uniqueness in each category
-    const uniqueLinks = {
-      emails: new Set<string>(),
-      phones: new Set<string>(),
-      external: new Set<string>(),
-      internal: new Set<string>(),
-      socials: {
-        facebook: new Set<string>(),
-        instagram: new Set<string>(),
-        linkedin: new Set<string>(),
+    const $ = cheerio.load(rawHtml, {
+      xml: {
+        decodeEntities: false,
       },
-      files: new Set<string>(),
-      images: new Set<string>(),
-    }
+    })
 
     // Extract contacts from visible text content
     const bodyText = $('body').text()
@@ -115,98 +115,83 @@ export const scrapeWebsiteManager = async (
       uniqueLinks.phones.add(phone)
     }
 
-    await Promise.all(
-      $('a')
-        .map(async (_, element) => {
-          const $link = $(element)
-          let href = $link.attr('href') || ''
+    // Process links with specific data
+    $('a').each((_, element) => {
+      const href = $(element).attr('href') || ''
+      const cleanHref = cleanUrl(resolveUrl(url, href))
 
-          href = cleanUrl(resolveUrl(url, href))
+      if (cleanHref.includes('instagram.com')) {
+        const clean = normalizeInstagram(cleanHref)
+        if (clean) {
+          uniqueLinks.socials.instagram.add({
+            url: clean.url,
+            username: clean.username,
+          })
+        }
+      } else if (cleanHref.includes('facebook.com')) {
+        const clean = normalizeFacebook(cleanHref)
+        if (clean) {
+          uniqueLinks.socials.facebook.add({
+            url: clean.url,
+            username: clean.username,
+          })
+        }
+      } else if (cleanHref.includes('linkedin.com')) {
+        const clean = normalizeLinkedin(cleanHref)
+        if (clean) {
+          uniqueLinks.socials.linkedin.add({
+            url: clean.url,
+            name: clean.name,
+            type: clean.type,
+          })
+        }
+      }
+    })
 
-          if (href.startsWith('mailto:')) {
-            await insertEnrichmentEmail(
-              enrichmentId,
-              href.replace('mailto:', ''),
-            )
-            uniqueLinks.emails.add(href.replace('mailto:', ''))
-            return
-          }
+    logger.info({
+      msg: 'Inserting social media data',
+      event: 'inserting_social_media_data',
+      metadata: { enrichmentId, uniqueLinks },
+    })
+    // Batch insert with specific data
+    await Promise.all([
+      insertEnrichmentInstagramBatch(
+        enrichmentId,
+        Array.from(uniqueLinks.socials.instagram),
+      ),
+      insertEnrichmentFacebookBatch(
+        enrichmentId,
+        Array.from(uniqueLinks.socials.facebook),
+      ),
+      insertEnrichmentLinkedinBatch(
+        enrichmentId,
+        Array.from(uniqueLinks.socials.linkedin),
+      ),
+    ])
 
-          if (href.startsWith('tel:')) {
-            await insertEnrichmentPhone(enrichmentId, href.replace('tel:', ''))
-            uniqueLinks.phones.add(href.replace('tel:', ''))
-            return
-          }
+    logger.info({
+      msg: 'Inserting email data',
+      event: 'inserting_email_data',
+      metadata: { enrichmentId, uniqueLinks },
+    })
+    for (const email of uniqueLinks.emails) {
+      await insertEnrichmentEmail(enrichmentId, url, email)
+    }
 
-          if (!isValidUrl(href)) return
-
-          if (isFile(href)) {
-            uniqueLinks.files.add(href)
-            return
-          }
-
-          if (isImage(href)) {
-            uniqueLinks.images.add(href)
-            return
-          }
-
-          if (href.includes('instagram.com')) {
-            const cleanInstagram = normalizeInstagram(href)
-
-            if (cleanInstagram) {
-              logger.info({
-                msg: 'Instagram link found',
-                event: 'instagram_link_found',
-                metadata: { url, href },
-              })
-              await insertEnrichmentInstagram(enrichmentId, cleanInstagram.url)
-              uniqueLinks.socials.instagram.add(cleanInstagram.url)
-            }
-            return
-          }
-
-          if (href.includes('facebook.com')) {
-            logger.info({
-              msg: 'Facebook link found',
-              event: 'facebook_link_found',
-              metadata: { url, href },
-            })
-            const facebook = normalizeFacebook(href)
-            if (facebook) {
-              await insertEnrichmentFacebook(enrichmentId, facebook.url)
-              uniqueLinks.socials.facebook.add(facebook.url)
-            }
-            return
-          }
-
-          if (href.includes('linkedin.com')) {
-            logger.info({
-              msg: 'LinkedIn link found',
-              event: 'linkedin_link_found',
-              metadata: { url, href },
-            })
-            const linkedin = normalizeLinkedin(href)
-            if (linkedin) {
-              await insertEnrichmentLinkedin(enrichmentId, linkedin.url)
-              uniqueLinks.socials.linkedin.add(linkedin.url)
-            }
-            return
-          }
-
-          if (href.includes(mainDomain)) {
-            uniqueLinks.internal.add(href)
-            return
-          }
-
-          uniqueLinks.external.add(href)
-        })
-        .get(),
-    )
+    logger.info({
+      msg: 'Inserting phone data',
+      event: 'inserting_phone_data',
+      metadata: { enrichmentId, uniqueLinks },
+    })
+    for (const phone of uniqueLinks.phones) {
+      await insertEnrichmentPhone(enrichmentId, url, phone)
+    }
 
     const internalLinks = Array.from(uniqueLinks.internal).filter(
       (internalUrl) => internalUrl !== cleanUrl(url),
     )
 
+    // const mainDomain = getMainDomain(url)
     // await websiteRagIndexingPipeline(mainDomain, url, markdown)
 
     const responseTime = Date.now() - time
@@ -225,20 +210,11 @@ export const scrapeWebsiteManager = async (
         robots: '',
       },
       links: {
-        emails: Array.from(uniqueLinks.emails),
-        phones: Array.from(uniqueLinks.phones),
-        external: Array.from(uniqueLinks.external),
         internal: internalLinks,
-        socials: {
-          facebook: Array.from(uniqueLinks.socials.facebook),
-          instagram: Array.from(uniqueLinks.socials.instagram),
-          linkedin: Array.from(uniqueLinks.socials.linkedin),
-        },
-        files: Array.from(uniqueLinks.files),
-        images: Array.from(uniqueLinks.images),
       },
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error({
       msg: 'Error scraping website',
       event: 'scrape_website_manager_error',
@@ -254,5 +230,12 @@ export const scrapeWebsiteManager = async (
             : String(error),
       },
     })
+    return {
+      error: {
+        name: 'ScrapeError',
+        message: errorMessage,
+        stack: error instanceof Error ? (error.stack ?? '') : '',
+      },
+    }
   }
 }

@@ -14,9 +14,9 @@ export const placesApiQueue = createApiQueue({
   rateLimiter: createRateLimiter({
     refillRate: 600 / 60,
     capacity: 600,
-    name: placesName,
+    name: placesName
   }),
-  concurrency: 10,
+  concurrency: 10
 })
 
 /**
@@ -31,25 +31,9 @@ export const hubspotApiQueue = createApiQueue({
   rateLimiter: createRateLimiter({
     refillRate: 11,
     capacity: 110,
-    name: hubspotName,
+    name: hubspotName
   }),
-  concurrency: 10,
-})
-
-/**
- * Pre-configured rate limiter for Firecrawl API
- * Limits requests to 500 per minute as per Firecrawl API requirements
- * Both capacity and refill rate are set to 500/minute
- */
-const firecrawlName = 'firecrawl_api'
-export const firecrawlApiQueue = createApiQueue({
-  name: firecrawlName,
-  rateLimiter: createRateLimiter({
-    refillRate: 500 / 60,
-    capacity: 500,
-    name: firecrawlName,
-  }),
-  concurrency: 50,
+  concurrency: 10
 })
 
 /**
@@ -63,7 +47,7 @@ export const whoisApiQueue = createApiQueue({
   rateLimiter: createRateLimiter({
     refillRate: WHOIS_CONFIG.RATE_LIMIT.REQUESTS_PER_SECOND,
     capacity: WHOIS_CONFIG.RATE_LIMIT.BURST_CAPACITY,
-    name: whoIsName,
+    name: whoIsName
   }),
-  concurrency: 50,
+  concurrency: 50
 })

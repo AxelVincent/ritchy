@@ -5,6 +5,7 @@ import { enrichmentEmail } from '../../../db/schema/enrichment'
 
 export const insertEnrichmentEmail = async (
   enrichmentId: string,
+  source: string,
   email: string,
 ): Promise<void> => {
   const normalizedEmail = email.toLowerCase().trim()
@@ -14,6 +15,7 @@ export const insertEnrichmentEmail = async (
     .values({
       enrichmentId,
       email: normalizedEmail,
+      source,
     })
     .onConflictDoNothing()
 

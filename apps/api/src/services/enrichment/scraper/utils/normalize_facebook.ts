@@ -1,7 +1,9 @@
-export function normalizeFacebook(url: string): {
+export type NormalizedFacebook = {
   username: string
   url: string
-} | null {
+}
+
+export function normalizeFacebook(url: string): NormalizedFacebook | null {
   // Return null if URL is not provided or doesn't contain facebook.com
   if (!url?.toLowerCase()?.includes('facebook.com')) {
     return null

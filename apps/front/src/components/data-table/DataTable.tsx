@@ -69,7 +69,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
     isEnriching,
     enrichmentProgress,
     enrichmentData,
-    enrichmentError,
   } = useEnrichment({
     listId,
     searchId,
@@ -209,7 +208,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
               isEnriching={isEnriching}
               enrichmentProgress={enrichmentProgress}
               enrichmentData={enrichmentData}
-              enrichmentError={enrichmentError}
               handleFetchEnrichment={handleFetchEnrichment}
             />
             {!isMobile && (

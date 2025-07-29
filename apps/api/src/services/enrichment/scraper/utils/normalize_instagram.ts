@@ -1,7 +1,9 @@
-export function normalizeInstagram(url: string): {
+export type NormalizedInstagram = {
   username: string
   url: string
-} | null {
+}
+
+export function normalizeInstagram(url: string): NormalizedInstagram | null {
   // Return null if URL is not provided or doesn't contain instagram.com
   if (!url?.toLowerCase()?.includes('instagram.com')) {
     return null
