@@ -18,7 +18,7 @@ syncRouter.post(
   }),
   async (req, res) => {
     try {
-      const placeIds = req.body.placeIds
+      const userPlaceIds = req.body.userPlaceIds
       const userId = req.auth.userId
       const BATCH_SIZE = 30
       const allCompanies: HubspotBase[] = []
@@ -27,12 +27,12 @@ syncRouter.post(
       const result = await withHubspotClient(userId, async (client) => {
         try {
           // Process in batches
-          for (let i = 0; i < placeIds.length; i += BATCH_SIZE) {
-            const batchPlaceIds = placeIds.slice(i, i + BATCH_SIZE)
+          for (let i = 0; i < userPlaceIds.length; i += BATCH_SIZE) {
+            const batchUserPlaceIds = userPlaceIds.slice(i, i + BATCH_SIZE)
 
             // 1. Process companies first (this creates the lead mappings)
             const companies = await createOrUpdateCompanies(
-              batchPlaceIds,
+              batchUserPlaceIds,
               userId,
               client,
             )
@@ -40,7 +40,7 @@ syncRouter.post(
 
             // 2. Process contacts (this only creates contacts for places that don't have them)
             const contacts = await createOrUpdateContacts(
-              batchPlaceIds,
+              batchUserPlaceIds,
               userId,
               client,
             )
@@ -51,10 +51,10 @@ syncRouter.post(
               event: 'hubspot_sync_batch_complete',
               metadata: {
                 batchIndex: i / BATCH_SIZE,
-                batchSize: batchPlaceIds.length,
+                batchSize: batchUserPlaceIds.length,
                 companiesCreated: companies.length,
                 contactsCreated: contacts.length,
-                placeIds: batchPlaceIds,
+                userPlaceIds: batchUserPlaceIds,
               },
             })
           }

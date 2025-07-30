@@ -48,7 +48,7 @@ export const sendDataToHubspot = async (
     const results = [...createResults.results, ...updateResults.results].map(
       (result) => ({
         ...result,
-        placeId: result.properties.ritchy_place_id as string,
+        userPlaceId: result.properties.ritchy_place_id as string,
         createdAt: result.createdAt.toISOString(),
         updatedAt: result.updatedAt.toISOString(),
         archived: result.archived ?? false,

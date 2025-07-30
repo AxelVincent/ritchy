@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { EnrichResponseSchema } from '../enrich'
+import { SocialMediaPlatformEnum } from '../enrich'
 import { SearchModelEnum } from '../payments/checkout'
 import { RectangleSchema } from '../searches/search'
 import { NoteSchema } from './notes'
-import { StatusSchema } from './status'
+import { StatusEnum } from './status'
 
 // Basic/Common Schemas
 export const LocationSchema = z.object({
@@ -42,66 +42,68 @@ export const LocalizedTextSchema = z.object({
 })
 
 export const AddressComponentSchema = z.object({
-  longText: z.string(),
-  shortText: z.string(),
-  types: z.array(
-    z.enum([
-      'administrative_area_level_1',
-      'administrative_area_level_2',
-      'administrative_area_level_3',
-      'administrative_area_level_4',
-      'administrative_area_level_5',
-      'administrative_area_level_6',
-      'administrative_area_level_7',
-      'archipelago',
-      'colloquial_area',
-      'continent',
-      'establishment',
-      'finance',
-      'floor',
-      'food',
-      'general_contractor',
-      'geocode',
-      'health',
-      'intersection',
-      'landmark',
-      'natural_feature',
-      'neighborhood',
-      'place_of_worship',
-      'plus_code',
-      'point_of_interest',
-      'political',
-      'post_box',
-      'postal_code_prefix',
-      'postal_code_suffix',
-      'postal_town',
-      'premise',
-      'room',
-      'route',
-      'street_address',
-      'street_number',
-      'sublocality',
-      'sublocality_level_1',
-      'sublocality_level_2',
-      'sublocality_level_3',
-      'sublocality_level_4',
-      'sublocality_level_5',
-      'subpremise',
-      'town_square',
-      'country',
-      'locality',
-      'postal_code',
-      'postal_town',
-      'premise',
-      'route',
-      'street_address',
-      'street_number',
-      'sublocality',
-      'plus_code',
-      'beach',
-    ]),
-  ),
-  languageCode: z.string(),
+  longText: z.string().optional(),
+  shortText: z.string().optional(),
+  types: z
+    .array(
+      z.enum([
+        'administrative_area_level_1',
+        'administrative_area_level_2',
+        'administrative_area_level_3',
+        'administrative_area_level_4',
+        'administrative_area_level_5',
+        'administrative_area_level_6',
+        'administrative_area_level_7',
+        'archipelago',
+        'colloquial_area',
+        'continent',
+        'establishment',
+        'finance',
+        'floor',
+        'food',
+        'general_contractor',
+        'geocode',
+        'health',
+        'intersection',
+        'landmark',
+        'natural_feature',
+        'neighborhood',
+        'place_of_worship',
+        'plus_code',
+        'point_of_interest',
+        'political',
+        'post_box',
+        'postal_code_prefix',
+        'postal_code_suffix',
+        'postal_town',
+        'premise',
+        'room',
+        'route',
+        'street_address',
+        'street_number',
+        'sublocality',
+        'sublocality_level_1',
+        'sublocality_level_2',
+        'sublocality_level_3',
+        'sublocality_level_4',
+        'sublocality_level_5',
+        'subpremise',
+        'town_square',
+        'country',
+        'locality',
+        'postal_code',
+        'postal_town',
+        'premise',
+        'route',
+        'street_address',
+        'street_number',
+        'sublocality',
+        'plus_code',
+        'beach',
+      ]),
+    )
+    .optional(),
+  languageCode: z.string().optional(),
 })
 
 export const PriceLevelEnum = z.enum([
@@ -136,7 +138,8 @@ export const PlaceListAssociationSchema = z.object({
 })
 
 export const PlaceSchemaBase = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
+  sourceId: z.string(),
   name: z.string(),
   website: z.string().optional(),
   location: LocationSchema,
@@ -169,15 +172,56 @@ export const PlaceSchemaBase = z.object({
   }),
 })
 
+export const PhoneTypeEnum = z.enum([
+  'MOBILE',
+  'FIXED_LINE',
+  'FIXED_LINE_OR_MOBILE',
+  'PREMIUM_RATE',
+  'TOLL_FREE',
+  'SHARED_COST',
+  'VOIP',
+  'PERSONAL_NUMBER',
+  'PAGER',
+  'UAN',
+  'VOICEMAIL',
+])
+
+const EmailSchema = z.object({
+  email: z.string().email(),
+  isPrimary: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+export type Email = z.infer<typeof EmailSchema>
+
+const PhoneSchema = z.object({
+  phone: z.string(),
+  type: PhoneTypeEnum,
+  isPrimary: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+export type Phone = z.infer<typeof PhoneSchema>
+const SocialMediaSchema = z.object({
+  url: z.string().url(),
+  platform: SocialMediaPlatformEnum,
+  isPrimary: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+export type SocialMedia = z.infer<typeof SocialMediaSchema>
+
 export const PlaceSchema = PlaceSchemaBase.extend({
-  searchId: z.string().uuid().nullable(),
   listId: z.string().uuid().nullable(),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional().nullable(),
-  status: StatusSchema.nullable(),
-  enrichment: EnrichResponseSchema.nullable(),
-  primaryEmail: z.string().email().nullable(),
-  secondaryEmails: z.array(z.string().email()).optional(),
+  status: StatusEnum.nullable(),
+  domainRegisteredAt: z.date().nullable(),
+  emails: z.array(EmailSchema).optional(),
+  phones: z.array(PhoneSchema).optional(),
+  linkedinSocials: z.array(SocialMediaSchema).optional(),
+  facebookSocials: z.array(SocialMediaSchema).optional(),
+  instagramSocials: z.array(SocialMediaSchema).optional(),
   hubspotSynced: z.boolean(),
 })
 

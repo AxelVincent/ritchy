@@ -82,6 +82,7 @@ describe('DataExport', () => {
     const mockData: SearchResult[] = [
       {
         id: '1',
+        sourceId: '1',
         name: 'Test Place',
         website: 'https://test.com',
         types: ['restaurant'],
@@ -112,10 +113,43 @@ describe('DataExport', () => {
         openingHours: undefined,
         utcOffsetMinutes: 0,
         status: null,
-        searchId: null,
         listId: null,
-        enrichment: null,
-        primaryEmail: 'test@example.com',
+        domainRegisteredAt: new Date(),
+        emails: [
+          {
+            email: 'test@example.com',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        linkedinSocials: [
+          {
+            url: 'https://test.com',
+            platform: 'LINKEDIN',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        facebookSocials: [
+          {
+            url: 'https://test.com',
+            platform: 'FACEBOOK',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        instagramSocials: [
+          {
+            url: 'https://test.com',
+            platform: 'INSTAGRAM',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
         hubspotSynced: false,
       },
     ]
@@ -152,6 +186,7 @@ describe('DataExport', () => {
     const mockData: SearchResult[] = [
       {
         id: '1',
+        sourceId: '1',
         name: 'Test Place',
         website: 'https://test.com',
         types: ['restaurant'],
@@ -180,10 +215,43 @@ describe('DataExport', () => {
         openingHours: undefined,
         utcOffsetMinutes: 0,
         status: null,
-        searchId: null,
         listId: null,
-        enrichment: null,
-        primaryEmail: 'test@example.com',
+        domainRegisteredAt: new Date(),
+        emails: [
+          {
+            email: 'test@example.com',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        linkedinSocials: [
+          {
+            url: 'https://test.com',
+            platform: 'LINKEDIN',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        facebookSocials: [
+          {
+            url: 'https://test.com',
+            platform: 'FACEBOOK',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        instagramSocials: [
+          {
+            url: 'https://test.com',
+            platform: 'INSTAGRAM',
+            isPrimary: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
         hubspotSynced: false,
       },
     ]

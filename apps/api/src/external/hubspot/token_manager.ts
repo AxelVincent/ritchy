@@ -4,22 +4,9 @@ import { and, eq, sql } from 'drizzle-orm'
 import { HUBSPOT_CONFIG } from '../../config/hubspot'
 import { db } from '../../db/db'
 import { hubspotToken } from '../../db/schema'
-import { createApiQueue } from '../utils/api_queue'
-import { hubspotRateLimiter } from '../utils/rate_limiter/config'
-import type { HubspotToken } from './oauth'
 
-// Create API queue for HubSpot operations
-const hubspotQueue = createApiQueue(hubspotRateLimiter, {
-  maxRetries: 3,
-  defaultPriority: 0,
-  onError: (error) => {
-    logger.error({
-      msg: 'HubSpot API queue error',
-      event: 'hubspot_api_queue_error',
-      metadata: { error },
-    })
-  },
-})
+import { hubspotApiQueue } from '../../internal/rate_limiter/config'
+import type { HubspotToken } from './oauth'
 
 // Token Management Functions
 const getHubspotClient = async (userId: string): Promise<Client> => {
@@ -148,12 +135,11 @@ export const withHubspotClient = async <T>(
   options: {
     retries?: number
     onRetry?: (error: unknown, attempt: number) => void
-    priority?: number
   } = {},
 ): Promise<T> => {
-  const { retries = 2, onRetry, priority = 0 } = options
+  const { retries = 2, onRetry } = options
 
-  return hubspotQueue.addToQueue(async () => {
+  return hubspotApiQueue.addToQueue(async () => {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const client = await getHubspotClient(userId)
@@ -208,5 +194,5 @@ export const withHubspotClient = async <T>(
     }
 
     throw new Error('Max retries exceeded')
-  }, priority)
+  })
 }

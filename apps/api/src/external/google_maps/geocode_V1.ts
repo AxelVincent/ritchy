@@ -1,8 +1,8 @@
 import { logger } from '@ritchy/logger'
 import type { GeocodeRequestParams, GeocodeResult } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
-import { REDIS_KEYS } from '../redis/keys'
-import { redisClient } from '../redis/redis'
+import { REDIS_KEYS } from '../../internal/redis/keys'
+import { redisClient } from '../../internal/redis/redis'
 
 export async function getGeocodeV1(
   params: GeocodeRequestParams,

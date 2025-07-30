@@ -43,6 +43,7 @@ interface TextWrapperProps {
   actions?: Action[]
   id: string
   disableContentTooltip?: boolean
+  customTooltipContent?: string
 }
 
 // Memoized action button component
@@ -87,6 +88,7 @@ export const TextWrapper = memo(
     actions = [],
     id,
     disableContentTooltip = false,
+    customTooltipContent,
   }: TextWrapperProps) => {
     const isMobile = useIsMobile()
     // Cache the text content check
@@ -116,7 +118,7 @@ export const TextWrapper = memo(
                 </Label>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p className="text-xs">{textContent}</p>
+                <p className="text-xs">{customTooltipContent || textContent}</p>
               </TooltipContent>
             </Tooltip>
           ) : (

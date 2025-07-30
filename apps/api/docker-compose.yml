@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:pg15
     environment:
       - POSTGRES_USER=${PGUSER}
       - POSTGRES_PASSWORD=${PGPASSWORD}
@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${PGPORT}:5432"
 
   redis:
     image: redis/redis-stack-server:7.2.0-v17
@@ -34,25 +34,6 @@ services:
       timeout: 3s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    ports:
-      - "5672:${RABBITMQ_PORT}"
-      - "15672:${RABBITMQ_MANAGEMENT_PORT}"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-      - RABBITMQ_DEFAULT_VHOST=${RABBITMQ_VHOST}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
-
 volumes:
   postgres_data:
   redis_data:
-  rabbitmq_data: 

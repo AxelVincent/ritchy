@@ -20,6 +20,22 @@ type SocialMediaConfigType = {
   }
 }
 
+export const PLATFORM_DOMAINS = [
+  'twitter.com',
+  'youtube.com',
+  'tiktok.com',
+  'pinterest.com',
+  'reddit.com',
+  'tumblr.com',
+  'medium.com',
+]
+
+export const SOCIAL_MEDIA_DOMAINS = [
+  'facebook.com',
+  'instagram.com',
+  'linkedin.com',
+]
+
 export const SOCIAL_MEDIA_CONFIG: SocialMediaConfigType = {
   facebook: { domain: 'facebook.com', icon: Facebook },
   twitter: { domain: 'twitter.com', icon: Twitter },
@@ -32,10 +48,24 @@ export const SOCIAL_MEDIA_CONFIG: SocialMediaConfigType = {
   snapchat: { domain: 'snapchat.com', icon: Camera },
 } as const
 
-// Basic/Common Schemas
-const SocialMediaPlatformEnum = z.enum(
-  Object.keys(SOCIAL_MEDIA_CONFIG) as [string, ...string[]],
-)
+export const SocialMediaPlatformEnum = z.enum([
+  'LINKEDIN',
+  'FACEBOOK',
+  'INSTAGRAM',
+])
+
+export type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
+
+export const PlatformPlatformEnum = z.enum([
+  'twitter',
+  'youtube',
+  'tiktok',
+  'pinterest',
+  'reddit',
+  'snapchat',
+  'booking',
+  'tripadvisor',
+])
 
 // Domain registration data schema
 export const DomainRegistrationSchema = z.object({
@@ -66,7 +96,18 @@ export const EnrichmentJobStatusParamsSchema = z.object({
 })
 
 export const EnrichmentJobStatusSchema = z.object({
-  status: z.enum(['processing', 'completed', 'error']),
+  status: z.enum([
+    // FinishedStatus
+    'completed',
+    'failed',
+    // Other JobState values
+    'active',
+    'delayed',
+    'prioritized',
+    'waiting',
+    'waiting-children',
+    'unknown',
+  ]),
   progress: z.number().min(0).max(100),
   data: z.object({
     jobId: z.string(),
@@ -98,7 +139,7 @@ export type EnrichmentJobStatusApiResponse = z.infer<
 >
 
 // Add type for the config
-export type SocialMediaPlatform = keyof typeof SOCIAL_MEDIA_CONFIG
+export type SocialMediaPlatformLegacy = keyof typeof SOCIAL_MEDIA_CONFIG
 export type SocialMediaConfig =
   (typeof SOCIAL_MEDIA_CONFIG)[SocialMediaPlatform]
 
@@ -108,7 +149,7 @@ export const EnrichmentJobSchema = z.object({
   enrichments: z
     .array(
       z.object({
-        placeId: z.string(),
+        userPlaceId: z.string(),
         website: UrlSchema,
       }),
     )
@@ -117,9 +158,9 @@ export const EnrichmentJobSchema = z.object({
 })
 
 export const EnrichmentJobResultSchema = z.object({
-  placeId: z.string(),
+  userPlaceId: z.string(),
   success: z.boolean(),
-  data: EnrichResponseSchema.optional(),
+  message: z.string().optional(),
   error: z.string().optional(),
   warning: z.string().optional(),
 })
@@ -136,7 +177,7 @@ export const BatchEnrichmentRequestBodySchema = z.object({
   enrichments: z
     .array(
       z.object({
-        placeId: z.string(),
+        userPlaceId: z.string(),
         website: UrlSchema,
       }),
     )

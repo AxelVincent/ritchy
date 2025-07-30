@@ -10,10 +10,7 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
-import {
-  add_enrichment_batch,
-  get_job_status,
-} from '../../services/enrichment/queue/batch_enrichment_queue'
+import { enrichmentQueue } from '../../internal/bullmq/jobs/enrichment/queue'
 
 /**
  * Batch enrichment endpoint for processing multiple enrichments
@@ -57,25 +54,19 @@ export const batchEnrichWebsites = async (
       metadata: { userId, enrichmentCount: enrichments.length },
     })
 
-    // Add enrichments to the job queue
-    const jobId = await add_enrichment_batch(userId, enrichments)
-
-    logger.info({
-      msg: 'Batch enrichment job queued successfully',
-      event: 'batch_enrichment_queued',
-      metadata: { userId, jobId, enrichmentCount: enrichments.length },
+    // Create a single job for the entire batch
+    const job = await enrichmentQueue.add('enrichment', {
+      enrichments,
+      totalCount: enrichments.length,
+      processedCount: 0,
+      errors: [],
     })
 
-    const response: BatchEnrichmentResponse = {
-      jobId,
+    res.json({
+      jobId: job.id ?? '',
       message: `Enrichment job started. Processing ${enrichments.length} websites.`,
       enrichmentCount: enrichments.length,
-    }
-
-    // Validate response
-    const validatedResponse = BatchEnrichmentResponseSchema.parse(response)
-
-    res.json(validatedResponse)
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.info({
@@ -110,7 +101,7 @@ export const batchEnrichWebsites = async (
   }
 }
 
-// Add this new endpoint
+// Update the job status endpoint
 export const getEnrichmentJobStatus = async (
   req: Request<
     Record<string, never>,
@@ -122,7 +113,6 @@ export const getEnrichmentJobStatus = async (
 ): Promise<void> => {
   try {
     const { jobId } = req.params
-    const userId = req.auth.userId
 
     if (!jobId) {
       res.status(400).json({
@@ -131,15 +121,46 @@ export const getEnrichmentJobStatus = async (
       return
     }
 
+    const job = await enrichmentQueue.getJob(jobId)
+
+    // If job is not found, check if it was completed and removed
+    if (!job) {
+      logger.info({
+        msg: 'Enrichment job not found',
+        event: 'enrichment_job_not_found',
+        metadata: { jobId },
+      })
+      res.status(404).json({
+        error: 'Job not found',
+      })
+      return
+    }
+
+    const state = await job.getState()
+    const progress = (await job.progress) || 0
+    const data = await job.data
+
     logger.info({
-      msg: 'Getting enrichment job status',
-      event: 'enrichment_job_status_request',
-      metadata: { userId, jobId },
+      msg: 'Enrichment job status',
+      event: 'enrichment_job_status',
+      metadata: { jobId, state, progress, data },
     })
 
-    const status = await get_job_status(jobId)
-
-    res.json(status)
+    res.json({
+      status: state,
+      progress: progress as number,
+      data: {
+        jobId: job.id ?? '',
+        totalMessages: data.totalCount,
+        processedMessages: data.processedCount,
+        remainingMessages: data.totalCount - data.processedCount,
+        startedAt: job.timestamp.toString(),
+        completedAt: job.finishedOn
+          ? new Date(job.finishedOn).toISOString()
+          : undefined,
+        errors: data.errors.map((error) => error.error),
+      },
+    })
   } catch (error) {
     logger.error({
       msg: 'Failed to get enrichment job status',

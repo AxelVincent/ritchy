@@ -1,18 +1,30 @@
+import { logger } from '@ritchy/logger'
 import type { PlaceListAssociation } from '@ritchy/types'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { listPlace } from '../../db/schema'
+import { listPlace, place, userPlace } from '../../db/schema'
 import { list } from '../../db/schema'
+
 export const getListAssociationsByPlaceIds = async (
-  googlePlaceIds: string[],
+  userPlaceIds: string[],
   userId: string,
   listId?: string,
 ): Promise<Map<string, PlaceListAssociation[]>> => {
-  const placeIdSet = new Set(googlePlaceIds)
+  const userPlaceIdSet = new Set(userPlaceIds)
+
+  logger.debug({
+    msg: 'Getting list associations by place ids',
+    event: 'get_list_associations_by_place_ids',
+    metadata: {
+      userPlaceIds,
+      userId,
+      listId,
+    },
+  })
 
   const associations = await db
     .select({
-      placeId: listPlace.placeId,
+      placeId: place.sourceId,
       listId: list.id,
       listName: list.name,
       listEmoji: list.emoji,
@@ -20,14 +32,28 @@ export const getListAssociationsByPlaceIds = async (
     })
     .from(list)
     .leftJoin(listPlace, eq(list.id, listPlace.listId))
+    .innerJoin(userPlace, eq(listPlace.userPlaceId, userPlace.id))
+    .innerJoin(place, eq(userPlace.placeId, place.id))
     .where(
-      and(inArray(listPlace.placeId, [...placeIdSet]), eq(list.userId, userId)),
+      and(
+        inArray(userPlace.id, [...userPlaceIdSet]),
+        eq(userPlace.userId, userId),
+      ),
     )
 
   // Initialize the Map with empty arrays for all placeIds
   const resultMap = new Map<string, PlaceListAssociation[]>(
-    [...placeIdSet].map((placeId) => [placeId, []]),
+    [...userPlaceIdSet].map((userPlaceId) => [userPlaceId, []]),
   )
+
+  logger.debug({
+    msg: 'List associations by place ids',
+    event: 'list_associations_by_place_ids',
+    metadata: {
+      associations,
+      resultMap,
+    },
+  })
 
   // Add associations where they exist
   for (const association of associations) {

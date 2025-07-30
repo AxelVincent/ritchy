@@ -24,7 +24,7 @@ const STAR_KEYS = ['star-1', 'star-2', 'star-3', 'star-4', 'star-5'] as const
 
 export const PlaceReviewsTab = ({ place }: { place: Place }) => {
   const [showOriginal, setShowOriginal] = useState<OriginalTextMap>({})
-  const { data, isLoading, error } = usePlaceReviewsQuery(place.id)
+  const { data, isLoading, error } = usePlaceReviewsQuery(place.sourceId)
 
   const toggleOriginalText = (reviewId: string) => {
     setShowOriginal((prev) => ({

@@ -32,7 +32,7 @@ export const createHubspotProperties = async (
     .from(hubspotFieldMapping)
     .where(
       and(
-        eq(hubspotFieldMapping.tokenId, tokenId),
+        eq(hubspotFieldMapping.hubspotTokenId, tokenId),
         inArray(
           hubspotFieldMapping.internalField,
           updates.map((update) => update.internalField),

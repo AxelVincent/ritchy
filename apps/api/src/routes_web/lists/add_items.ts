@@ -63,19 +63,18 @@ export const addItemsToList = async (
       'listPlace',
       items.map((item) => ({
         listId: listId,
-        placeId: item.placeId,
-        searchId: item.searchId,
+        userPlaceId: item.userPlaceId,
       })),
-      ['listId', 'placeId'],
+      ['listId', 'userPlaceId'],
     )
 
     const newPlaceIds = records
       .filter((record) => operations[record.id] === 'insert')
-      .map((record) => record.placeId)
+      .map((record) => record.userPlaceId)
 
     const duplicatePlaceIds = records
       .filter((record) => operations[record.id] === 'update')
-      .map((record) => record.placeId)
+      .map((record) => record.userPlaceId)
 
     res.json({
       success: true,

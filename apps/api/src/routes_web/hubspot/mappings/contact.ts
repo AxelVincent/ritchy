@@ -19,7 +19,7 @@ import { getHubspotToken } from '../../../services/hubspot/queries/get_hubspot_t
 
 type ContactMapping = {
   id: string
-  tokenId: string
+  hubspotTokenId: string
   internalField: ContactField | StatusField
   hubspotField: string
   createdAt: Date
@@ -27,17 +27,19 @@ type ContactMapping = {
 }
 
 type ContactMappingInput = {
-  tokenId: string
+  hubspotTokenId: string
   internalField: ContactField | StatusField
   hubspotField: string
   createdAt: Date
   updatedAt: Date
 }
 
-const createDefaultMappings = (tokenId: string): ContactMappingInput[] => [
+const createDefaultMappings = (
+  hubspotTokenId: string,
+): ContactMappingInput[] => [
   // Contact fields
   ...Object.entries(FIELD_CONFIGS.contact).map(([field, config]) => ({
-    tokenId,
+    hubspotTokenId,
     internalField: `contact.${field}` as ContactField,
     hubspotField: config.defaultHubspotField,
     createdAt: new Date(),
@@ -45,7 +47,7 @@ const createDefaultMappings = (tokenId: string): ContactMappingInput[] => [
   })),
   // Status fields
   ...Object.entries(FIELD_CONFIGS.status).map(([field, config]) => ({
-    tokenId,
+    hubspotTokenId,
     internalField: `status.${field}` as StatusField,
     hubspotField: config.defaultHubspotField,
     createdAt: new Date(),
@@ -99,8 +101,8 @@ export const getContactMappings = async (
       return
     }
 
-    const token = await getHubspotToken(userId)
-    if (!token) {
+    const hubspotToken = await getHubspotToken(userId)
+    if (!hubspotToken) {
       res.status(404).json([])
       return
     }
@@ -110,7 +112,7 @@ export const getContactMappings = async (
       .from(hubspotFieldMapping)
       .where(
         and(
-          eq(hubspotFieldMapping.tokenId, token.id),
+          eq(hubspotFieldMapping.hubspotTokenId, hubspotToken.id),
           inArray(hubspotFieldMapping.internalField, [
             ...ContactFieldEnum.options,
             ...StatusFieldEnum.options,
@@ -120,14 +122,14 @@ export const getContactMappings = async (
 
     // If no mappings exist, create default ones
     if (mappings.length === 0) {
-      const defaultMappings = createDefaultMappings(token.id)
+      const defaultMappings = createDefaultMappings(hubspotToken.id)
       await db.insert(hubspotFieldMapping).values(defaultMappings).returning()
       const createdMappings = (await db
         .select()
         .from(hubspotFieldMapping)
         .where(
           and(
-            eq(hubspotFieldMapping.tokenId, token.id),
+            eq(hubspotFieldMapping.hubspotTokenId, hubspotToken.id),
             inArray(hubspotFieldMapping.internalField, [
               ...ContactFieldEnum.options,
               ...StatusFieldEnum.options,
@@ -182,7 +184,7 @@ export const updateContactMapping = async (
       })
       .where(
         and(
-          eq(hubspotFieldMapping.tokenId, token.id),
+          eq(hubspotFieldMapping.hubspotTokenId, hubspotToken.id),
           eq(hubspotFieldMapping.internalField, internalField as ContactField),
         ),
       )
@@ -224,7 +226,7 @@ export const resetContactMappings = async (
       .values(defaultMappings)
       .onConflictDoUpdate({
         target: [
-          hubspotFieldMapping.tokenId,
+          hubspotFieldMapping.hubspotTokenId,
           hubspotFieldMapping.internalField,
         ],
         set: {

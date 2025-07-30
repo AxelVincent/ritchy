@@ -14,77 +14,22 @@ export const useUpdatePlaceStatus = () => {
 
   return useApiMutation<
     UpdateStatusApiResponse,
-    UpdateStatusRequest & { searchId: string | null; listId: string | null }
-  >('/places/:placeId/status', {
+    UpdateStatusRequest & { listId: string | null }
+  >('/places/:userPlaceId/status', {
     method: 'PUT',
-    getEndpoint: ({ placeId }) => `/places/${placeId}/status`,
-    getBody: ({ status, searchId, listId }) => ({ status, searchId, listId }),
-    onMutate: async ({ placeId, searchId, status, listId }) => {
-      // Cancel any outgoing refetches to avoid overwriting our optimistic update
-      await queryClient.cancelQueries({
-        queryKey: searchId ? searchContentKeys.search(searchId) : undefined,
-      })
-      await queryClient.cancelQueries({
-        queryKey: listId ? listContentKeys.list(listId) : undefined,
+    getEndpoint: ({ userPlaceId }) => `/places/${userPlaceId}/status`,
+    getBody: ({ status, listId }) => ({ status, listId }),
+    onMutate: async ({ listId }) => {
+      queryClient.invalidateQueries({
+        queryKey: listContentKeys.all,
       })
 
-      // Snapshot the previous value
-      const previousSearch = searchId
-        ? queryClient.getQueryData(searchContentKeys.search(searchId))
-        : undefined
-      const previousList = listId
-        ? queryClient.getQueryData(listContentKeys.list(listId))
-        : undefined
-
-      // Optimistically update the search results
-      if (previousSearch && searchId) {
-        queryClient.setQueryData(
-          searchContentKeys.search(searchId),
-          (oldData: GetSearchContentResponse) => {
-            return oldData.map((place) => {
-              if (place.id === placeId) {
-                return {
-                  ...place,
-                  status: {
-                    ...place.status,
-                    status,
-                    updatedAt: new Date().toISOString(),
-                  },
-                }
-              }
-              return place
-            })
-          },
-        )
-      }
-
-      // Optimistically update the list
-      if (previousList && listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(listId),
-          (oldData: GetListContentResponse) => {
-            return {
-              ...oldData,
-              items: oldData.items.map((place) => {
-                if (place.id === placeId) {
-                  return {
-                    ...place,
-                    status: {
-                      ...place.status,
-                      status,
-                      updatedAt: new Date().toISOString(),
-                    },
-                  }
-                }
-                return place
-              }),
-            }
-          },
-        )
-      }
+      queryClient.invalidateQueries({
+        queryKey: searchContentKeys.all,
+      })
 
       // Return a context object with the snapshotted values
-      return { previousSearch, previousList, searchId, listId }
+      return { listId }
     },
     onError: (_, _variables, context: unknown) => {
       const typedContext = context as {

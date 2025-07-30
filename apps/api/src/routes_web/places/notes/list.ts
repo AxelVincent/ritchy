@@ -18,21 +18,23 @@ export const getPlaceNotes = async (
       msg: 'Getting place notes',
       event: 'get_place_notes',
       metadata: {
-        placeId: req.params.placeId,
+        userPlaceId: req.params.userPlaceId,
       },
     })
-    const paramsParse = NotesParamsSchema.parse({ placeId: req.params.placeId })
+    const paramsParse = NotesParamsSchema.parse({
+      userPlaceId: req.params.userPlaceId,
+    })
 
     const notes = await db
       .select()
       .from(note)
-      .where(eq(note.placeId, paramsParse.placeId))
+      .where(eq(note.userPlaceId, paramsParse.userPlaceId))
       .orderBy(desc(note.createdAt))
 
     res.json(
       notes.map((n) => ({
         id: n.id,
-        placeId: n.placeId,
+        userPlaceId: n.userPlaceId,
         note: n.note,
         userId: n.userId,
         createdAt: n.createdAt.toISOString(),
@@ -44,7 +46,7 @@ export const getPlaceNotes = async (
       msg: 'Place notes retrieved',
       event: 'place_notes_retrieved',
       metadata: {
-        placeId: req.params.placeId,
+        userPlaceId: req.params.userPlaceId,
       },
     })
     return
@@ -54,7 +56,7 @@ export const getPlaceNotes = async (
       event: 'get_place_notes_error',
       metadata: {
         error: error instanceof Error ? error : { error },
-        placeId: req.params.placeId,
+        userPlaceId: req.params.userPlaceId,
       },
     })
     res.status(500).json({

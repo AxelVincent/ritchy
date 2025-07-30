@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
-import { list, listPlace } from '../../db/schema'
+import { list, listPlace, place, userPlace } from '../../db/schema'
 import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
 
 export const getListContent = async (
@@ -32,22 +32,24 @@ export const getListContent = async (
     // Get all place IDs in the list with their searchId
     const places = await db
       .select({
-        id: listPlace.id,
-        placeId: listPlace.placeId,
-        searchId: listPlace.searchId,
+        id: userPlace.id,
       })
       .from(listPlace)
+      .innerJoin(userPlace, eq(listPlace.userPlaceId, userPlace.id))
       .where(eq(listPlace.listId, listId))
 
-    // Convert to the format expected by the shared utility
-    const placesWithSearchIds = places.map((place) => ({
-      placeId: place.placeId,
-      searchId: place.searchId || null,
-    }))
+    logger.info({
+      msg: 'Places in list',
+      event: 'places_in_list',
+      metadata: {
+        listId,
+        places,
+      },
+    })
 
     // Use shared utility to get place details and aggregate data
     const { places: aggregatedPlaceDetails } = await getPlacesWithDetails(
-      placesWithSearchIds,
+      places.map((place) => place.id),
       {
         userId,
         excludeListId: listId,

@@ -15,14 +15,14 @@ export const updateStatus = async (
     msg: 'Updating status',
     event: 'update_status',
     metadata: {
-      placeId: req.params.placeId,
+      userPlaceId: req.params.userPlaceId,
       status: req.body.status,
     },
   })
 
   try {
     const { status } = req.body
-    const { placeId } = req.params
+    const { userPlaceId } = req.params
 
     const result = await upsertStatus(
       {
@@ -33,7 +33,7 @@ export const updateStatus = async (
           ...req.metadata,
         },
       },
-      placeId,
+      userPlaceId,
       status,
     )
 
@@ -42,7 +42,7 @@ export const updateStatus = async (
       msg: 'Status updated',
       event: 'status_updated',
       metadata: {
-        placeId: req.params.placeId,
+        userPlaceId: req.params.userPlaceId,
       },
     })
     return

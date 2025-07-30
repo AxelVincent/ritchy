@@ -8,12 +8,16 @@ import {
   PlaceSchema,
   SOCIAL_MEDIA_CONFIG,
   type SearchResult,
+  type SocialMediaPlatformEnum,
 } from '@ritchy/types'
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
 import posthog from 'posthog-js'
 import { useState } from 'react'
 import React from 'react'
+import { z } from 'zod'
+
+type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
 interface DataExportProps {
   /** Array of search results to export. If selectedRows is undefined, all data will be exported */
@@ -28,13 +32,13 @@ export const validateAllSearchResultFieldsHaveColumns = (
   }[],
 ) => {
   const excludedFields = [
+    'sourceId',
     'utcOffsetMinutes',
     'addressComponents',
     'notes',
     'enrichment',
     'searchId',
     'listId',
-    'secondaryEmails',
     'hubspotSynced',
   ]
   // Get all fields from SearchResult schema
@@ -127,6 +131,79 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
     try {
       setIsExporting(true)
 
+      // Create a copy of the data with properly structured fields
+      const exportData = selectedRows.map((row) => ({
+        ...row,
+        // Convert string dates back to Date objects for schema validation
+        domainRegisteredAt: row.domainRegisteredAt
+          ? new Date(row.domainRegisteredAt)
+          : null,
+        facebookSocials: row.facebookSocials
+          ?.filter((social) => social.url && social.url.trim() !== '')
+          ?.map((social) => ({
+            ...social,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : social.createdAt,
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : social.updatedAt,
+          })),
+        instagramSocials: row.instagramSocials
+          ?.filter((social) => social.url && social.url.trim() !== '')
+          ?.map((social) => ({
+            ...social,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : social.createdAt,
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : social.updatedAt,
+          })),
+        linkedinSocials: row.linkedinSocials
+          ?.filter((social) => social.url && social.url.trim() !== '')
+          ?.map((social) => ({
+            ...social,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : social.createdAt,
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : social.updatedAt,
+          })),
+        emails: row.emails
+          ?.filter((email) => {
+            if (!email.email || email.email.trim() === '') return false
+            try {
+              // Use Zod's email validation directly
+              z.string().email().parse(email.email.trim())
+              return true
+            } catch {
+              return false
+            }
+          })
+          ?.map((email) => ({
+            ...email,
+            createdAt: email.createdAt
+              ? new Date(email.createdAt)
+              : email.createdAt,
+            updatedAt: email.updatedAt
+              ? new Date(email.updatedAt)
+              : email.updatedAt,
+          })),
+        phones: row.phones
+          ?.filter((phone) => phone.phone && phone.phone.trim() !== '')
+          ?.map((phone) => ({
+            ...phone,
+            createdAt: phone.createdAt
+              ? new Date(phone.createdAt)
+              : phone.createdAt,
+            updatedAt: phone.updatedAt
+              ? new Date(phone.updatedAt)
+              : phone.updatedAt,
+          })),
+      }))
+
       // Create a Map of website URIs to enrichment data
       const enrichmentMap = new Map<string, EnrichmentWithStatus>(
         selectedRows
@@ -141,22 +218,9 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
               error: undefined,
             }
 
-            const enrichData = row.enrichment as
-              | EnrichmentWithStatus
-              | undefined
-
-            if (!enrichData || enrichData.error) {
-              const state = {
-                ...baseEnrichmentState,
-                error: enrichData?.error,
-              }
-              return [row.website, state] as [string, EnrichmentWithStatus]
-            }
-
             const state = {
               ...baseEnrichmentState,
-              emails: enrichData.emails,
-              socialLinks: enrichData.socialLinks,
+              domainRegisteredAt: row.domainRegisteredAt,
             }
             return [row.website, state] as [string, EnrichmentWithStatus]
           }),
@@ -199,15 +263,65 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.phone || '',
         },
         {
+          header: 'Phones',
+          field: 'phones',
+          accessor: (row: SearchResult): string =>
+            (row.phones || []).join(', '),
+        },
+        {
           header: 'Primary Email',
-          field: 'primaryEmail',
-          accessor: (row: SearchResult): string => row.primaryEmail || '',
+          field: 'emails',
+          accessor: (row: SearchResult): string => row.emails?.[0]?.email || '',
         },
         {
           header: 'Secondary Emails',
-          field: 'secondaryEmails',
           accessor: (row: SearchResult): string =>
-            row.secondaryEmails?.join(', ') || '',
+            (row.emails || [])
+              .slice(1)
+              .map((e) => e.email)
+              .join(', '),
+        },
+        {
+          header: 'Primary LinkedIn Social',
+          field: 'linkedinSocials',
+          accessor: (row: SearchResult): string =>
+            row.linkedinSocials?.[0]?.url || '',
+        },
+        {
+          header: 'Primary Facebook Social',
+          field: 'facebookSocials',
+          accessor: (row: SearchResult): string =>
+            row.facebookSocials?.[0]?.url || '',
+        },
+        {
+          header: 'Primary Instagram Social',
+          field: 'instagramSocials',
+          accessor: (row: SearchResult): string =>
+            row.instagramSocials?.[0]?.url || '',
+        },
+        {
+          header: 'Secondary LinkedIn Socials',
+          accessor: (row: SearchResult): string =>
+            (row.linkedinSocials || [])
+              .slice(1)
+              .map((s) => s.url)
+              .join(', '),
+        },
+        {
+          header: 'Secondary Facebook Socials',
+          accessor: (row: SearchResult): string =>
+            (row.facebookSocials || [])
+              .slice(1)
+              .map((s) => s.url)
+              .join(', '),
+        },
+        {
+          header: 'Secondary Instagram Socials',
+          accessor: (row: SearchResult): string =>
+            (row.instagramSocials || [])
+              .slice(1)
+              .map((s) => s.url)
+              .join(', '),
         },
         {
           header: 'Rating',
@@ -391,7 +505,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         {
           header: 'Status',
           field: 'status',
-          accessor: (row: SearchResult): string => row.status?.status || '',
+          accessor: (row: SearchResult): string => row.status || 'NEW',
         },
         {
           header: 'Emails',
@@ -408,17 +522,18 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
             const enrichData = row.website
               ? enrichmentMap.get(row.website)
               : null
-            return enrichData?.socialLinks[platform]?.join(', ') || ''
+            return (
+              enrichData?.socialLinks[platform as SocialMediaPlatform]?.join(
+                ', ',
+              ) || ''
+            )
           },
         })),
         {
           header: 'Domain Registration Date',
-          field: 'domainRegistrationDate',
+          field: 'domainRegisteredAt',
           accessor: (row: SearchResult): string => {
-            const enrichment = row.enrichment as
-              | EnrichmentWithStatus
-              | undefined
-            return enrichment?.domainRegistration?.registrationDate || ''
+            return row.domainRegisteredAt?.toISOString() || ''
           },
         },
       ]
@@ -426,7 +541,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
       validateAllSearchResultFieldsHaveColumns(columns)
 
       validateAndExportToCsv<SearchResult>({
-        data: selectedRows,
+        data: exportData,
         filename: 'places.csv',
         schema: PlaceSchema,
         columns,

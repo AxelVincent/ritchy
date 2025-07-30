@@ -2,9 +2,15 @@ import { logger } from '@ritchy/logger'
 import type { Place, PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { eq, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { listPlace, search } from '../../db/schema'
-import { REDIS_KEYS } from '../redis/keys'
-import { redisClient } from '../redis/redis'
+import {
+  listPlace,
+  place,
+  search,
+  searchPlace,
+  userPlace,
+} from '../../db/schema'
+import { REDIS_KEYS } from '../../internal/redis/keys'
+import { redisClient } from '../../internal/redis/redis'
 import { getPlaceDetailsV1 } from './place_details_V1'
 import { postTextSearchV1 } from './text_search_V1'
 import type { PreferredPlace } from './types'
@@ -19,7 +25,10 @@ const COST_PER_PLACE_DETAILS_CALL = 0.04 // $0.04 per call
 const COST_PER_TEXT_SEARCH_CALL = 0.04 // $0.04 per call
 
 // Track which searches are currently being refreshed
-const activeSearchRefreshes = new Map<string, Promise<PlaceBase[]>>()
+const activeSearchRefreshes = new Map<
+  string,
+  Promise<Omit<PlaceBase, 'id'>[]>
+>()
 
 // Get estimated API calls for a search model
 function getEstimatedApiCallsForModel(model: string): number {
@@ -37,32 +46,73 @@ function getEstimatedApiCallsForModel(model: string): number {
   }
 }
 
+export type PlaceDetailsOptimized = PlaceBase & {
+  id: string
+  fromCache: boolean
+  isEnriched: boolean
+}
+
 export async function getPlaceDetailsOptimized(
-  placeId: string,
-  searchId: string | null,
-): Promise<PlaceBase & { fromCache: boolean }> {
+  userPlaceId: string,
+): Promise<PlaceDetailsOptimized> {
   const startTime = Date.now()
   let scenario = 'unknown'
   let apiCallsMade = 0
   let estimatedCost = 0
 
-  const key = REDIS_KEYS.place(placeId)
+  const [placeResult] = await db
+    .select({
+      sourceId: place.sourceId,
+      isEnriched: userPlace.isEnriched,
+    })
+    .from(place)
+    .innerJoin(userPlace, eq(place.id, userPlace.placeId))
+    .where(eq(userPlace.id, userPlaceId))
+    .limit(1)
 
+  const key = REDIS_KEYS.place(placeResult.sourceId)
   const cachedPlace = await redisClient.get<PreferredPlace>(key)
+
   if (cachedPlace) {
     scenario = 'cache_hit'
     // Only log cache hits in summary statistics, not individually
     const place = mapToPlaceDetails(cachedPlace.data)
-    return { ...place, fromCache: true }
+    return {
+      ...place,
+      id: userPlaceId,
+      fromCache: true,
+      isEnriched: placeResult.isEnriched,
+    }
   }
 
+  logger.info({
+    msg: 'No cached place found, checking for search',
+    event: 'no_cached_place_found',
+    metadata: {
+      userPlaceId,
+    },
+  })
+  const [searchPlaceResult] = await db
+    .select({ searchId: searchPlace.searchId })
+    .from(searchPlace)
+    .where(eq(searchPlace.userPlaceId, userPlaceId))
+    .limit(1)
+
   // If we have a searchId, check if we should refresh the search
-  if (searchId) {
+  if (searchPlaceResult) {
+    logger.info({
+      msg: 'Search place result found',
+      event: 'search_place_result_found',
+      metadata: {
+        userPlaceId,
+        searchPlaceResult,
+      },
+    })
     // Get search details
     const searchDetails = await db
       .select()
       .from(search)
-      .where(eq(search.id, searchId))
+      .where(eq(search.id, searchPlaceResult.searchId))
       .limit(1)
 
     if (searchDetails.length > 0) {
@@ -83,7 +133,7 @@ export async function getPlaceDetailsOptimized(
         const placesFromSearch = await db
           .select({ count: sql`COUNT(*)` })
           .from(listPlace)
-          .where(eq(listPlace.searchId, searchId))
+          .where(eq(listPlace.searchId, searchPlaceResult.searchId))
 
         const placeCount = Number(placesFromSearch[0]?.count || 0)
 
@@ -92,15 +142,17 @@ export async function getPlaceDetailsOptimized(
           scenario = 'search_refreshed'
 
           // Check if this search is already being refreshed by another request
-          const existingRefresh = activeSearchRefreshes.get(searchId)
+          const existingRefresh = activeSearchRefreshes.get(
+            searchPlaceResult.searchId,
+          )
 
           if (existingRefresh) {
             logger.info({
               msg: 'Using already in-progress search refresh',
               event: 'reuse_search_refresh',
               metadata: {
-                placeId,
-                searchId,
+                userPlaceId,
+                searchId: searchPlaceResult.searchId,
                 model: searchData.model,
               },
             })
@@ -112,7 +164,12 @@ export async function getPlaceDetailsOptimized(
             const refreshedPlace = await redisClient.get<PreferredPlace>(key)
             if (refreshedPlace) {
               const place = mapToPlaceDetails(refreshedPlace.data)
-              return { ...place, fromCache: true }
+              return {
+                ...place,
+                id: userPlaceId,
+                fromCache: true,
+                isEnriched: placeResult.isEnriched,
+              }
             }
           } else {
             // Start a new refresh and track it
@@ -120,8 +177,8 @@ export async function getPlaceDetailsOptimized(
               msg: 'Refreshing stale search results to update place cache',
               event: 'refresh_search_for_place',
               metadata: {
-                placeId,
-                searchId,
+                userPlaceId,
+                searchId: searchPlaceResult.searchId,
                 model: searchData.model,
                 lastRefreshTime: searchData.updatedAt.toISOString(),
                 timeSinceRefresh: `${Math.round((currentTime - lastRefreshTime) / 1000 / 60 / 60 / 24)} days`,
@@ -148,13 +205,13 @@ export async function getPlaceDetailsOptimized(
                 await db
                   .update(search)
                   .set({ updatedAt: new Date() })
-                  .where(eq(search.id, searchId))
+                  .where(eq(search.id, searchPlaceResult.searchId))
 
                 logger.info({
                   msg: 'Search refresh completed - BILLABLE API CALL OVERVIEW',
                   event: 'search_refresh_completed',
                   metadata: {
-                    searchId,
+                    searchId: searchPlaceResult.searchId,
                     model: searchData.model,
                     estimatedApiCalls,
                     estimatedCost:
@@ -170,12 +227,15 @@ export async function getPlaceDetailsOptimized(
                 return results
               } finally {
                 // Remove from active refreshes when done
-                activeSearchRefreshes.delete(searchId)
+                activeSearchRefreshes.delete(searchPlaceResult.searchId)
               }
             })()
 
             // Store the promise
-            activeSearchRefreshes.set(searchId, refreshPromise)
+            activeSearchRefreshes.set(
+              searchPlaceResult.searchId,
+              refreshPromise,
+            )
 
             // Wait for the refresh to complete
             await refreshPromise
@@ -184,7 +244,12 @@ export async function getPlaceDetailsOptimized(
             const refreshedPlace = await redisClient.get<Place>(key)
             if (refreshedPlace) {
               const place = mapToPlaceDetails(refreshedPlace.data)
-              return { ...place, fromCache: true }
+              return {
+                ...place,
+                id: userPlaceId,
+                fromCache: true,
+                isEnriched: placeResult.isEnriched,
+              }
             }
           }
         } else {
@@ -195,8 +260,8 @@ export async function getPlaceDetailsOptimized(
             msg: 'Skipping search refresh as it is not cost-effective',
             event: 'skip_refresh_not_cost_effective',
             metadata: {
-              placeId,
-              searchId,
+              userPlaceId,
+              searchId: searchPlaceResult.searchId,
               model: searchData.model,
               placeCount,
               estimatedApiCalls,
@@ -214,8 +279,8 @@ export async function getPlaceDetailsOptimized(
           msg: 'Skipping search refresh as it was recently updated',
           event: 'skip_search_refresh',
           metadata: {
-            placeId,
-            searchId,
+            userPlaceId,
+            searchId: searchPlaceResult.searchId,
             lastRefreshTime: searchData.updatedAt.toISOString(),
             timeSinceRefresh: `${Math.round((currentTime - lastRefreshTime) / 1000 / 60 / 60 / 24)} days`,
             model: searchData.model,
@@ -232,14 +297,15 @@ export async function getPlaceDetailsOptimized(
     msg: 'Fetching individual place details - BILLABLE API CALL',
     event: 'fetch_individual_place',
     metadata: {
-      placeId,
-      searchId,
+      userPlaceId,
+      // Only include searchId if we have a searchPlaceResult
+      ...(searchPlaceResult && { searchId: searchPlaceResult.searchId }),
       estimatedCost: COST_PER_PLACE_DETAILS_CALL,
     },
   })
 
   try {
-    const result = await getPlaceDetailsV1(placeId)
+    const result = await getPlaceDetailsV1(userPlaceId)
     apiCallsMade += 1
     estimatedCost += COST_PER_PLACE_DETAILS_CALL
 
@@ -248,8 +314,8 @@ export async function getPlaceDetailsOptimized(
       msg: 'Place details optimization metrics',
       event: 'place_details_optimization',
       metadata: {
-        placeId,
-        searchId,
+        userPlaceId,
+        searchId: searchPlaceResult.searchId,
         scenario,
         apiCallsMade,
         estimatedCost,
@@ -258,15 +324,20 @@ export async function getPlaceDetailsOptimized(
       },
     })
 
-    return result
+    return {
+      ...result,
+      id: userPlaceId,
+      fromCache: false,
+      isEnriched: placeResult.isEnriched,
+    }
   } catch (error) {
     const endTime = Date.now()
     logger.error({
       msg: 'Place details fetch failed',
       event: 'place_details_fetch_error',
       metadata: {
-        placeId,
-        searchId,
+        userPlaceId,
+        searchId: searchPlaceResult.searchId,
         scenario,
         apiCallsMade,
         estimatedCost,

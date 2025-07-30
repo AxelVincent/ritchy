@@ -1,16 +1,12 @@
-import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
+import { SocialMediaPlatformEnum } from '@ritchy/types'
 
-/**
- * Checks if a domain is a social media domain
- * @param domain - Domain to check
- * @returns True if it's a social media domain
- */
 export const isSocialMediaDomain = (domain: string): boolean => {
-  const socialMediaDomains = Object.values(SOCIAL_MEDIA_CONFIG).map(
-    (config) => config.domain,
+  const socialMediaDomains = Object.values(SocialMediaPlatformEnum.Enum).map(
+    (config) => config.toLowerCase(),
   )
   return socialMediaDomains.some(
     (socialDomain) =>
-      domain === socialDomain || domain.endsWith(`.${socialDomain}`),
+      domain.toLowerCase() === socialDomain ||
+      domain.toLowerCase().endsWith(`.${socialDomain}`),
   )
 }

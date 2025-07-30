@@ -16,14 +16,14 @@ import { withHubspotClient } from '../../../external/hubspot/token_manager'
 import { getHubspotToken } from '../../../services/hubspot/queries/get_hubspot_token'
 
 type CompanyMapping = {
-  tokenId: string
+  hubspotTokenId: string
   internalField: CompanyField
   hubspotField: string
 }
 
-const createDefaultMappings = (tokenId: string): CompanyMapping[] =>
+const createDefaultMappings = (hubspotTokenId: string): CompanyMapping[] =>
   Object.entries(FIELD_CONFIGS.company).map(([field, config]) => ({
-    tokenId,
+    hubspotTokenId,
     internalField: `company.${field}` as CompanyField,
     hubspotField: config.defaultHubspotField,
   }))
@@ -87,7 +87,7 @@ export const getCompanyMappings = async (
         .from(hubspotFieldMapping)
         .where(
           and(
-            eq(hubspotFieldMapping.tokenId, token.id),
+            eq(hubspotFieldMapping.hubspotTokenId, token.id),
             inArray(
               hubspotFieldMapping.internalField,
               CompanyFieldEnum.options,
@@ -109,7 +109,7 @@ export const getCompanyMappings = async (
         .from(hubspotFieldMapping)
         .where(
           and(
-            eq(hubspotFieldMapping.tokenId, token.id),
+            eq(hubspotFieldMapping.hubspotTokenId, token.id),
             inArray(
               hubspotFieldMapping.internalField,
               CompanyFieldEnum.options,
@@ -167,7 +167,7 @@ export const updateCompanyMapping = async (
       })
       .where(
         and(
-          eq(hubspotFieldMapping.tokenId, token.id),
+          eq(hubspotFieldMapping.hubspotTokenId, token.id),
           eq(
             hubspotFieldMapping.internalField,
             internalField as keyof typeof DEFAULT_COMPANY_FIELDS,
@@ -212,7 +212,7 @@ export const resetCompanyMappings = async (
       .values(defaultMappings)
       .onConflictDoUpdate({
         target: [
-          hubspotFieldMapping.tokenId,
+          hubspotFieldMapping.hubspotTokenId,
           hubspotFieldMapping.internalField,
         ],
         set: {

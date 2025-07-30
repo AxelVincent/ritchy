@@ -16,11 +16,11 @@ import statusRouter from './status'
 
 const placesRouter: Router = express.Router({ mergeParams: true })
 
-placesRouter.use('/:placeId/status', statusRouter)
+placesRouter.use('/:userPlaceId/status', statusRouter)
 
-placesRouter.use('/:placeId/notes', notesRouter)
+placesRouter.use('/:userPlaceId/notes', notesRouter)
 
-placesRouter.use('/:placeId/reviews', reviewsRouter)
+placesRouter.use('/:placeSourceId/reviews', reviewsRouter)
 
 placesRouter.post(
   '/autocomplete',

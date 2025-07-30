@@ -29,8 +29,7 @@ export const ListManagementButtons = <TData extends SearchResult>({
           open={showAddListDialog}
           onOpenChange={setShowAddListDialog}
           selectedItems={selectedRows.map((row) => ({
-            placeId: row.original.id,
-            searchId: row.original.searchId,
+            userPlaceId: row.original.id,
           }))}
         />
         {listId && (
@@ -69,8 +68,7 @@ export const ListManagementButtons = <TData extends SearchResult>({
         open={showAddListDialog}
         onOpenChange={setShowAddListDialog}
         selectedItems={filteredRows.map((row) => ({
-          placeId: row.original.id,
-          searchId: row.original.searchId,
+          userPlaceId: row.original.id,
         }))}
       />
       <Button variant="default" onClick={() => setShowAddListDialog(true)}>

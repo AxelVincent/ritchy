@@ -337,6 +337,62 @@
       "when": 1751384862397,
       "tag": "0047_polite_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1753190715074,
+      "tag": "0048_furry_bug",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1753197193732,
+      "tag": "0049_third_red_skull",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1753198575103,
+      "tag": "0050_handy_sphinx",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1753268015176,
+      "tag": "0051_abandoned_machine_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1753275913724,
+      "tag": "0052_update_social_platform_enum",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1753278748206,
+      "tag": "0053_right_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1753715145412,
+      "tag": "0054_material_captain_britain",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1753777231452,
+      "tag": "0055_black_miss_america",
+      "breakpoints": true
     }
   ]
 }

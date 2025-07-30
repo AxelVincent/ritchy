@@ -94,7 +94,7 @@ export function Filter({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-full max-w-[200px] overflow-hidden justify-between relative group hover:bg-transparent"
+                    className="h-8 w-full max-w-[200px] overflow-hidden justify-between relative group hover:bg-transparent text-muted-foreground"
                     style={{ direction: 'rtl' }}
                   >
                     {selected.length > 0 && (

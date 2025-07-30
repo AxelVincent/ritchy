@@ -6,7 +6,7 @@ import { updateHubspotContactStatus } from '../../hubspot/update_hubspot_contact
 
 export const upsertStatus = async (
   context: VersionContext,
-  placeId: string,
+  userPlaceId: string,
   status: StatusType,
 ): Promise<Status> => {
   try {
@@ -14,8 +14,7 @@ export const upsertStatus = async (
       msg: 'Upserting place status',
       event: 'place_status_upsert',
       metadata: {
-        placeId,
-        userId: context.userId,
+        userPlaceId,
         status,
         changeSource: context.changeSource,
         ...context.metadata,
@@ -26,15 +25,14 @@ export const upsertStatus = async (
     const result = await db.upsert(
       'status',
       {
-        placeId,
-        userId: context.userId,
+        userPlaceId,
         status,
         updatedAt: new Date(),
       },
-      ['placeId', 'userId'],
+      ['userPlaceId'],
     )
     if (context.changeSource === 'user') {
-      updateHubspotContactStatus(context.userId, placeId, status)
+      updateHubspotContactStatus(context.userId, userPlaceId, status)
     }
 
     return {
@@ -48,8 +46,7 @@ export const upsertStatus = async (
       event: 'place_status_upsert_error',
       metadata: {
         error: error instanceof Error ? error : { error },
-        placeId,
-        userId: context.userId,
+        userPlaceId,
         status,
       },
     })

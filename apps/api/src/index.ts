@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { createServer } from 'node:http'
 import { clerkMiddleware, getAuth } from '@clerk/express'
+import { createQueueDashExpressMiddleware } from '@queuedash/api'
 import { baseLogger, logger } from '@ritchy/logger'
 import timeout from 'connect-timeout'
 import cors from 'cors'
@@ -9,22 +10,20 @@ import express, { type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import pinoHttp from 'pino-http'
-import { validateRabbitMQAtStartup } from './config/rabbitmq'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
-import { rabbitMQHealthMonitor } from './external/rabbitmq/health-monitor'
-import { rabbitMQService } from './external/rabbitmq/service'
-import { redisHealthMonitor } from './external/redis/health-monitor'
+import { initQdrantCollection } from './external/qdrant'
+import { redisHealthMonitor } from './internal/redis/health-monitor'
 import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
-import {
-  initialize_enrichment_queue,
-  shutdown_enrichment_queue,
-} from './services/enrichment/queue/batch_enrichment_queue'
 import webhookRoutes from './webhook'
 
-// Validate RabbitMQ at startup
-await validateRabbitMQAtStartup()
+// Import the worker
+import './internal/bullmq/jobs/enrichment/worker'
+import './internal/bullmq/jobs/firecrawl/worker'
+import { enrichmentQueue } from './internal/bullmq/jobs/enrichment/queue'
+import { firecrawlQueue } from './internal/bullmq/jobs/firecrawl/queue'
+import { basicAuth } from './middleware/basic_auth'
 
 const app = express()
 const server = createServer(app)
@@ -176,7 +175,7 @@ app.use(
   }),
 )
 
-// Add near the top of your middleware stack
+// Replace the simple helmet() call with a configured version
 app.use(helmet())
 
 // Healthcheck route
@@ -189,6 +188,41 @@ app.use('/web', isAuthenticated, webRoutes)
 
 // Webhook route
 app.use('/webhook', webhookRoutes)
+
+// QueueDash middleware
+app.use(
+  '/queuedash',
+  (_req, res, next) => {
+    res.setHeader(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://unpkg.com",
+        "style-src 'self' 'unsafe-inline' https://unpkg.com",
+        "connect-src 'self' https://unpkg.com",
+        "img-src 'self' data: https://unpkg.com",
+      ].join('; '),
+    )
+    next()
+  },
+  basicAuth,
+  createQueueDashExpressMiddleware({
+    ctx: {
+      queues: [
+        {
+          queue: enrichmentQueue,
+          displayName: 'Enrichment',
+          type: 'bullmq',
+        },
+        {
+          queue: firecrawlQueue,
+          displayName: 'Firecrawl',
+          type: 'bullmq',
+        },
+      ],
+    },
+  }),
+)
 
 // Monitor long running requests
 app.use((req, res, next) => {
@@ -250,47 +284,16 @@ setInterval(() => {
   lastHeapUsed = heapUsedMB
 }, 900000) // Check every 15 minutes
 
+// Initialize Qdrant collection
+initQdrantCollection().then(() => {
+  logger.info({
+    msg: 'Qdrant collection initialized successfully',
+    event: 'qdrant_collection_initialized',
+  })
+})
+
 // Start Redis health monitor
 redisHealthMonitor.start(1000 * 60 * 15) // Check every 15 minutes
-// Start RabbitMQ health monitor
-rabbitMQHealthMonitor.start(1000 * 60 * 5) // Check every 5 minutes (more frequent for queue monitoring)
-
-// Initialize enrichment queue
-initialize_enrichment_queue()
-  .then(() => {
-    logger.info({
-      msg: 'Enrichment queue initialized successfully',
-      event: 'enrichment_queue_initialized',
-    })
-  })
-  .catch((error) => {
-    logger.error({
-      msg: 'Failed to initialize enrichment queue',
-      event: 'enrichment_queue_init_error',
-      metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  })
-
-// Initialize RabbitMQ service
-rabbitMQService
-  .start()
-  .then(() => {
-    logger.info({
-      msg: 'RabbitMQ service started successfully',
-      event: 'rabbitmq_service_started',
-    })
-  })
-  .catch((error) => {
-    logger.error({
-      msg: 'Failed to start RabbitMQ service',
-      event: 'rabbitmq_service_start_error',
-      metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  })
 
 // Then start the server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
@@ -346,34 +349,6 @@ process.on('SIGTERM', async () => {
 
   // Shutdown Redis health monitor
   redisHealthMonitor.stop()
-  // Shutdown RabbitMQ health monitor
-  rabbitMQHealthMonitor.stop()
-
-  // Shutdown enrichment queue
-  try {
-    await shutdown_enrichment_queue()
-  } catch (error) {
-    logger.error({
-      msg: 'Error shutting down enrichment queue',
-      event: 'enrichment_queue_shutdown_error',
-      metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  }
-
-  // Shutdown RabbitMQ service
-  try {
-    await rabbitMQService.stop()
-  } catch (error) {
-    logger.error({
-      msg: 'Error shutting down RabbitMQ service',
-      event: 'rabbitmq_service_shutdown_error',
-      metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  }
 
   process.exit(0)
 })
@@ -386,34 +361,6 @@ process.on('SIGINT', async () => {
 
   // Shutdown Redis health monitor
   redisHealthMonitor.stop()
-  // Shutdown RabbitMQ health monitor
-  rabbitMQHealthMonitor.stop()
-
-  // Shutdown enrichment queue
-  try {
-    await shutdown_enrichment_queue()
-  } catch (error) {
-    logger.error({
-      msg: 'Error shutting down enrichment queue',
-      event: 'enrichment_queue_shutdown_error',
-      metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  }
-
-  // Shutdown RabbitMQ service
-  try {
-    await rabbitMQService.stop()
-  } catch (error) {
-    logger.error({
-      msg: 'Error shutting down RabbitMQ service',
-      event: 'rabbitmq_service_shutdown_error',
-      metadata: {
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  }
 
   process.exit(0)
 })

@@ -15,8 +15,7 @@ interface AddItemsToListDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedItems: {
-    placeId: string
-    searchId: string | null
+    userPlaceId: string
   }[]
 }
 
@@ -33,8 +32,7 @@ export function AddItemsToListDialog({
     const res = await addItemsToList({
       id: listId,
       items: selectedItems.map((item) => ({
-        placeId: item.placeId,
-        searchId: item.searchId,
+        userPlaceId: item.userPlaceId,
       })),
     })
 

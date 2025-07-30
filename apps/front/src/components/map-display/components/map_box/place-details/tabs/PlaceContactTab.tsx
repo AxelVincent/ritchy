@@ -1,73 +1,82 @@
-import { ContactEmailCell } from '@/components/data-table/columns/utils/ColumnCells'
-import { SecondaryEmailsList } from '@/components/data-table/columns/utils/SecondaryEmailsList'
-import { Badge } from '@/components/ui/badge'
+import { PhonesList } from '@/components/data-table/columns/utils/PhonesList'
 import type { Place } from '@ritchy/types'
-import { Mail } from 'lucide-react'
+import { EmailsList } from '../../../../../data-table/columns/utils/EmailsList'
+import { SocialMediaList } from '../../../../../data-table/columns/utils/SocialMediaList'
 
 export const PlaceContactTab = ({ place }: { place: Place }) => {
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="flex flex-col w-full mt-6">
-          {/* Email Sections - Only show if there are emails */}
-          {place.primaryEmail ||
-          (place.secondaryEmails && place.secondaryEmails.length > 0) ? (
-            <>
-              {/* Emails Title */}
-              <div className="flex items-center gap-3 mb-2">
-                <Mail className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div className="text-sm text-muted-foreground font-medium">
-                  Emails
-                </div>
-              </div>
+  const hasEmails = place.emails?.length !== 0
+  const hasPhones = place.phones?.length !== 0
+  const hasLinkedinSocials = place.linkedinSocials?.length !== 0
+  const hasFacebookSocials = place.facebookSocials?.length !== 0
+  const hasInstagramSocials = place.instagramSocials?.length !== 0
 
-              {/* Primary Email */}
-              {place.primaryEmail && (
-                <div className="flex flex-col gap-2 mb-3">
-                  <div className="ml-8">
-                    <div className="flex items-center gap-2">
-                      <ContactEmailCell
-                        id={place.id}
-                        content={place.primaryEmail}
-                      />
-                      <Badge variant="secondary" className="text-xs">
-                        Primary
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Secondary Emails */}
-              {place.secondaryEmails && place.secondaryEmails.length > 0 && (
-                <div className="flex flex-col gap-2 mb-3">
-                  <div className="ml-8">
-                    <SecondaryEmailsList
-                      emails={place.secondaryEmails}
-                      id={place.id}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Separator */}
-              <div className="border-t pt-2" />
-            </>
-          ) : (
-            /* No Contact Information - Only show when no emails exist */
-            <div className="flex items-center gap-3 mb-2">
-              <Mail className="h-5 w-5 text-muted-foreground shrink-0" />
-              <div className="flex-1">
-                <div className="text-sm text-muted-foreground">
-                  No contact emails available
-                  <br />
-                  Use the Enrich All button to find emails
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+  if (
+    !hasEmails &&
+    !hasPhones &&
+    !hasLinkedinSocials &&
+    !hasFacebookSocials &&
+    !hasInstagramSocials
+  ) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        No contact information available
       </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-wrap gap-6 p-4">
+      {/* Emails section - takes full width due to typically longer content */}
+      {hasEmails && (
+        <div className="min-w-[200px] flex-1 max-w-[400px]w-full">
+          <h3 className="mb-2 text-base font-medium">Emails</h3>
+          <EmailsList
+            emails={place.emails || []}
+            id={`place-${place.id}-emails`}
+          />
+        </div>
+      )}
+
+      {hasPhones && (
+        <div className="min-w-[200px] flex-1 max-w-[400px]">
+          <h3 className="mb-2 text-base font-medium">Phones</h3>
+          <PhonesList
+            phones={place.phones || []}
+            id={`place-${place.id}-phones`}
+          />
+        </div>
+      )}
+
+      {/* Social media sections - will wrap based on available space */}
+      {hasFacebookSocials && (
+        <div className="min-w-[200px] flex-1 max-w-[400px]">
+          <h3 className="mb-2 text-base font-medium">Facebook</h3>
+          <SocialMediaList
+            socials={place.facebookSocials || []}
+            id={`place-${place.id}-facebook-socials`}
+          />
+        </div>
+      )}
+
+      {hasInstagramSocials && (
+        <div className="min-w-[200px] flex-1 max-w-[400px]">
+          <h3 className="mb-2 text-base font-medium">Instagram</h3>
+          <SocialMediaList
+            socials={place.instagramSocials || []}
+            id={`place-${place.id}-instagram-socials`}
+          />
+        </div>
+      )}
+
+      {hasLinkedinSocials && (
+        <div className="min-w-[200px] flex-1 max-w-[400px]">
+          <h3 className="mb-2 text-base font-medium">LinkedIn</h3>
+          <SocialMediaList
+            socials={place.linkedinSocials || []}
+            id={`place-${place.id}-linkedin-socials`}
+          />
+        </div>
+      )}
     </div>
   )
 }

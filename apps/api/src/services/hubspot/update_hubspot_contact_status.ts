@@ -15,7 +15,7 @@ import { createHubspotProperties } from './utils/create_hubspot_properties'
  */
 export const updateHubspotContactStatus = async (
   userId: string,
-  placeId: string,
+  userPlaceId: string,
   statusValue: InternalLeadStatus,
 ): Promise<void> => {
   const token = await getValidToken(userId)
@@ -27,13 +27,13 @@ export const updateHubspotContactStatus = async (
     })
     return
   }
-  const [contactMapping] = await getHubspotLeadMapping(placeId, token.id)
+  const [contactMapping] = await getHubspotLeadMapping(userPlaceId, token.id)
 
   if (!contactMapping || !contactMapping.hubspotContactId) {
-    logger.error({
+    logger.info({
       msg: 'Hubspot contact mapping not found',
       event: 'hubspot_contact_mapping_not_found',
-      metadata: { placeId, tokenId: token.id },
+      metadata: { userPlaceId, hubspotTokenId: token.id },
     })
     return
   }

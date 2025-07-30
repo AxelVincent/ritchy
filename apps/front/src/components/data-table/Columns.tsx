@@ -22,15 +22,17 @@ import { openingHoursColumn } from './columns/OpeningHoursColumn'
 import { phoneColumn } from './columns/PhoneColumn'
 import { priceLevelColumn } from './columns/PriceLevelColumn'
 import { priceRangeColumn } from './columns/PriceRangeColumn'
-import { primaryEmailColumn } from './columns/PrimaryEmailColumn'
 import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
-import { secondaryEmailsColumn } from './columns/SecondaryEmailsColumn'
+
 import { selectColumn } from './columns/SelectColumn'
-import { socialEmailColumn } from './columns/SocialEmailColumn'
 
 import { domainRegistrationDateColumn } from './columns/DomainRegistrationDateColumn'
+import { emailsColumn } from './columns/EmailsColumn'
+import { facebookSocialsColumn } from './columns/FacebookSocialsColumn'
+import { instagramSocialsColumn } from './columns/InstagramSocialsColumn'
+import { linkedinSocialsColumn } from './columns/LinkedinSocialsColumn'
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
@@ -42,9 +44,10 @@ export const columns: ColumnDef<SearchResult>[] = [
   statusColumn,
   websiteColumn,
   phoneColumn,
-  primaryEmailColumn,
-  secondaryEmailsColumn,
-  socialEmailColumn,
+  emailsColumn,
+  instagramSocialsColumn,
+  linkedinSocialsColumn,
+  facebookSocialsColumn,
   domainRegistrationDateColumn,
   notesColumn,
   associatedListsColumn,

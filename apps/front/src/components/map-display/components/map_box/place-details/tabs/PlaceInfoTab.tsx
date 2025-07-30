@@ -12,6 +12,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { getDomainFromUrl } from '@/lib/utils/url-utils'
 import type { Place } from '@ritchy/types'
 import {
   ChevronDown,
@@ -175,7 +176,7 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => {
                   className="text-blue-600 hover:text-blue-800 hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {new URL(place.website).hostname}
+                  {getDomainFromUrl(place.website)}
                 </a>
               </TextWrapper>
             </div>
@@ -189,11 +190,10 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => {
             </div>
           )}
 
-          {/* Primary Email */}
-          {place.primaryEmail && (
+          {place.emails && place.emails.length > 0 && (
             <div className="flex items-center gap-3 mb-2">
               <Mail className="h-5 w-5 text-muted-foreground shrink-0" />
-              <ContactEmailCell id={place.id} content={place.primaryEmail} />
+              <ContactEmailCell id={place.id} content={place.emails[0].email} />
             </div>
           )}
 

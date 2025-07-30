@@ -46,12 +46,24 @@ const baseLogger = pino({
   ...(process.env.NODE_ENV === 'development'
     ? {
         transport: {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'HH:MM:ss.l',
-            ignore: 'pid,hostname',
-          },
+          targets: [
+            {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                translateTime: 'HH:MM:ss.l',
+                ignore: 'pid,hostname',
+              },
+            },
+            {
+              target: 'pino-loki',
+              options: {
+                batching: false,
+                host: 'http://localhost:3100',
+                labels: { job: 'pino', service: 'ritchy' },
+              },
+            },
+          ],
         },
       }
     : {}),

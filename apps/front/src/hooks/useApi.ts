@@ -11,7 +11,7 @@ import type { z } from 'zod'
 import { createApiClient } from '../lib/api/createApiClient'
 
 // Create a single API client instance per base URL
-const webApiClient = createApiClient({
+export const webApiClient = createApiClient({
   baseUrl: import.meta.env.VITE_API_WEB_BASE_URL || '/api/web',
 })
 

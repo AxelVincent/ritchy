@@ -15,21 +15,16 @@ export const useAddPlaceNote = () => {
 
   return useApiMutation<
     AddNoteApiResponse,
-    AddNoteRequest & { searchId: string | null; listId: string | null }
-  >('/places/:placeId/notes', {
-    getEndpoint: ({ placeId }) => `/places/${placeId}/notes`,
+    AddNoteRequest & { listId: string | null }
+  >('/places/:userPlaceId/notes', {
+    getEndpoint: ({ userPlaceId }) => `/places/${userPlaceId}/notes`,
     getBody: ({ note }) => ({ note }),
-    onMutate: async ({ placeId, note, searchId, listId }) => {
+    onMutate: async ({ userPlaceId, note, listId }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: ['notes', 'place', placeId],
+        queryKey: ['notes', 'place', userPlaceId],
         exact: true,
       })
-      if (searchId) {
-        await queryClient.cancelQueries({
-          queryKey: searchContentKeys.search(searchId),
-        })
-      }
       if (listId) {
         await queryClient.cancelQueries({
           queryKey: listContentKeys.list(listId),
@@ -40,13 +35,8 @@ export const useAddPlaceNote = () => {
       const previousNotes = queryClient.getQueryData<Note[]>([
         'notes',
         'place',
-        placeId,
+        userPlaceId,
       ])
-      const previousSearch = searchId
-        ? queryClient.getQueryData<GetSearchContentResponse>(
-            searchContentKeys.search(searchId),
-          )
-        : undefined
       const previousList = listId
         ? queryClient.getQueryData<GetListContentResponse>(
             listContentKeys.list(listId),
@@ -56,7 +46,7 @@ export const useAddPlaceNote = () => {
       // Create optimistic note
       const optimisticNote: Note = {
         id: `temp-${Date.now()}`,
-        placeId,
+        userPlaceId,
         note,
         userId: 'current-user',
         createdAt: new Date().toISOString(),
@@ -65,27 +55,9 @@ export const useAddPlaceNote = () => {
 
       // Update notes query
       queryClient.setQueryData<Note[]>(
-        ['notes', 'place', placeId],
+        ['notes', 'place', userPlaceId],
         (old = []) => [optimisticNote, ...old],
       )
-
-      // Update search results if applicable
-      if (previousSearch && searchId) {
-        queryClient.setQueryData(
-          searchContentKeys.search(searchId),
-          (oldData: GetSearchContentResponse) => {
-            return oldData.map((place) => {
-              if (place.id === placeId) {
-                return {
-                  ...place,
-                  notes: [optimisticNote, ...(place.notes || [])],
-                }
-              }
-              return place
-            })
-          },
-        )
-      }
 
       // Update list content if applicable
       if (previousList && listId) {
@@ -95,7 +67,7 @@ export const useAddPlaceNote = () => {
             return {
               ...oldData,
               items: oldData.items.map((place) => {
-                if (place.id === placeId) {
+                if (place.id === userPlaceId) {
                   return {
                     ...place,
                     notes: [optimisticNote, ...(place.notes || [])],
@@ -108,7 +80,7 @@ export const useAddPlaceNote = () => {
         )
       }
 
-      return { previousNotes, previousSearch, previousList, searchId, listId }
+      return { previousNotes, previousList, listId }
     },
     onError: (_, variables, context: unknown) => {
       const typedContext = context as {
@@ -122,7 +94,7 @@ export const useAddPlaceNote = () => {
       // Rollback all optimistic updates on error
       if (typedContext.previousNotes) {
         queryClient.setQueryData(
-          ['notes', 'place', variables.placeId],
+          ['notes', 'place', variables.userPlaceId],
           typedContext.previousNotes,
         )
       }
@@ -139,10 +111,10 @@ export const useAddPlaceNote = () => {
         )
       }
     },
-    onSuccess: (_, { placeId }) => {
+    onSuccess: (_, { userPlaceId }) => {
       // Invalidate the notes query to get the real server data
       queryClient.invalidateQueries({
-        queryKey: ['notes', 'place', placeId],
+        queryKey: ['notes', 'place', userPlaceId],
         exact: true,
       })
     },
