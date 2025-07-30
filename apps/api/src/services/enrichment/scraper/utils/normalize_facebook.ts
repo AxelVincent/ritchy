@@ -3,6 +3,23 @@ export type NormalizedFacebook = {
   url: string
 }
 
+const FACEBOOK_EXCLUDED_PATHS = [
+  'posts/',
+  'photos/',
+  'pages/',
+  'groups/',
+  'events/',
+  'help/',
+  'sharer.php/',
+  'profile.php',
+  'sharer',
+  'stories',
+  'photo.php',
+  'ad_campaign',
+  'people',
+  'pg',
+] as const
+
 export function normalizeFacebook(url: string): NormalizedFacebook | null {
   // Return null if URL is not provided or doesn't contain facebook.com
   if (!url?.toLowerCase()?.includes('facebook.com')) {
@@ -12,23 +29,19 @@ export function normalizeFacebook(url: string): NormalizedFacebook | null {
   // Normalize the URL to lowercase for consistent checks
   const lowercaseUrl = url.toLowerCase()
 
-  // Return null for:
-  // - Main facebook.com domain
-  // - Posts URLs (/posts/)
-  // - Photos URLs (/photos/)
-  // - Pages URLs (/pages/)
-  // - Groups URLs (/groups/)
-  // - Events URLs (/events/)
+  // Return null for main facebook.com domain
   if (
     lowercaseUrl === 'https://facebook.com' ||
-    lowercaseUrl === 'https://www.facebook.com' ||
-    lowercaseUrl.includes('facebook.com/posts/') ||
-    lowercaseUrl.includes('facebook.com/photos/') ||
-    lowercaseUrl.includes('facebook.com/pages/') ||
-    lowercaseUrl.includes('facebook.com/groups/') ||
-    lowercaseUrl.includes('facebook.com/events/') ||
-    lowercaseUrl.includes('facebook.com/help/') ||
-    lowercaseUrl.includes('facebook.com/sharer.php/')
+    lowercaseUrl === 'https://www.facebook.com'
+  ) {
+    return null
+  }
+
+  // Check if URL contains any of the excluded paths
+  if (
+    FACEBOOK_EXCLUDED_PATHS.some((path) =>
+      lowercaseUrl.includes(`facebook.com/${path}`),
+    )
   ) {
     return null
   }
