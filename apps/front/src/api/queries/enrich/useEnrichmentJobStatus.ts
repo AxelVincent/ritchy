@@ -1,3 +1,4 @@
+import { webApiClient } from '@/hooks/useApi'
 import type { EnrichmentJobStatusApiResponse } from '@ritchy/types'
 import { useQuery } from '@tanstack/react-query'
 
@@ -6,15 +7,18 @@ const enrichmentJobStatusKeys = {
   job: (jobId: string) => [...enrichmentJobStatusKeys.all, jobId] as const,
 }
 
-export const useEnrichmentJobStatus = (jobId: string, enabled = false) => {
+export const useEnrichmentJobStatus = (
+  jobId: string,
+  enabled: boolean,
+  pollingInterval: number,
+) => {
+  const api = webApiClient.fetchWithAuth
+
   return useQuery<EnrichmentJobStatusApiResponse>({
     queryKey: enrichmentJobStatusKeys.job(jobId),
-    queryFn: async () => {
-      const response = await fetch(`/api/web/enrich/job/${jobId}/status`)
-      return response.json()
-    },
-    enabled,
+    queryFn: () => api(`/enrich/job/${jobId}/status`),
     staleTime: 0,
-    refetchInterval: false,
+    refetchInterval: enabled ? pollingInterval : false,
+    enabled,
   })
 }

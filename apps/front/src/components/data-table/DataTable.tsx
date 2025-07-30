@@ -26,7 +26,6 @@ import { ListManagementButtons } from '../lists/ListManagementButtons'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
 import { EnrichmentButtons } from './EnrichmentButtons'
-import { useEnrichment } from './hooks/useEnrichment'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -62,17 +61,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnOrder, setColumnOrder] = useState<string[]>([])
-
-  // Use the simplified enrichment hook
-  const {
-    handleFetchEnrichment,
-    isEnriching,
-    enrichmentProgress,
-    enrichmentData,
-  } = useEnrichment({
-    listId,
-    searchId,
-  })
 
   const localStorageKey = `tableColumnSizing_${storageKey || 'default'}`
 
@@ -205,10 +193,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
           <div className="flex gap-2">
             <EnrichmentButtons
               table={table}
-              isEnriching={isEnriching}
-              enrichmentProgress={enrichmentProgress}
-              enrichmentData={enrichmentData}
-              handleFetchEnrichment={handleFetchEnrichment}
+              listId={listId}
+              searchId={searchId}
             />
             {!isMobile && (
               <DataExport

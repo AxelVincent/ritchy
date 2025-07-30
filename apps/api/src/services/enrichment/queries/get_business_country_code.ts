@@ -38,11 +38,6 @@ export const getBusinessCountryCodeByEnrichmentId = async (
   if (!sourcePlace) {
     return null
   }
-  logger.info({
-    msg: 'Getting source place from redis',
-    event: 'getting_source_place_from_redis',
-    metadata: { sourcePlace },
-  })
   return (
     sourcePlace.data.addressComponents?.find((component) =>
       component.types?.includes('country'),

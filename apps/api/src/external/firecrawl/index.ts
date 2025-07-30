@@ -52,12 +52,6 @@ export const scrapeWithRetry = async (
       throw new Error(`Failed to scrape: ${scrapeResult.error}`)
     }
 
-    logger.info({
-      msg: '[firecrawl] Scrape result',
-      event: 'firecrawl_scrape_result',
-      metadata: { url, scrapeResult },
-    })
-
     // Check if we got an error status code
     const statusCode = scrapeResult.metadata?.statusCode
     if (statusCode && [401, 403, 408, 500].includes(statusCode)) {
