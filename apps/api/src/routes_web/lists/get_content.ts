@@ -58,7 +58,7 @@ export const getListContent = async (
       },
     )
 
-    logger.info({
+    logger.debug({
       msg: 'List content',
       event: 'list_content',
       metadata: {

@@ -68,6 +68,40 @@ describe('normalizeFacebook', () => {
     expect(normalizeFacebook('https://facebook.com/events/123456')).toBeNull()
   })
 
+  // New test cases for additional excluded paths
+  it('should return null for profile.php URLs', () => {
+    expect(
+      normalizeFacebook('https://facebook.com/profile.php?id=123'),
+    ).toBeNull()
+  })
+
+  it('should return null for sharer URLs', () => {
+    expect(normalizeFacebook('https://facebook.com/sharer')).toBeNull()
+    expect(normalizeFacebook('https://facebook.com/sharer.php')).toBeNull()
+  })
+
+  it('should return null for stories URLs', () => {
+    expect(normalizeFacebook('https://facebook.com/stories/123456')).toBeNull()
+  })
+
+  it('should return null for photo.php URLs', () => {
+    expect(
+      normalizeFacebook('https://facebook.com/photo.php?id=123'),
+    ).toBeNull()
+  })
+
+  it('should return null for ad campaign URLs', () => {
+    expect(normalizeFacebook('https://facebook.com/ad_campaign/123')).toBeNull()
+  })
+
+  it('should return null for people URLs', () => {
+    expect(normalizeFacebook('https://facebook.com/people/username')).toBeNull()
+  })
+
+  it('should return null for pg URLs', () => {
+    expect(normalizeFacebook('https://facebook.com/pg/pagename')).toBeNull()
+  })
+
   it('should return null for invalid usernames', () => {
     expect(normalizeFacebook('https://facebook.com/posts')).toBeNull()
     expect(normalizeFacebook('https://facebook.com/photos')).toBeNull()
