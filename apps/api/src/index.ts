@@ -23,6 +23,7 @@ import './internal/bullmq/jobs/enrichment/worker'
 import './internal/bullmq/jobs/firecrawl/worker'
 import { enrichmentQueue } from './internal/bullmq/jobs/enrichment/queue'
 import { firecrawlQueue } from './internal/bullmq/jobs/firecrawl/queue'
+import { basicAuth } from './middleware/basic_auth'
 
 const app = express()
 const server = createServer(app)
@@ -41,26 +42,6 @@ app.use(
   express.urlencoded({
     extended: true,
     limit: '10mb',
-  }),
-)
-
-app.use(
-  '/queuedash',
-  createQueueDashExpressMiddleware({
-    ctx: {
-      queues: [
-        {
-          queue: enrichmentQueue,
-          displayName: 'Enrichment',
-          type: 'bull' as const,
-        },
-        {
-          queue: firecrawlQueue,
-          displayName: 'Firecrawl',
-          type: 'bull' as const,
-        },
-      ],
-    },
   }),
 )
 
@@ -194,7 +175,7 @@ app.use(
   }),
 )
 
-// Add near the top of your middleware stack
+// Replace the simple helmet() call with a configured version
 app.use(helmet())
 
 // Healthcheck route
@@ -207,6 +188,41 @@ app.use('/web', isAuthenticated, webRoutes)
 
 // Webhook route
 app.use('/webhook', webhookRoutes)
+
+// QueueDash middleware
+app.use(
+  '/queuedash',
+  (_req, res, next) => {
+    res.setHeader(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://unpkg.com",
+        "style-src 'self' 'unsafe-inline' https://unpkg.com",
+        "connect-src 'self' https://unpkg.com",
+        "img-src 'self' data: https://unpkg.com",
+      ].join('; '),
+    )
+    next()
+  },
+  basicAuth,
+  createQueueDashExpressMiddleware({
+    ctx: {
+      queues: [
+        {
+          queue: enrichmentQueue,
+          displayName: 'Enrichment',
+          type: 'bullmq',
+        },
+        {
+          queue: firecrawlQueue,
+          displayName: 'Firecrawl',
+          type: 'bullmq',
+        },
+      ],
+    },
+  }),
+)
 
 // Monitor long running requests
 app.use((req, res, next) => {

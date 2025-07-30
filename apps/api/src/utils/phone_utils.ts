@@ -65,7 +65,6 @@ export const parseAndValidatePhone = (
       msg: 'Failed to parse phone number',
       event: 'phone_parse_error',
       metadata: {
-        phone,
         countryCode,
         error: error instanceof Error ? error.message : String(error),
       },
