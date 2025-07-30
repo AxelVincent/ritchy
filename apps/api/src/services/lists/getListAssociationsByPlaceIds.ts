@@ -24,7 +24,7 @@ export const getListAssociationsByPlaceIds = async (
 
   const associations = await db
     .select({
-      placeId: place.sourceId,
+      userPlaceId: userPlace.id,
       listId: list.id,
       listName: list.name,
       listEmoji: list.emoji,
@@ -57,9 +57,9 @@ export const getListAssociationsByPlaceIds = async (
 
   // Add associations where they exist
   for (const association of associations) {
-    if (!association.placeId) continue
+    if (!association.userPlaceId) continue
 
-    const currentAssociations = resultMap.get(association.placeId) ?? []
+    const currentAssociations = resultMap.get(association.userPlaceId) ?? []
     const newAssociation = {
       id: association.listId.toString(),
       name: association.listName,
@@ -67,7 +67,7 @@ export const getListAssociationsByPlaceIds = async (
     }
 
     currentAssociations.push(newAssociation)
-    resultMap.set(association.placeId, currentAssociations)
+    resultMap.set(association.userPlaceId, currentAssociations)
   }
 
   // If listId is provided, sort the arrays to ensure it appears first
