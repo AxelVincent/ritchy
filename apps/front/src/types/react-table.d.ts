@@ -7,6 +7,7 @@ declare module '@tanstack/react-table' {
     label?: string
     filterVariant?: 'text' | 'range' | 'select' | 'multi-select' | 'date-range'
     getFacetedUniqueValues?: (rows: RowData[]) => string[]
+    isEnrichment?: boolean
   }
 
   interface TableMeta {

@@ -145,7 +145,6 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     return hasSelectedRowsWithWebsite ? (
       <div className="flex flex-col gap-2">
         <Button
-          variant="outline"
           onClick={handleEnrichClick}
           disabled={!!activeJobId}
           className={activeJobId ? 'h-auto' : ''}
@@ -163,7 +162,6 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   return (
     <div className="flex flex-col gap-2">
       <Button
-        variant="outline"
         onClick={handleEnrichClick}
         disabled={!!activeJobId}
         className={activeJobId ? 'h-auto' : ''}

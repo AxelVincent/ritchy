@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow, parseISO } from 'date-fns'
+import { HelpCircle } from 'lucide-react'
 import React from 'react'
 import { ColumnPinCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
@@ -95,6 +96,7 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
   accessorKey: 'enrichment',
   meta: {
     filterVariant: 'date-range',
+    isEnrichment: true,
   },
   accessorFn: (row) => {
     return row.domainRegisteredAt
@@ -128,22 +130,43 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
       title="Domain Registration Date"
       helper={
         <Card className="shadow-md">
-          <CardContent className="p-4 space-y-2 text-sm">
-            <div className="font-medium">What does this mean?</div>
-            <ul className="list-disc pl-4 space-y-1">
-              <li>
-                <span className="font-semibold">Domain registration date</span>{' '}
-                is when the website was first purchased. This can help you spot
-                newly opened businesses.
-              </li>
-              <li>
-                <span className="font-semibold text-foreground">
-                  But it's not always exact:
-                </span>{' '}
-                some businesses change names or get a website long after
-                opening.
-              </li>
-            </ul>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <HelpCircle
+                className="h-5 w-5 text-primary"
+                aria-label="Calendar"
+              />
+              <div className="font-semibold text-base">
+                About domain registration
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              <div className="flex items-start gap-2">
+                <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
+                  <span className="text-primary">1.</span>
+                </div>
+                <div>
+                  Shows when a business first registered their website domain -
+                  tracking their online presence
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
+                  <span className="text-primary">2.</span>
+                </div>
+                <div>
+                  Helps identify established vs. newer businesses based on their
+                  digital footprint
+                </div>
+              </div>
+              <div className="mt-3 bg-muted/30 p-2.5 rounded-md flex items-start gap-2">
+                <div className="flex-shrink-0">💡</div>
+                <div className="text-sm">
+                  Keep in mind: Some businesses create websites years after
+                  opening, so this date might not reflect their actual age
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       }

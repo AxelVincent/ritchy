@@ -187,15 +187,15 @@ export const DataTable = <TData extends SearchResult, TValue>({
       <div className="flex flex-col space-y-2">
         <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto md:pl-2 pl-16 md:mt-0 mt-2">
           <div className="flex gap-2">
-            <ListManagementButtons table={table} listId={listId} />
-            <HubspotSyncManagementButtons table={table} />
-          </div>
-          <div className="flex gap-2">
             <EnrichmentButtons
               table={table}
               listId={listId}
               searchId={searchId}
             />
+            <ListManagementButtons table={table} listId={listId} />
+            <HubspotSyncManagementButtons table={table} />
+          </div>
+          <div className="flex gap-2">
             {!isMobile && (
               <DataExport
                 selectedRows={

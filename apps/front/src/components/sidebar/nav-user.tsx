@@ -10,12 +10,10 @@ import {
   Sun,
   UserRoundCog,
 } from 'lucide-react'
-import { useState } from 'react'
 
 import { useCreatePortalSession } from '@/api/mutations/payments/useCreatePortalSession'
 import { useUserMe } from '@/api/queries/users/useUserMe'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +30,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useTheme } from '@/providers/theme-provider'
-import { UserButton, UserProfile, useAuth, useUser } from '@clerk/clerk-react'
+import { UserButton, useAuth, useClerk, useUser } from '@clerk/clerk-react'
 import { useNavigate } from '@tanstack/react-router'
 import { Badge } from '../ui/badge'
 import { Label } from '../ui/label'
@@ -43,7 +41,7 @@ export function NavUser() {
   const { user } = useUser()
   const { signOut } = useAuth()
   const { theme, setTheme } = useTheme()
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const { openUserProfile } = useClerk()
 
   const createPortalSession = useCreatePortalSession()
 
@@ -163,7 +161,7 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
-                onClick={() => setIsProfileOpen(true)}
+                onClick={() => openUserProfile()}
                 className="cursor-pointer"
               >
                 <UserRoundCog />
@@ -180,12 +178,6 @@ export function NavUser() {
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
-
-      <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-        <DialogContent className="h-fit !w-[unset] !max-w-[unset] p-0">
-          <UserProfile />
-        </DialogContent>
-      </Dialog>
     </SidebarMenu>
   )
 }

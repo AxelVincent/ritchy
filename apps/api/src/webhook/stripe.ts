@@ -271,6 +271,11 @@ export const stripeWebhook = async (
             const stripePriceId = items[0].price.id
             const productId = items[0].plan.product as string
             const planType = getPlanFromProductId(productId)
+            // TODO: Remove search model
+            const searchModel =
+              planType === 'ESSENTIALS' || planType === 'PRO'
+                ? 'ENHANCED'
+                : 'BASIC'
             const status = stripeEvent.status
 
             // Now perform the database operation with validated data
@@ -283,6 +288,7 @@ export const stripeWebhook = async (
                 stripeCustomerId,
                 status,
                 plan: planType,
+                searchModel,
               })
               .onConflictDoUpdate({
                 target: subscription.userId,

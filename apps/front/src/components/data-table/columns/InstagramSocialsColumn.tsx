@@ -17,6 +17,7 @@ export const instagramSocialsColumn: ColumnDef<SearchResult> = {
   accessorKey: 'instagramSocials',
   meta: {
     filterVariant: 'text',
+    isEnrichment: true,
   },
   accessorFn: (row) => {
     const socialSearchString =

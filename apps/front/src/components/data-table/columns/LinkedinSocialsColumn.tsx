@@ -17,6 +17,7 @@ export const linkedinSocialsColumn: ColumnDef<SearchResult> = {
   accessorKey: 'linkedinSocials',
   meta: {
     filterVariant: 'text',
+    isEnrichment: true,
   },
   accessorFn: (row) => {
     const socialSearchString =
