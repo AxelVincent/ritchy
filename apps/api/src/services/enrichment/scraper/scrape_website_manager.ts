@@ -11,6 +11,8 @@ import { insertEnrichmentLinkedinBatch } from '../queries/insert_enrichment_link
 import { insertEnrichmentPhone } from '../queries/insert_enrichment_phone'
 import { cleanUrl } from './utils/clean_url'
 import { extractContactsFromText } from './utils/extract_contacts_from_text'
+import { getMainDomain } from './utils/get_main_domain'
+import { normaliseInternalUrl } from './utils/normalise_internal_url'
 import {
   type NormalizedFacebook,
   normalizeFacebook,
@@ -119,6 +121,16 @@ export const scrapeWebsiteManager = async (
     $('a').each((_, element) => {
       const href = $(element).attr('href') || ''
       const cleanHref = cleanUrl(resolveUrl(url, href))
+      const mainDomain = getMainDomain(url)
+
+      // Check if the URL is internal (either contains domain or starts with /)
+      if (cleanHref.includes(mainDomain)) {
+        const normalisedHref = normaliseInternalUrl(cleanHref, mainDomain)
+        if (normalisedHref) {
+          uniqueLinks.internal.add(normalisedHref)
+        }
+        return
+      }
 
       if (cleanHref.includes('instagram.com')) {
         const clean = normalizeInstagram(cleanHref)

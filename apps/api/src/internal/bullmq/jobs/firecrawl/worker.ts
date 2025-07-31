@@ -7,7 +7,7 @@ export const worker = new Worker(
   async (job) => {
     const { url, options } = job.data
     const app = getFirecrawlClient()
-    return app.scrapeUrl(url, options)
+    return app.scrapeUrl(url, { ...options, timeout: 60000 })
   },
   {
     connection: bullmqRedisOptions,
@@ -15,6 +15,6 @@ export const worker = new Worker(
       max: 500,
       duration: 60000,
     },
-    concurrency: 25,
+    concurrency: 35,
   },
 )
