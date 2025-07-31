@@ -125,11 +125,6 @@ export const scrapeWebsiteManager = async (
 
       // Check if the URL is internal (either contains domain or starts with /)
       if (cleanHref.includes(mainDomain)) {
-        console.log({
-          msg: 'Processing internal link',
-          event: 'processing_internal_link',
-          metadata: { cleanHref, url, mainDomain },
-        })
         const normalisedHref = normaliseInternalUrl(cleanHref, mainDomain)
         if (normalisedHref) {
           uniqueLinks.internal.add(normalisedHref)
@@ -217,8 +212,6 @@ export const scrapeWebsiteManager = async (
       event: 'website_scraped',
       metadata: { url, userPlaceId, responseTime },
     })
-
-    console.log('internalLinks', internalLinks)
 
     return {
       metadata: metadata ?? {

@@ -309,15 +309,6 @@ describe('scrapeWebsiteManager', () => {
       mockUserPlaceId,
     )
 
-    // Debug: Log the result if it's an error
-    if ('error' in result) {
-      console.log('Scrape error:', {
-        name: result.error.name,
-        message: result.error.message,
-        stack: result.error.stack,
-      })
-    }
-
     // Verify successful result
     expect('error' in result).toBe(false)
     if ('error' in result) return // TypeScript guard

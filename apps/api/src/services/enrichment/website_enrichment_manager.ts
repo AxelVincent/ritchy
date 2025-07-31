@@ -15,7 +15,7 @@ import { populateContactFromEnrichment } from '../contact/populate_contact_from_
 import { getBusinessWebsite } from './queries/get_business_website'
 
 export const websiteEnrichmentManager = async ({
-  userPlaceId
+  userPlaceId,
 }: {
   userPlaceId: string
 }) => {
@@ -23,7 +23,7 @@ export const websiteEnrichmentManager = async ({
   logger.info({
     msg: 'Starting website enrichment manager',
     event: 'website_enrichment_manager_start',
-    metadata: { userPlaceId }
+    metadata: { userPlaceId },
   })
   try {
     const place = await getPlaceByUserPlaceId(userPlaceId)
@@ -31,7 +31,7 @@ export const websiteEnrichmentManager = async ({
       logger.error({
         msg: 'Place not found',
         event: 'place_not_found',
-        metadata: { userPlaceId }
+        metadata: { userPlaceId },
       })
       return
     }
@@ -45,12 +45,12 @@ export const websiteEnrichmentManager = async ({
     if (existingEnrichment) {
       await populateContactFromEnrichment({
         enrichmentId: existingEnrichment.id,
-        userPlaceId
+        userPlaceId,
       })
       logger.info({
         msg: 'Website already enriched',
         event: 'website_already_enriched',
-        metadata: { website: existingEnrichment.domain, userPlaceId }
+        metadata: { website: existingEnrichment.domain, userPlaceId },
       })
       return
     }
@@ -60,12 +60,12 @@ export const websiteEnrichmentManager = async ({
       await db.insert(enrichmentTable).values({
         placeId: place.place.id,
         domain: null,
-        domainRegisteredAt: null
+        domainRegisteredAt: null,
       })
       logger.error({
         msg: 'Website not found',
         event: 'website_not_found',
-        metadata: { userPlaceId }
+        metadata: { userPlaceId },
       })
       return
     }
@@ -85,7 +85,7 @@ export const websiteEnrichmentManager = async ({
       logger.info({
         msg: 'Website is a subpage',
         event: 'website_is_subpage',
-        metadata: { website }
+        metadata: { website },
       })
     }
 
@@ -96,7 +96,7 @@ export const websiteEnrichmentManager = async ({
         domain,
         domainRegisteredAt: whoisData?.registrationDate
           ? new Date(whoisData.registrationDate)
-          : null
+          : null,
       })
       .returning()
 
@@ -121,25 +121,25 @@ export const websiteEnrichmentManager = async ({
     logger.info({
       msg: 'Scraping main page of the website',
       event: 'scraping_main_page_of_the_website',
-      metadata: { website, userPlaceId }
+      metadata: { website, userPlaceId },
     })
     const scrapeResult = await scrapeWebsiteManager(
       website,
       enrichment.id,
       false,
-      userPlaceId
+      userPlaceId,
     )
     if (!scrapeResult || 'error' in scrapeResult) {
       logger.error({
         msg: 'Failed to scrape website',
         event: 'failed_to_scrape_website',
-        metadata: { website, userPlaceId }
+        metadata: { website, userPlaceId },
       })
       await db
         .update(enrichmentTable)
         .set({
           error: scrapeResult.error.message,
-          success: false
+          success: false,
         })
         .where(eq(enrichmentTable.id, enrichment.id))
       return
@@ -151,7 +151,7 @@ export const websiteEnrichmentManager = async ({
       const businessName = await getBusinessName(userPlaceId)
       crawlStrategy = await getCrawlStrategy(
         links.internal,
-        businessName ?? domain
+        businessName ?? domain,
       )
       logger.info({
         msg: 'Website has too many internal links',
@@ -159,8 +159,8 @@ export const websiteEnrichmentManager = async ({
         metadata: {
           website,
           crawlStrategyLength: crawlStrategy.length,
-          userPlaceId
-        }
+          userPlaceId,
+        },
       })
     }
 
@@ -175,8 +175,8 @@ export const websiteEnrichmentManager = async ({
       event: 'scraped_website',
       metadata: {
         internal: links.internal,
-        userPlaceId
-      }
+        userPlaceId,
+      },
     })
 
     await Promise.all([
@@ -188,13 +188,13 @@ export const websiteEnrichmentManager = async ({
           language: metadata.language,
           keywords: metadata.keywords,
           favicon: metadata.favicon,
-          robots: metadata.robots
+          robots: metadata.robots,
         })
         .where(eq(enrichmentTable.id, enrichment.id)),
       populateContactFromEnrichment({
         enrichmentId: enrichment.id,
-        userPlaceId
-      })
+        userPlaceId,
+      }),
     ])
 
     const endTime = Date.now()
@@ -202,11 +202,11 @@ export const websiteEnrichmentManager = async ({
     logger.info({
       msg: 'Website enrichment manager completed',
       event: 'website_enrichment_manager_completed',
-      metadata: { userPlaceId, duration }
+      metadata: { userPlaceId, duration },
     })
     return {
       success: true,
-      message: 'Website enriched successfully'
+      message: 'Website enriched successfully',
     }
   } catch (error) {
     const errorDetails = {
@@ -222,11 +222,11 @@ export const websiteEnrichmentManager = async ({
                 stack:
                   process.env.NODE_ENV === 'development'
                     ? error.stack
-                    : undefined
+                    : undefined,
               }
             : error,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     }
 
     logger.error(errorDetails)
@@ -238,7 +238,7 @@ export const websiteEnrichmentManager = async ({
         error instanceof Error
           ? `Website enrichment failed: ${error.message}`
           : 'An unexpected error occurred during website enrichment',
-      error: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      error: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
     }
   }
 }
