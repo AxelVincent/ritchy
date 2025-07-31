@@ -17,6 +17,7 @@ export const facebookSocialsColumn: ColumnDef<SearchResult> = {
   accessorKey: 'facebookSocials',
   meta: {
     filterVariant: 'text',
+    isEnrichment: true,
   },
   accessorFn: (row) => {
     const socialSearchString =

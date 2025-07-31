@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ArrowUpDown, HelpCircle } from 'lucide-react'
@@ -75,21 +77,84 @@ export const HeaderWrapper = ({
             </TooltipContent>
           )}
         </Tooltip>
-        {helper && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="ml-2 cursor-help text-muted-foreground flex-shrink-0">
-                <HelpCircle className="h-4 w-4" aria-label="Help" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent
-              side="top"
-              className="max-w-xs p-0 bg-transparent border-none shadow-none"
-            >
-              {helper}
-            </TooltipContent>
-          </Tooltip>
-        )}
+        <div className="flex items-center gap-2">
+          {column.columnDef.meta?.isEnrichment && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="ml-2 cursor-help text-muted-foreground flex-shrink-0">
+                  <MagicWandIcon
+                    className="h-4 w-4 text-primary"
+                    aria-label="Help"
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="max-w-xs p-0 bg-transparent border-none shadow-none"
+              >
+                <Card className="shadow-md">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <MagicWandIcon
+                        className="h-5 w-5 text-primary"
+                        aria-label="Magic Wand"
+                      />
+                      <div className="font-semibold text-base">
+                        Quick enrichment guide
+                      </div>
+                    </div>
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-2">
+                        <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
+                          <span className="text-primary">1.</span>
+                        </div>
+                        <div>
+                          Find the enrichment button with the magic wand icon{' '}
+                          <MagicWandIcon className="h-4 w-4 inline-block text-primary" />{' '}
+                          at the top of your table
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="h-5 w-5 flex-shrink-0 flex items-center justify-center">
+                          <span className="text-primary">2.</span>
+                        </div>
+                        <div>
+                          Click it to instantly search and gather fresh data
+                          from across the internet
+                        </div>
+                      </div>
+                      <div className="mt-3 bg-muted/30 p-2.5 rounded-md flex items-start gap-2">
+                        <div className="flex-shrink-0">💡</div>
+                        <div className="text-sm">
+                          This smart process checks multiple sources and might
+                          take a moment to get you the best results
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {helper && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="ml-2 cursor-help text-muted-foreground flex-shrink-0">
+                  <HelpCircle
+                    className="h-4 w-4 text-primary"
+                    aria-label="Help"
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="max-w-xs p-0 bg-transparent border-none shadow-none"
+              >
+                {helper}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
       {column.getCanFilter() && (

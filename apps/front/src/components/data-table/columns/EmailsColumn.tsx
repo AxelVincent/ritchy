@@ -18,6 +18,7 @@ export const emailsColumn: ColumnDef<SearchResult> = {
   accessorKey: 'emails',
   meta: {
     filterVariant: 'text',
+    isEnrichment: true,
   },
   accessorFn: (row) => {
     const emailSearchString =
