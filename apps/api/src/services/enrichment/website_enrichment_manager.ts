@@ -12,7 +12,9 @@ import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
+import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
+import { isSocialMediaUrl } from './utils/is_social_media_url'
 
 export const websiteEnrichmentManager = async ({
   userPlaceId,
@@ -50,7 +52,11 @@ export const websiteEnrichmentManager = async ({
       logger.info({
         msg: 'Website already enriched',
         event: 'website_already_enriched',
-        metadata: { website: existingEnrichment.domain, userPlaceId },
+        metadata: {
+          website: existingEnrichment.domain,
+          userPlaceId,
+          timeToEnrich: Date.now() - startTime,
+        },
       })
       return
     }
@@ -65,17 +71,36 @@ export const websiteEnrichmentManager = async ({
       logger.error({
         msg: 'Website not found',
         event: 'website_not_found',
-        metadata: { userPlaceId },
+        metadata: { userPlaceId, timeToEnrich: Date.now() - startTime },
       })
       return
     }
 
-    // TODO: check if the website is a social media website
-    // if it is, we need to insert the social media website into the enrichment table
-    // and return
-
     const domain = getMainDomain(website)
-    const whoisData = await performWhoisLookup(domain)
+    const [enrichment] = await db
+      .insert(enrichmentTable)
+      .values({
+        placeId: place.place.id,
+        domain,
+      })
+      .returning()
+
+    if (isSocialMediaUrl(website)) {
+      await processSocialMediaDomain({
+        enrichmentId: enrichment.id,
+        website,
+      })
+      await populateContactFromEnrichment({
+        enrichmentId: enrichment.id,
+        userPlaceId,
+      })
+      logger.info({
+        msg: 'Website enrichment manager completed [social media]',
+        event: 'website_enrichment_manager_completed',
+        metadata: { website, timeToEnrich: Date.now() - startTime },
+      })
+      return
+    }
 
     // TODO: check if the website is a subpage
     // if it is, we need :
@@ -88,17 +113,6 @@ export const websiteEnrichmentManager = async ({
         metadata: { website },
       })
     }
-
-    const [enrichment] = await db
-      .insert(enrichmentTable)
-      .values({
-        placeId: place.place.id,
-        domain,
-        domainRegisteredAt: whoisData?.registrationDate
-          ? new Date(whoisData.registrationDate)
-          : null,
-      })
-      .returning()
 
     // logger.info({
     //   msg: 'Getting website vectors',
@@ -179,6 +193,7 @@ export const websiteEnrichmentManager = async ({
       },
     })
 
+    const whoisData = await performWhoisLookup(domain)
     await Promise.all([
       db
         .update(enrichmentTable)
@@ -189,6 +204,9 @@ export const websiteEnrichmentManager = async ({
           keywords: metadata.keywords,
           favicon: metadata.favicon,
           robots: metadata.robots,
+          domainRegisteredAt: whoisData?.registrationDate
+            ? new Date(whoisData.registrationDate)
+            : null,
         })
         .where(eq(enrichmentTable.id, enrichment.id)),
       populateContactFromEnrichment({
@@ -200,7 +218,7 @@ export const websiteEnrichmentManager = async ({
     const endTime = Date.now()
     const duration = endTime - startTime
     logger.info({
-      msg: 'Website enrichment manager completed',
+      msg: 'Website enrichment manager completed [regular website]',
       event: 'website_enrichment_manager_completed',
       metadata: { userPlaceId, duration },
     })
