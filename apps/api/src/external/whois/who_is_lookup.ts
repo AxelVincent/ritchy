@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { DomainRegistration } from '@ritchy/types'
-import { isSocialMediaDomain } from '../../services/enrichment/utils/is_social_media_domain'
+import { isSocialMediaUrl } from '../../services/enrichment/utils/is_social_media_url'
 import { performWhoisLookup as performWhoisApiLookup } from './whois_api'
 
 /**
@@ -14,9 +14,9 @@ export const performWhoisLookup = async (
   timeoutMs = 10000,
 ): Promise<DomainRegistration | null> => {
   // Skip social media domains
-  if (isSocialMediaDomain(domain)) {
+  if (isSocialMediaUrl(domain)) {
     logger.debug({
-      msg: 'Skipping WHOIS lookup for social media domain',
+      msg: 'Skipping WHOIS lookup for social media url',
       event: 'whois_lookup_skipped_social_media',
       metadata: { domain },
     })
