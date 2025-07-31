@@ -2,16 +2,75 @@ import { describe, expect, it } from 'vitest'
 import { cleanUrl } from '../clean_url'
 
 describe('cleanUrl', () => {
+  // Test root path handling
+  it('should preserve trailing slash for root paths', () => {
+    const testCases = [
+      {
+        input: '/',
+        expected: '/',
+      },
+      {
+        input: 'https://example.com/',
+        expected: 'https://example.com/',
+      },
+      {
+        input: 'http://localhost:3000/',
+        expected: 'http://localhost:3000/',
+      },
+    ]
+
+    for (const { input, expected } of testCases) {
+      expect(cleanUrl(input)).toBe(expected)
+    }
+  })
+
+  // Test relative paths
+  it('should handle relative paths correctly', () => {
+    const testCases = [
+      {
+        input: '/about',
+        expected: '/about',
+      },
+      {
+        input: '/contact/',
+        expected: '/contact',
+      },
+      {
+        input: '/products/item/',
+        expected: '/products/item',
+      },
+      {
+        input: '/en/about/',
+        expected: '/en/about',
+      },
+    ]
+
+    for (const { input, expected } of testCases) {
+      expect(cleanUrl(input)).toBe(expected)
+    }
+  })
+
   it('should remove hash fragments from URLs', () => {
     const input = 'https://example.com/page#section'
     const expected = 'https://example.com/page'
     expect(cleanUrl(input)).toBe(expected)
   })
 
-  it('should remove trailing slashes from paths', () => {
-    const input = 'https://example.com/page/'
-    const expected = 'https://example.com/page'
-    expect(cleanUrl(input)).toBe(expected)
+  it('should remove trailing slashes from non-root paths', () => {
+    const testCases = [
+      {
+        input: 'https://example.com/page/',
+        expected: 'https://example.com/page',
+      },
+      {
+        input: 'https://example.com/about/team/',
+        expected: 'https://example.com/about/team',
+      },
+    ]
+
+    for (const { input, expected } of testCases) {
+      expect(cleanUrl(input)).toBe(expected)
+    }
   })
 
   it('should handle URLs with both hash and trailing slash', () => {
@@ -33,7 +92,16 @@ describe('cleanUrl', () => {
   })
 
   it('should return original string for invalid URLs', () => {
-    const invalidUrls = ['not-a-url', 'http://', 'javascript:void(0)', '', '#']
+    const invalidUrls = [
+      'not-a-url',
+      'http://',
+      'https://',
+      'javascript:void(0)',
+      '',
+      '#',
+      'about', // relative path without leading slash should be preserved
+      'contact/us', // relative path without leading slash should be preserved
+    ]
 
     for (const url of invalidUrls) {
       expect(cleanUrl(url)).toBe(url)
