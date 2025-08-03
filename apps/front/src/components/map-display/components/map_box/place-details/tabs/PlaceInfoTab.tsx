@@ -19,6 +19,7 @@ import {
   ChevronUp,
   Clock,
   ExternalLink,
+  Info,
   Mail,
   MapPin,
   MapPinPlusInside,
@@ -64,6 +65,16 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => {
               <span className="font-medium">{place.name}</span>
             </TextWrapper>
           </div>
+
+          {/* Short Description */}
+          {place.shortDescription && (
+            <div className="flex items-center gap-3 mb-2">
+              <Info className="h-5 w-5 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground">
+                {place.shortDescription}
+              </span>
+            </div>
+          )}
 
           {/* Rating information */}
           {place.rating && (

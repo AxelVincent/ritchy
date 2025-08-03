@@ -15,10 +15,11 @@ export const enrichment = pgTable('enrichment', {
     .notNull()
     .references(() => place.id, { onDelete: 'cascade' })
     .unique(),
+  description: text('description'),
+  shortDescription: text('short_description'),
   domain: text('domain'),
   domainRegisteredAt: timestamp('domain_registered_at'),
   title: text('title'),
-  description: text('description'),
   language: text('language'),
   keywords: text('keywords'),
   favicon: text('favicon'),

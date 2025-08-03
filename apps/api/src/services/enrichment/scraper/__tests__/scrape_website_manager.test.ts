@@ -7,6 +7,7 @@ import { insertEnrichmentFacebookBatch } from '../../queries/insert_enrichment_f
 import { insertEnrichmentInstagramBatch } from '../../queries/insert_enrichment_instagram_batch'
 import { insertEnrichmentLinkedinBatch } from '../../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../../queries/insert_enrichment_phone'
+import { isSocialMediaUrl } from '../../utils/is_social_media_url'
 import { scrapeWebsiteManager } from '../scrape_website_manager'
 
 // Mock only external dependencies and configs
@@ -32,11 +33,8 @@ vi.mock('../../../../config/redis', () => ({
 vi.mock('../../../../config/qdrant', () => ({
   QDRANT_CONFIG: {
     API_KEY: 'test-qdrant-key',
-    USER: 'test-user',
-    PORT: '6333',
-    MANAGEMENT_PORT: '6334',
-    API_PORT: '6333',
-    HOST: 'localhost',
+    URL: 'http://localhost:6333',
+    COLLECTION_NAME: 'test-collection',
   },
 }))
 
@@ -93,6 +91,10 @@ vi.mock('../../queries/insert_enrichment_linkedin_batch', () => ({
 
 vi.mock('../../../enrichment/queries/get_business_country_code', () => ({
   getBusinessCountryCodeByEnrichmentId: vi.fn(),
+}))
+
+vi.mock('../../utils/is_social_media_url', () => ({
+  isSocialMediaUrl: vi.fn(),
 }))
 
 describe('scrapeWebsiteManager', () => {
@@ -504,5 +506,88 @@ describe('scrapeWebsiteManager', () => {
     expect(result.error.name).toBe('ScrapeError')
     expect(result.error.message).toBe('Unexpected error')
     expect(result.error.stack).toBeDefined()
+  })
+
+  it('should not consider social media URLs as internal links even if they contain part of main domain', async () => {
+    const mainUrl = 'https://hego.paris.com'
+
+    // Mock HTML with social media links containing part of the domain name
+    vi.mocked(scrapeWithRetry).mockResolvedValue({
+      success: true,
+      rawHtml: `
+        <html>
+          <body>
+            <!-- Regular internal links -->
+            <a href="https://hego.paris.com/about">About</a>
+            <a href="https://hego.paris.com/contact">Contact</a>
+            
+            <!-- Social media links containing part of domain -->
+            <a href="https://instagram.com/hego.paris">Instagram</a>
+            <a href="https://facebook.com/hego.paris">Facebook</a>
+            <a href="https://linkedin.com/company/hego-paris">LinkedIn</a>
+          </body>
+        </html>
+      `,
+      markdown: '# Test Content',
+      metadata: {
+        title: '',
+        description: '',
+        language: '',
+        keywords: '',
+        robots: '',
+      },
+    })
+
+    // Mock isSocialMediaUrl to return true for social media URLs
+    vi.mocked(isSocialMediaUrl).mockImplementation((url: string) => {
+      return (
+        url.includes('instagram.com') ||
+        url.includes('facebook.com') ||
+        url.includes('linkedin.com')
+      )
+    })
+
+    const result = await scrapeWebsiteManager(
+      mainUrl,
+      mockEnrichmentId,
+      false,
+      mockUserPlaceId,
+    )
+
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+
+    // Should only include actual internal links
+    expect(result.links.internal).toEqual([
+      'https://hego.paris.com/about',
+      'https://hego.paris.com/contact',
+    ])
+
+    // Should NOT include social media URLs even though they contain 'hego.paris'
+    expect(result.links.internal).not.toContain(
+      'https://instagram.com/hego.paris',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://facebook.com/hego.paris',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://linkedin.com/company/hego-paris',
+    )
+
+    // Verify that social media URLs were properly processed as social links
+    expect(insertEnrichmentInstagramBatch).toHaveBeenCalledWith(
+      mockEnrichmentId,
+      [expect.objectContaining({ username: 'hego.paris' })],
+    )
+
+    expect(insertEnrichmentFacebookBatch).toHaveBeenCalledWith(
+      mockEnrichmentId,
+      [expect.objectContaining({ username: 'hego.paris' })],
+    )
+
+    expect(insertEnrichmentLinkedinBatch).toHaveBeenCalledWith(
+      mockEnrichmentId,
+      [expect.objectContaining({ name: 'hego-paris', type: 'company' })],
+    )
   })
 })

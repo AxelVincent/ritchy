@@ -10,6 +10,8 @@ import { getCrawlStrategy } from '../../external/langchain/get_crawl_strategy'
 import { getBusinessName } from './queries/get_business_name'
 import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
+import { getWebsiteDescription } from '../../external/langchain/get_website_description'
+import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vectors'
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
 import { processSocialMediaDomain } from './process_social_media_domain'
@@ -114,23 +116,23 @@ export const websiteEnrichmentManager = async ({
       })
     }
 
-    // logger.info({
-    //   msg: 'Getting website vectors',
-    //   event: 'getting_website_vectors',
-    //   metadata: { domain, userPlaceId },
-    // })
-    // const websiteVectors = await getWebsiteVectors(domain)
+    logger.info({
+      msg: 'Getting website vectors',
+      event: 'getting_website_vectors',
+      metadata: { domain, userPlaceId },
+    })
+    const websiteVectors = await getWebsiteVectors(domain)
 
-    // if (websiteVectors.length > 0) {
-    //   logger.info({
-    //     msg: 'Website already exists in qdrant',
-    //     event: 'website_already_exists',
-    //     metadata: {
-    //       website,
-    //     },
-    //   })
-    //   return
-    // }
+    if (websiteVectors.length > 0) {
+      logger.info({
+        msg: 'Website already exists in qdrant',
+        event: 'website_already_exists',
+        metadata: {
+          website,
+        },
+      })
+      return
+    }
 
     logger.info({
       msg: 'Scraping main page of the website',
@@ -179,8 +181,6 @@ export const websiteEnrichmentManager = async ({
     }
 
     for (const url of crawlStrategy) {
-      // wait 500ms to avoid rate limiting
-      await new Promise((resolve) => setTimeout(resolve, 500))
       await scrapeWebsiteManager(url, enrichment.id, true, userPlaceId)
     }
 
@@ -193,13 +193,17 @@ export const websiteEnrichmentManager = async ({
       },
     })
 
+    const { description, shortDescription } =
+      await getWebsiteDescription(domain)
+
     const whoisData = await performWhoisLookup(domain)
     await Promise.all([
       db
         .update(enrichmentTable)
         .set({
           title: metadata.title,
-          description: metadata.description,
+          description,
+          shortDescription,
           language: metadata.language,
           keywords: metadata.keywords,
           favicon: metadata.favicon,

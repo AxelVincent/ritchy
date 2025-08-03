@@ -243,6 +243,11 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.website || '',
         },
         {
+          header: 'Short Description',
+          field: 'shortDescription',
+          accessor: (row: SearchResult): string => row.shortDescription || '',
+        },
+        {
           header: 'Google Maps URL',
           field: 'googleMapsUri',
           accessor: (row: SearchResult): string => row.googleMapsUri || '',
@@ -535,6 +540,11 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => {
             return row.domainRegisteredAt?.toISOString() || ''
           },
+        },
+        {
+          header: 'Description',
+          field: 'description',
+          accessor: (row: SearchResult): string => row.description || '',
         },
       ]
 

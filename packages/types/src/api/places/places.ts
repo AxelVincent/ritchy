@@ -217,6 +217,8 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   notes: z.array(NoteSchema).optional().nullable(),
   status: StatusEnum.nullable(),
   domainRegisteredAt: z.date().nullable(),
+  description: z.string().nullable(),
+  shortDescription: z.string().nullable(),
   emails: z.array(EmailSchema).optional(),
   phones: z.array(PhoneSchema).optional(),
   linkedinSocials: z.array(SocialMediaSchema).optional(),
