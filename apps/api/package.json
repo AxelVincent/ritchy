@@ -29,6 +29,7 @@
     "@langchain/anthropic": "0.3.24",
     "@langchain/community": "0.3.48",
     "@langchain/core": "0.3.62",
+    "@langchain/google-genai": "0.2.16",
     "@langchain/mistralai": "0.2.1",
     "@langchain/openai": "0.6.2",
     "@langchain/qdrant": "0.1.2",

@@ -47,6 +47,31 @@ export const websiteEnrichmentManager = async ({
       .limit(1)
 
     if (existingEnrichment) {
+      // Enrich description if not already done
+      // TODO: Better handling of this
+      if (existingEnrichment.domain && !existingEnrichment.description) {
+        const description = await getWebsiteDescription(
+          existingEnrichment.domain,
+        )
+        if (description) {
+          logger.info({
+            msg: 'Updating website description',
+            event: 'updating_website_description',
+            metadata: {
+              shortDescription: description.shortDescription,
+              website: existingEnrichment.domain,
+              userPlaceId,
+            },
+          })
+          await db
+            .update(enrichmentTable)
+            .set({
+              description: description.description,
+              shortDescription: description.shortDescription,
+            })
+            .where(eq(enrichmentTable.id, existingEnrichment.id))
+        }
+      }
       await populateContactFromEnrichment({
         enrichmentId: existingEnrichment.id,
         userPlaceId,

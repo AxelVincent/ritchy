@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import { anthropic_haiku, mistral_8b } from './llms'
+import { gemini_2_5_pro } from './llms'
 import {
   WebDescriptionAssistantSchema,
   webDescriptionAssistant,
@@ -37,7 +37,7 @@ export const getWebsiteDescription = async (domain: string) => {
       content: aggregatedContent,
     })
 
-    const anthropic_structuredOutput = anthropic_haiku.withStructuredOutput(
+    const anthropic_structuredOutput = gemini_2_5_pro.withStructuredOutput(
       WebDescriptionAssistantSchema,
     )
     const anthropic_result = await anthropic_structuredOutput.invoke(prompt)
