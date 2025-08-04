@@ -117,7 +117,7 @@ export const TextWrapper = memo(
                   {children}
                 </Label>
               </TooltipTrigger>
-              <TooltipContent side="bottom">
+              <TooltipContent side="bottom" className="max-w-xs">
                 <p className="text-xs">{customTooltipContent || textContent}</p>
               </TooltipContent>
             </Tooltip>

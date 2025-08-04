@@ -1,0 +1,1 @@
+ALTER TABLE "enrichment" ADD COLUMN "short_description" text;

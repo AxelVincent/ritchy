@@ -18,6 +18,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { PlaceContactTab } from './tabs/PlaceContactTab'
+import { PlaceDescriptionTab } from './tabs/PlaceDescriptionTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
 import { PlaceReviewsTab } from './tabs/PlaceReviewsTab'
@@ -218,6 +219,13 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     Informations
                   </TabsTrigger>
                   <TabsTrigger
+                    value="description"
+                    aria-label="Description"
+                    className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+                  >
+                    Description
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="contact"
                     aria-label="Contact"
                     className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
@@ -246,6 +254,13 @@ export const PlaceCard = ({ places, displayedPlaceIds }: PlaceCardProps) => {
                     className="mt-0 p-4 h-full flex-1 overflow-auto"
                   >
                     <PlaceInfoTab place={currentPlace} />
+                  </TabsContent>
+
+                  <TabsContent
+                    value="description"
+                    className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
+                  >
+                    <PlaceDescriptionTab place={currentPlace} />
                   </TabsContent>
 
                   <TabsContent

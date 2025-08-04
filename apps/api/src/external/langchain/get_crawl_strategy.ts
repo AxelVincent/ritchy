@@ -1,20 +1,18 @@
 import 'dotenv/config'
-import { ChatAnthropic } from '@langchain/anthropic'
+
+import { anthropic_haiku } from './llms'
 import {
   WebCrawlerAssistantSchema,
   webCrawlerAssistant,
 } from './prompts/web_crawler_assistant'
 
-const llm = new ChatAnthropic({
-  model: 'claude-3-5-haiku-20241022',
-  temperature: 0,
-})
-
 export const getCrawlStrategy = async (
   urls: string[],
   businessName: string,
 ) => {
-  const structuredOutput = llm.withStructuredOutput(WebCrawlerAssistantSchema)
+  const structuredOutput = anthropic_haiku.withStructuredOutput(
+    WebCrawlerAssistantSchema,
+  )
 
   const prompt = await webCrawlerAssistant.invoke({
     links: urls,

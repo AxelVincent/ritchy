@@ -6,8 +6,12 @@ export const websiteRagIndexingPipeline = async (
   url: string,
   markdown: string,
 ) => {
-  const documents = await markdownSplitter(markdown)
-  await vectorStore.addDocuments(documents, {
-    customPayload: [{ domain, url }],
+  const now = new Date()
+  const documents = await markdownSplitter(markdown, {
+    domain,
+    url,
+    createdAt: now,
+    updatedAt: now,
   })
+  await vectorStore.addDocuments(documents)
 }

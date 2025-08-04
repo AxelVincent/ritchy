@@ -3,12 +3,14 @@ import * as cheerio from 'cheerio'
 import { scrapeWithRetry } from '../../../external/firecrawl'
 
 import type { FirecrawlDocumentMetadata } from '@mendable/firecrawl-js'
+import { websiteRagIndexingPipeline } from '../../../external/langchain/website_rag_indexing_pipeline'
 import { getBusinessCountryCodeByEnrichmentId } from '../../enrichment/queries/get_business_country_code'
 import { insertEnrichmentEmail } from '../queries/insert_enrichment_email'
 import { insertEnrichmentFacebookBatch } from '../queries/insert_enrichment_facebook_batch'
 import { insertEnrichmentInstagramBatch } from '../queries/insert_enrichment_instagram_batch'
 import { insertEnrichmentLinkedinBatch } from '../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../queries/insert_enrichment_phone'
+import { isSocialMediaUrl } from '../utils/is_social_media_url'
 import { cleanUrl } from './utils/clean_url'
 import { extractContactsFromText } from './utils/extract_contacts_from_text'
 import { getMainDomain } from './utils/get_main_domain'
@@ -124,7 +126,7 @@ export const scrapeWebsiteManager = async (
       const mainDomain = getMainDomain(url)
 
       // Check if the URL is internal (either contains domain or starts with /)
-      if (cleanHref.includes(mainDomain)) {
+      if (cleanHref.includes(mainDomain) && !isSocialMediaUrl(cleanHref)) {
         const normalisedHref = normaliseInternalUrl(cleanHref, mainDomain)
         if (normalisedHref) {
           uniqueLinks.internal.add(normalisedHref)
@@ -203,8 +205,8 @@ export const scrapeWebsiteManager = async (
       (internalUrl) => internalUrl !== cleanUrl(url),
     )
 
-    // const mainDomain = getMainDomain(url)
-    // await websiteRagIndexingPipeline(mainDomain, url, markdown)
+    const mainDomain = getMainDomain(url)
+    await websiteRagIndexingPipeline(mainDomain, url, markdown)
 
     const responseTime = Date.now() - time
     logger.info({

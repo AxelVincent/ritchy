@@ -111,7 +111,12 @@ const config = {
       },
     },
   },
-  plugins: [animate, require('tailwindcss-animate'), addVariablesForColors],
+  plugins: [
+    animate,
+    require('tailwindcss-animate'),
+    addVariablesForColors,
+    require('@tailwindcss/typography'),
+  ],
 } satisfies Config
 
 // This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).

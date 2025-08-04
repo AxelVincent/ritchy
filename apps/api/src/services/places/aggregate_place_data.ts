@@ -10,7 +10,7 @@ import {
   getUserEnrichedPlaces,
 } from '../enrichment/getUserEnrichedPlaces'
 import { getOrFetchEnrichmentData } from '../enrichment/get_or_fetch_enrichment_data'
-import { getDomainRegisteredAtByPlaceIds } from '../enrichment/queries/get_domain_registered_at_by_place_ids'
+import { getEnrichmentByPlaceIds } from '../enrichment/queries/get_enrichment_by_place_ids'
 import { sanitizeEnrichmentData } from '../enrichment/utils/sanitize_enrichment_data'
 import { getHubspotSyncedByPlaceIds } from '../hubspot/get_hubspot_synced_by_place_ids'
 import { getListAssociationsByPlaceIds } from '../lists/getListAssociationsByPlaceIds'
@@ -84,7 +84,7 @@ export const aggregatePlaceData = async (
   )
 
   const hubspotSynced = await getHubspotSyncedByPlaceIds(userPlaceIds, userId)
-  const domainRegisteredAt = await getDomainRegisteredAtByPlaceIds(userPlaceIds)
+  const enrichment = await getEnrichmentByPlaceIds(userPlaceIds)
 
   // Get user's enriched places if needed
   let enrichedPlaces = new Map<string, EnrichmentLegacy>()
@@ -104,7 +104,10 @@ export const aggregatePlaceData = async (
       lists: associations.get(basePlace.id) || [],
       notes: notes.get(basePlace.id) || [],
       status: statuses.get(basePlace.id)?.status || 'NEW',
-      domainRegisteredAt: domainRegisteredAt.get(basePlace.id) || null,
+      domainRegisteredAt:
+        enrichment.get(basePlace.id)?.domainRegisteredAt || null,
+      description: enrichment.get(basePlace.id)?.description || null,
+      shortDescription: enrichment.get(basePlace.id)?.shortDescription || null,
       listId: listIdMap.get(basePlace.id) || null,
       emails: emails.get(basePlace.id) || [],
       phones: phones.get(basePlace.id) || [],

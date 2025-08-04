@@ -33,6 +33,7 @@ import { emailsColumn } from './columns/EmailsColumn'
 import { facebookSocialsColumn } from './columns/FacebookSocialsColumn'
 import { instagramSocialsColumn } from './columns/InstagramSocialsColumn'
 import { linkedinSocialsColumn } from './columns/LinkedinSocialsColumn'
+import { shortDescriptionColumn } from './columns/ShortDescriptionColumn'
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
@@ -44,6 +45,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   statusColumn,
   websiteColumn,
   phoneColumn,
+  shortDescriptionColumn,
   emailsColumn,
   instagramSocialsColumn,
   linkedinSocialsColumn,
