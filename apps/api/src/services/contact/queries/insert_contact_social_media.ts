@@ -1,6 +1,4 @@
-import { logger } from '@ritchy/logger'
 import type { SocialMediaPlatform } from '@ritchy/types'
-import { and, eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { contactSocialMedia } from '../../../db/schema'
 

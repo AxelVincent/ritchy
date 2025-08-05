@@ -3,6 +3,7 @@ import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
@@ -307,6 +308,12 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   {visibleCells.map((cell) => (
                     <td
                       key={cell.id}
+                      className={cn('border-r border-border relative', {
+                        'bg-muted':
+                          cell.column.id === visibleCells[0].column.id,
+                        'bg-primary-foreground':
+                          selectedPlaceId === row.original.id,
+                      })}
                       style={{
                         display: 'flex',
                         width: cell.column.getSize(),
@@ -322,13 +329,28 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           cell.column.id === visibleCells[0].column.id ? 1 : 0,
                         alignItems: 'center',
                       }}
-                      className={cn('border-r border-border', {
-                        'bg-muted':
-                          cell.column.id === visibleCells[0].column.id,
-                        'bg-primary-foreground':
-                          selectedPlaceId === row.original.id,
-                      })}
                     >
+                      {cell.column.columnDef.meta?.isEnrichment &&
+                        row.original.enrichedAt && (
+                          <div className="absolute top-1 right-1">
+                            <MagicWandIcon
+                              className={cn('h-2.5 w-2.5', {
+                                'text-blue-400 dark:text-blue-500':
+                                  new Date(row.original.enrichedAt) <=
+                                  new Date(Date.now() - 1000 * 60 * 30),
+                                'text-green-400 dark:text-green-500':
+                                  new Date(row.original.enrichedAt) >
+                                  new Date(Date.now() - 1000 * 60 * 30),
+                              })}
+                              aria-label={
+                                new Date(row.original.enrichedAt) >
+                                new Date(Date.now() - 1000 * 60 * 30)
+                                  ? 'Recently enriched'
+                                  : 'Previously enriched'
+                              }
+                            />
+                          </div>
+                        )}
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),

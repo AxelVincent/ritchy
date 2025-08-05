@@ -11,6 +11,7 @@ type Enrichment = {
   domainRegisteredAt: Date | null
   description: string | null
   shortDescription: string | null
+  enrichedAt: Date | null
 }
 
 export const getEnrichmentByPlaceIds = async (
@@ -22,6 +23,7 @@ export const getEnrichmentByPlaceIds = async (
       domainRegisteredAt: enrichmentTable.domainRegisteredAt,
       description: enrichmentTable.description,
       shortDescription: enrichmentTable.shortDescription,
+      enrichedAt: userPlace.enrichedAt,
     })
     .from(enrichmentTable)
     .innerJoin(place, eq(enrichmentTable.placeId, place.id))
@@ -42,6 +44,7 @@ export const getEnrichmentByPlaceIds = async (
       domainRegisteredAt: enrichment.domainRegisteredAt,
       description: enrichment.description,
       shortDescription: enrichment.shortDescription,
+      enrichedAt: enrichment.enrichedAt,
     })
   }
 

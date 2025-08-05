@@ -32,6 +32,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
   }[],
 ) => {
   const excludedFields = [
+    'enrichedAt',
     'sourceId',
     'utcOffsetMinutes',
     'addressComponents',

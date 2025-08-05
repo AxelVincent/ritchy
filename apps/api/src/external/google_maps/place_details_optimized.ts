@@ -49,7 +49,7 @@ function getEstimatedApiCallsForModel(model: string): number {
 export type PlaceDetailsOptimized = PlaceBase & {
   id: string
   fromCache: boolean
-  isEnriched: boolean
+  enrichedAt: Date | null
 }
 
 export async function getPlaceDetailsOptimized(
@@ -63,7 +63,7 @@ export async function getPlaceDetailsOptimized(
   const [placeResult] = await db
     .select({
       sourceId: place.sourceId,
-      isEnriched: userPlace.isEnriched,
+      enrichedAt: userPlace.enrichedAt,
     })
     .from(place)
     .innerJoin(userPlace, eq(place.id, userPlace.placeId))
@@ -81,7 +81,7 @@ export async function getPlaceDetailsOptimized(
       ...place,
       id: userPlaceId,
       fromCache: true,
-      isEnriched: placeResult.isEnriched,
+      enrichedAt: placeResult.enrichedAt,
     }
   }
 
@@ -168,7 +168,7 @@ export async function getPlaceDetailsOptimized(
                 ...place,
                 id: userPlaceId,
                 fromCache: true,
-                isEnriched: placeResult.isEnriched,
+                enrichedAt: placeResult.enrichedAt,
               }
             }
           } else {
@@ -248,7 +248,7 @@ export async function getPlaceDetailsOptimized(
                 ...place,
                 id: userPlaceId,
                 fromCache: true,
-                isEnriched: placeResult.isEnriched,
+                enrichedAt: placeResult.enrichedAt,
               }
             }
           }
@@ -328,7 +328,7 @@ export async function getPlaceDetailsOptimized(
       ...result,
       id: userPlaceId,
       fromCache: false,
-      isEnriched: placeResult.isEnriched,
+      enrichedAt: placeResult.enrichedAt,
     }
   } catch (error) {
     const endTime = Date.now()
