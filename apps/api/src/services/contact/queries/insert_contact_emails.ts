@@ -9,10 +9,13 @@ export const insertContactEmails = async (
     return
   }
 
-  await db.insert(contactEmail).values(
-    emails.map((email) => ({
-      contactId,
-      email,
-    })),
-  )
+  await db
+    .insert(contactEmail)
+    .values(
+      emails.map((email) => ({
+        contactId,
+        email,
+      })),
+    )
+    .onConflictDoNothing()
 }
