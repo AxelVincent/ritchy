@@ -130,6 +130,23 @@ export const HeaderWrapper = ({
                           take a moment to get you the best results
                         </div>
                       </div>
+                      <div className="mt-3 bg-muted/30 p-2.5 rounded-md flex items-start gap-2">
+                        <div className="text-sm">
+                          Look for the magic wand indicators in enriched cells:
+                          <div className="mt-1 space-y-1">
+                            <div className="flex items-center gap-1">
+                              <MagicWandIcon className="h-2.5 w-2.5 mr-1 text-blue-400" />
+                              <span>shows enriched data</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MagicWandIcon className="h-2.5 w-2.5 mr-1 text-green-400" />
+                              <span>
+                                shows recently enriched data (last 30 minutes)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

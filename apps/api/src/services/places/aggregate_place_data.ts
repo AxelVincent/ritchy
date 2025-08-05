@@ -115,6 +115,7 @@ export const aggregatePlaceData = async (
       facebookSocials: facebookSocials.get(basePlace.id) || [],
       instagramSocials: instagramSocials.get(basePlace.id) || [],
       hubspotSynced: hubspotSynced.get(basePlace.id) || false,
+      enrichedAt: enrichment.get(basePlace.id)?.enrichedAt || null,
     }
   })
 

@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
@@ -35,28 +36,46 @@ export const contact = pgTable(
 
 export type Contact = InferSelectModel<typeof contact>
 
-export const contactEmail = pgTable('contact_email', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  contactId: uuid('contact_id')
-    .notNull()
-    .references(() => contact.id, { onDelete: 'cascade' }),
-  email: text('email').notNull(),
-  isPrimary: boolean('is_primary').notNull().default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+export const contactEmail = pgTable(
+  'contact_email',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    contactId: uuid('contact_id')
+      .notNull()
+      .references(() => contact.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique().on(table.contactId, table.email),
+    uniqueIndex('one_primary_email_per_contact')
+      .on(table.contactId)
+      .where(sql`${table.isPrimary} = true`),
+  ],
+)
 
-export const contactSocialMedia = pgTable('contact_social_media', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  contactId: uuid('contact_id')
-    .notNull()
-    .references(() => contact.id, { onDelete: 'cascade' }),
-  socialMediaPlatform: socialPlatformEnum('social_media_platform').notNull(),
-  url: text('url').notNull(),
-  isPrimary: boolean('is_primary').notNull().default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+export const contactSocialMedia = pgTable(
+  'contact_social_media',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    contactId: uuid('contact_id')
+      .notNull()
+      .references(() => contact.id, { onDelete: 'cascade' }),
+    socialMediaPlatform: socialPlatformEnum('social_media_platform').notNull(),
+    url: text('url').notNull(),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique().on(table.contactId, table.socialMediaPlatform, table.url),
+    uniqueIndex('one_primary_social_media_per_contact')
+      .on(table.contactId)
+      .where(sql`${table.isPrimary} = true`),
+  ],
+)
 
 export const phoneTypeEnum = pgEnum('phone_type', [
   'PREMIUM_RATE',
@@ -72,14 +91,23 @@ export const phoneTypeEnum = pgEnum('phone_type', [
   'MOBILE',
 ])
 
-export const contactPhone = pgTable('contact_phone', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  contactId: uuid('contact_id')
-    .notNull()
-    .references(() => contact.id, { onDelete: 'cascade' }),
-  phone: text('phone').notNull(),
-  type: phoneTypeEnum('type').notNull(),
-  isPrimary: boolean('is_primary').notNull().default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+export const contactPhone = pgTable(
+  'contact_phone',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    contactId: uuid('contact_id')
+      .notNull()
+      .references(() => contact.id, { onDelete: 'cascade' }),
+    phone: text('phone').notNull(),
+    type: phoneTypeEnum('type').notNull(),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique().on(table.contactId, table.phone, table.type),
+    uniqueIndex('one_primary_phone_per_contact')
+      .on(table.contactId)
+      .where(sql`${table.isPrimary} = true`),
+  ],
+)

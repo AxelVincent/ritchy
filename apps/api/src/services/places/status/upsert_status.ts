@@ -29,7 +29,7 @@ export const upsertStatus = async (
         status,
         updatedAt: new Date(),
       },
-      ['userPlaceId'],
+      ['userPlaceId', 'status'],
     )
     if (context.changeSource === 'user') {
       updateHubspotContactStatus(context.userId, userPlaceId, status)

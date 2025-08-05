@@ -225,6 +225,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   facebookSocials: z.array(SocialMediaSchema).optional(),
   instagramSocials: z.array(SocialMediaSchema).optional(),
   hubspotSynced: z.boolean(),
+  enrichedAt: z.date().nullable(),
 })
 
 // Type inference from schemas

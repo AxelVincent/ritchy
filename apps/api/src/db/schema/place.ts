@@ -27,7 +27,7 @@ export const userPlace = pgTable(
     placeId: uuid('place_id')
       .notNull()
       .references(() => place.id, { onDelete: 'cascade' }),
-    isEnriched: boolean('is_enriched').notNull().default(false),
+    enrichedAt: timestamp('enriched_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

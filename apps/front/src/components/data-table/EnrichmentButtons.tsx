@@ -58,6 +58,13 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     (row) => row.original.website,
   )
   const batchEnrichmentMutation = useBatchEnrichment()
+  const rowsToEnrich = hasSelectedRows
+    ? selectedRows.filter(
+        (row) => row.original.website && !row.original.enrichedAt,
+      )
+    : table
+        .getFilteredRowModel()
+        .rows.filter((row) => row.original.website && !row.original.enrichedAt)
 
   const jobStatusQuery = useEnrichmentJobStatus(
     activeJobId || '',
@@ -66,9 +73,6 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   )
 
   const handleEnrichClick = async () => {
-    const rowsToEnrich = hasSelectedRows
-      ? selectedRows.filter((row) => row.original.website)
-      : table.getFilteredRowModel().rows.filter((row) => row.original.website)
     try {
       const response = await batchEnrichmentMutation.mutateAsync({
         enrichments: rowsToEnrich.map((row) => ({
@@ -166,11 +170,7 @@ export const EnrichmentButtons = <TData extends SearchResult>({
         disabled={!!activeJobId}
         className={activeJobId ? 'h-auto' : ''}
       >
-        {renderButtonContent(
-          table.getFilteredRowModel().rows.filter((row) => row.original.website)
-            .length,
-          'Enrich All',
-        )}
+        {renderButtonContent(rowsToEnrich.length, 'Enrich All')}
       </Button>
     </div>
   )

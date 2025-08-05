@@ -5,7 +5,7 @@ import { isSubPage } from './utils/is_sub_page'
 
 import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { enrichment as enrichmentTable } from '../../db/schema'
+import { enrichment, enrichment as enrichmentTable } from '../../db/schema'
 import { getCrawlStrategy } from '../../external/langchain/get_crawl_strategy'
 import { getBusinessName } from './queries/get_business_name'
 import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
@@ -16,6 +16,7 @@ import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
+import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
 import { isSocialMediaUrl } from './utils/is_social_media_url'
 
 export const websiteEnrichmentManager = async ({
@@ -76,6 +77,7 @@ export const websiteEnrichmentManager = async ({
         enrichmentId: existingEnrichment.id,
         userPlaceId,
       })
+      await setUserPlaceAsEnriched(userPlaceId)
       logger.info({
         msg: 'Website already enriched',
         event: 'website_already_enriched',
@@ -242,6 +244,7 @@ export const websiteEnrichmentManager = async ({
         enrichmentId: enrichment.id,
         userPlaceId,
       }),
+      setUserPlaceAsEnriched(userPlaceId),
     ])
 
     const endTime = Date.now()
@@ -256,6 +259,7 @@ export const websiteEnrichmentManager = async ({
       message: 'Website enriched successfully',
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     const errorDetails = {
       msg: 'Error enriching website',
       event: 'error_enriching_website',
@@ -275,16 +279,21 @@ export const websiteEnrichmentManager = async ({
         timestamp: new Date().toISOString(),
       },
     }
-
     logger.error(errorDetails)
 
-    // Return a more specific error message based on the error type
+    await Promise.all([
+      setUserPlaceAsEnriched(userPlaceId),
+      db
+        .update(enrichmentTable)
+        .set({
+          error: errorMessage,
+          success: false,
+        })
+        .where(eq(enrichmentTable.id, enrichment.id)),
+    ])
     return {
       success: false,
-      message:
-        error instanceof Error
-          ? `Website enrichment failed: ${error.message}`
-          : 'An unexpected error occurred during website enrichment',
+      message: `Website enrichment failed: ${errorMessage}`,
       error: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
     }
   }
