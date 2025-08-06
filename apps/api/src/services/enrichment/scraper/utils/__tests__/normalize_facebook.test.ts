@@ -105,6 +105,7 @@ describe('normalizeFacebook', () => {
   it('should return null for invalid usernames', () => {
     expect(normalizeFacebook('https://facebook.com/posts')).toBeNull()
     expect(normalizeFacebook('https://facebook.com/photos')).toBeNull()
+    expect(normalizeFacebook('https://facebook.com/p/pagename')).toBeNull()
     expect(normalizeFacebook('https://facebook.com/pages')).toBeNull()
     expect(normalizeFacebook('https://facebook.com/groups')).toBeNull()
     expect(normalizeFacebook('https://facebook.com/events')).toBeNull()
