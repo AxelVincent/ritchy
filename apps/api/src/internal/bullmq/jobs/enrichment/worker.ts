@@ -86,7 +86,7 @@ const worker = new Worker<EnrichmentJobData>(
   processEnrichmentJob,
   {
     connection: bullmqRedisOptions,
-    concurrency: 20,
+    concurrency: 50,
   },
 )
 
