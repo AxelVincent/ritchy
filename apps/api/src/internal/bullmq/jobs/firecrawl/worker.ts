@@ -15,6 +15,6 @@ export const worker = new Worker(
       max: 500,
       duration: 60000,
     },
-    concurrency: 35,
+    concurrency: 50,
   },
 )

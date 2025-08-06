@@ -5,6 +5,7 @@ export type NormalizedFacebook = {
 
 const FACEBOOK_EXCLUDED_PATHS = [
   'posts/',
+  'p/',
   'photos/',
   'pages/',
   'groups/',

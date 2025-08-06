@@ -32,7 +32,6 @@ export const validateAllSearchResultFieldsHaveColumns = (
   }[],
 ) => {
   const excludedFields = [
-    'enrichedAt',
     'sourceId',
     'utcOffsetMinutes',
     'addressComponents',
@@ -139,6 +138,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         domainRegisteredAt: row.domainRegisteredAt
           ? new Date(row.domainRegisteredAt)
           : null,
+        enrichedAt: row.enrichedAt ? new Date(row.enrichedAt) : null,
         facebookSocials: row.facebookSocials
           ?.filter((social) => social.url && social.url.trim() !== '')
           ?.map((social) => ({
@@ -546,6 +546,12 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           header: 'Description',
           field: 'description',
           accessor: (row: SearchResult): string => row.description || '',
+        },
+        {
+          header: 'Enriched At',
+          field: 'enrichedAt',
+          accessor: (row: SearchResult): string =>
+            row.enrichedAt?.toISOString() || '',
         },
       ]
 
