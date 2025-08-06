@@ -11,6 +11,7 @@ import { getBusinessName } from './queries/get_business_name'
 import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
 import { getWebsiteDescription } from '../../external/langchain/get_website_description'
+import { deleteWebsiteVectors } from '../../external/qdrant/queries/delete_website_vectors'
 import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vectors'
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
@@ -48,38 +49,15 @@ export const websiteEnrichmentManager = async ({
       .limit(1)
 
     if (existingEnrichment) {
-      // Enrich description if not already done
-      // TODO: Better handling of this
-      if (existingEnrichment.domain && !existingEnrichment.description) {
-        const description = await getWebsiteDescription(
-          existingEnrichment.domain,
-        )
-        if (description) {
-          logger.info({
-            msg: 'Updating website description',
-            event: 'updating_website_description',
-            metadata: {
-              shortDescription: description.shortDescription,
-              website: existingEnrichment.domain,
-              userPlaceId,
-            },
-          })
-          await db
-            .update(enrichmentTable)
-            .set({
-              description: description.description,
-              shortDescription: description.shortDescription,
-            })
-            .where(eq(enrichmentTable.id, existingEnrichment.id))
-        }
-      }
-      await populateContactFromEnrichment({
-        enrichmentId: existingEnrichment.id,
-        userPlaceId,
-      })
-      await setUserPlaceAsEnriched(userPlaceId)
+      await Promise.all([
+        populateContactFromEnrichment({
+          enrichmentId: existingEnrichment.id,
+          userPlaceId,
+        }),
+        setUserPlaceAsEnriched(userPlaceId),
+      ])
       logger.info({
-        msg: 'Website already enriched',
+        msg: 'Website already enriched, skipping enrichment',
         event: 'website_already_enriched',
         metadata: {
           website: existingEnrichment.domain,
@@ -98,7 +76,7 @@ export const websiteEnrichmentManager = async ({
         domainRegisteredAt: null,
       })
       logger.error({
-        msg: 'Website not found',
+        msg: 'Website not found, skipping enrichment',
         event: 'website_not_found',
         metadata: { userPlaceId, timeToEnrich: Date.now() - startTime },
       })
@@ -106,7 +84,7 @@ export const websiteEnrichmentManager = async ({
     }
 
     const domain = getMainDomain(website)
-    const [enrichment] = await db
+    const [insertedEnrichment] = await db
       .insert(enrichmentTable)
       .values({
         placeId: place.place.id,
@@ -116,11 +94,11 @@ export const websiteEnrichmentManager = async ({
 
     if (isSocialMediaUrl(website)) {
       await processSocialMediaDomain({
-        enrichmentId: enrichment.id,
+        enrichmentId: insertedEnrichment.id,
         website,
       })
       await populateContactFromEnrichment({
-        enrichmentId: enrichment.id,
+        enrichmentId: insertedEnrichment.id,
         userPlaceId,
       })
       logger.info({
@@ -149,16 +127,15 @@ export const websiteEnrichmentManager = async ({
       metadata: { domain, userPlaceId },
     })
     const websiteVectors = await getWebsiteVectors(domain)
-
     if (websiteVectors.length > 0) {
       logger.info({
-        msg: 'Website already exists in qdrant',
-        event: 'website_already_exists',
+        msg: 'Website already exists in qdrant, deleting vectors before scraping',
+        event: 'website_already_exists_in_qdrant',
         metadata: {
           website,
         },
       })
-      return
+      await deleteWebsiteVectors(domain)
     }
 
     logger.info({
@@ -168,7 +145,7 @@ export const websiteEnrichmentManager = async ({
     })
     const scrapeResult = await scrapeWebsiteManager(
       website,
-      enrichment.id,
+      insertedEnrichment.id,
       false,
       userPlaceId,
     )
@@ -208,7 +185,7 @@ export const websiteEnrichmentManager = async ({
     }
 
     for (const url of crawlStrategy) {
-      await scrapeWebsiteManager(url, enrichment.id, true, userPlaceId)
+      await scrapeWebsiteManager(url, insertedEnrichment.id, true, userPlaceId)
     }
 
     logger.info({
@@ -239,9 +216,9 @@ export const websiteEnrichmentManager = async ({
             ? new Date(whoisData.registrationDate)
             : null,
         })
-        .where(eq(enrichmentTable.id, enrichment.id)),
+        .where(eq(enrichmentTable.id, insertedEnrichment.id)),
       populateContactFromEnrichment({
-        enrichmentId: enrichment.id,
+        enrichmentId: insertedEnrichment.id,
         userPlaceId,
       }),
       setUserPlaceAsEnriched(userPlaceId),
