@@ -3,18 +3,23 @@ import { Worker } from 'bullmq'
 import { getFirecrawlClient } from '../../../../external/firecrawl'
 import { bullmqRedisOptions } from '../../config'
 
+const TIMEOUT = 30000
 export const worker = new Worker(
   'firecrawl-api',
   async (job) => {
     const { url, options } = job.data
     const app = getFirecrawlClient()
-    return app.scrapeUrl(url, { ...options, maxAge: 604800000, timeout: 60000 })
+    return app.scrapeUrl(url, {
+      ...options,
+      maxAge: 604800000,
+      timeout: TIMEOUT,
+    })
   },
   {
     connection: bullmqRedisOptions,
     limiter: {
       max: 500,
-      duration: 60000,
+      duration: TIMEOUT * 2,
     },
     concurrency: 50,
   },
