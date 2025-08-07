@@ -5,7 +5,6 @@ import { scrapeWithRetry } from '../../../external/firecrawl'
 import type { FirecrawlDocumentMetadata } from '@mendable/firecrawl-js'
 import { websiteRagIndexingPipeline } from '../../../external/langchain/website_rag_indexing_pipeline'
 import { getBusinessCountryCodeByEnrichmentId } from '../../enrichment/queries/get_business_country_code'
-import { insertEnrichmentEmail } from '../queries/insert_enrichment_email'
 import { insertEnrichmentFacebookBatch } from '../queries/insert_enrichment_facebook_batch'
 import { insertEnrichmentInstagramBatch } from '../queries/insert_enrichment_instagram_batch'
 import { insertEnrichmentLinkedinBatch } from '../queries/insert_enrichment_linkedin_batch'
@@ -28,6 +27,7 @@ import {
   normalizeLinkedin,
 } from './utils/normalize_linkedin'
 import { resolveUrl } from './utils/resolve_url'
+import { verifyAndInsertEnrichmentEmail } from './verify_and_insert_enrichment_email'
 
 type ScrapeResult = {
   links: Links
@@ -66,7 +66,7 @@ export const scrapeWebsiteManager = async (
   try {
     const time = Date.now()
     logger.info({
-      msg: 'Scraping website',
+      msg: '[Scrape Website Manager] Scraping website',
       event: 'scraping_website',
       metadata: { url, userPlaceId },
     })
@@ -85,7 +85,7 @@ export const scrapeWebsiteManager = async (
 
     if (!success) {
       logger.error({
-        msg: 'Failed to scrape website',
+        msg: '[Scrape Website Manager] Failed to scrape website',
         event: 'scrape_website_failed',
         metadata: { url, error },
       })
@@ -94,7 +94,7 @@ export const scrapeWebsiteManager = async (
 
     if (!rawHtml || !markdown) {
       logger.error({
-        msg: 'No response returned from scrape',
+        msg: '[Scrape Website Manager] No response returned from scrape',
         event: 'scrape_website_no_response',
         metadata: { url },
       })
@@ -163,7 +163,7 @@ export const scrapeWebsiteManager = async (
     })
 
     logger.info({
-      msg: 'Inserting social media data',
+      msg: '[Scrape Website Manager] Inserting social media data',
       event: 'inserting_social_media_data',
       metadata: { enrichmentId, uniqueLinks },
     })
@@ -183,20 +183,10 @@ export const scrapeWebsiteManager = async (
       ),
     ])
 
-    logger.info({
-      msg: 'Inserting email data',
-      event: 'inserting_email_data',
-      metadata: { enrichmentId, uniqueLinks },
-    })
     for (const email of uniqueLinks.emails) {
-      await insertEnrichmentEmail(enrichmentId, url, email)
+      await verifyAndInsertEnrichmentEmail(enrichmentId, url, email)
     }
 
-    logger.info({
-      msg: 'Inserting phone data',
-      event: 'inserting_phone_data',
-      metadata: { enrichmentId, uniqueLinks },
-    })
     for (const phone of uniqueLinks.phones) {
       await insertEnrichmentPhone(enrichmentId, url, phone)
     }
@@ -208,11 +198,11 @@ export const scrapeWebsiteManager = async (
     const mainDomain = getMainDomain(url)
     await websiteRagIndexingPipeline(mainDomain, url, markdown)
 
-    const responseTime = Date.now() - time
+    const responseTimeInSeconds = (Date.now() - time) / 1000
     logger.info({
-      msg: 'Website scraped',
-      event: 'website_scraped',
-      metadata: { url, userPlaceId, responseTime },
+      msg: `[Scrape Website Manager] Website scraped successfully in ${responseTimeInSeconds} seconds`,
+      event: 'website_scraped_success',
+      metadata: { url, userPlaceId, responseTimeInSeconds },
     })
 
     return {
@@ -230,7 +220,7 @@ export const scrapeWebsiteManager = async (
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error({
-      msg: 'Error scraping website',
+      msg: '[Scrape Website Manager] Error scraping website',
       event: 'scrape_website_manager_error',
       metadata: {
         url,

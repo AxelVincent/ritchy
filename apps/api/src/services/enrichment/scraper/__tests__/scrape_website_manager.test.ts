@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { scrapeWithRetry } from '../../../../external/firecrawl'
 import { websiteRagIndexingPipeline } from '../../../../external/langchain/website_rag_indexing_pipeline'
 import { getBusinessCountryCodeByEnrichmentId } from '../../../enrichment/queries/get_business_country_code'
-import { insertEnrichmentEmail } from '../../queries/insert_enrichment_email'
 import { insertEnrichmentFacebookBatch } from '../../queries/insert_enrichment_facebook_batch'
 import { insertEnrichmentInstagramBatch } from '../../queries/insert_enrichment_instagram_batch'
 import { insertEnrichmentLinkedinBatch } from '../../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../../queries/insert_enrichment_phone'
 import { isSocialMediaUrl } from '../../utils/is_social_media_url'
 import { scrapeWebsiteManager } from '../scrape_website_manager'
+import { verifyAndInsertEnrichmentEmail } from '../verify_and_insert_enrichment_email'
 
 // Mock only external dependencies and configs
 vi.mock('../../../../config/firecrawl', () => ({
@@ -69,8 +69,8 @@ vi.mock('@ritchy/logger', () => ({
 }))
 
 // Mock database operations
-vi.mock('../../queries/insert_enrichment_email', () => ({
-  insertEnrichmentEmail: vi.fn(),
+vi.mock('../verify_and_insert_enrichment_email', () => ({
+  verifyAndInsertEnrichmentEmail: vi.fn(),
 }))
 
 vi.mock('../../queries/insert_enrichment_phone', () => ({
@@ -199,7 +199,7 @@ describe('scrapeWebsiteManager', () => {
     vi.mocked(insertEnrichmentInstagramBatch).mockResolvedValue(undefined)
     vi.mocked(insertEnrichmentFacebookBatch).mockResolvedValue(undefined)
     vi.mocked(insertEnrichmentLinkedinBatch).mockResolvedValue(undefined)
-    vi.mocked(insertEnrichmentEmail).mockResolvedValue(undefined)
+    vi.mocked(verifyAndInsertEnrichmentEmail).mockResolvedValue(undefined)
     vi.mocked(insertEnrichmentPhone).mockResolvedValue(undefined)
     vi.mocked(websiteRagIndexingPipeline).mockResolvedValue(undefined)
   })
@@ -380,7 +380,7 @@ describe('scrapeWebsiteManager', () => {
     ]
 
     for (const email of expectedEmails) {
-      expect(insertEnrichmentEmail).toHaveBeenCalledWith(
+      expect(verifyAndInsertEnrichmentEmail).toHaveBeenCalledWith(
         mockEnrichmentId,
         mockUrl,
         email,

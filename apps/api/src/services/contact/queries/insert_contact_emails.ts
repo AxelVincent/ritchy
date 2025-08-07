@@ -1,5 +1,5 @@
-import { db } from 'apps/api/src/db/db'
-import { contactEmail } from 'apps/api/src/db/schema'
+import { db } from '../../../db/db'
+import { contactEmail } from '../../../db/schema'
 
 export const insertContactEmails = async (
   contactId: string,

@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { type Job, Worker } from 'bullmq'
-import { bullmqRedisOptions } from '../..'
 import { websiteEnrichmentManager } from '../../../../services/enrichment/website_enrichment_manager'
+import { bullmqRedisOptions } from '../../config'
 import type { EnrichmentJobData } from './queue'
 
 const processEnrichmentJob = async (job: Job<EnrichmentJobData>) => {

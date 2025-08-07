@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
-import { QDRANT_CONFIG } from 'apps/api/src/config/qdrant'
 import { getQdrantClient } from '..'
+import { QDRANT_CONFIG } from '../../../config/qdrant'
 
 export const deleteWebsiteVectors = async (domain: string) => {
   try {

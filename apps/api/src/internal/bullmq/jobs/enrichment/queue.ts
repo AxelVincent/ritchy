@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq'
-import { bullmqRedisOptions } from '../..'
+import { bullmqRedisOptions } from '../../config'
 
 export interface EnrichmentJobData {
   enrichments: Array<{
