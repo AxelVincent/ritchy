@@ -1,5 +1,5 @@
 import { Queue, QueueEvents } from 'bullmq'
-import { bullmqRedisOptions } from '../..'
+import { bullmqRedisOptions } from '../../config'
 
 const queueName = 'firecrawl-api'
 export const firecrawlQueue = new Queue(queueName, {
