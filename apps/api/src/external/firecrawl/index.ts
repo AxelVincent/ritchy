@@ -27,8 +27,9 @@ export const scrapeWithRetry = async (
   },
 ) => {
   try {
+    const time = Date.now()
     logger.info({
-      msg: '[firecrawl] Starting website scrape',
+      msg: '[Firecrawl] Starting website scrape',
       event: 'firecrawl_scrape_start',
       metadata: {
         url,
@@ -41,12 +42,13 @@ export const scrapeWithRetry = async (
 
     if (!scrapeResult.success) {
       logger.error({
-        msg: '[firecrawl] Scrape result indicated failure',
+        msg: '[Firecrawl] Scrape result indicated failure',
         event: 'firecrawl_scrape_failure',
         metadata: {
           url,
           error: scrapeResult.error,
           rawResult: scrapeResult,
+          responseTimeInSeconds: (Date.now() - time) / 1000,
         },
       })
       throw new Error(`Failed to scrape: ${scrapeResult.error}`)
@@ -56,9 +58,13 @@ export const scrapeWithRetry = async (
     const statusCode = scrapeResult.metadata?.statusCode
     if (statusCode && [401, 403, 408, 500].includes(statusCode)) {
       logger.info({
-        msg: `[firecrawl] Got status code ${statusCode}, retrying with stealth proxy`,
+        msg: `[Firecrawl] Got status code ${statusCode}, retrying with stealth proxy`,
         event: 'firecrawl_scrape_retry_with_stealth_proxy',
-        metadata: { url, statusCode },
+        metadata: {
+          url,
+          statusCode,
+          responseTimeInSeconds: (Date.now() - time) / 1000,
+        },
       })
       // Retry with stealth proxy
       const job = await firecrawlQueue.add('firecrawl-api', {
@@ -71,18 +77,30 @@ export const scrapeWithRetry = async (
       scrapeResult = await job.waitUntilFinished(firecrawlQueueEvents)
       if (!scrapeResult.success) {
         logger.error({
-          msg: '[firecrawl] Scrape result indicated failure',
+          msg: '[Firecrawl] Scrape result indicated failure',
           event: 'firecrawl_scrape_failure',
-          metadata: { url, error: scrapeResult.error, rawResult: scrapeResult },
+          metadata: {
+            url,
+            error: scrapeResult.error,
+            rawResult: scrapeResult,
+            responseTimeInSeconds: (Date.now() - time) / 1000,
+          },
         })
         throw new Error(`Failed to scrape: ${scrapeResult.error}`)
       }
     }
 
+    const responseTimeInSeconds = (Date.now() - time) / 1000
+    logger.info({
+      msg: `[Firecrawl] Website scraped successfully in ${responseTimeInSeconds} seconds`,
+      event: 'firecrawl_scrape_success',
+      metadata: { url, responseTimeInSeconds, options },
+    })
+
     return scrapeResult
   } catch (error) {
     logger.warn({
-      msg: '[firecrawl] Error scraping website, retrying with stealth proxy',
+      msg: '[Firecrawl] Error scraping website, retrying with stealth proxy',
       event: 'firecrawl_scrape_error',
       metadata: {
         url,

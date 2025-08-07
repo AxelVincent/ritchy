@@ -38,11 +38,13 @@ Output:
   Include this section only if the content includes relevant additional information about the business for sales and marketing purposes.
 
 - Do **not** include sections if there is no meaningful content to add.
-- Format each section using proper Markdown structure:
-  - Use '###' for section headings
-  - Use short paragraphs (2-4 sentences max)
-  - Use bullet points where appropriate (e.g., listing services, features)
-  - Use line breaks between sections
+- Format output using proper Markdown:
+  - Use '###' headings for each section.
+  - Write in short paragraphs (2–4 sentences max).
+  - Use bullet points ('-') to list services, features, or products.
+  - Add a blank line between sections and between paragraphs.
+  - Avoid writing large walls of text.
+- Do not omit formatting — always apply the above rules when content exists.
 - Ensure the output is visually clean and easy to read for a human editor or end user.
 - Do not merge all content into a single block of text.
 - Do **not** invent or speculate details (e.g., founder names, motivations, or values not present in the input).

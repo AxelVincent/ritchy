@@ -1,5 +1,5 @@
-import { db } from 'apps/api/src/db/db'
-import { contactPhone, type phoneTypeEnum } from 'apps/api/src/db/schema'
+import { db } from '../../../db/db'
+import { contactPhone, type phoneTypeEnum } from '../../../db/schema'
 
 export const insertContactPhones = async (
   contactId: string,

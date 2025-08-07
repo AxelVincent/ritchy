@@ -1,11 +1,11 @@
 import { Queue, QueueEvents } from 'bullmq'
 import { bullmqRedisOptions } from '../../config'
 
-const queueName = 'firecrawl-api'
-export const firecrawlQueue = new Queue(queueName, {
+const queueName = 'million-verifier'
+export const millionVerifierQueue = new Queue(queueName, {
   connection: bullmqRedisOptions,
   defaultJobOptions: {
-    attempts: 3,
+    attempts: 1,
     backoff: {
       type: 'exponential',
       delay: 1000,
@@ -13,6 +13,6 @@ export const firecrawlQueue = new Queue(queueName, {
   },
 })
 
-export const firecrawlQueueEvents = new QueueEvents(queueName, {
+export const millionVerifierQueueEvents = new QueueEvents(queueName, {
   connection: bullmqRedisOptions,
 })

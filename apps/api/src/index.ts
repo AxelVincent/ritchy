@@ -13,17 +13,17 @@ import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
 import { initQdrantCollection } from './external/qdrant'
+import { enrichmentQueue } from './internal/bullmq/jobs/enrichment/queue'
+import { firecrawlQueue } from './internal/bullmq/jobs/firecrawl/queue'
+import { millionVerifierQueue } from './internal/bullmq/jobs/million_verifier/queue'
 import { redisHealthMonitor } from './internal/redis/health-monitor'
+import { basicAuth } from './middleware/basic_auth'
 import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
 
-// Import the worker
-import './internal/bullmq/jobs/enrichment/worker'
-import './internal/bullmq/jobs/firecrawl/worker'
-import { enrichmentQueue } from './internal/bullmq/jobs/enrichment/queue'
-import { firecrawlQueue } from './internal/bullmq/jobs/firecrawl/queue'
-import { basicAuth } from './middleware/basic_auth'
+// Import the bullmq workers
+import './internal/bullmq'
 
 const app = express()
 const server = createServer(app)
@@ -217,6 +217,11 @@ app.use(
         {
           queue: firecrawlQueue,
           displayName: 'Firecrawl',
+          type: 'bullmq',
+        },
+        {
+          queue: millionVerifierQueue,
+          displayName: 'Million Verifier',
           type: 'bullmq',
         },
       ],

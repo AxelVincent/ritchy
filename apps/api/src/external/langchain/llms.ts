@@ -33,3 +33,9 @@ export const gemini_2_5_pro = new ChatGoogleGenerativeAI({
   temperature: 0,
   apiKey: LLM_CONFIG.GOOGLE_AI_API_KEY,
 })
+
+export const gemini_2_5_flash = new ChatGoogleGenerativeAI({
+  model: 'gemini-2.5-flash',
+  temperature: 0,
+  apiKey: LLM_CONFIG.GOOGLE_AI_API_KEY,
+})

@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import { gemini_2_5_pro } from './llms'
+import { gemini_2_5_flash, gemini_2_5_pro } from './llms'
 import {
   WebDescriptionAssistantSchema,
   webDescriptionAssistant,
@@ -37,7 +37,7 @@ export const getWebsiteDescription = async (domain: string) => {
       content: aggregatedContent,
     })
 
-    const anthropic_structuredOutput = gemini_2_5_pro.withStructuredOutput(
+    const anthropic_structuredOutput = gemini_2_5_flash.withStructuredOutput(
       WebDescriptionAssistantSchema,
     )
     const anthropic_result = await anthropic_structuredOutput.invoke(prompt)
@@ -59,7 +59,10 @@ export const getWebsiteDescription = async (domain: string) => {
     logger.error({
       msg: 'Error getting website description',
       event: 'get_website_description_error',
-      metadata: { domain, error },
+      metadata: {
+        domain,
+        error: error instanceof Error ? error : new Error(String(error)),
+      },
     })
     return {
       description: '',
