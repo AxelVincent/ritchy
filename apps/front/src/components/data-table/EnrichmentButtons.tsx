@@ -59,12 +59,8 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   )
   const batchEnrichmentMutation = useBatchEnrichment()
   const rowsToEnrich = hasSelectedRows
-    ? selectedRows.filter(
-        (row) => row.original.website && !row.original.enrichedAt,
-      )
-    : table
-        .getFilteredRowModel()
-        .rows.filter((row) => row.original.website && !row.original.enrichedAt)
+    ? selectedRows.filter((row) => row.original.website)
+    : table.getFilteredRowModel().rows.filter((row) => row.original.website)
 
   const jobStatusQuery = useEnrichmentJobStatus(
     activeJobId || '',

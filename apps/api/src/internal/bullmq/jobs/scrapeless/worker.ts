@@ -1,17 +1,17 @@
 import { logger } from '@ritchy/logger'
+import { getScrapelessClient } from 'apps/api/src/external/scrapeless'
 import { Worker } from 'bullmq'
-import { getFirecrawlClient } from '../../../../external/firecrawl'
 import { bullmqRedisOptions } from '../../config'
+import { worker } from '../firecrawl/worker'
 
 const TIMEOUT = 30000
-export const worker = new Worker(
-  'firecrawl-api',
+export const scrapelessWorker = new Worker(
+  'scrapeless-api',
   async (job) => {
     const { url, options } = job.data
-    const app = getFirecrawlClient()
-    return app.scrapeUrl(url, {
+    const client = getScrapelessClient()
+    return client.scrapeUrl(url, {
       ...options,
-      maxAge: 604800000,
       timeout: TIMEOUT,
     })
   },
@@ -27,16 +27,16 @@ export const worker = new Worker(
 
 worker.on('completed', (job) => {
   logger.info({
-    msg: 'Firecrawl job completed',
-    event: 'firecrawl_success',
+    msg: 'Scrapeless job completed',
+    event: 'scrapeless_success',
     metadata: { jobId: job.id },
   })
 })
 
 worker.on('failed', (job, err) => {
   logger.error({
-    msg: 'Firecrawl job failed',
-    event: 'firecrawl_error',
+    msg: 'Scrapeless job failed',
+    event: 'scrapeless_error',
     metadata: { jobId: job?.id, error: err.message },
   })
 })

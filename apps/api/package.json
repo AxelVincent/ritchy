@@ -38,6 +38,7 @@
     "@qdrant/js-client-rest": "1.14.1",
     "@queuedash/api": "3.6.0",
     "@ritchy/logger": "workspace:*",
+    "@scrapeless-ai/sdk": "1.9.1",
     "@turf/turf": "7.1.0",
     "@types/cors": "2.8.17",
     "amqplib": "0.10.8",

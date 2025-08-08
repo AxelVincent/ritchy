@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { scrapeWithRetry } from '../../../../external/firecrawl'
 import { websiteRagIndexingPipeline } from '../../../../external/langchain/website_rag_indexing_pipeline'
 import { getBusinessCountryCodeByEnrichmentId } from '../../../enrichment/queries/get_business_country_code'
 import { insertEnrichmentFacebookBatch } from '../../queries/insert_enrichment_facebook_batch'
@@ -7,14 +6,15 @@ import { insertEnrichmentInstagramBatch } from '../../queries/insert_enrichment_
 import { insertEnrichmentLinkedinBatch } from '../../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../../queries/insert_enrichment_phone'
 import { isSocialMediaUrl } from '../../utils/is_social_media_url'
+import { scrapeWithFeatureFlag } from '../scrape_with_feature_flag'
 import { scrapeWebsiteManager } from '../scrape_website_manager'
 import { verifyAndInsertEnrichmentEmail } from '../verify_and_insert_enrichment_email'
 
 // Mock only external dependencies and configs
 vi.mock('../../../../config/firecrawl', () => ({
   FIRECRAWL_CONFIG: {
-    API_KEY: 'test-api-key',
-  },
+    API_KEY: 'test-api-key'
+  }
 }))
 
 vi.mock('../../../../config/redis', () => ({
@@ -23,19 +23,19 @@ vi.mock('../../../../config/redis', () => ({
     PORT: 6379,
     USER: 'test-user',
     PASSWORD: 'test-password',
-    PUBLIC_URL: 'redis://localhost:6379',
+    PUBLIC_URL: 'redis://localhost:6379'
   },
   CACHE_THRESHOLDS: {
-    PLACE_UPDATE_THRESHOLD: 7776000,
-  },
+    PLACE_UPDATE_THRESHOLD: 7776000
+  }
 }))
 
 vi.mock('../../../../config/qdrant', () => ({
   QDRANT_CONFIG: {
     API_KEY: 'test-qdrant-key',
     URL: 'http://localhost:6333',
-    COLLECTION_NAME: 'test-collection',
-  },
+    COLLECTION_NAME: 'test-collection'
+  }
 }))
 
 vi.mock('../../../../config/drizzle', () => ({
@@ -45,17 +45,17 @@ vi.mock('../../../../config/drizzle', () => ({
     DATABASE: 'test_db',
     USER: 'test_user',
     PASSWORD: 'test_password',
-    PUBLIC_URL: 'postgres://test_user:test_password@localhost:5432/test_db',
-  },
+    PUBLIC_URL: 'postgres://test_user:test_password@localhost:5432/test_db'
+  }
 }))
 
 // Mock external service calls
-vi.mock('../../../../external/firecrawl', () => ({
-  scrapeWithRetry: vi.fn(),
+vi.mock('../scrape_with_feature_flag', () => ({
+  scrapeWithFeatureFlag: vi.fn()
 }))
 
 vi.mock('../../../../external/langchain/website_rag_indexing_pipeline', () => ({
-  websiteRagIndexingPipeline: vi.fn(),
+  websiteRagIndexingPipeline: vi.fn()
 }))
 
 // Update the logger mock to include all required methods
@@ -64,37 +64,37 @@ vi.mock('@ritchy/logger', () => ({
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
-    debug: vi.fn(),
-  },
+    debug: vi.fn()
+  }
 }))
 
 // Mock database operations
 vi.mock('../verify_and_insert_enrichment_email', () => ({
-  verifyAndInsertEnrichmentEmail: vi.fn(),
+  verifyAndInsertEnrichmentEmail: vi.fn()
 }))
 
 vi.mock('../../queries/insert_enrichment_phone', () => ({
-  insertEnrichmentPhone: vi.fn(),
+  insertEnrichmentPhone: vi.fn()
 }))
 
 vi.mock('../../queries/insert_enrichment_instagram_batch', () => ({
-  insertEnrichmentInstagramBatch: vi.fn(),
+  insertEnrichmentInstagramBatch: vi.fn()
 }))
 
 vi.mock('../../queries/insert_enrichment_facebook_batch', () => ({
-  insertEnrichmentFacebookBatch: vi.fn(),
+  insertEnrichmentFacebookBatch: vi.fn()
 }))
 
 vi.mock('../../queries/insert_enrichment_linkedin_batch', () => ({
-  insertEnrichmentLinkedinBatch: vi.fn(),
+  insertEnrichmentLinkedinBatch: vi.fn()
 }))
 
 vi.mock('../../../enrichment/queries/get_business_country_code', () => ({
-  getBusinessCountryCodeByEnrichmentId: vi.fn(),
+  getBusinessCountryCodeByEnrichmentId: vi.fn()
 }))
 
 vi.mock('../../utils/is_social_media_url', () => ({
-  isSocialMediaUrl: vi.fn(),
+  isSocialMediaUrl: vi.fn()
 }))
 
 describe('scrapeWebsiteManager', () => {
@@ -107,7 +107,7 @@ describe('scrapeWebsiteManager', () => {
 
     // Setup default mock implementations
     vi.mocked(getBusinessCountryCodeByEnrichmentId).mockResolvedValue('US')
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFeatureFlag).mockResolvedValue({
       success: true,
       rawHtml: `
         <html>
@@ -191,8 +191,8 @@ describe('scrapeWebsiteManager', () => {
         description: 'Test Description',
         language: 'en',
         keywords: 'test',
-        robots: 'index,follow',
-      },
+        robots: 'index,follow'
+      }
     })
 
     // Mock database operations
@@ -210,7 +210,7 @@ describe('scrapeWebsiteManager', () => {
 
   it('should correctly handle root path links', async () => {
     // Simplified HTML with just the root path link
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFeatureFlag).mockResolvedValue({
       success: true,
       rawHtml: `
         <html>
@@ -226,15 +226,15 @@ describe('scrapeWebsiteManager', () => {
         description: '',
         language: '',
         keywords: '',
-        robots: '',
-      },
+        robots: ''
+      }
     })
 
     const result = await scrapeWebsiteManager(
       'https://example.com',
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
     expect('error' in result).toBe(false)
@@ -248,7 +248,7 @@ describe('scrapeWebsiteManager', () => {
   it('should exclude the scraped URL from internal links', async () => {
     const scrapedUrl = 'https://example.com'
 
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFeatureFlag).mockResolvedValue({
       success: true,
       rawHtml: `
         <html>
@@ -270,15 +270,15 @@ describe('scrapeWebsiteManager', () => {
         description: '',
         language: '',
         keywords: '',
-        robots: '',
-      },
+        robots: ''
+      }
     })
 
     const result = await scrapeWebsiteManager(
       scrapedUrl,
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
     expect('error' in result).toBe(false)
@@ -288,8 +288,8 @@ describe('scrapeWebsiteManager', () => {
     expect(result.links.internal).toEqual(
       expect.arrayContaining([
         'https://example.com/about',
-        'https://example.com/contact',
-      ]),
+        'https://example.com/contact'
+      ])
     )
 
     // The scraped URL and its variations should be excluded
@@ -308,7 +308,7 @@ describe('scrapeWebsiteManager', () => {
       mockUrl,
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
     // Verify successful result
@@ -320,7 +320,7 @@ describe('scrapeWebsiteManager', () => {
       description: 'Test Description',
       language: 'en',
       keywords: 'test',
-      robots: 'index,follow',
+      robots: 'index,follow'
     })
 
     // Verify internal links were processed
@@ -337,8 +337,8 @@ describe('scrapeWebsiteManager', () => {
         'https://example.com/privacy',
         'https://example.com/terms',
         'https://example.com/sitemap',
-        'https://example.com/partners/local',
-      ]),
+        'https://example.com/partners/local'
+      ])
     )
 
     // Verify social media insertions
@@ -347,8 +347,8 @@ describe('scrapeWebsiteManager', () => {
       expect.arrayContaining([
         expect.objectContaining({ username: 'test' }),
         expect.objectContaining({ username: 'test_global' }),
-        expect.objectContaining({ username: 'test.updates' }),
-      ]),
+        expect.objectContaining({ username: 'test.updates' })
+      ])
     )
 
     expect(insertEnrichmentFacebookBatch).toHaveBeenCalledWith(
@@ -356,8 +356,8 @@ describe('scrapeWebsiteManager', () => {
       expect.arrayContaining([
         expect.objectContaining({ username: 'test' }),
         expect.objectContaining({ username: 'test.community' }),
-        expect.objectContaining({ username: 'test.events' }),
-      ]),
+        expect.objectContaining({ username: 'test.events' })
+      ])
     )
 
     // In the main test, update the LinkedIn expectations
@@ -367,23 +367,23 @@ describe('scrapeWebsiteManager', () => {
         {
           name: 'test',
           type: 'company',
-          url: 'https://www.linkedin.com/company/test',
-        },
-      ],
+          url: 'https://www.linkedin.com/company/test'
+        }
+      ]
     )
 
     // Verify email insertions
     const expectedEmails = [
       'test@example.com',
       'support@example.com',
-      'sales.team@example.com',
+      'sales.team@example.com'
     ]
 
     for (const email of expectedEmails) {
       expect(verifyAndInsertEnrichmentEmail).toHaveBeenCalledWith(
         mockEnrichmentId,
         mockUrl,
-        email,
+        email
       )
     }
 
@@ -392,14 +392,14 @@ describe('scrapeWebsiteManager', () => {
       1,
       mockEnrichmentId,
       mockUrl,
-      '+33612345678',
+      '+33612345678'
     )
 
     expect(insertEnrichmentPhone).toHaveBeenNthCalledWith(
       2,
       mockEnrichmentId,
       mockUrl,
-      '+33698765432',
+      '+33698765432'
     )
 
     // Verify total number of calls
@@ -409,24 +409,24 @@ describe('scrapeWebsiteManager', () => {
     expect(websiteRagIndexingPipeline).toHaveBeenCalledWith(
       'example.com',
       mockUrl,
-      '# Test Content',
+      '# Test Content'
     )
   })
 
   it('should handle scraping failure', async () => {
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFeatureFlag).mockResolvedValue({
       success: false,
       error: 'Failed to scrape',
       rawHtml: null,
       markdown: null,
-      metadata: null,
+      metadata: null
     })
 
     const result = await scrapeWebsiteManager(
       mockUrl,
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
     expect('error' in result).toBe(true)
@@ -437,18 +437,18 @@ describe('scrapeWebsiteManager', () => {
   })
 
   it('should handle missing HTML and markdown', async () => {
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFeatureFlag).mockResolvedValue({
       success: true,
       rawHtml: null,
       markdown: null,
-      metadata: null,
+      metadata: null
     })
 
     const result = await scrapeWebsiteManager(
       mockUrl,
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
     expect('error' in result).toBe(true)
@@ -461,11 +461,11 @@ describe('scrapeWebsiteManager', () => {
   it('should respect onlyMainContent flag', async () => {
     await scrapeWebsiteManager(mockUrl, mockEnrichmentId, true, mockUserPlaceId)
 
-    expect(scrapeWithRetry).toHaveBeenCalledWith(
+    expect(scrapeWithFeatureFlag).toHaveBeenCalledWith(
       mockUrl,
       expect.objectContaining({
-        onlyMainContent: true,
-      }),
+        onlyMainContent: true
+      })
     )
   })
 
@@ -476,28 +476,27 @@ describe('scrapeWebsiteManager', () => {
       mockUrl,
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
-    expect(scrapeWithRetry).toHaveBeenCalledWith(
-      mockUrl,
-      expect.objectContaining({
-        location: {
-          country: 'FR',
-        },
-      }),
-    )
+    expect(scrapeWithFeatureFlag).toHaveBeenCalledWith(mockUrl, {
+      formats: ['markdown', 'rawHtml'],
+      excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
+      onlyMainContent: false,
+      proxy: 'auto',
+      country: 'FR'
+    })
   })
 
   it('should handle unexpected errors during processing', async () => {
     const testError = new Error('Unexpected error')
-    vi.mocked(scrapeWithRetry).mockRejectedValue(testError)
+    vi.mocked(scrapeWithFeatureFlag).mockRejectedValue(testError)
 
     const result = await scrapeWebsiteManager(
       mockUrl,
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
     expect('error' in result).toBe(true)
@@ -512,7 +511,7 @@ describe('scrapeWebsiteManager', () => {
     const mainUrl = 'https://hego.paris.com'
 
     // Mock HTML with social media links containing part of the domain name
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFeatureFlag).mockResolvedValue({
       success: true,
       rawHtml: `
         <html>
@@ -534,8 +533,8 @@ describe('scrapeWebsiteManager', () => {
         description: '',
         language: '',
         keywords: '',
-        robots: '',
-      },
+        robots: ''
+      }
     })
 
     // Mock isSocialMediaUrl to return true for social media URLs
@@ -551,7 +550,7 @@ describe('scrapeWebsiteManager', () => {
       mainUrl,
       mockEnrichmentId,
       false,
-      mockUserPlaceId,
+      mockUserPlaceId
     )
 
     expect('error' in result).toBe(false)
@@ -560,34 +559,34 @@ describe('scrapeWebsiteManager', () => {
     // Should only include actual internal links
     expect(result.links.internal).toEqual([
       'https://hego.paris.com/about',
-      'https://hego.paris.com/contact',
+      'https://hego.paris.com/contact'
     ])
 
     // Should NOT include social media URLs even though they contain 'hego.paris'
     expect(result.links.internal).not.toContain(
-      'https://instagram.com/hego.paris',
+      'https://instagram.com/hego.paris'
     )
     expect(result.links.internal).not.toContain(
-      'https://facebook.com/hego.paris',
+      'https://facebook.com/hego.paris'
     )
     expect(result.links.internal).not.toContain(
-      'https://linkedin.com/company/hego-paris',
+      'https://linkedin.com/company/hego-paris'
     )
 
     // Verify that social media URLs were properly processed as social links
     expect(insertEnrichmentInstagramBatch).toHaveBeenCalledWith(
       mockEnrichmentId,
-      [expect.objectContaining({ username: 'hego.paris' })],
+      [expect.objectContaining({ username: 'hego.paris' })]
     )
 
     expect(insertEnrichmentFacebookBatch).toHaveBeenCalledWith(
       mockEnrichmentId,
-      [expect.objectContaining({ username: 'hego.paris' })],
+      [expect.objectContaining({ username: 'hego.paris' })]
     )
 
     expect(insertEnrichmentLinkedinBatch).toHaveBeenCalledWith(
       mockEnrichmentId,
-      [expect.objectContaining({ name: 'hego-paris', type: 'company' })],
+      [expect.objectContaining({ name: 'hego-paris', type: 'company' })]
     )
   })
 })

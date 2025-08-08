@@ -1,6 +1,5 @@
 import { logger } from '@ritchy/logger'
 import * as cheerio from 'cheerio'
-import { scrapeWithRetry } from '../../../external/firecrawl'
 
 import type { FirecrawlDocumentMetadata } from '@mendable/firecrawl-js'
 import { websiteRagIndexingPipeline } from '../../../external/langchain/website_rag_indexing_pipeline'
@@ -10,21 +9,22 @@ import { insertEnrichmentInstagramBatch } from '../queries/insert_enrichment_ins
 import { insertEnrichmentLinkedinBatch } from '../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../queries/insert_enrichment_phone'
 import { isSocialMediaUrl } from '../utils/is_social_media_url'
+import { scrapeWithFeatureFlag } from './scrape_with_feature_flag'
 import { cleanUrl } from './utils/clean_url'
 import { extractContactsFromText } from './utils/extract_contacts_from_text'
 import { getMainDomain } from './utils/get_main_domain'
 import { normaliseInternalUrl } from './utils/normalise_internal_url'
 import {
   type NormalizedFacebook,
-  normalizeFacebook,
+  normalizeFacebook
 } from './utils/normalize_facebook'
 import {
   type NormalizedInstagram,
-  normalizeInstagram,
+  normalizeInstagram
 } from './utils/normalize_instagram'
 import {
   type NormalizedLinkedin,
-  normalizeLinkedin,
+  normalizeLinkedin
 } from './utils/normalize_linkedin'
 import { resolveUrl } from './utils/resolve_url'
 import { verifyAndInsertEnrichmentEmail } from './verify_and_insert_enrichment_email'
@@ -50,7 +50,7 @@ export const scrapeWebsiteManager = async (
   url: string,
   enrichmentId: string,
   onlyMainContent: boolean,
-  userPlaceId: string,
+  userPlaceId: string
 ): Promise<ScrapeResult | ScrapeError> => {
   // Modify the uniqueLinks structure
   const uniqueLinks = {
@@ -59,35 +59,33 @@ export const scrapeWebsiteManager = async (
     socials: {
       instagram: new Set<NormalizedInstagram>(),
       facebook: new Set<NormalizedFacebook>(),
-      linkedin: new Set<NormalizedLinkedin>(),
+      linkedin: new Set<NormalizedLinkedin>()
     },
-    internal: new Set<string>(),
+    internal: new Set<string>()
   }
   try {
     const time = Date.now()
     logger.info({
       msg: '[Scrape Website Manager] Scraping website',
       event: 'scraping_website',
-      metadata: { url, userPlaceId },
+      metadata: { url, userPlaceId }
     })
     const countryCode = await getBusinessCountryCodeByEnrichmentId(enrichmentId)
 
     const { rawHtml, markdown, metadata, success, error } =
-      await scrapeWithRetry(url, {
+      await scrapeWithFeatureFlag(url, {
         formats: ['markdown', 'rawHtml'],
         excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
-        location: {
-          country: countryCode ?? 'US',
-        },
+        country: countryCode ?? 'US',
         proxy: 'auto',
-        onlyMainContent,
+        onlyMainContent
       })
 
     if (!success) {
       logger.error({
         msg: '[Scrape Website Manager] Failed to scrape website',
         event: 'scrape_website_failed',
-        metadata: { url, error },
+        metadata: { url, error }
       })
       throw new Error('Failed to scrape website')
     }
@@ -96,15 +94,15 @@ export const scrapeWebsiteManager = async (
       logger.error({
         msg: '[Scrape Website Manager] No response returned from scrape',
         event: 'scrape_website_no_response',
-        metadata: { url },
+        metadata: { url }
       })
       throw new Error('No response returned from scrape')
     }
 
     const $ = cheerio.load(rawHtml, {
       xml: {
-        decodeEntities: false,
-      },
+        decodeEntities: false
+      }
     })
 
     // Extract contacts from visible text content
@@ -139,7 +137,7 @@ export const scrapeWebsiteManager = async (
         if (clean) {
           uniqueLinks.socials.instagram.add({
             url: clean.url,
-            username: clean.username,
+            username: clean.username
           })
         }
       } else if (cleanHref.includes('facebook.com')) {
@@ -147,7 +145,7 @@ export const scrapeWebsiteManager = async (
         if (clean) {
           uniqueLinks.socials.facebook.add({
             url: clean.url,
-            username: clean.username,
+            username: clean.username
           })
         }
       } else if (cleanHref.includes('linkedin.com')) {
@@ -156,7 +154,7 @@ export const scrapeWebsiteManager = async (
           uniqueLinks.socials.linkedin.add({
             url: clean.url,
             name: clean.name,
-            type: clean.type,
+            type: clean.type
           })
         }
       }
@@ -165,22 +163,22 @@ export const scrapeWebsiteManager = async (
     logger.info({
       msg: '[Scrape Website Manager] Inserting social media data',
       event: 'inserting_social_media_data',
-      metadata: { enrichmentId, uniqueLinks },
+      metadata: { enrichmentId, uniqueLinks }
     })
     // Batch insert with specific data
     await Promise.all([
       insertEnrichmentInstagramBatch(
         enrichmentId,
-        Array.from(uniqueLinks.socials.instagram),
+        Array.from(uniqueLinks.socials.instagram)
       ),
       insertEnrichmentFacebookBatch(
         enrichmentId,
-        Array.from(uniqueLinks.socials.facebook),
+        Array.from(uniqueLinks.socials.facebook)
       ),
       insertEnrichmentLinkedinBatch(
         enrichmentId,
-        Array.from(uniqueLinks.socials.linkedin),
-      ),
+        Array.from(uniqueLinks.socials.linkedin)
+      )
     ])
 
     for (const email of uniqueLinks.emails) {
@@ -192,7 +190,7 @@ export const scrapeWebsiteManager = async (
     }
 
     const internalLinks = Array.from(uniqueLinks.internal).filter(
-      (internalUrl) => internalUrl !== cleanUrl(url),
+      (internalUrl) => internalUrl !== cleanUrl(url)
     )
 
     const mainDomain = getMainDomain(url)
@@ -202,7 +200,7 @@ export const scrapeWebsiteManager = async (
     logger.info({
       msg: `[Scrape Website Manager] Website scraped successfully in ${responseTimeInSeconds} seconds`,
       event: 'website_scraped_success',
-      metadata: { url, userPlaceId, responseTimeInSeconds },
+      metadata: { url, userPlaceId, responseTimeInSeconds }
     })
 
     return {
@@ -211,11 +209,11 @@ export const scrapeWebsiteManager = async (
         description: '',
         language: '',
         keywords: '',
-        robots: '',
+        robots: ''
       },
       links: {
-        internal: internalLinks,
-      },
+        internal: internalLinks
+      }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -229,17 +227,17 @@ export const scrapeWebsiteManager = async (
             ? {
                 name: error.name,
                 message: error.message,
-                stack: error.stack,
+                stack: error.stack
               }
-            : String(error),
-      },
+            : String(error)
+      }
     })
     return {
       error: {
         name: 'ScrapeError',
         message: errorMessage,
-        stack: error instanceof Error ? (error.stack ?? '') : '',
-      },
+        stack: error instanceof Error ? (error.stack ?? '') : ''
+      }
     }
   }
 }
