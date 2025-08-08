@@ -8,7 +8,6 @@ import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useState } from 'react'
 import { ContactEmailCell } from './utils/ColumnCells'
-import { ColumnPinCell } from './utils/ColumnCells'
 import { EmailsList } from './utils/EmailsList'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -31,7 +30,7 @@ export const emailsColumn: ColumnDef<SearchResult> = {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     if (!emails?.length) {
-      return <ColumnPinCell id={row.original.id} content={null} />
+      return <ContactEmailCell id={row.original.id} content={null} />
     }
 
     if (emails.length === 1) {
