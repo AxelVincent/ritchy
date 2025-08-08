@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { formatPhoneNumberWithCountry } from '@/lib/utils/phone-utils'
 import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
 import type { Note, SearchResult, SocialMediaPlatform } from '@ritchy/types'
-import React from 'react'
+import React, { useState } from 'react'
 import {
   createColumnPinActions,
   createColumnPinCopyActions,
@@ -11,7 +11,10 @@ import {
   createColumnPinNoteActions,
 } from './createColumnActions'
 
+import { usePostContactEmail } from '@/api/mutations/contacts/usePostContactEmail'
 import { Notes } from '@/components/notes/Notes'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/use-toast'
 import { formatDistanceToNow } from 'date-fns'
 import posthog from 'posthog-js'
 
@@ -29,6 +32,12 @@ export interface NotesColumnCellProps {
   id: string
   place: SearchResult
   content: Note | null
+}
+
+interface CopyCellProps {
+  id: string
+  content: string
+  href?: string
 }
 
 // For columns that need both pin and copy actions
@@ -206,41 +215,111 @@ export const PhoneCell = ({
 export const ContactEmailCell = ({
   id,
   content,
-  isPin = true,
 }: {
   id: string
-  content: string
-  isPin?: boolean
+  content: string | null
 }) => {
-  const actions = React.useMemo(() => {
-    if (isPin) {
-      return createColumnPinMailtoActions(id, content)
+  const [isEditing, setIsEditing] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const { toast } = useToast()
+  const { mutate: addEmail, isPending } = usePostContactEmail()
+
+  const handleAddEmail = () => {
+    if (!newEmail) {
+      setIsEditing(false)
+      return
     }
-    return [
+
+    addEmail(
       {
-        icon: 'Copy' as const,
-        onClick: () => {
-          navigator.clipboard.writeText(content)
+        userPlaceId: id,
+        email: newEmail,
+      },
+      {
+        onSuccess: () => {
+          setNewEmail('')
+          setIsEditing(false)
+          toast({
+            title: 'Email added successfully',
+            description: `Added ${newEmail} to contact`,
+          })
         },
-        label: 'Copy',
+        onError: (error) => {
+          toast({
+            title: 'Failed to add email',
+            description: error.message,
+            variant: 'destructive',
+          })
+        },
+      },
+    )
+  }
+
+  const actions = React.useMemo(() => {
+    const baseActions = content ? createColumnPinMailtoActions(id, content) : []
+    return [
+      ...baseActions,
+      {
+        icon: 'Plus' as const,
+        onClick: () => setIsEditing(true),
+        label: 'Add email',
       },
     ]
-  }, [id, content, isPin])
+  }, [id, content])
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    posthog.capture('click_mailto_button', { property: 'value' })
-    window.open(`mailto:${content}`, '_blank')
+  if (isEditing) {
+    return (
+      <TextWrapper id={id} actions={[]}>
+        <Input
+          type="email"
+          placeholder="Add new email"
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !isPending) {
+              handleAddEmail()
+            } else if (e.key === 'Escape') {
+              setIsEditing(false)
+              setNewEmail('')
+            }
+          }}
+          onBlur={handleAddEmail}
+          autoFocus
+          className="w-full h-full min-h-[24px] px-2 py-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+          disabled={isPending}
+        />
+      </TextWrapper>
+    )
+  }
+
+  if (!content) {
+    return (
+      <div
+        className="text-muted-foreground hover:text-muted-foreground/80 cursor-pointer w-full h-full"
+        onClick={() => setIsEditing(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            setIsEditing(true)
+          }
+        }}
+      />
+    )
   }
 
   return (
     <TextWrapper id={id} actions={actions}>
       <span
-        className="text-blue-600 hover:text-blue-800 hover:underline"
-        onClick={handleClick}
+        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation()
+          posthog.capture('click_mailto_button', { property: 'value' })
+          window.open(`mailto:${content}`, '_blank')
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            handleClick(e as unknown as React.MouseEvent)
+            e.stopPropagation()
+            posthog.capture('click_mailto_button', { property: 'value' })
+            window.open(`mailto:${content}`, '_blank')
           }
         }}
       >
@@ -374,3 +453,59 @@ export const ContactPhoneCell = ({
     </TextWrapper>
   )
 }
+export const CopyCell = React.memo(function CopyCell({
+  id,
+  content,
+  href,
+}: CopyCellProps) {
+  const actions = React.useMemo(
+    () => [
+      {
+        icon: 'Copy' as const,
+        onClick: () => {
+          navigator.clipboard.writeText(content)
+        },
+        label: 'Copy',
+      },
+    ],
+    [content],
+  )
+
+  const displayContent = href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 hover:text-blue-800 hover:underline block w-full overflow-hidden text-ellipsis whitespace-nowrap px-2 py-1 rounded transition-colors"
+      onClick={(e) => e.stopPropagation()}
+      title={content}
+    >
+      {content}
+    </a>
+  ) : (
+    content
+  )
+
+  return (
+    <TextWrapper id={id} actions={actions}>
+      {/* TODO: This is a hack to get the copy cell to work with emails, it should be refactored to allow other types of content */}
+      <span
+        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation()
+          posthog.capture('click_mailto_button', { property: 'value' })
+          window.open(`mailto:${content}`, '_blank')
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.stopPropagation()
+            posthog.capture('click_mailto_button', { property: 'value' })
+            window.open(`mailto:${content}`, '_blank')
+          }
+        }}
+      >
+        {displayContent}
+      </span>
+    </TextWrapper>
+  )
+})

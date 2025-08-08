@@ -1,6 +1,6 @@
 import type { Email } from '@ritchy/types'
 import { Star } from 'lucide-react'
-import { ContactEmailCell } from './ColumnCells'
+import { CopyCell } from './ColumnCells'
 
 export const EmailsList = ({
   emails,
@@ -19,11 +19,7 @@ export const EmailsList = ({
           id={id}
           className="flex items-center gap-2 truncate"
         >
-          <ContactEmailCell
-            id={`${id}-${emailObj.email}`}
-            content={emailObj.email}
-            isPin={false}
-          />
+          <CopyCell id={`${id}-${emailObj.email}`} content={emailObj.email} />
           {emailObj.isPrimary && (
             <Star
               className="h-4 w-4 flex-shrink-0 text-yellow-400"

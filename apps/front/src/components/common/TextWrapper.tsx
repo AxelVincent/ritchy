@@ -16,6 +16,7 @@ import {
   MapPinned,
   MessageSquareText,
   Phone,
+  Plus,
   Trash,
 } from 'lucide-react'
 import { isValidElement, memo, useMemo } from 'react'
@@ -29,6 +30,7 @@ const ICONS = {
   Phone,
   Mail,
   faWhatsapp,
+  Plus,
 } as const
 
 export interface Action {

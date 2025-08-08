@@ -103,3 +103,18 @@ export const createColumnPinMailtoActions = (
       : []),
   ]
 }
+
+export const createColumnPinEmailActions = (
+  id: string,
+  email: string | null,
+  onAddEmail: () => void,
+): Action[] => {
+  return [
+    ...(email ? createColumnPinMailtoActions(id, email) : []),
+    {
+      icon: 'Plus' as const,
+      onClick: onAddEmail,
+      label: 'Add email',
+    },
+  ]
+}
