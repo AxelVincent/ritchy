@@ -1,11 +1,11 @@
 import { Queue, QueueEvents } from 'bullmq'
 import { bullmqRedisOptions } from '../../config'
 
-const queueName = 'scrapeless-api'
-export const scrapelessQueue = new Queue(queueName, {
+const queueName = 'brightdata-api'
+export const brightdataQueue = new Queue(queueName, {
   connection: bullmqRedisOptions,
   defaultJobOptions: {
-    attempts: 3,
+    attempts: 1,
     backoff: {
       type: 'exponential',
       delay: 1000,
@@ -13,6 +13,6 @@ export const scrapelessQueue = new Queue(queueName, {
   },
 })
 
-export const scrapelessQueueEvents = new QueueEvents(queueName, {
+export const brightdataQueueEvents = new QueueEvents(queueName, {
   connection: bullmqRedisOptions,
 })

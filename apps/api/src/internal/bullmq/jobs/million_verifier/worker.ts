@@ -4,7 +4,7 @@ import { MILLION_VERIFIER_CONFIG } from '../../../../config/million_verifier'
 import { MillionVerifierResponseSchema } from '../../../../external/million_verifier'
 import { bullmqRedisOptions } from '../../config'
 
-export const worker = new Worker(
+const worker = new Worker(
   'million-verifier',
   async (job) => {
     logger.info({

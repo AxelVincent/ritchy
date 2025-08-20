@@ -48,6 +48,7 @@
     "commander": "14.0.0",
     "connect-timeout": "1.9.0",
     "cors": "2.8.5",
+    "dompurify": "3.2.6",
     "dotenv": "16.4.7",
     "drizzle-orm": "0.36.4",
     "express": "4.21.1",
@@ -56,6 +57,7 @@
     "fast-xml-parser": "4.5.0",
     "helmet": "8.1.0",
     "ioredis": "5.4.2",
+    "jsdom": "26.0.0",
     "libphonenumber-js": "^1.12.9",
     "openai": "5.9.2",
     "p-limit": "6.1.0",
@@ -64,6 +66,7 @@
     "stripe": "17.6.0",
     "svix": "1.45.1",
     "tldts": "7.0.10",
+    "turndown": "7.2.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
@@ -72,7 +75,9 @@
     "@types/connect-timeout": "0.0.39",
     "@types/express": "5.0.1",
     "@types/express-session": "1.18.1",
+    "@types/jsdom": "21.1.7",
     "@types/node": "22.14.1",
+    "@types/turndown": "5.0.5",
     "drizzle-kit": "0.28.1",
     "tsup": "8.3.5",
     "tsx": "4.19.2",

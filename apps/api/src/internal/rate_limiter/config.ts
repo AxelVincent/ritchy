@@ -35,19 +35,3 @@ export const hubspotApiQueue = createApiQueue({
   }),
   concurrency: 10,
 })
-
-/**
- * Pre-configured rate limiter for WHOIS API
- * Limits requests to 50 per second as per WHOIS API requirements
- * Both capacity and refill rate are set to 50/second
- */
-const whoIsName = 'whois_api'
-export const whoisApiQueue = createApiQueue({
-  name: whoIsName,
-  rateLimiter: createRateLimiter({
-    refillRate: WHOIS_CONFIG.RATE_LIMIT.REQUESTS_PER_SECOND,
-    capacity: WHOIS_CONFIG.RATE_LIMIT.BURST_CAPACITY,
-    name: whoIsName,
-  }),
-  concurrency: 50,
-})

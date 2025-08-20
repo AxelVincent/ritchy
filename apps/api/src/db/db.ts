@@ -14,7 +14,11 @@ const connectionData = {
   database: DRIZZLE_CONFIG.DATABASE,
   username: DRIZZLE_CONFIG.USER,
   password: DRIZZLE_CONFIG.PASSWORD,
-  max: 1,
+  max: 500,
+  min: 10,
+  idle_timeout: 30,
+  connect_timeout: 10,
+  max_lifetime: 3600,
   ...(isDevelopment && {
     debug: true,
     onnotice: (notice: unknown) => console.log('Postgres Notice:', notice),

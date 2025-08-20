@@ -1,3 +1,4 @@
+import { logger } from '@ritchy/logger'
 import { extractEmail } from 'extract-email-address'
 import { extractPhonesFromText } from '../../../../utils/phone_utils'
 
@@ -8,6 +9,11 @@ const BANNED_EMAIL_PATTERNS = [
 
 const extractEmails = (text: string): string[] => {
   const emails = extractEmail(text).map((email) => email.email)
+  logger.info({
+    msg: 'Extracted emails',
+    event: 'extracted_emails',
+    metadata: { emails },
+  })
   return emails.filter(
     (email) => !BANNED_EMAIL_PATTERNS.some((pattern) => pattern.test(email)),
   )

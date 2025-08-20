@@ -43,7 +43,7 @@ export const getListContent = async (
       event: 'places_in_list',
       metadata: {
         listId,
-        places,
+        placeCount: places.length,
       },
     })
 

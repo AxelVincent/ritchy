@@ -14,6 +14,7 @@ import { getWebsiteDescription } from '../../external/langchain/get_website_desc
 import { deleteWebsiteVectors } from '../../external/qdrant/queries/delete_website_vectors'
 import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vectors'
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
+import { enqueueScraperJob } from '../../internal/bullmq/jobs/scraper/queue'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
@@ -26,10 +27,18 @@ export const websiteEnrichmentManager = async ({
   userPlaceId: string
 }) => {
   const startTime = Date.now()
+  const memoryUsage = process.memoryUsage()
   logger.info({
     msg: 'Starting website enrichment manager',
     event: 'website_enrichment_manager_start',
-    metadata: { userPlaceId },
+    metadata: {
+      userPlaceId,
+      memoryUsage: {
+        heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
+        external: `${Math.round(memoryUsage.external / 1024 / 1024)}MB`,
+      },
+    },
   })
   try {
     const place = await getPlaceByUserPlaceId(userPlaceId)
@@ -114,21 +123,21 @@ export const websiteEnrichmentManager = async ({
     // - to avoid main platform where useless data could be found
     // - to scrape only the subpage
     if (isSubPage(website)) {
-      logger.info({
+      logger.debug({
         msg: 'Website is a subpage',
         event: 'website_is_subpage',
         metadata: { website },
       })
     }
 
-    logger.info({
+    logger.debug({
       msg: 'Getting website vectors',
       event: 'getting_website_vectors',
       metadata: { domain, userPlaceId },
     })
     const websiteVectors = await getWebsiteVectors(domain)
     if (websiteVectors.length > 0) {
-      logger.info({
+      logger.debug({
         msg: 'Website already exists in qdrant, deleting vectors before scraping',
         event: 'website_already_exists_in_qdrant',
         metadata: {
@@ -138,17 +147,18 @@ export const websiteEnrichmentManager = async ({
       await deleteWebsiteVectors(domain)
     }
 
-    logger.info({
+    logger.debug({
       msg: 'Scraping main page of the website',
       event: 'scraping_main_page_of_the_website',
       metadata: { website, userPlaceId },
     })
-    const scrapeResult = await scrapeWebsiteManager(
+    const scrapeResult = await enqueueScraperJob(
       website,
       insertedEnrichment.id,
       false,
       userPlaceId,
     )
+
     if (!scrapeResult || 'error' in scrapeResult) {
       logger.error({
         msg: 'Failed to scrape website',
@@ -173,7 +183,7 @@ export const websiteEnrichmentManager = async ({
         links.internal,
         businessName ?? domain,
       )
-      logger.info({
+      logger.debug({
         msg: 'Website has too many internal links',
         event: 'website_has_too_many_internal_links',
         metadata: {
@@ -184,9 +194,11 @@ export const websiteEnrichmentManager = async ({
       })
     }
 
-    for (const url of crawlStrategy) {
-      await scrapeWebsiteManager(url, insertedEnrichment.id, true, userPlaceId)
-    }
+    await Promise.all(
+      crawlStrategy.map(async (url: string) => {
+        await enqueueScraperJob(url, insertedEnrichment.id, true, userPlaceId)
+      }),
+    )
 
     logger.info({
       msg: 'Scraped website',
@@ -227,7 +239,7 @@ export const websiteEnrichmentManager = async ({
     const endTime = Date.now()
     const duration = endTime - startTime
     logger.info({
-      msg: 'Website enrichment manager completed [regular website]',
+      msg: `Website enrichment manager completed [regular website] in ${duration / 1000} seconds`,
       event: 'website_enrichment_manager_completed',
       metadata: { userPlaceId, duration },
     })

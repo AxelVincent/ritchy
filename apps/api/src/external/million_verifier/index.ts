@@ -73,7 +73,7 @@ export const verifyWithMillionVerifier = async (
       millionVerifierQueueEvents,
     )) as MillionVerifierResponse
 
-    logger.info({
+    logger.debug({
       msg: '[Million Verifier] Email verified with result',
       event: 'email_verified_with_result',
       metadata: { email, result: result },
@@ -95,7 +95,7 @@ export const verifyWithMillionVerifier = async (
       })
     }
 
-    logger.info({
+    logger.debug({
       msg: '[Million Verifier] Email verified',
       event: 'email_verified',
       metadata: { email, result },
