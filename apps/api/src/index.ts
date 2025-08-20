@@ -13,7 +13,7 @@ import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
 import { initQdrantCollection } from './external/qdrant'
-import { enrichmentQueue } from './internal/bullmq/jobs/enrichment/queue'
+import { enrichmentBatchQueue } from './internal/bullmq/jobs/enrichment/batch/queue'
 import { firecrawlQueue } from './internal/bullmq/jobs/firecrawl/queue'
 import { millionVerifierQueue } from './internal/bullmq/jobs/million_verifier/queue'
 import { redisHealthMonitor } from './internal/redis/health-monitor'
@@ -24,6 +24,11 @@ import webhookRoutes from './webhook'
 
 // Import the bullmq workers
 import './internal/bullmq'
+import { bullmqQueues } from './internal/bullmq'
+import { brightdataQueue } from './internal/bullmq/jobs/brightdata/queue'
+import { enrichmentUnitQueue } from './internal/bullmq/jobs/enrichment/unit/queue'
+import { scraperQueue } from './internal/bullmq/jobs/scraper/queue'
+import { whoisQueue } from './internal/bullmq/jobs/whois/queue'
 
 const app = express()
 const server = createServer(app)
@@ -208,23 +213,7 @@ app.use(
   basicAuth,
   createQueueDashExpressMiddleware({
     ctx: {
-      queues: [
-        {
-          queue: enrichmentQueue,
-          displayName: 'Enrichment',
-          type: 'bullmq',
-        },
-        {
-          queue: firecrawlQueue,
-          displayName: 'Firecrawl',
-          type: 'bullmq',
-        },
-        {
-          queue: millionVerifierQueue,
-          displayName: 'Million Verifier',
-          type: 'bullmq',
-        },
-      ],
+      queues: bullmqQueues,
     },
   }),
 )
@@ -253,41 +242,6 @@ app.use((req, res, next) => {
 
   next()
 })
-
-// Monitor memory usage
-const memoryThreshold = 512 // MB
-let lastHeapUsed = 0
-
-setInterval(() => {
-  const used = process.memoryUsage()
-  const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024)
-  const heapDelta = heapUsedMB - lastHeapUsed
-
-  logger.info({
-    msg: 'Memory usage',
-    event: 'memory_stats',
-    metadata: {
-      heapUsed: `${heapUsedMB}MB`,
-      heapTotal: `${Math.round(used.heapTotal / 1024 / 1024)}MB`,
-      rss: `${Math.round(used.rss / 1024 / 1024)}MB`,
-      external: `${Math.round(used.external / 1024 / 1024)}MB`,
-      arrayBuffers: `${Math.round(used.arrayBuffers / 1024 / 1024)}MB`,
-      delta: `${heapDelta}MB`,
-      timestamp: new Date().toISOString(),
-    },
-  })
-
-  // Alert on significant increases
-  if (heapDelta > memoryThreshold) {
-    logger.warn({
-      msg: 'Significant memory increase detected',
-      event: 'memory_spike',
-      metadata: { increase: `${heapDelta}MB` },
-    })
-  }
-
-  lastHeapUsed = heapUsedMB
-}, 900000) // Check every 15 minutes
 
 // Initialize Qdrant collection
 initQdrantCollection().then(() => {

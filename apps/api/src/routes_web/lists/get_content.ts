@@ -43,7 +43,7 @@ export const getListContent = async (
       event: 'places_in_list',
       metadata: {
         listId,
-        places,
+        placeCount: places.length,
       },
     })
 
@@ -58,14 +58,6 @@ export const getListContent = async (
       },
     )
 
-    logger.debug({
-      msg: 'List content',
-      event: 'list_content',
-      metadata: {
-        listId,
-        items: aggregatedPlaceDetails,
-      },
-    })
     res.json({
       id: String(result[0].id),
       name: result[0].name,

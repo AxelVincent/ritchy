@@ -5,9 +5,11 @@ import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { CACHE_THRESHOLDS } from '../../config/redis'
 
 import { eq } from 'drizzle-orm'
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import { place } from '../../db/schema'
 import { userPlace } from '../../db/schema'
+import type * as schema from '../../db/schema'
 import { placesApiQueue } from '../../internal/rate_limiter/config'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
@@ -114,8 +116,10 @@ async function fetchPlaceDetails(
 
 export async function getPlaceDetailsV1(
   userPlaceId: string,
+  tx?: PostgresJsDatabase<typeof schema>,
 ): Promise<PlaceBase & { fromCache: boolean; is_deleted?: boolean }> {
-  const [placeId] = await db
+  const dbOrTx = tx ?? db
+  const [placeId] = await dbOrTx
     .select({
       sourceId: place.sourceId,
     })

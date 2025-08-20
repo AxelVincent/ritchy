@@ -19,7 +19,7 @@ export const worker = new Worker(
     connection: bullmqRedisOptions,
     limiter: {
       max: 500,
-      duration: TIMEOUT * 2,
+      duration: 60000,
     },
     concurrency: 50,
   },

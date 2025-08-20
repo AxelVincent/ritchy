@@ -1,10 +1,10 @@
 import { logger } from '@ritchy/logger'
 import { type Job, Worker } from 'bullmq'
-import { websiteEnrichmentManager } from '../../../../services/enrichment/website_enrichment_manager'
-import { bullmqRedisOptions } from '../../config'
-import type { EnrichmentJobData } from './queue'
+import { bullmqRedisOptions } from '../../../config'
+import { enrichmentUnitQueue, enrichmentUnitQueueEvents } from '../unit/queue'
+import type { EnrichmentBatchJobData } from './queue'
 
-const processEnrichmentJob = async (job: Job<EnrichmentJobData>) => {
+const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
   const { enrichments, totalCount } = job.data
   const errors: Array<{ userPlaceId: string; error: string }> = []
   let processedCount = 0
@@ -13,9 +13,10 @@ const processEnrichmentJob = async (job: Job<EnrichmentJobData>) => {
     await Promise.all(
       enrichments.map(async (enrichment) => {
         try {
-          await websiteEnrichmentManager({
+          const unitJob = await enrichmentUnitQueue.add('enrichment-unit', {
             userPlaceId: enrichment.userPlaceId,
           })
+          await unitJob.waitUntilFinished(enrichmentUnitQueueEvents)
         } catch (error) {
           errors.push({
             userPlaceId: enrichment.userPlaceId,
@@ -81,12 +82,12 @@ const processEnrichmentJob = async (job: Job<EnrichmentJobData>) => {
   }
 }
 
-const worker = new Worker<EnrichmentJobData>(
-  'enrichment',
-  processEnrichmentJob,
+const worker = new Worker<EnrichmentBatchJobData>(
+  'enrichment-batch',
+  processEnrichmentBatchJob,
   {
     connection: bullmqRedisOptions,
-    concurrency: 50,
+    concurrency: 10,
   },
 )
 

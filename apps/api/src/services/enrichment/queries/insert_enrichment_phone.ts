@@ -9,14 +9,15 @@ import {
 import { getBusinessCountryCodeByEnrichmentId } from './get_business_country_code'
 
 export const insertEnrichmentPhone = async (
+  userPlaceId: string,
   enrichmentId: string,
   source: string,
   phone: string,
 ) => {
-  logger.info({
+  logger.debug({
     msg: 'Inserting enrichment phone',
     event: 'inserting_enrichment_phone',
-    metadata: { enrichmentId, phone },
+    metadata: { userPlaceId, enrichmentId, source, phone },
   })
 
   const countryCode = await getBusinessCountryCodeByEnrichmentId(enrichmentId)
@@ -28,10 +29,13 @@ export const insertEnrichmentPhone = async (
   }
 
   if (parsedResult) {
-    logger.info({
+    logger.debug({
       msg: 'Phone parsed successfully',
       event: 'phone_parsed',
       metadata: {
+        userPlaceId,
+        enrichmentId,
+        source,
         originalPhone: phone,
         formattedPhone: parsedResult.formattedPhone,
         type: parsedResult.type,
@@ -50,13 +54,38 @@ export const insertEnrichmentPhone = async (
         })
         .onConflictDoNothing()
 
-      logger.info({
+      logger.debug({
         msg: 'Enrichment phone inserted',
         event: 'enrichment_phone_inserted',
-        metadata: { enrichmentId, phone: parsedResult.formattedPhone },
+        metadata: {
+          userPlaceId,
+          enrichmentId,
+          source,
+          phone: parsedResult.formattedPhone,
+        },
       })
     } catch (error) {
-      handleDatabaseError(error, enrichmentId, parsedResult.formattedPhone)
+      if (
+        (error instanceof DrizzleError &&
+          error.message.includes('duplicate key')) ||
+        (error instanceof Error &&
+          error.message.includes(
+            'duplicate key value violates unique constraint',
+          ))
+      ) {
+        logger.info({
+          msg: 'Enrichment phone already exists',
+          event: 'enrichment_phone_already_exists',
+          metadata: {
+            userPlaceId,
+            enrichmentId,
+            source,
+            phone: parsedResult.formattedPhone,
+          },
+        })
+        return
+      }
+      throw error
     }
   } else {
     // For failed parses, try to store the original number
@@ -71,28 +100,22 @@ export const insertEnrichmentPhone = async (
         })
         .onConflictDoNothing()
     } catch (error) {
-      handleDatabaseError(error, enrichmentId, phone)
+      if (
+        (error instanceof DrizzleError &&
+          error.message.includes('duplicate key')) ||
+        (error instanceof Error &&
+          error.message.includes(
+            'duplicate key value violates unique constraint',
+          ))
+      ) {
+        logger.info({
+          msg: 'Enrichment phone already exists',
+          event: 'enrichment_phone_already_exists',
+          metadata: { userPlaceId, enrichmentId, source, phone },
+        })
+        return
+      }
+      throw error
     }
   }
-}
-
-const handleDatabaseError = (
-  error: unknown,
-  enrichmentId: string,
-  phone: string,
-) => {
-  if (
-    (error instanceof DrizzleError &&
-      error.message.includes('duplicate key')) ||
-    (error instanceof Error &&
-      error.message.includes('duplicate key value violates unique constraint'))
-  ) {
-    logger.info({
-      msg: 'Enrichment phone already exists',
-      event: 'enrichment_phone_already_exists',
-      metadata: { enrichmentId, phone },
-    })
-    return
-  }
-  throw error
 }

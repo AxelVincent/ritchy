@@ -32,7 +32,7 @@ export const getPhonesByPlaceIds = async (userPlaceIds: string[]) => {
       ])
     }
 
-    logger.info({
+    logger.debug({
       msg: 'Phones fetched for places',
       event: 'phones_fetched',
       metadata: {

@@ -12,7 +12,7 @@ import { redisClient } from '../../../internal/redis/redis'
 export const getBusinessCountryCodeByEnrichmentId = async (
   enrichmentId: string,
 ) => {
-  logger.info({
+  logger.debug({
     msg: 'Getting business country code by enrichment id',
     event: 'getting_business_country_code_by_enrichment_id',
     metadata: { enrichmentId },
@@ -27,7 +27,7 @@ export const getBusinessCountryCodeByEnrichmentId = async (
   if (!place) {
     return null
   }
-  logger.info({
+  logger.debug({
     msg: 'Getting place from enrichment',
     event: 'getting_place_from_enrichment',
     metadata: { place },
