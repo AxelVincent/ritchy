@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import type { DomainRegistration } from '@ritchy/types'
+import { enqueueWhoisJob } from '../../internal/bullmq/jobs/whois/queue'
 import { isSocialMediaUrl } from '../../services/enrichment/utils/is_social_media_url'
-import { performWhoisLookup as performWhoisApiLookup } from './whois_api'
 
 /**
  * Performs WHOIS lookup using external API
@@ -24,7 +24,7 @@ export const performWhoisLookup = async (
   }
 
   try {
-    const whoisData = await performWhoisApiLookup(domain, timeoutMs)
+    const whoisData = await enqueueWhoisJob(domain, timeoutMs)
 
     logger.debug({
       event: 'whois_lookup_success',

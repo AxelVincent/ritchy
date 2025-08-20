@@ -42,12 +42,13 @@ interface LogPayload {
 }
 
 const baseLogger = pino({
-  level: process.env.LOG_LEVEL || 'info',
+  level: 'debug',
   ...(process.env.NODE_ENV === 'development'
     ? {
         transport: {
           targets: [
             {
+              level: 'debug',
               target: 'pino-pretty',
               options: {
                 colorize: true,
@@ -56,6 +57,7 @@ const baseLogger = pino({
               },
             },
             {
+              level: 'debug',
               target: 'pino-loki',
               options: {
                 batching: false,

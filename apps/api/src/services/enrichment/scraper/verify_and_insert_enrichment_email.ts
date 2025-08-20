@@ -6,6 +6,7 @@ import { verifyWithMillionVerifier } from '../../../external/million_verifier'
 import { insertEnrichmentEmail } from '../queries/insert_enrichment_email'
 
 export const verifyAndInsertEnrichmentEmail = async (
+  userPlaceId: string,
   enrichmentId: string,
   source: string,
   email: string,
@@ -24,10 +25,10 @@ export const verifyAndInsertEnrichmentEmail = async (
       .limit(1)
 
     if (existingEmail) {
-      logger.info({
+      logger.debug({
         msg: `[Verify and Insert Enrichment Email] Email already exists and verified: ${normalizedEmail}`,
         event: 'email_already_exists',
-        metadata: { enrichmentId, email: normalizedEmail },
+        metadata: { userPlaceId, enrichmentId, email: normalizedEmail },
       })
       return
     }
@@ -41,7 +42,12 @@ export const verifyAndInsertEnrichmentEmail = async (
       logger.warn({
         msg: `[Verify and Insert Enrichment Email] Email not safe to save : ${normalizedEmail} - ${verificationResult.result}`,
         event: 'email_not_safe_to_save',
-        metadata: { enrichmentId, email: normalizedEmail, verificationResult },
+        metadata: {
+          userPlaceId,
+          enrichmentId,
+          email: normalizedEmail,
+          verificationResult,
+        },
       })
       return
     }
@@ -59,7 +65,7 @@ export const verifyAndInsertEnrichmentEmail = async (
     logger.error({
       msg: 'Failed to verify and insert enrichment email',
       event: 'failed_to_verify_and_insert_enrichment_email',
-      metadata: { enrichmentId, email, error },
+      metadata: { userPlaceId, enrichmentId, email, error },
     })
     return
   }

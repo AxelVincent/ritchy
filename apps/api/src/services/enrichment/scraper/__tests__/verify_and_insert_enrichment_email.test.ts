@@ -25,6 +25,7 @@ vi.mock('../../queries/insert_enrichment_email', () => ({
 
 vi.mock('@ritchy/logger', () => ({
   logger: {
+    debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@ritchy/logger', () => ({
 }))
 
 describe('verifyAndInsertEnrichmentEmail', () => {
+  const mockUserPlaceId = 'test-user-place-id'
   const mockEnrichmentId = 'test-enrichment-id'
   const mockSource = 'https://example.com'
   const mockEmail = 'Test.Email@Example.com'
@@ -70,6 +72,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     })
 
     await verifyAndInsertEnrichmentEmail(
+      mockUserPlaceId,
       mockEnrichmentId,
       mockSource,
       ' Test.Email@Example.com ',
@@ -88,6 +91,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     } as unknown as ReturnType<typeof db.select>)
 
     await verifyAndInsertEnrichmentEmail(
+      mockUserPlaceId,
       mockEnrichmentId,
       mockSource,
       mockEmail,
@@ -95,10 +99,14 @@ describe('verifyAndInsertEnrichmentEmail', () => {
 
     expect(verifyWithMillionVerifier).not.toHaveBeenCalled()
     expect(insertEnrichmentEmail).not.toHaveBeenCalled()
-    expect(logger.info).toHaveBeenCalledWith({
+    expect(logger.debug).toHaveBeenCalledWith({
       msg: `[Verify and Insert Enrichment Email] Email already exists and verified: ${normalizedEmail}`,
       event: 'email_already_exists',
-      metadata: { enrichmentId: mockEnrichmentId, email: normalizedEmail },
+      metadata: {
+        userPlaceId: mockUserPlaceId,
+        enrichmentId: mockEnrichmentId,
+        email: normalizedEmail,
+      },
     })
   })
 
@@ -127,6 +135,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     })
 
     await verifyAndInsertEnrichmentEmail(
+      mockUserPlaceId,
       mockEnrichmentId,
       mockSource,
       mockEmail,
@@ -137,6 +146,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       msg: `[Verify and Insert Enrichment Email] Email not safe to save : ${normalizedEmail} - invalid`,
       event: 'email_not_safe_to_save',
       metadata: {
+        userPlaceId: mockUserPlaceId,
         enrichmentId: mockEnrichmentId,
         email: normalizedEmail,
         verificationResult: {
@@ -184,6 +194,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     vi.mocked(verifyWithMillionVerifier).mockResolvedValue(verificationResult)
 
     await verifyAndInsertEnrichmentEmail(
+      mockUserPlaceId,
       mockEnrichmentId,
       mockSource,
       mockEmail,
@@ -211,6 +222,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     } as unknown as ReturnType<typeof db.select>)
 
     await verifyAndInsertEnrichmentEmail(
+      mockUserPlaceId,
       mockEnrichmentId,
       mockSource,
       mockEmail,
@@ -222,6 +234,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       msg: 'Failed to verify and insert enrichment email',
       event: 'failed_to_verify_and_insert_enrichment_email',
       metadata: {
+        userPlaceId: mockUserPlaceId,
         enrichmentId: mockEnrichmentId,
         email: mockEmail,
         error: dbError,
@@ -242,6 +255,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     vi.mocked(verifyWithMillionVerifier).mockRejectedValue(verificationError)
 
     await verifyAndInsertEnrichmentEmail(
+      mockUserPlaceId,
       mockEnrichmentId,
       mockSource,
       mockEmail,
@@ -252,6 +266,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       msg: 'Failed to verify and insert enrichment email',
       event: 'failed_to_verify_and_insert_enrichment_email',
       metadata: {
+        userPlaceId: mockUserPlaceId,
         enrichmentId: mockEnrichmentId,
         email: mockEmail,
         error: verificationError,

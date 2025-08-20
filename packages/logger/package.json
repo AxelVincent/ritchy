@@ -5,7 +5,9 @@
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist/**"],
+  "files": [
+    "dist/**"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -16,6 +18,7 @@
     "check:fix": "biome check --apply ./src"
   },
   "dependencies": {
+    "dotenv": "16.4.7",
     "pino": "9.5.0"
   },
   "devDependencies": {

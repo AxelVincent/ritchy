@@ -10,7 +10,7 @@ import {
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
-import { enrichmentQueue } from '../../internal/bullmq/jobs/enrichment/queue'
+import { enrichmentBatchQueue } from '../../internal/bullmq/jobs/enrichment/batch/queue'
 
 /**
  * Batch enrichment endpoint for processing multiple enrichments
@@ -55,7 +55,7 @@ export const batchEnrichWebsites = async (
     })
 
     // Create a single job for the entire batch
-    const job = await enrichmentQueue.add('enrichment', {
+    const job = await enrichmentBatchQueue.add('enrichment-batch', {
       enrichments,
       totalCount: enrichments.length,
       processedCount: 0,
@@ -121,7 +121,7 @@ export const getEnrichmentJobStatus = async (
       return
     }
 
-    const job = await enrichmentQueue.getJob(jobId)
+    const job = await enrichmentBatchQueue.getJob(jobId)
 
     // If job is not found, check if it was completed and removed
     if (!job) {

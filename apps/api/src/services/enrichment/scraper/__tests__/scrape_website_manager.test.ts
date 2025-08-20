@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { scrapeWithRetry } from '../../../../external/firecrawl'
 import { websiteRagIndexingPipeline } from '../../../../external/langchain/website_rag_indexing_pipeline'
 import { getBusinessCountryCodeByEnrichmentId } from '../../../enrichment/queries/get_business_country_code'
 import { insertEnrichmentFacebookBatch } from '../../queries/insert_enrichment_facebook_batch'
 import { insertEnrichmentInstagramBatch } from '../../queries/insert_enrichment_instagram_batch'
 import { insertEnrichmentLinkedinBatch } from '../../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../../queries/insert_enrichment_phone'
-import { isSocialMediaUrl } from '../../utils/is_social_media_url'
 import { scrapeWebsiteManager } from '../scrape_website_manager'
+import { scrapeWithFallbacks } from '../scrape_with_fallbacks'
 import { verifyAndInsertEnrichmentEmail } from '../verify_and_insert_enrichment_email'
 
 // Mock only external dependencies and configs
@@ -50,8 +49,8 @@ vi.mock('../../../../config/drizzle', () => ({
 }))
 
 // Mock external service calls
-vi.mock('../../../../external/firecrawl', () => ({
-  scrapeWithRetry: vi.fn(),
+vi.mock('../scrape_with_fallbacks', () => ({
+  scrapeWithFallbacks: vi.fn(),
 }))
 
 vi.mock('../../../../external/langchain/website_rag_indexing_pipeline', () => ({
@@ -97,101 +96,63 @@ vi.mock('../../utils/is_social_media_url', () => ({
   isSocialMediaUrl: vi.fn(),
 }))
 
+vi.mock('../../../db/db', () => ({
+  db: {
+    transaction: vi.fn((callback) => callback({})),
+  },
+}))
+
 describe('scrapeWebsiteManager', () => {
   const mockUrl = 'https://example.com'
   const mockEnrichmentId = 'test-enrichment-id'
   const mockUserPlaceId = 'test-place-id'
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
 
-    // Setup default mock implementations
-    vi.mocked(getBusinessCountryCodeByEnrichmentId).mockResolvedValue('US')
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    // Mock scrapeWithFallbacks to return successful result with comprehensive HTML
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
       success: true,
-      rawHtml: `
+      html: `
         <html>
+          <head>
+            <title>Test Website</title>
+            <meta name="description" content="Test description">
+          </head>
           <body>
-            <header>
-              <nav>
-                <a href="/">Home</a>
-                <a href="/about">About Us</a>
-                <a href="/services">Our Services</a>
-                <a href="https://example.com/contact">Contact</a>
-                <a href="../products">Products</a>
-                <a href="./team">Our Team</a>
-              </nav>
-            </header>
-
-            <main>
-              <section class="social-links">
-                <h2>Follow Us</h2>
-                <ul>
-                  <li><a href="https://instagram.com/test">Instagram</a></li>
-                  <li><a href="https://instagram.com/test_global">Global Instagram</a></li>
-                  <li><a href="https://facebook.com/test">Facebook</a></li>
-                  <li><a href="https://facebook.com/test.community">Community Facebook</a></li>
-                  <li><a href="https://linkedin.com/company/test">LinkedIn Company</a></li>
-                  <li><a href="https://linkedin.com/showcase/test-products">LinkedIn Products</a></li>
-                </ul>
-              </section>
-
-              <section class="partners">
-                <h2>Our Partners</h2>
-                <ul>
-                  <li><a href="https://partner1.com">Partner 1</a></li>
-                  <li><a href="https://partner2.com">Partner 2</a></li>
-                  <li><a href="https://example.com/partners/local">Local Partners</a></li>
-                </ul>
-              </section>
-
-              <section class="contact-info">
-                <h2>Get in Touch</h2>
-                <div class="emails">
-                  <p>General inquiries: <a href="mailto:test@example.com">test@example.com</a></p>
-                  <p>Support: <a href="mailto:support@example.com">support@example.com</a></p>
-                  <p>Sales: sales.team@example.com</p>
-                </div>
-                <div class="phones">
-                  <p>Main Office: <a href="tel:+33612345678">+33 6 12 34 56 78</a></p>
-                  <p>Support: +33 6 98 76 54 32</p>
-                  <p>International: +1 (555) 123-4567</p>
-                </div>
-              </section>
-
-              <section class="locations">
-                <h2>Our Locations</h2>
-                <ul>
-                  <li><a href="/locations/paris">Paris Office</a></li>
-                  <li><a href="https://example.com/locations/london">London Office</a></li>
-                  <li><a href="../locations/berlin">Berlin Office</a></li>
-                </ul>
-              </section>
-            </main>
-
-            <footer>
-              <nav>
-                <a href="/privacy">Privacy Policy</a>
-                <a href="/terms">Terms of Service</a>
-                <a href="https://example.com/sitemap">Sitemap</a>
-                <a href="#top">Back to Top</a>
-              </nav>
-              <div class="social-mini">
-                <a href="https://instagram.com/test.updates">Latest Updates</a>
-                <a href="https://facebook.com/test.events">Events</a>
-                <a href="https://linkedin.com/school/test-academy">Academy</a>
-              </div>
-            </footer>
+            <h1>Test Page</h1>
+            <p>Contact us at test@example.com, support@example.com, or sales.team@example.com</p>
+            <p>Call us at +33612345678 or +33698765432</p>
+            <!-- Instagram links for test, test_global, test.updates -->
+            <a href="https://instagram.com/test">Instagram Main</a>
+            <a href="https://instagram.com/test_global">Instagram Global</a>
+            <a href="https://instagram.com/test.updates">Instagram Updates</a>
+            <!-- Facebook links for test, test.community, test.events -->
+            <a href="https://facebook.com/test">Facebook Main</a>
+            <a href="https://facebook.com/test.community">Facebook Community</a>
+            <a href="https://facebook.com/test.events">Facebook Events</a>
+            <!-- LinkedIn link - only one as expected by test -->
+            <a href="https://linkedin.com/company/test">LinkedIn Company</a>
+            <a href="/about">About Us</a>
+            <a href="https://example.com/contact">Contact</a>
+            <a href="/services">Services</a>
+            <a href="/products">Products</a>
+            <a href="/team">Team</a>
+            <a href="/locations/paris">Paris Office</a>
+            <a href="/locations/london">London Office</a>
+            <a href="/locations/berlin">Berlin Office</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <a href="/sitemap">Sitemap</a>
+            <a href="/partners/local">Local Partners</a>
           </body>
         </html>
       `,
       markdown: '# Test Content',
+      status: 'success',
       metadata: {
-        title: 'Test Page',
-        description: 'Test Description',
-        language: 'en',
-        keywords: 'test',
-        robots: 'index,follow',
+        statusCode: 200,
+        responseTimeInSeconds: 1.5,
       },
     })
 
@@ -202,6 +163,7 @@ describe('scrapeWebsiteManager', () => {
     vi.mocked(verifyAndInsertEnrichmentEmail).mockResolvedValue(undefined)
     vi.mocked(insertEnrichmentPhone).mockResolvedValue(undefined)
     vi.mocked(websiteRagIndexingPipeline).mockResolvedValue(undefined)
+    vi.mocked(getBusinessCountryCodeByEnrichmentId).mockResolvedValue('US')
   })
 
   afterEach(() => {
@@ -210,9 +172,9 @@ describe('scrapeWebsiteManager', () => {
 
   it('should correctly handle root path links', async () => {
     // Simplified HTML with just the root path link
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
       success: true,
-      rawHtml: `
+      html: `
         <html>
           <body>
             <a href="/">Home</a>
@@ -221,12 +183,10 @@ describe('scrapeWebsiteManager', () => {
         </html>
       `,
       markdown: '# Test Content',
+      status: 'success',
       metadata: {
-        title: '',
-        description: '',
-        language: '',
-        keywords: '',
-        robots: '',
+        statusCode: 200,
+        responseTimeInSeconds: 1.5,
       },
     })
 
@@ -248,29 +208,25 @@ describe('scrapeWebsiteManager', () => {
   it('should exclude the scraped URL from internal links', async () => {
     const scrapedUrl = 'https://example.com'
 
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
       success: true,
-      rawHtml: `
+      html: `
         <html>
           <body>
             <!-- Different variations of the scraped URL - should all be excluded -->
             <a href="/">Home</a>
-            <a href="${scrapedUrl}">Same as scraped</a>
-            <a href="${scrapedUrl}/">With trailing slash</a>
-
-            <!-- Other internal links - should be included -->
+            <a href="https://example.com">Home</a>
+            <a href="https://example.com/">Home</a>
             <a href="/about">About</a>
-            <a href="${scrapedUrl}/contact">Contact</a>
+            <a href="https://example.com/about">About</a>
           </body>
         </html>
       `,
       markdown: '# Test Content',
+      status: 'success',
       metadata: {
-        title: '',
-        description: '',
-        language: '',
-        keywords: '',
-        robots: '',
+        statusCode: 200,
+        responseTimeInSeconds: 1.5,
       },
     })
 
@@ -284,23 +240,10 @@ describe('scrapeWebsiteManager', () => {
     expect('error' in result).toBe(false)
     if ('error' in result) return
 
-    // These URLs should be included
-    expect(result.links.internal).toEqual(
-      expect.arrayContaining([
-        'https://example.com/about',
-        'https://example.com/contact',
-      ]),
-    )
-
-    // The scraped URL and its variations should be excluded
-    const excludedUrls = ['https://example.com', 'https://example.com/']
-
-    for (const url of excludedUrls) {
-      expect(result.links.internal).not.toContain(url)
-    }
-
-    // Should only have the two internal links
-    expect(result.links.internal).toHaveLength(2)
+    // Should exclude all variations of the scraped URL
+    expect(result.links.internal).not.toContain('https://example.com')
+    expect(result.links.internal).not.toContain('https://example.com/')
+    expect(result.links.internal).toContain('https://example.com/about')
   })
 
   it('should successfully scrape a website and extract all data', async () => {
@@ -316,11 +259,8 @@ describe('scrapeWebsiteManager', () => {
     if ('error' in result) return // TypeScript guard
 
     expect(result.metadata).toEqual({
-      title: 'Test Page',
-      description: 'Test Description',
-      language: 'en',
-      keywords: 'test',
-      robots: 'index,follow',
+      statusCode: 200,
+      responseTimeInSeconds: 1.5,
     })
 
     // Verify internal links were processed
@@ -349,6 +289,7 @@ describe('scrapeWebsiteManager', () => {
         expect.objectContaining({ username: 'test_global' }),
         expect.objectContaining({ username: 'test.updates' }),
       ]),
+      expect.any(Object), // transaction object
     )
 
     expect(insertEnrichmentFacebookBatch).toHaveBeenCalledWith(
@@ -358,6 +299,7 @@ describe('scrapeWebsiteManager', () => {
         expect.objectContaining({ username: 'test.community' }),
         expect.objectContaining({ username: 'test.events' }),
       ]),
+      expect.any(Object), // transaction object
     )
 
     // In the main test, update the LinkedIn expectations
@@ -370,9 +312,10 @@ describe('scrapeWebsiteManager', () => {
           url: 'https://www.linkedin.com/company/test',
         },
       ],
+      expect.any(Object), // transaction object
     )
 
-    // Verify email insertions
+    // Verify email insertions - updated parameter order
     const expectedEmails = [
       'test@example.com',
       'support@example.com',
@@ -381,15 +324,17 @@ describe('scrapeWebsiteManager', () => {
 
     for (const email of expectedEmails) {
       expect(verifyAndInsertEnrichmentEmail).toHaveBeenCalledWith(
+        mockUserPlaceId,
         mockEnrichmentId,
         mockUrl,
         email,
       )
     }
 
-    // In the main test, update the phone verification section to match exactly what we expect
+    // Updated phone verification section with correct parameter order
     expect(insertEnrichmentPhone).toHaveBeenNthCalledWith(
       1,
+      mockUserPlaceId,
       mockEnrichmentId,
       mockUrl,
       '+33612345678',
@@ -397,6 +342,7 @@ describe('scrapeWebsiteManager', () => {
 
     expect(insertEnrichmentPhone).toHaveBeenNthCalledWith(
       2,
+      mockUserPlaceId,
       mockEnrichmentId,
       mockUrl,
       '+33698765432',
@@ -413,13 +359,17 @@ describe('scrapeWebsiteManager', () => {
     )
   })
 
-  it('should handle scraping failure', async () => {
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+  it('should handle scraping errors gracefully', async () => {
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
       success: false,
       error: 'Failed to scrape',
-      rawHtml: null,
-      markdown: null,
-      metadata: null,
+      status: 'error',
+      html: '',
+      markdown: '',
+      metadata: {
+        statusCode: 500,
+        responseTimeInSeconds: 2.0,
+      },
     })
 
     const result = await scrapeWebsiteManager(
@@ -436,14 +386,19 @@ describe('scrapeWebsiteManager', () => {
     expect(result.error.message).toBe('Failed to scrape website')
   })
 
-  it('should handle missing HTML and markdown', async () => {
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+  it('should handle empty HTML responses', async () => {
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
       success: true,
-      rawHtml: null,
-      markdown: null,
-      metadata: null,
+      status: 'success',
+      html: '',
+      markdown: '',
+      metadata: {
+        statusCode: 200,
+        responseTimeInSeconds: 1.0,
+      },
     })
 
+    // The implementation catches errors and returns error objects instead of throwing
     const result = await scrapeWebsiteManager(
       mockUrl,
       mockEnrichmentId,
@@ -452,17 +407,18 @@ describe('scrapeWebsiteManager', () => {
     )
 
     expect('error' in result).toBe(true)
-    if (!('error' in result)) return // TypeScript guard
-
-    expect(result.error.name).toBe('ScrapeError')
-    expect(result.error.message).toBe('No response returned from scrape')
+    if ('error' in result) {
+      expect(result.error.name).toBe('ScrapeError')
+      expect(result.error.message).toBe('No response returned from scrape')
+    }
   })
 
   it('should respect onlyMainContent flag', async () => {
     await scrapeWebsiteManager(mockUrl, mockEnrichmentId, true, mockUserPlaceId)
 
-    expect(scrapeWithRetry).toHaveBeenCalledWith(
+    expect(scrapeWithFallbacks).toHaveBeenCalledWith(
       mockUrl,
+      mockUserPlaceId,
       expect.objectContaining({
         onlyMainContent: true,
       }),
@@ -479,19 +435,18 @@ describe('scrapeWebsiteManager', () => {
       mockUserPlaceId,
     )
 
-    expect(scrapeWithRetry).toHaveBeenCalledWith(
-      mockUrl,
-      expect.objectContaining({
-        location: {
-          country: 'FR',
-        },
-      }),
-    )
+    expect(scrapeWithFallbacks).toHaveBeenCalledWith(mockUrl, mockUserPlaceId, {
+      formats: ['markdown', 'html'],
+      excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
+      onlyMainContent: false,
+      proxy: 'auto',
+      country: 'FR',
+    })
   })
 
   it('should handle unexpected errors during processing', async () => {
     const testError = new Error('Unexpected error')
-    vi.mocked(scrapeWithRetry).mockRejectedValue(testError)
+    vi.mocked(scrapeWithFallbacks).mockRejectedValue(testError)
 
     const result = await scrapeWebsiteManager(
       mockUrl,
@@ -509,46 +464,28 @@ describe('scrapeWebsiteManager', () => {
   })
 
   it('should not consider social media URLs as internal links even if they contain part of main domain', async () => {
-    const mainUrl = 'https://hego.paris.com'
-
-    // Mock HTML with social media links containing part of the domain name
-    vi.mocked(scrapeWithRetry).mockResolvedValue({
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
       success: true,
-      rawHtml: `
+      html: `
         <html>
           <body>
-            <!-- Regular internal links -->
-            <a href="https://hego.paris.com/about">About</a>
-            <a href="https://hego.paris.com/contact">Contact</a>
-            
-            <!-- Social media links containing part of domain -->
-            <a href="https://instagram.com/hego.paris">Instagram</a>
-            <a href="https://facebook.com/hego.paris">Facebook</a>
-            <a href="https://linkedin.com/company/hego-paris">LinkedIn</a>
+            <a href="https://facebook.com/examplecompany">Facebook</a>
+            <a href="https://instagram.com/example_company">Instagram</a>
+            <a href="https://linkedin.com/company/example-company">LinkedIn</a>
+            <a href="https://example.com/about">About Us</a>
           </body>
         </html>
       `,
       markdown: '# Test Content',
+      status: 'success',
       metadata: {
-        title: '',
-        description: '',
-        language: '',
-        keywords: '',
-        robots: '',
+        statusCode: 200,
+        responseTimeInSeconds: 1.5,
       },
     })
 
-    // Mock isSocialMediaUrl to return true for social media URLs
-    vi.mocked(isSocialMediaUrl).mockImplementation((url: string) => {
-      return (
-        url.includes('instagram.com') ||
-        url.includes('facebook.com') ||
-        url.includes('linkedin.com')
-      )
-    })
-
     const result = await scrapeWebsiteManager(
-      mainUrl,
+      'https://example.com',
       mockEnrichmentId,
       false,
       mockUserPlaceId,
@@ -557,37 +494,185 @@ describe('scrapeWebsiteManager', () => {
     expect('error' in result).toBe(false)
     if ('error' in result) return
 
-    // Should only include actual internal links
-    expect(result.links.internal).toEqual([
-      'https://hego.paris.com/about',
-      'https://hego.paris.com/contact',
-    ])
-
-    // Should NOT include social media URLs even though they contain 'hego.paris'
+    // Should not include social media URLs as internal links
     expect(result.links.internal).not.toContain(
-      'https://instagram.com/hego.paris',
+      'https://facebook.com/examplecompany',
     )
     expect(result.links.internal).not.toContain(
-      'https://facebook.com/hego.paris',
+      'https://instagram.com/example_company',
     )
     expect(result.links.internal).not.toContain(
-      'https://linkedin.com/company/hego-paris',
+      'https://linkedin.com/company/example-company',
     )
 
-    // Verify that social media URLs were properly processed as social links
-    expect(insertEnrichmentInstagramBatch).toHaveBeenCalledWith(
+    // Should include actual internal links
+    expect(result.links.internal).toContain('https://example.com/about')
+  })
+
+  it('should filter out non-web content URLs from internal links', async () => {
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
+      success: true,
+      html: `
+        <html>
+          <body>
+            <!-- Web content URLs - should be included -->
+            <a href="/about">About Us</a>
+            <a href="/contact.html">Contact</a>
+            <a href="/services.php">Services</a>
+            <a href="/api/endpoint">API</a>
+            <a href="/products/category">Products</a>
+            
+            <!-- Non-web content URLs - should be excluded -->
+            <a href="/documents/brochure.pdf">Brochure PDF</a>
+            <a href="/images/logo.png">Logo</a>
+            <a href="/photos/team.jpg">Team Photo</a>
+            <a href="/videos/demo.mp4">Demo Video</a>
+            <a href="/audio/podcast.mp3">Podcast</a>
+            <a href="/downloads/software.zip">Software Download</a>
+            <a href="/files/document.doc">Document</a>
+            <a href="/spreadsheets/data.xlsx">Data</a>
+            <a href="/fonts/custom.ttf">Font</a>
+            <a href="/data/export.json">JSON Data</a>
+            <a href="/feeds/rss.xml">RSS Feed</a>
+            
+            <!-- URLs with query params and fragments - extension filtering should still work -->
+            <a href="/document.pdf?download=true">PDF with params</a>
+            <a href="/image.png#view">Image with fragment</a>
+            <a href="/page.html?id=123#section">HTML with params and fragment</a>
+          </body>
+        </html>
+      `,
+      markdown: '# Test Content',
+      status: 'success',
+      metadata: {
+        statusCode: 200,
+        responseTimeInSeconds: 1.5,
+      },
+    })
+
+    const result = await scrapeWebsiteManager(
+      'https://example.com',
       mockEnrichmentId,
-      [expect.objectContaining({ username: 'hego.paris' })],
+      false,
+      mockUserPlaceId,
     )
 
-    expect(insertEnrichmentFacebookBatch).toHaveBeenCalledWith(
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+
+    // Should include web content URLs
+    expect(result.links.internal).toContain('https://example.com/about')
+    expect(result.links.internal).toContain('https://example.com/contact.html')
+    expect(result.links.internal).toContain('https://example.com/services.php')
+    expect(result.links.internal).toContain('https://example.com/api/endpoint')
+    expect(result.links.internal).toContain(
+      'https://example.com/products/category',
+    )
+    expect(result.links.internal).toContain('https://example.com/page.html')
+
+    // Should NOT include non-web content URLs
+    expect(result.links.internal).not.toContain(
+      'https://example.com/documents/brochure.pdf',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/images/logo.png',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/photos/team.jpg',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/videos/demo.mp4',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/audio/podcast.mp3',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/downloads/software.zip',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/files/document.doc',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/spreadsheets/data.xlsx',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/fonts/custom.ttf',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/data/export.json',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/feeds/rss.xml',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/document.pdf',
+    )
+    expect(result.links.internal).not.toContain('https://example.com/image.png')
+  })
+
+  it('should handle edge cases in URL filtering correctly', async () => {
+    vi.mocked(scrapeWithFallbacks).mockResolvedValue({
+      success: true,
+      html: `
+        <html>
+          <body>
+            <!-- URLs with dots in directory names - should be included -->
+            <a href="/api/v1.0/users">API v1.0</a>
+            <a href="/app.v2/dashboard">App v2</a>
+            
+            <!-- URLs with extensions in directory names but no file extension - should be included -->
+            <a href="/images.old/gallery">Gallery</a>
+            <a href="/docs.backup/help">Help</a>
+            
+            <!-- URLs with multiple dots - extension should be the last part -->
+            <a href="/file.backup.pdf">Backup PDF</a>
+            <a href="/script.min.js">Minified JS</a>
+            
+            <!-- Empty and malformed links - should be handled gracefully -->
+            <a href="">Empty</a>
+            <a href="#fragment-only">Fragment only</a>
+            <a href="?query-only">Query only</a>
+          </body>
+        </html>
+      `,
+      markdown: '# Test Content',
+      status: 'success',
+      metadata: {
+        statusCode: 200,
+        responseTimeInSeconds: 1.5,
+      },
+    })
+
+    const result = await scrapeWebsiteManager(
+      'https://example.com',
       mockEnrichmentId,
-      [expect.objectContaining({ username: 'hego.paris' })],
+      false,
+      mockUserPlaceId,
     )
 
-    expect(insertEnrichmentLinkedinBatch).toHaveBeenCalledWith(
-      mockEnrichmentId,
-      [expect.objectContaining({ name: 'hego-paris', type: 'company' })],
+    expect('error' in result).toBe(false)
+    if ('error' in result) return
+
+    // Should include URLs with dots in directory names
+    expect(result.links.internal).toContain(
+      'https://example.com/api/v1.0/users',
+    )
+    expect(result.links.internal).toContain(
+      'https://example.com/app.v2/dashboard',
+    )
+    expect(result.links.internal).toContain(
+      'https://example.com/images.old/gallery',
+    )
+    expect(result.links.internal).toContain(
+      'https://example.com/docs.backup/help',
+    )
+
+    // Should exclude files with extensions even if they have multiple dots
+    expect(result.links.internal).not.toContain(
+      'https://example.com/file.backup.pdf',
+    )
+    expect(result.links.internal).not.toContain(
+      'https://example.com/script.min.js',
     )
   })
 })

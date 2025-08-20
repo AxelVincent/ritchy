@@ -1,5 +1,6 @@
 import { logger } from '@ritchy/logger'
 
+import { db } from '../../db/db'
 import { populateContactEmailsFromEnrichment } from './populate_contact_emails_from_enrichment'
 import { populateContactPhonesFromEnrichment } from './populate_contact_phones_from_enrichment'
 import { populateContactSocialMediasFromEnrichment } from './populate_contact_social_medias_from_enrichment'
@@ -12,19 +13,23 @@ export const populateContactFromEnrichment = async ({
   enrichmentId: string
   userPlaceId: string
 }) => {
-  const contact = await getOrCreatePrimaryContact(userPlaceId)
+  const contact = await db.transaction(async (tx) => {
+    const contact = await getOrCreatePrimaryContact(userPlaceId, tx)
 
-  logger.info({
-    msg: 'Populating enrichment contact data',
-    event: 'populating_enrichment_contact_data',
-    metadata: { contactId: contact.id, enrichmentId, userPlaceId },
+    logger.info({
+      msg: 'Populating enrichment contact data',
+      event: 'populating_enrichment_contact_data',
+      metadata: { contactId: contact.id, enrichmentId, userPlaceId },
+    })
+
+    await Promise.all([
+      populateContactSocialMediasFromEnrichment(enrichmentId, contact.id, tx),
+      populateContactEmailsFromEnrichment(enrichmentId, contact.id, tx),
+      populateContactPhonesFromEnrichment(enrichmentId, contact.id, tx),
+    ])
+
+    return contact
   })
-
-  await Promise.all([
-    populateContactSocialMediasFromEnrichment(enrichmentId, contact.id),
-    populateContactEmailsFromEnrichment(enrichmentId, contact.id),
-    populateContactPhonesFromEnrichment(enrichmentId, contact.id),
-  ])
 
   logger.info({
     msg: 'Enrichment contact data populated',
