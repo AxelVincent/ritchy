@@ -48,7 +48,7 @@ export const aggregatePlaceData = async (
     msg: 'List associations by place ids',
     event: 'list_associations_by_place_ids',
     metadata: {
-      associations,
+      associationsCount: associations.size,
     },
   })
   const notes = await getNotesByPlaceIds(userPlaceIds)
@@ -56,7 +56,7 @@ export const aggregatePlaceData = async (
     msg: 'Notes by place ids',
     event: 'notes_by_place_ids',
     metadata: {
-      notes,
+      notesCount: notes.size,
     },
   })
   const statuses = await getStatusByPlaceIds(userPlaceIds)
@@ -64,7 +64,7 @@ export const aggregatePlaceData = async (
     msg: 'Statuses by place ids',
     event: 'statuses_by_place_ids',
     metadata: {
-      statuses,
+      statusesCount: statuses.size,
     },
   })
 
