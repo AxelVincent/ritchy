@@ -25,7 +25,6 @@ export const scrapeWithBrightdata = async (
         metadata: {
           url,
           error: result.error,
-          rawResult: result,
           responseTimeInSeconds: (Date.now() - time) / 1000,
         },
       })
