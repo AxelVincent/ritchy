@@ -50,8 +50,8 @@ export const getListAssociationsByPlaceIds = async (
     msg: 'List associations by place ids',
     event: 'list_associations_by_place_ids',
     metadata: {
-      associations,
-      resultMap,
+      associations: associations.slice(0, 10),
+      resultMapCount: resultMap.size,
     },
   })
 
