@@ -16,6 +16,12 @@ import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vec
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { enqueueScraperJob } from '../../internal/bullmq/jobs/scraper/queue'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
+import {
+  NO_ENRICHMENT_CREDITS_AVAILABLE_ERROR,
+  USER_CREDITS_NOT_FOUND_ERROR,
+  updateEnrichmentCredit,
+} from '../payment/queries/update_enrichment_credit'
+import { getUserIdByUserPlaceId } from '../places/queries/get_user_id_by_user_place_id'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
@@ -40,16 +46,20 @@ export const websiteEnrichmentManager = async ({
       },
     },
   })
+  const [userId, place] = await Promise.all([
+    getUserIdByUserPlaceId(userPlaceId),
+    getPlaceByUserPlaceId(userPlaceId),
+  ])
+  if (!userId || !place) {
+    logger.error({
+      msg: 'User or place not found',
+      event: 'user_or_place_not_found',
+      metadata: { userPlaceId },
+    })
+    return
+  }
   try {
-    const place = await getPlaceByUserPlaceId(userPlaceId)
-    if (!place) {
-      logger.error({
-        msg: 'Place not found',
-        event: 'place_not_found',
-        metadata: { userPlaceId },
-      })
-      return
-    }
+    await updateEnrichmentCredit(userId)
 
     const [existingEnrichment] = await db
       .select()
@@ -268,9 +278,28 @@ export const websiteEnrichmentManager = async ({
         timestamp: new Date().toISOString(),
       },
     }
-    logger.error(errorDetails)
+
+    // If the error is because of no enrichment credits available, we don't need to refund the credit
+    if (
+      error instanceof Error &&
+      (error.message === NO_ENRICHMENT_CREDITS_AVAILABLE_ERROR ||
+        error.message === USER_CREDITS_NOT_FOUND_ERROR)
+    ) {
+      logger.info({
+        msg: 'No enrichment credits available',
+        event: 'consume_enrichment_credit_no_credits',
+        metadata: { userId },
+      })
+      return {
+        success: false,
+        message: `Website enrichment failed: ${errorMessage}`,
+        error:
+          process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+      }
+    }
 
     await Promise.all([
+      updateEnrichmentCredit(userId, true),
       setUserPlaceAsEnriched(userPlaceId),
       db
         .update(enrichmentTable)
@@ -280,6 +309,7 @@ export const websiteEnrichmentManager = async ({
         })
         .where(eq(enrichmentTable.id, enrichment.id)),
     ])
+
     return {
       success: false,
       message: `Website enrichment failed: ${errorMessage}`,

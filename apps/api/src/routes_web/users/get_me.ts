@@ -4,6 +4,9 @@ import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { userDemoCode } from '../../db/schema'
+import { CREDIT_CONFIG } from '../../services/payment/config'
+import { getNextRenewalDate } from '../../services/payment/queries/get_next_renewal_date'
+import { getUserCredits } from '../../services/payment/queries/get_user_credits'
 import { getUserPlan } from '../../services/payment/queries/get_user_plan'
 
 export const getMe = async (
@@ -50,7 +53,31 @@ export const getMe = async (
       metadata: { userId, plan, isDemoValidated },
     })
 
-    res.json({ plan, isDemoValidated })
+    const credits = await getUserCredits(userId)
+    logger.info({
+      msg: 'Successfully retrieved user credits',
+      event: 'get_me_success',
+      metadata: { userId, credits },
+    })
+    const nextRenewalDate = await getNextRenewalDate(userId)
+    logger.info({
+      msg: 'Successfully retrieved user next renewal date',
+      event: 'get_me_success',
+      metadata: { userId, nextRenewalDate },
+    })
+
+    const creditsData = {
+      search: {
+        plan: CREDIT_CONFIG.find((c) => c.plan === plan)?.credits.search ?? 0,
+        credits: credits.search,
+      },
+      enrichment: {
+        plan:
+          CREDIT_CONFIG.find((c) => c.plan === plan)?.credits.enrichment ?? 0,
+        credits: credits.enrichment,
+      },
+    }
+    res.json({ plan, isDemoValidated, credits: creditsData, nextRenewalDate })
   } catch (error) {
     logger.error({
       msg: 'Error fetching user data for /me endpoint',

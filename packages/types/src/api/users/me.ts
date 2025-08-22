@@ -5,6 +5,17 @@ import { PlanEnum } from '../payments/checkout'
 export const UserMeDataSchema = z.object({
   plan: PlanEnum,
   isDemoValidated: z.boolean(),
+  credits: z.object({
+    search: z.object({
+      plan: z.number(),
+      credits: z.number(),
+    }),
+    enrichment: z.object({
+      plan: z.number(),
+      credits: z.number(),
+    }),
+  }),
+  nextRenewalDate: z.string().datetime().nullable(),
 })
 
 export const UserMeApiResponseSchema = z.union([

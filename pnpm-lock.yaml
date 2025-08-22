@@ -95,6 +95,9 @@ importers:
       cors:
         specifier: 2.8.5
         version: 2.8.5
+      dayjs:
+        specifier: 1.11.13
+        version: 1.11.13
       dompurify:
         specifier: 3.2.6
         version: 3.2.6
@@ -318,6 +321,9 @@ importers:
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
+      dayjs:
+        specifier: 1.11.13
+        version: 1.11.13
       framer-motion:
         specifier: 12.7.2
         version: 12.7.2(@emotion/is-prop-valid@1.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -4701,6 +4707,9 @@ packages:
 
   dateformat@4.6.3:
     resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
+
+  dayjs@1.11.13:
+    resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -12475,6 +12484,8 @@ snapshots:
   date-fns@4.1.0: {}
 
   dateformat@4.6.3: {}
+
+  dayjs@1.11.13: {}
 
   debug@2.6.9:
     dependencies:

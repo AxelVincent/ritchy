@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { place, search, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
+import { consumeSearchCredits } from '../../services/payment/queries/consume_search_credits'
 import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
 
 export const getSearchContent = async (
@@ -67,6 +68,7 @@ export const getSearchContent = async (
             sourceId: sql`excluded.source_id`,
           },
         })
+
       logger.info({
         msg: 'Places inserted',
         event: 'places_inserted',
@@ -74,14 +76,21 @@ export const getSearchContent = async (
           places: places.length,
         },
       })
+      const creditsUsed = await consumeSearchCredits(
+        userId,
+        freshResults.length,
+      )
+
+      const resultsToInsert = places
+        .map((place) => ({
+          userId,
+          placeId: place.id,
+        }))
+        .slice(0, creditsUsed)
+
       const userPlaces = await db
         .insert(userPlace)
-        .values(
-          places.map((place) => ({
-            userId,
-            placeId: place.id,
-          })),
-        )
+        .values(resultsToInsert)
         .returning({ id: userPlace.id })
         .onConflictDoUpdate({
           target: [userPlace.userId, userPlace.placeId],
