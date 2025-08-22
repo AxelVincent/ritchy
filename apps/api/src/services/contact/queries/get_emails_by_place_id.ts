@@ -37,7 +37,6 @@ export const getEmailsByPlaceIds = async (userPlaceIds: string[]) => {
     metadata: {
       userPlaceIds,
       emailsCount: result.size,
-      emailsData: Object.fromEntries(result),
     },
   })
 

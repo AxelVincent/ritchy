@@ -38,7 +38,6 @@ export const getPhonesByPlaceIds = async (userPlaceIds: string[]) => {
       metadata: {
         userPlaceIds,
         phonesCount: result.size,
-        phonesData: Object.fromEntries(result),
       },
     })
 
