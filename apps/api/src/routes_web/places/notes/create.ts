@@ -2,7 +2,8 @@ import { logger } from '@ritchy/logger'
 import type { AddNoteApiResponse, AddNoteRequest } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { createVersionedDbFromRequest } from '../../../db/versioned_db/client'
+import { db } from '../../../db/db'
+import { note as noteTable } from '../../../db/schema'
 
 export const addPlaceNote = async (
   req: Request<AddNoteRequest>,
@@ -21,12 +22,14 @@ export const addPlaceNote = async (
     const { note } = req.body
     const { userPlaceId } = req.params
 
-    const db = createVersionedDbFromRequest(req)
-    const result = await db.insert('note', {
-      userPlaceId,
-      note,
-      userId: req.auth.userId,
-    })
+    const [result] = await db
+      .insert(noteTable)
+      .values({
+        userPlaceId,
+        note,
+        userId: req.auth.userId,
+      })
+      .returning()
 
     res.json({
       id: result.id,

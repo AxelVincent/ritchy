@@ -6,12 +6,11 @@ import {
   type AddItemsToListRequestParams,
   type AddItemsToListResponse,
 } from '@ritchy/types'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
-import { list } from '../../db/schema'
-import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
+import { list, listPlace } from '../../db/schema'
 
 export const addItemsToList = async (
   req: Request<
@@ -58,23 +57,32 @@ export const addItemsToList = async (
       return
     }
 
-    const versionedDb = createVersionedDbFromRequest(req)
-    const { records, operations } = await versionedDb.bulkUpsert(
-      'listPlace',
-      items.map((item) => ({
-        listId: listId,
-        userPlaceId: item.userPlaceId,
-      })),
-      ['listId', 'userPlaceId'],
-    )
+    const upsertResults = await db
+      .insert(listPlace)
+      .values(
+        items.map((item) => ({
+          listId: listId,
+          userPlaceId: item.userPlaceId,
+        })),
+      )
+      .onConflictDoUpdate({
+        target: [listPlace.listId, listPlace.userPlaceId],
+        set: {
+          updatedAt: new Date(),
+        },
+      })
+      .returning({
+        placeId: listPlace.userPlaceId,
+        operation: sql`CASE WHEN xmax = 0 THEN 'insert' ELSE 'update' END`,
+      })
 
-    const newPlaceIds = records
-      .filter((record) => operations[record.id] === 'insert')
-      .map((record) => record.userPlaceId)
+    const newPlaceIds = upsertResults
+      .filter((record) => record.operation === 'insert')
+      .map((record) => record.placeId)
 
-    const duplicatePlaceIds = records
-      .filter((record) => operations[record.id] === 'update')
-      .map((record) => record.userPlaceId)
+    const duplicatePlaceIds = upsertResults
+      .filter((record) => record.operation === 'update')
+      .map((record) => record.placeId)
 
     res.json({
       success: true,

@@ -1,11 +1,12 @@
 import { logger } from '@ritchy/logger'
 import type { Status, StatusType } from '@ritchy/types'
-import { createVersionedDb } from '../../../db/versioned_db/client'
-import type { VersionContext } from '../../../db/versioned_db/types'
+import { db } from '../../../db/db'
+import { status as statusTable } from '../../../db/schema'
 import { updateHubspotContactStatus } from '../../hubspot/update_hubspot_contact_status'
+import type { HubspotContext } from '../../hubspot/update_place_status'
 
 export const upsertStatus = async (
-  context: VersionContext,
+  context: HubspotContext,
   userPlaceId: string,
   status: StatusType,
 ): Promise<Status> => {
@@ -17,20 +18,24 @@ export const upsertStatus = async (
         userPlaceId,
         status,
         changeSource: context.changeSource,
-        ...context.metadata,
       },
     })
 
-    const db = createVersionedDb(context)
-    const result = await db.upsert(
-      'status',
-      {
+    const [result] = await db
+      .insert(statusTable)
+      .values({
         userPlaceId,
         status,
-        updatedAt: new Date(),
-      },
-      ['userPlaceId', 'status'],
-    )
+      })
+      .onConflictDoUpdate({
+        target: [statusTable.userPlaceId, statusTable.status],
+        set: {
+          status,
+          updatedAt: new Date(),
+        },
+      })
+      .returning()
+
     if (context.changeSource === 'user') {
       updateHubspotContactStatus(context.userId, userPlaceId, status)
     }

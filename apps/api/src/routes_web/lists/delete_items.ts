@@ -11,7 +11,6 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
-import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 
 export const deleteItemsFromList = async (
   req: Request<
@@ -58,36 +57,14 @@ export const deleteItemsFromList = async (
       return
     }
 
-    const versionedDb = createVersionedDbFromRequest(req)
-
-    // Get the listPlace records to delete
-    const listPlaces = await db
-      .select()
-      .from(listPlace)
+    await db
+      .delete(listPlace)
       .where(
         and(
           eq(listPlace.listId, listId),
           inArray(listPlace.userPlaceId, parsedBody.items),
         ),
       )
-
-    // Delete with version history
-    const { notFound } = await versionedDb.bulkDelete('listPlace', listPlaces, [
-      'listId',
-      'userPlaceId',
-    ])
-
-    // Log any items that weren't found
-    if (notFound.length > 0) {
-      logger.info({
-        msg: 'Some items were not found in the list',
-        event: 'items_not_found',
-        metadata: {
-          listId,
-          notFound,
-        },
-      })
-    }
 
     res.json({
       success: true,
