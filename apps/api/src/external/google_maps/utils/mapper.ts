@@ -1,4 +1,4 @@
-import type { OpeningHours, Place, PlaceBase } from '@ritchy/types'
+import type { PlaceBase } from '@ritchy/types'
 import type { GooglePlacesTextSearchResponse, PreferredPlace } from './../types'
 
 const objectMapper = (place: PreferredPlace) => {
@@ -21,7 +21,6 @@ const objectMapper = (place: PreferredPlace) => {
     utcOffsetMinutes: place.utcOffsetMinutes || 0,
     openingHours: place.regularOpeningHours,
     editorialSummary: place.editorialSummary,
-    addressComponents: place.addressComponents || [],
     address: {
       formattedAddress: place.formattedAddress || '',
       shortFormattedAddress: place.shortFormattedAddress || '',

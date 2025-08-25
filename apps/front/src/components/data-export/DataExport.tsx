@@ -34,7 +34,6 @@ export const validateAllSearchResultFieldsHaveColumns = (
   const excludedFields = [
     'sourceId',
     'utcOffsetMinutes',
-    'addressComponents',
     'notes',
     'enrichment',
     'searchId',
