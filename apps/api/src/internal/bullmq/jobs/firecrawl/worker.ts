@@ -4,7 +4,7 @@ import { getFirecrawlClient } from '../../../../external/firecrawl'
 import { bullmqRedisOptions } from '../../config'
 
 const TIMEOUT = 30000
-export const worker = new Worker(
+const worker = new Worker(
   'firecrawl-api',
   async (job) => {
     const { url, options } = job.data

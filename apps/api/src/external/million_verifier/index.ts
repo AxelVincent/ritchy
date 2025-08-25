@@ -1,6 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { z } from 'zod'
 import {
+  enqueueMillionVerifierJob,
   millionVerifierQueue,
   millionVerifierQueueEvents,
 } from '../../internal/bullmq/jobs/million_verifier/queue'
@@ -62,16 +63,15 @@ export const MillionVerifierResponseSchema = z.object({
   livemode: z.boolean(),
 })
 
-type MillionVerifierResponse = z.infer<typeof MillionVerifierResponseSchema>
+export type MillionVerifierResponse = z.infer<
+  typeof MillionVerifierResponseSchema
+>
 
 export const verifyWithMillionVerifier = async (
   email: string,
 ): Promise<MillionVerifierResponse> => {
   try {
-    const job = await millionVerifierQueue.add('million-verifier', { email })
-    const result = (await job.waitUntilFinished(
-      millionVerifierQueueEvents,
-    )) as MillionVerifierResponse
+    const result = await enqueueMillionVerifierJob(email)
 
     logger.debug({
       msg: '[Million Verifier] Email verified with result',

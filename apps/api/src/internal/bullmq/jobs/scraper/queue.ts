@@ -17,7 +17,7 @@ export const scraperQueue = new Queue('scraper', {
   },
 })
 
-export const scraperQueueEvents = new QueueEvents('scraper', {
+const scraperQueueEvents = new QueueEvents('scraper', {
   connection: bullmqRedisOptions,
 })
 

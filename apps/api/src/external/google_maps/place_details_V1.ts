@@ -10,7 +10,7 @@ import { db } from '../../db/db'
 import { place } from '../../db/schema'
 import { userPlace } from '../../db/schema'
 import type * as schema from '../../db/schema'
-import { placesApiQueue } from '../../internal/rate_limiter/config'
+import { enqueuePlaceDetailsJob } from '../../internal/bullmq/jobs/google/places/queue'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
 import {
@@ -48,7 +48,7 @@ function getAge(updatedAt: string): number {
   return (now.getTime() - updatedAtDate.getTime()) / 1000
 }
 
-async function fetchPlaceDetails(
+export async function fetchPlaceDetails(
   googlePlaceId: string,
 ): Promise<PreferredPlace> {
   const url = new URL(
@@ -210,9 +210,7 @@ export async function getPlaceDetailsV1(
   }
 
   try {
-    const data = await placesApiQueue.addToQueue(async () =>
-      fetchPlaceDetails(placeId.sourceId),
-    )
+    const data = await enqueuePlaceDetailsJob(placeId.sourceId)
     AdvancedPlaceSchema.parse(data)
 
     // Cache the raw Google API response

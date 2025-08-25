@@ -4,7 +4,7 @@ import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
-import { placesApiQueue } from '../../internal/rate_limiter/config'
+import { enqueueTextSearchJob } from '../../internal/bullmq/jobs/google/places/queue'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
 import {
@@ -16,7 +16,7 @@ import {
 } from './types'
 import { mapToPlacesSearchResult } from './utils/mapper'
 
-async function fetchSinglePage(
+export async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
 ): Promise<GooglePlacesTextSearchResponse> {
   const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places:searchText`)
@@ -158,10 +158,7 @@ export async function postTextSearchV1(
 
         const validatedRequest =
           GooglePlacesTextSearchRequestBodySchema.parse(formattedRequest)
-
-        const data = await placesApiQueue.addToQueue(async () =>
-          fetchSinglePage(validatedRequest),
-        )
+        const data = await enqueueTextSearchJob(validatedRequest)
         GooglePlacesTextSearchResponseSchema.parse(data)
 
         if (data.places) {
