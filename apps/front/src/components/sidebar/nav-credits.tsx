@@ -16,6 +16,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenuButton,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { MagicWandIcon } from '@radix-ui/react-icons'
 import { useNavigate } from '@tanstack/react-router'
@@ -26,6 +27,7 @@ export function NavCredits() {
   const { data: me } = useUserMe()
   const navigate = useNavigate()
   const [isExpanded, setIsExpanded] = useState(false)
+  const { open } = useSidebar()
 
   const searchResultsPercentage =
     ((me?.credits.search.credits ?? 0) / (me?.credits.search.plan ?? 0)) * 100
@@ -75,7 +77,7 @@ export function NavCredits() {
           </SidebarMenuButton>
         </div>
       </SidebarGroupLabel>
-      {isExpanded && (
+      {isExpanded && open && (
         <Card className="p-4">
           <div className="w-full space-y-3">
             {/* Search Result Credits */}
