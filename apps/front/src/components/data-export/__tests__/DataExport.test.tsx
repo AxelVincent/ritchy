@@ -153,6 +153,7 @@ describe('DataExport', () => {
         hubspotSynced: false,
         description: 'Test Description',
         shortDescription: 'Test Short Description',
+        isDeleted: false,
         enrichedAt: new Date(),
       },
     ]
@@ -258,6 +259,7 @@ describe('DataExport', () => {
         hubspotSynced: false,
         description: 'Test Description',
         shortDescription: 'Test Short Description',
+        isDeleted: false,
         enrichedAt: new Date(),
       },
     ]

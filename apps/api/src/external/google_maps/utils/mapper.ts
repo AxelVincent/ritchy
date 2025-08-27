@@ -1,91 +1,52 @@
 import type { PlaceBase } from '@ritchy/types'
+import type { Place } from '../../../db/schema/place'
 import type { GooglePlacesTextSearchResponse, PreferredPlace } from './../types'
 
-const objectMapper = (place: PreferredPlace) => {
+const objectMapper = (place: Omit<Place, 'id'>): Omit<PlaceBase, 'id'> => {
   return {
-    sourceId: place.id,
-    website: place.websiteUri || '',
-    name: place.displayName?.text || '',
+    sourceId: place.sourceId,
+    website: place.website || '',
+    name: place.name || '',
     location: {
       latitude: place.location?.latitude || 0,
       longitude: place.location?.longitude || 0,
     },
     types: place.types || [],
-    primaryType: place.primaryType,
-    priceLevel: place.priceLevel,
-    priceRange: place.priceRange,
-    rating: place.rating,
-    ratingCount: place.userRatingCount,
-    googleMapsUri: place.googleMapsUri || '',
-    phone: place.internationalPhoneNumber,
+    primaryType: place.primaryType || undefined,
+    priceLevel: place.priceLevel || undefined,
+    priceRange: place.priceRange || undefined,
+    rating: place.rating || undefined,
+    ratingCount: place.ratingCount || undefined,
+    googleMapsUri: place.sourceUrl || '',
+    phone: place.phone || undefined,
     utcOffsetMinutes: place.utcOffsetMinutes || 0,
-    openingHours: place.regularOpeningHours,
-    editorialSummary: place.editorialSummary,
+    openingHours: place.openingHours || undefined,
+    isDeleted: place.isDeleted,
     address: {
       formattedAddress: place.formattedAddress || '',
       shortFormattedAddress: place.shortFormattedAddress || '',
-      country:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('country'),
-        )?.longText || '',
-      locality:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('locality'),
-        )?.longText || '',
-      sublocality:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('sublocality'),
-        )?.longText || '',
-      postalCode:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('postal_code'),
-        )?.longText || '',
-      postalCodeSuffix:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('postal_code_suffix'),
-        )?.longText || '',
-      plusCode:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('plus_code'),
-        )?.longText || '',
-      street:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('route'),
-        )?.longText || '',
-      streetNumber:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('street_number'),
-        )?.longText || '',
-      neighborhood:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('neighborhood'),
-        )?.longText || '',
-      administrativeAreaLevel1:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('administrative_area_level_1'),
-        )?.longText || '',
-      administrativeAreaLevel2:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('administrative_area_level_2'),
-        )?.longText || '',
-      administrativeAreaLevel3:
-        place.addressComponents?.find((component) =>
-          component.types?.includes('administrative_area_level_3'),
-        )?.longText || '',
+      country: place.country || '',
+      locality: place.locality || '',
+      sublocality: place.sublocality || '',
+      postalCode: place.postalCode || '',
+      postalCodeSuffix: place.postalCodeSuffix || '',
+      plusCode: place.plusCode || '',
+      street: place.street || '',
+      streetNumber: place.streetNumber || '',
+      neighborhood: place.neighborhood || '',
+      administrativeAreaLevel1: place.administrativeAreaLevel1 || '',
+      administrativeAreaLevel2: place.administrativeAreaLevel2 || '',
+      administrativeAreaLevel3: place.administrativeAreaLevel3 || '',
     },
   }
 }
 
 export function mapToPlacesSearchResult(
-  response: GooglePlacesTextSearchResponse,
+  response: Place,
 ): Omit<PlaceBase, 'id'>[] {
-  if (!response.places) return []
-
-  return response.places.map(objectMapper)
+  return [objectMapper(response)]
 }
 
-export function mapToPlaceDetails(
-  place: PreferredPlace,
-): Omit<PlaceBase, 'id'> {
+export function mapToPlaceDetails(place: Place): Omit<PlaceBase, 'id'> {
   return objectMapper(place)
 }

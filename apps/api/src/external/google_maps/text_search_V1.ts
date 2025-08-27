@@ -4,6 +4,9 @@ import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
+import { sql } from 'drizzle-orm'
+import { db } from '../../db/db'
+import { place } from '../../db/schema/place'
 import { enqueueTextSearchJob } from '../../internal/bullmq/jobs/google/places/queue'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
@@ -179,40 +182,179 @@ export async function postTextSearchV1(
       )
     }
 
-    // Track duplicates for logging
-    const seenIds = new Set<string>()
-    const duplicates = new Set<string>()
+    const places = await db
+      .insert(place)
+      .values(
+        allResults.map((place) => ({
+          source: 'google' as const,
+          sourceId: place.id,
+          sourceUrl: place.googleMapsUri,
+          website: place.websiteUri,
+          name: place.displayName?.text,
+          location: place.location,
+          types: place.types,
+          primaryType: place.primaryType,
+          priceLevel: place.priceLevel,
+          priceRange: place.priceRange,
+          rating: place.rating,
+          ratingCount: place.userRatingCount,
+          phone: place.internationalPhoneNumber,
+          utcOffsetMinutes: place.utcOffsetMinutes,
+          openingHours: place.regularOpeningHours,
+          formattedAddress: place.formattedAddress,
+          shortFormattedAddress: place.shortFormattedAddress,
+          country:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('country'),
+            )?.longText || '',
+          locality:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('locality'),
+            )?.longText || '',
+          sublocality:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('sublocality'),
+            )?.longText || '',
+          postalCode:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('postal_code'),
+            )?.longText || '',
+          postalCodeSuffix:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('postal_code_suffix'),
+            )?.longText || '',
+          plusCode:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('plus_code'),
+            )?.longText || '',
+          street:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('route'),
+            )?.longText || '',
+          streetNumber:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('street_number'),
+            )?.longText || '',
+          neighborhood:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('neighborhood'),
+            )?.longText || '',
+          administrativeAreaLevel1:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('administrative_area_level_1'),
+            )?.longText || '',
+          administrativeAreaLevel2:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('administrative_area_level_2'),
+            )?.longText || '',
+          administrativeAreaLevel3:
+            place.addressComponents?.find((component) =>
+              component.types?.includes('administrative_area_level_3'),
+            )?.longText || '',
+        })),
+      )
+      .returning({
+        id: place.id,
+        sourceId: place.sourceId,
+        sourceUrl: place.sourceUrl,
+        website: place.website,
+        name: place.name,
+        location: place.location,
+        types: place.types,
+        primaryType: place.primaryType,
+        priceLevel: place.priceLevel,
+        priceRange: place.priceRange,
+        rating: place.rating,
+        ratingCount: place.ratingCount,
+        phone: place.phone,
+        utcOffsetMinutes: place.utcOffsetMinutes,
+        openingHours: place.openingHours,
+        formattedAddress: place.formattedAddress,
+        shortFormattedAddress: place.shortFormattedAddress,
+        country: place.country,
+        locality: place.locality,
+        sublocality: place.sublocality,
+        postalCode: place.postalCode,
+        postalCodeSuffix: place.postalCodeSuffix,
+        plusCode: place.plusCode,
+        street: place.street,
+        streetNumber: place.streetNumber,
+        neighborhood: place.neighborhood,
+        administrativeAreaLevel1: place.administrativeAreaLevel1,
+        administrativeAreaLevel2: place.administrativeAreaLevel2,
+        administrativeAreaLevel3: place.administrativeAreaLevel3,
+        isDeleted: place.isDeleted,
+      })
+      .onConflictDoUpdate({
+        target: place.sourceId,
+        set: {
+          source: sql`excluded.source`,
+          sourceId: sql`excluded.source_id`,
+          sourceUrl: sql`excluded.source_url`,
+          website: sql`excluded.website`,
+          name: sql`excluded.name`,
+          location: sql`excluded.location`,
+          types: sql`excluded.types`,
+          primaryType: sql`excluded.primary_type`,
+          priceLevel: sql`excluded.price_level`,
+          priceRange: sql`excluded.price_range`,
+          rating: sql`excluded.rating`,
+          ratingCount: sql`excluded.rating_count`,
+          phone: sql`excluded.phone`,
+          utcOffsetMinutes: sql`excluded.utc_offset_minutes`,
+          openingHours: sql`excluded.opening_hours`,
+          formattedAddress: sql`excluded.formatted_address`,
+          shortFormattedAddress: sql`excluded.short_formatted_address`,
+          country: sql`excluded.country`,
+          locality: sql`excluded.locality`,
+          sublocality: sql`excluded.sublocality`,
+          postalCode: sql`excluded.postal_code`,
+          postalCodeSuffix: sql`excluded.postal_code_suffix`,
+          plusCode: sql`excluded.plus_code`,
+          street: sql`excluded.street`,
+          streetNumber: sql`excluded.street_number`,
+          neighborhood: sql`excluded.neighborhood`,
+          administrativeAreaLevel1: sql`excluded.administrative_area_level_1`,
+          administrativeAreaLevel2: sql`excluded.administrative_area_level_2`,
+          administrativeAreaLevel3: sql`excluded.administrative_area_level_3`,
+          updatedAt: sql`excluded.updated_at`,
+          isDeleted: sql`excluded.is_deleted`,
+        },
+      })
 
-    const uniqueResults = allResults.filter((place) => {
-      if (seenIds.has(place.id)) {
-        duplicates.add(place.id)
-        return false
-      }
-      seenIds.add(place.id)
-      return true
-    })
-
-    logger.info({
-      msg: 'Duplicate places filtered',
-      event: 'places_deduplication',
-      metadata: {
-        totalPlaces: allResults.length,
-        uniquePlaces: uniqueResults.length,
-        duplicatesRemoved: duplicates.size,
-        duplicateIds: Array.from(duplicates),
+    const results = places.map((place) => ({
+      sourceId: place.sourceId,
+      website: place.website || '',
+      name: place.name || '',
+      location: place.location || { latitude: 0, longitude: 0 },
+      types: place.types || [],
+      primaryType: place.primaryType || undefined,
+      priceLevel: place.priceLevel || undefined,
+      priceRange: place.priceRange || undefined,
+      rating: place.rating || undefined,
+      ratingCount: place.ratingCount || undefined,
+      googleMapsUri: place.sourceUrl || '',
+      phone: place.phone || undefined,
+      utcOffsetMinutes: place.utcOffsetMinutes || 0,
+      openingHours: place.openingHours || undefined,
+      isDeleted: place.isDeleted,
+      address: {
+        formattedAddress: place.formattedAddress || '',
+        shortFormattedAddress: place.shortFormattedAddress || '',
+        country: place.country || '',
+        locality: place.locality || '',
+        sublocality: place.sublocality || '',
+        postalCode: place.postalCode || '',
+        postalCodeSuffix: place.postalCodeSuffix || '',
+        plusCode: place.plusCode || '',
+        street: place.street || '',
+        streetNumber: place.streetNumber || '',
+        neighborhood: place.neighborhood || '',
+        administrativeAreaLevel1: place.administrativeAreaLevel1 || '',
+        administrativeAreaLevel2: place.administrativeAreaLevel2 || '',
+        administrativeAreaLevel3: place.administrativeAreaLevel3 || '',
       },
-    })
-
-    // Cache each unique place
-    await Promise.all(
-      uniqueResults.map(async (place) => {
-        const key = REDIS_KEYS.place(place.id)
-        // Cache the raw Google API response
-        await redisClient.set(key, place)
-      }),
-    )
-
-    const results = mapToPlacesSearchResult({ places: uniqueResults })
+    }))
 
     const endTime = Date.now()
     logger.info({

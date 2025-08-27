@@ -1,19 +1,11 @@
 import { logger } from '@ritchy/logger'
-import type { Place, PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
+import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { eq, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
-import {
-  listPlace,
-  place,
-  search,
-  searchPlace,
-  userPlace,
-} from '../../db/schema'
-import { REDIS_KEYS } from '../../internal/redis/keys'
-import { redisClient } from '../../internal/redis/redis'
+import { listPlace, search, searchPlace } from '../../db/schema'
+import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_bu_user_place_id'
 import { getPlaceDetailsV1 } from './place_details_V1'
 import { postTextSearchV1 } from './text_search_V1'
-import type { PreferredPlace } from './types'
 import { mapToPlaceDetails } from './utils/mapper'
 
 // How recently a search should have been refreshed to be considered "fresh" (in milliseconds)
@@ -60,23 +52,12 @@ export async function getPlaceDetailsOptimized(
   let apiCallsMade = 0
   let estimatedCost = 0
 
-  const [placeResult] = await db
-    .select({
-      sourceId: place.sourceId,
-      enrichedAt: userPlace.enrichedAt,
-    })
-    .from(place)
-    .innerJoin(userPlace, eq(place.id, userPlace.placeId))
-    .where(eq(userPlace.id, userPlaceId))
-    .limit(1)
+  const placeResult = await getPlaceByUserPlaceId(userPlaceId)
 
-  const key = REDIS_KEYS.place(placeResult.sourceId)
-  const cachedPlace = await redisClient.get<PreferredPlace>(key)
-
-  if (cachedPlace) {
+  if (placeResult.sourceUrl) {
     scenario = 'cache_hit'
     // Only log cache hits in summary statistics, not individually
-    const place = mapToPlaceDetails(cachedPlace.data)
+    const place = mapToPlaceDetails(placeResult)
     return {
       ...place,
       id: userPlaceId,
@@ -161,9 +142,10 @@ export async function getPlaceDetailsOptimized(
             await existingRefresh
 
             // Check if our place is now in cache after the search refresh
-            const refreshedPlace = await redisClient.get<PreferredPlace>(key)
-            if (refreshedPlace) {
-              const place = mapToPlaceDetails(refreshedPlace.data)
+            const refreshedPlace = await getPlaceByUserPlaceId(userPlaceId)
+
+            if (refreshedPlace.sourceUrl) {
+              const place = mapToPlaceDetails(refreshedPlace)
               return {
                 ...place,
                 id: userPlaceId,
@@ -241,9 +223,9 @@ export async function getPlaceDetailsOptimized(
             await refreshPromise
 
             // Check if our place is now in cache
-            const refreshedPlace = await redisClient.get<Place>(key)
-            if (refreshedPlace) {
-              const place = mapToPlaceDetails(refreshedPlace.data)
+            const refreshedPlace = await getPlaceByUserPlaceId(userPlaceId)
+            if (refreshedPlace.sourceUrl) {
+              const place = mapToPlaceDetails(refreshedPlace)
               return {
                 ...place,
                 id: userPlaceId,

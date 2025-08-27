@@ -39,6 +39,7 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'searchId',
     'listId',
     'hubspotSynced',
+    'isDeleted',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(
