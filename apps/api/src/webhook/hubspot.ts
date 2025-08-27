@@ -1,20 +1,14 @@
 import crypto from 'node:crypto'
 import { logger } from '@ritchy/logger'
-import {
-  type HubspotLeadStatus,
-  type InternalLeadStatus,
-  LEAD_STATUS_MAPPING,
-} from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { HUBSPOT_CONFIG } from '../config/hubspot'
 import { db } from '../db/db'
-import { hubspotLeadMapping, webhookEvent } from '../db/schema'
+import { webhookEvent } from '../db/schema'
 import { clearContactMapping } from '../services/hubspot/clear_contact_mapping'
 import { deleteCompanyMapping } from '../services/hubspot/delete_company_mapping'
 import { getHubspotTokenByPortalId } from '../services/hubspot/queries/get_hubspot_token_by_portal_id'
 import { updatePlaceStatus } from '../services/hubspot/update_place_status'
-import { upsertStatus } from '../services/places/status/upsert_status'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
 type WebhookResponse = {
@@ -133,15 +127,11 @@ export const hubspotWebhook = async (
   req: Request,
   res: Response<WebhookResponse>,
 ): Promise<void> => {
-  // Parse the raw body to JSON
   const body = Buffer.isBuffer(req.body)
     ? JSON.parse(req.body.toString('utf8'))
     : req.body
 
-  // Handle batch of events
   const events = Array.isArray(body) ? body : ([body] as HubSpotWebhookEvent[])
-
-  const batchId = crypto.randomUUID()
 
   logger.info({
     msg: 'HubSpot webhook received',
@@ -236,14 +226,7 @@ export const hubspotWebhook = async (
                     userId: token.userId,
                     sessionId: req.auth.sessionId,
                     changeSource: 'integration',
-                    metadata: {
-                      timestamp: new Date(),
-                      ipAddress: req.ip ?? '',
-                      userAgent: String(req.headers['user-agent'] ?? ''),
-                      requestId: String(req.headers['x-request-id'] ?? ''),
-                    },
                   },
-                  batchId,
                   contactId: event.objectId.toString(),
                   event,
                 })

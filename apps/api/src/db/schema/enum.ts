@@ -3,6 +3,7 @@ import {
   ContactFieldEnum,
   PhoneTypeEnum,
   PlanEnum,
+  PriceLevelEnum,
   SearchModelEnum,
   SocialMediaPlatformEnum,
   StatusFieldEnum,
@@ -13,6 +14,8 @@ export const socialPlatformEnum = pgEnum(
   'social_platform',
   SocialMediaPlatformEnum.options,
 )
+
+export const priceLevelEnum = pgEnum('price_level', PriceLevelEnum.options)
 
 export const phoneTypeEnum = pgEnum('phone_type', PhoneTypeEnum.options)
 

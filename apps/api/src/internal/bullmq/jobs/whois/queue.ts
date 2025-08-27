@@ -14,7 +14,7 @@ export const whoisQueue = new Queue(queueName, {
   },
 })
 
-export const whoisQueueEvents = new QueueEvents(queueName, {
+const whoisQueueEvents = new QueueEvents(queueName, {
   connection: bullmqRedisOptions,
 })
 

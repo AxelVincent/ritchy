@@ -4,14 +4,14 @@ import type {
   AutocompleteRequestBody,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
-import { postAutocompleteV1 } from '../../external/google_maps/autocomplete_V1'
+import { enqueueAutocompleteJob } from '../../internal/bullmq/jobs/google/places/queue'
 
 export const postAutocomplete = async (
   req: Request<AutocompleteRequestBody>,
   res: Response<AutocompleteApiResponse>,
 ) => {
   try {
-    const predictions = await postAutocompleteV1(req.body)
+    const predictions = await enqueueAutocompleteJob(req.body)
     res.json({ predictions })
   } catch (error) {
     logger.error({

@@ -14,8 +14,8 @@ const brightdataWorker = new Worker(
       const isSuccess = result.status_code >= 200 && result.status_code < 300
 
       return {
-        success: isSuccess,
         ...result,
+        success: isSuccess,
         error: isSuccess ? undefined : `HTTP ${result.status_code}`,
       }
     } catch (error) {

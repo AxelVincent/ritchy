@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import {
   brightdataQueue,
   brightdataQueueEvents,
+  enqueueBrightdataJob,
 } from '../../internal/bullmq/jobs/brightdata/queue'
 import type { BrightdataWebUnlockerResponse } from './web_unlocker'
 
@@ -15,8 +16,7 @@ export const scrapeWithBrightdata = async (
       event: 'brightdata_scrape_start',
       metadata: { url },
     })
-    const job = await brightdataQueue.add('brightdata-api', { url })
-    const result = await job.waitUntilFinished(brightdataQueueEvents)
+    const result = await enqueueBrightdataJob(url)
 
     if (!result.success) {
       logger.error({

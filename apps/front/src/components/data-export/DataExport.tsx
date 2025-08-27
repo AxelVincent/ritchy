@@ -34,12 +34,12 @@ export const validateAllSearchResultFieldsHaveColumns = (
   const excludedFields = [
     'sourceId',
     'utcOffsetMinutes',
-    'addressComponents',
     'notes',
     'enrichment',
     'searchId',
     'listId',
     'hubspotSynced',
+    'isDeleted',
   ]
   // Get all fields from SearchResult schema
   const searchResultKeys = Object.keys(

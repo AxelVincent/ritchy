@@ -6,20 +6,23 @@ import {
 } from '@ritchy/types'
 import { and } from 'drizzle-orm'
 import { db } from '../../db/db'
-import type { VersionContext } from '../../db/versioned_db/types'
 import type { HubSpotWebhookEvent } from '../../webhook/hubspot'
 import { upsertStatus } from '../places/status/upsert_status'
+
+export type HubspotContext = {
+  userId: string
+  sessionId: string
+  changeSource: 'user' | 'integration'
+}
 
 export const updatePlaceStatus = async ({
   tokenId,
   context,
-  batchId,
   contactId,
   event,
 }: {
   tokenId: string
-  context: VersionContext
-  batchId: string
+  context: HubspotContext
   contactId: string
   event: HubSpotWebhookEvent
 }) => {
@@ -77,13 +80,6 @@ export const updatePlaceStatus = async ({
       userId: token.userId,
       sessionId: context.sessionId,
       changeSource: 'integration',
-      metadata: {
-        ...context.metadata,
-      },
-      additionalContext: {
-        hubspotEvent: event,
-      },
-      bulkOperationId: batchId,
     },
     leadMapping.userPlaceId,
     newStatus,

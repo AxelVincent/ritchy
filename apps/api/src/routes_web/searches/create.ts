@@ -5,12 +5,11 @@ import {
   CreateSearchRequestBodySchema,
   hasModelAccess,
 } from '@ritchy/types'
-import { and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
-import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
+import { getUserCredits } from '../../services/payment/queries/get_user_credits'
 import { getUserSearchModel } from '../../services/payment/queries/get_user_search_model'
 
 export const createSearch = async (
@@ -59,53 +58,28 @@ export const createSearch = async (
       return
     }
 
-    // Special handling for BASIC model with search limits (free users)
-    if (userSearchModel === 'BASIC') {
-      // Optimized query: use LIMIT 4 to avoid counting all records
-      // We only need to know if user has 3+ searches to enforce the limit
-      const searchRecords = await db
-        .select({ id: search.id })
-        .from(search)
-        .where(eq(search.userId, req.auth.userId))
-        .limit(4)
+    const userCredits = await getUserCredits(req.auth.userId)
 
-      const searchCount = searchRecords.length
-
-      logger.info({
-        msg: 'Basic model search count checked',
-        event: 'search_count_checked',
-        metadata: {
-          currentSearchCount: searchCount,
-          limit: 3,
-        },
+    if (userCredits.search <= 0) {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: 'You have no credits left. Please upgrade your plan.',
       })
-
-      if (searchCount >= 3) {
-        logger.warn({
-          msg: 'Basic model search limit reached',
-          event: 'search_limit_reached',
-          metadata: {
-            searchCount,
-            limit: 3,
-          },
-        })
-        res.status(403).json({
-          error: 'Search limit reached',
-          message:
-            'Basic plan users are limited to 3 searches. Please upgrade your plan for unlimited searches.',
-        })
-        return
-      }
+      return
     }
 
-    const versionedDb = createVersionedDbFromRequest(req)
-    const result = await versionedDb.insert('search', {
-      userId: req.auth.userId,
-      placeName: parsedBody.placeName,
-      keyword: parsedBody.keyword,
-      model: parsedBody.model,
-      rectangle: parsedBody.rectangle,
-    })
+    const [result] = await db
+      .insert(search)
+      .values({
+        userId: req.auth.userId,
+        placeName: parsedBody.placeName,
+        keyword: parsedBody.keyword,
+        model: parsedBody.model,
+        rectangle: parsedBody.rectangle,
+      })
+      .returning({
+        id: search.id,
+      })
 
     logger.info({
       msg: 'Search created successfully',

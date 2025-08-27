@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { type Job, Worker } from 'bullmq'
 import { bullmqRedisOptions } from '../../../config'
-import { enrichmentUnitQueue, enrichmentUnitQueueEvents } from '../unit/queue'
+import { enqueueEnrichmentUnitJob } from '../unit/queue'
 import type { EnrichmentBatchJobData } from './queue'
 
 const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
@@ -13,10 +13,7 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
     await Promise.all(
       enrichments.map(async (enrichment) => {
         try {
-          const unitJob = await enrichmentUnitQueue.add('enrichment-unit', {
-            userPlaceId: enrichment.userPlaceId,
-          })
-          await unitJob.waitUntilFinished(enrichmentUnitQueueEvents)
+          await enqueueEnrichmentUnitJob(enrichment.userPlaceId)
         } catch (error) {
           errors.push({
             userPlaceId: enrichment.userPlaceId,

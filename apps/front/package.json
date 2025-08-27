@@ -58,6 +58,7 @@
     "clsx": "2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
+    "dayjs": "1.11.13",
     "framer-motion": "12.7.2",
     "frimousse": "^0.2.0",
     "immer": "10.1.1",

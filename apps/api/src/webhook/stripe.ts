@@ -5,7 +5,9 @@ import Stripe from 'stripe'
 import { STRIPE_CONFIG, getPlanFromProductId } from '../config/stripe'
 import { db } from '../db/db'
 import { subscription, user as userTable, webhookEvent } from '../db/schema'
+import { credits } from '../db/schema/credits'
 import { sendSlackNotification } from '../external/slack/slack'
+import { CREDIT_CONFIG } from '../services/payment/config'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
@@ -302,6 +304,28 @@ export const stripeWebhook = async (
                 },
               })
               .returning()
+
+            const creditConfig = CREDIT_CONFIG.find(
+              (config) => config.plan === planType,
+            )
+
+            const enrichment = creditConfig?.credits.enrichment ?? 0
+            const search = creditConfig?.credits.search ?? 0
+
+            await db
+              .insert(credits)
+              .values({
+                userId,
+                enrichment,
+                search,
+              })
+              .onConflictDoUpdate({
+                target: credits.userId,
+                set: {
+                  enrichment,
+                  search,
+                },
+              })
 
             const isNewSubscription =
               result[0].createdAt.getTime() === result[0].updatedAt.getTime()

@@ -1,0 +1,15 @@
+ALTER TABLE "place" ADD COLUMN "formatted_address" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "short_formatted_address" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "country" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "locality" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "sublocality" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "postal_code" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "postal_code_suffix" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "plus_code" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "street" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "street_number" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "neighborhood" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "administrative_area_level_1" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "administrative_area_level_2" text;--> statement-breakpoint
+ALTER TABLE "place" ADD COLUMN "administrative_area_level_3" text;--> statement-breakpoint
+ALTER TABLE "place" DROP COLUMN IF EXISTS "address";

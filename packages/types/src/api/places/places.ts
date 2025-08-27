@@ -153,7 +153,7 @@ export const PlaceSchemaBase = z.object({
   openingHours: OpeningHoursSchema.optional(),
   googleMapsUri: z.string(),
   phone: z.string().optional(),
-  addressComponents: z.array(AddressComponentSchema).optional(),
+  isDeleted: z.boolean(),
   address: z.object({
     formattedAddress: z.string().optional(),
     shortFormattedAddress: z.string().optional(),

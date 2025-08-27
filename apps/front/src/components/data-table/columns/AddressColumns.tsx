@@ -1,12 +1,3 @@
-import { TextWrapper } from '@/components/common/TextWrapper'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ColumnPinCopyCell } from './utils/ColumnCells'
@@ -213,51 +204,4 @@ export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
       content={row.original.address.administrativeAreaLevel3 ?? null}
     />
   ),
-}
-
-export const addressComponentsColumn: ColumnDef<SearchResult> = {
-  id: 'addressComponents',
-  accessorKey: 'address.addressComponents',
-  size: 200,
-  enableSorting: false,
-  enableColumnFilter: false,
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Address Components" />
-  ),
-  cell: ({ row }) => {
-    const components = row.original.addressComponents
-    if (!components?.length) return null
-
-    return (
-      <TextWrapper id={row.original.id} actions={[]}>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              {`${components.length} components`}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Address Components</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2">
-              {components.map((component) => (
-                <div
-                  key={component.longText}
-                  className="flex items-center justify-between border-b pb-2"
-                >
-                  <span className="text-sm font-medium">
-                    {component.longText}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {component.types?.join(', ')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </TextWrapper>
-    )
-  },
 }

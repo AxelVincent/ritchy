@@ -17,6 +17,13 @@ export const enrichmentUnitQueue = new Queue('enrichment-unit', {
   },
 })
 
-export const enrichmentUnitQueueEvents = new QueueEvents('enrichment-unit', {
+const enrichmentUnitQueueEvents = new QueueEvents('enrichment-unit', {
   connection: bullmqRedisOptions,
 })
+
+export const enqueueEnrichmentUnitJob = async (
+  userPlaceId: string,
+): Promise<void> => {
+  const job = await enrichmentUnitQueue.add('enrichment-unit', { userPlaceId })
+  return await job.waitUntilFinished(enrichmentUnitQueueEvents)
+}

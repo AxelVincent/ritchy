@@ -29,9 +29,6 @@ export const updateStatus = async (
         userId: req.auth.userId,
         sessionId: req.auth.sessionId,
         changeSource: 'user',
-        metadata: {
-          ...req.metadata,
-        },
       },
       userPlaceId,
       status,

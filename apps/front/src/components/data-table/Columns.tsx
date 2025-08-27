@@ -1,7 +1,6 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
-  addressComponentsColumn,
   administrativeAreaLevel1Column,
   administrativeAreaLevel2Column,
   administrativeAreaLevel3Column,
@@ -43,6 +42,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   selectColumn,
   nameColumn,
   statusColumn,
+  notesColumn,
   websiteColumn,
   phoneColumn,
   shortDescriptionColumn,
@@ -51,7 +51,6 @@ export const columns: ColumnDef<SearchResult>[] = [
   linkedinSocialsColumn,
   facebookSocialsColumn,
   domainRegistrationDateColumn,
-  notesColumn,
   associatedListsColumn,
   primaryTypeColumn,
   typesColumn,
@@ -72,6 +71,5 @@ export const columns: ColumnDef<SearchResult>[] = [
   administrativeAreaLevel1Column,
   administrativeAreaLevel2Column,
   administrativeAreaLevel3Column,
-  addressComponentsColumn,
   // actionsColumn,
 ]

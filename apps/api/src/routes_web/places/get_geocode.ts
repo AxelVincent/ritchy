@@ -1,14 +1,14 @@
 import { logger } from '@ritchy/logger'
 import type { GeocodeApiResponse, GeocodeRequestParams } from '@ritchy/types'
 import type { Request, Response } from 'express'
-import { getGeocodeV1 } from '../../external/google_maps/geocode_V1'
+import { enqueueGeocodeJob } from '../../internal/bullmq/jobs/google/places/queue'
 
 export const getGeocode = async (
   req: Request<GeocodeRequestParams>,
   res: Response<GeocodeApiResponse>,
 ) => {
   try {
-    const result = await getGeocodeV1(req.params)
+    const result = await enqueueGeocodeJob(req.params)
     res.json({ result })
   } catch (error) {
     logger.error({

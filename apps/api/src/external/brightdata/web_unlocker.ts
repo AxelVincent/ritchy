@@ -6,6 +6,8 @@ import { z } from 'zod'
 
 const BrightdataWebUnlockerResponseSchema = z.object({
   status_code: z.number(),
+  success: z.boolean(),
+  error: z.string().optional(),
   headers: z
     .object({
       'access-control-allow-origin': z.string().optional(),
@@ -25,7 +27,7 @@ const BrightdataWebUnlockerResponseSchema = z.object({
       connection: z.string().optional(),
       'transfer-encoding': z.string().optional(),
     })
-    .catchall(z.string()), // Allow additional headers that aren't explicitly defined
+    .catchall(z.string()),
   body: z.string(),
 })
 

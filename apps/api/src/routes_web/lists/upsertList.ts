@@ -9,7 +9,6 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list } from '../../db/schema'
-import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
 
 export const upsertList = async (
   req: Request<Record<string, never>, UpsertListApiResponse, UpsertListRequest>,
@@ -33,7 +32,6 @@ export const upsertList = async (
       updatedAt: Date
     }
 
-    const versionedDb = createVersionedDbFromRequest(req)
     if (parsedBody.id) {
       const existingList = await db
         .select()
@@ -57,17 +55,37 @@ export const upsertList = async (
         ...(parsedBody.id && { id: parsedBody.id }),
       }
 
-      const updateResult = await versionedDb.update('list', values, {
-        id: parsedBody.id,
-      })
+      // const updateResult = await versionedDb.update('list', values, {
+      //   id: parsedBody.id,
+      // })
+      const [updateResult] = await db
+        .update(list)
+        .set(values)
+        .where(eq(list.id, parsedBody.id))
+        .returning({
+          id: list.id,
+          name: list.name,
+          emoji: list.emoji,
+          createdAt: list.createdAt,
+          updatedAt: list.updatedAt,
+        })
 
       result = updateResult
     } else {
-      const createResult = await versionedDb.insert('list', {
-        name: parsedBody.name,
-        emoji: parsedBody.emoji,
-        userId: userId,
-      })
+      const [createResult] = await db
+        .insert(list)
+        .values({
+          name: parsedBody.name,
+          emoji: parsedBody.emoji,
+          userId: userId,
+        })
+        .returning({
+          id: list.id,
+          name: list.name,
+          emoji: list.emoji,
+          createdAt: list.createdAt,
+          updatedAt: list.updatedAt,
+        })
 
       result = createResult
     }

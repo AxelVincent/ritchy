@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/sidebar'
 
 import { useIsMobile } from '@/hooks/use-mobile'
+import { NavCredits } from './nav-credits'
 import { NavHistory } from './nav-history'
 import { NavMain } from './nav-main'
 import { RitchyLogo } from './ritchy-logo'
@@ -28,6 +29,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <NavCustomLists />
           <NavHistory />
         </SidebarContent>
+        <NavCredits />
         <SidebarFooter>
           <NavUser />
         </SidebarFooter>

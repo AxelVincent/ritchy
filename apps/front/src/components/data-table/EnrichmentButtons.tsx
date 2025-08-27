@@ -93,6 +93,18 @@ export const EnrichmentButtons = <TData extends SearchResult>({
         Math.round((data.processedMessages / data.totalMessages) * 100),
       )
       if (status === 'completed' || status === 'failed') {
+        // Invalidate queries one last time to get the final data
+        if (listId) {
+          queryClient.invalidateQueries({
+            queryKey: listContentKeys.list(listId),
+          })
+        }
+        if (searchId) {
+          queryClient.invalidateQueries({
+            queryKey: searchContentKeys.search(searchId),
+          })
+        }
+
         setActiveJobId(null) // This will stop polling automatically
         withTTL.remove(storageKey)
         setProgress(100)

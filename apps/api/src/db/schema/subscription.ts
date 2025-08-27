@@ -1,4 +1,4 @@
-import { text, timestamp, unique, uniqueIndex } from 'drizzle-orm/pg-core'
+import { text, timestamp } from 'drizzle-orm/pg-core'
 import { pgTable, uuid } from 'drizzle-orm/pg-core'
 import {
   searchModelEnum,

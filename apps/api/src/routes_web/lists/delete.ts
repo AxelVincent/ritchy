@@ -6,8 +6,7 @@ import type {
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
-import { list } from '../../db/schema'
-import { createVersionedDbFromRequest } from '../../db/versioned_db/client'
+import { list, listPlace } from '../../db/schema'
 
 export const deleteList = async (
   req: Request<DeleteListRequestParams>,
@@ -47,10 +46,9 @@ export const deleteList = async (
       return
     }
 
-    const versionedDb = createVersionedDbFromRequest(req)
-    await versionedDb.transaction(async (ops) => {
-      await ops.bulkDelete('listPlace', [{ listId }], ['listId'], ops.db)
-      await ops.delete('list', { id: listId }, ops.db)
+    await db.transaction(async (tx) => {
+      await tx.delete(listPlace).where(eq(listPlace.listId, listId))
+      await tx.delete(list).where(eq(list.id, listId))
     })
 
     res.json({ success: true })
