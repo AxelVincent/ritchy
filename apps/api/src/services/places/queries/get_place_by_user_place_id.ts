@@ -3,11 +3,12 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../db/db'
 import { place as placeTable, userPlace } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
+import type { PlaceWithEnrichedAt } from './get_places_by_user_place_ids'
 
 export const getPlaceByUserPlaceId = async (
   userPlaceId: string,
   tx?: PostgresJsDatabase<typeof schema>,
-) => {
+): Promise<PlaceWithEnrichedAt> => {
   const dbOrTx = tx ?? db
   const [place] = await dbOrTx
     .select({
@@ -44,6 +45,7 @@ export const getPlaceByUserPlaceId = async (
       isDeleted: placeTable.isDeleted,
       createdAt: placeTable.createdAt,
       updatedAt: placeTable.updatedAt,
+      userPlaceId: userPlace.id,
       enrichedAt: userPlace.enrichedAt,
     })
     .from(placeTable)

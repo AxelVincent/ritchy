@@ -3,7 +3,8 @@ import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { eq, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { listPlace, search, searchPlace } from '../../db/schema'
-import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_bu_user_place_id'
+import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
+import type { PlaceWithEnrichedAt } from '../../services/places/queries/get_places_by_user_place_ids'
 import { getPlaceDetailsV1 } from './place_details_V1'
 import { postTextSearchV1 } from './text_search_V1'
 import { mapToPlaceDetails } from './utils/mapper'
@@ -45,24 +46,22 @@ export type PlaceDetailsOptimized = PlaceBase & {
 }
 
 export async function getPlaceDetailsOptimized(
-  userPlaceId: string,
+  place: PlaceWithEnrichedAt,
 ): Promise<PlaceDetailsOptimized> {
   const startTime = Date.now()
   let scenario = 'unknown'
   let apiCallsMade = 0
   let estimatedCost = 0
 
-  const placeResult = await getPlaceByUserPlaceId(userPlaceId)
-
-  if (placeResult.sourceUrl) {
+  if (place.sourceUrl) {
     scenario = 'cache_hit'
     // Only log cache hits in summary statistics, not individually
-    const place = mapToPlaceDetails(placeResult)
+    const placeDetails = mapToPlaceDetails(place)
     return {
-      ...place,
-      id: userPlaceId,
+      ...placeDetails,
+      id: place.userPlaceId,
       fromCache: true,
-      enrichedAt: placeResult.enrichedAt,
+      enrichedAt: place.enrichedAt,
     }
   }
 
@@ -70,13 +69,13 @@ export async function getPlaceDetailsOptimized(
     msg: 'No cached place found, checking for search',
     event: 'no_cached_place_found',
     metadata: {
-      userPlaceId,
+      userPlaceId: place.userPlaceId,
     },
   })
   const [searchPlaceResult] = await db
     .select({ searchId: searchPlace.searchId })
     .from(searchPlace)
-    .where(eq(searchPlace.userPlaceId, userPlaceId))
+    .where(eq(searchPlace.userPlaceId, place.userPlaceId))
     .limit(1)
 
   // If we have a searchId, check if we should refresh the search
@@ -85,7 +84,7 @@ export async function getPlaceDetailsOptimized(
       msg: 'Search place result found',
       event: 'search_place_result_found',
       metadata: {
-        userPlaceId,
+        userPlaceId: place.userPlaceId,
         searchPlaceResult,
       },
     })
@@ -132,7 +131,7 @@ export async function getPlaceDetailsOptimized(
               msg: 'Using already in-progress search refresh',
               event: 'reuse_search_refresh',
               metadata: {
-                userPlaceId,
+                userPlaceId: place.userPlaceId,
                 searchId: searchPlaceResult.searchId,
                 model: searchData.model,
               },
@@ -142,15 +141,17 @@ export async function getPlaceDetailsOptimized(
             await existingRefresh
 
             // Check if our place is now in cache after the search refresh
-            const refreshedPlace = await getPlaceByUserPlaceId(userPlaceId)
+            const refreshedPlace = await getPlaceByUserPlaceId(
+              place.userPlaceId,
+            )
 
             if (refreshedPlace.sourceUrl) {
-              const place = mapToPlaceDetails(refreshedPlace)
+              const placeDetails = mapToPlaceDetails(refreshedPlace)
               return {
-                ...place,
-                id: userPlaceId,
+                ...placeDetails,
+                id: refreshedPlace.userPlaceId,
                 fromCache: true,
-                enrichedAt: placeResult.enrichedAt,
+                enrichedAt: refreshedPlace.enrichedAt,
               }
             }
           } else {
@@ -159,7 +160,7 @@ export async function getPlaceDetailsOptimized(
               msg: 'Refreshing stale search results to update place cache',
               event: 'refresh_search_for_place',
               metadata: {
-                userPlaceId,
+                userPlaceId: place.userPlaceId,
                 searchId: searchPlaceResult.searchId,
                 model: searchData.model,
                 lastRefreshTime: searchData.updatedAt.toISOString(),
@@ -223,14 +224,16 @@ export async function getPlaceDetailsOptimized(
             await refreshPromise
 
             // Check if our place is now in cache
-            const refreshedPlace = await getPlaceByUserPlaceId(userPlaceId)
+            const refreshedPlace = await getPlaceByUserPlaceId(
+              place.userPlaceId,
+            )
             if (refreshedPlace.sourceUrl) {
-              const place = mapToPlaceDetails(refreshedPlace)
+              const placeDetails = mapToPlaceDetails(refreshedPlace)
               return {
-                ...place,
-                id: userPlaceId,
+                ...placeDetails,
+                id: refreshedPlace.userPlaceId,
                 fromCache: true,
-                enrichedAt: placeResult.enrichedAt,
+                enrichedAt: refreshedPlace.enrichedAt,
               }
             }
           }
@@ -242,7 +245,7 @@ export async function getPlaceDetailsOptimized(
             msg: 'Skipping search refresh as it is not cost-effective',
             event: 'skip_refresh_not_cost_effective',
             metadata: {
-              userPlaceId,
+              userPlaceId: place.userPlaceId,
               searchId: searchPlaceResult.searchId,
               model: searchData.model,
               placeCount,
@@ -261,7 +264,7 @@ export async function getPlaceDetailsOptimized(
           msg: 'Skipping search refresh as it was recently updated',
           event: 'skip_search_refresh',
           metadata: {
-            userPlaceId,
+            userPlaceId: place.userPlaceId,
             searchId: searchPlaceResult.searchId,
             lastRefreshTime: searchData.updatedAt.toISOString(),
             timeSinceRefresh: `${Math.round((currentTime - lastRefreshTime) / 1000 / 60 / 60 / 24)} days`,
@@ -279,7 +282,7 @@ export async function getPlaceDetailsOptimized(
     msg: 'Fetching individual place details - BILLABLE API CALL',
     event: 'fetch_individual_place',
     metadata: {
-      userPlaceId,
+      userPlaceId: place.userPlaceId,
       // Only include searchId if we have a searchPlaceResult
       ...(searchPlaceResult && { searchId: searchPlaceResult.searchId }),
       estimatedCost: COST_PER_PLACE_DETAILS_CALL,
@@ -287,7 +290,7 @@ export async function getPlaceDetailsOptimized(
   })
 
   try {
-    const result = await getPlaceDetailsV1(userPlaceId)
+    const result = await getPlaceDetailsV1(place.userPlaceId)
     apiCallsMade += 1
     estimatedCost += COST_PER_PLACE_DETAILS_CALL
 
@@ -296,7 +299,7 @@ export async function getPlaceDetailsOptimized(
       msg: 'Place details optimization metrics',
       event: 'place_details_optimization',
       metadata: {
-        userPlaceId,
+        userPlaceId: place.userPlaceId,
         searchId: searchPlaceResult.searchId,
         scenario,
         apiCallsMade,
@@ -308,9 +311,9 @@ export async function getPlaceDetailsOptimized(
 
     return {
       ...result,
-      id: userPlaceId,
+      id: place.userPlaceId,
       fromCache: false,
-      enrichedAt: placeResult.enrichedAt,
+      enrichedAt: place.enrichedAt,
     }
   } catch (error) {
     const endTime = Date.now()
@@ -318,7 +321,7 @@ export async function getPlaceDetailsOptimized(
       msg: 'Place details fetch failed',
       event: 'place_details_fetch_error',
       metadata: {
-        userPlaceId,
+        userPlaceId: place.userPlaceId,
         searchId: searchPlaceResult.searchId,
         scenario,
         apiCallsMade,
