@@ -145,7 +145,6 @@ export const getSearchContent = async (
       userPlaceIds,
       {
         userId,
-        includeEnrichment: true,
       },
     )
 

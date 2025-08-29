@@ -53,7 +53,6 @@ export const getListContent = async (
       {
         userId,
         excludeListId: listId,
-        includeEnrichment: true,
         listId,
       },
     )

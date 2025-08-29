@@ -13,7 +13,7 @@ import type * as schema from '../../db/schema'
 import { enqueuePlaceDetailsJob } from '../../internal/bullmq/jobs/google/places/queue'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
-import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_bu_user_place_id'
+import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 import {
   AdvancedPlaceSchema,
   PREFERRED_PLACE_KEYS,

@@ -7,12 +7,12 @@ import {
   getPlaceDetailsOptimized,
 } from '../../external/google_maps/place_details_optimized'
 import { aggregatePlaceData } from './aggregate_place_data'
+import { getPlacesByUserPlaceIds } from './queries/get_places_by_user_place_ids'
 
 interface AggregatePlaceDataOptions {
   userId: string
   listId?: string
   excludeListId?: string
-  includeEnrichment?: boolean
 }
 
 interface GetPlacesWithDetailsResult {
@@ -31,13 +31,13 @@ export const getPlacesWithDetails = async (
   userPlaceIds: string[],
   options: AggregatePlaceDataOptions,
 ): Promise<GetPlacesWithDetailsResult> => {
-  const { userId, listId, excludeListId, includeEnrichment = false } = options
+  const { userId, listId, excludeListId } = options
+
+  const places = await getPlacesByUserPlaceIds(userPlaceIds)
 
   // Get place details with rate limiting and optimization
   const placeDetailsResults = await Promise.allSettled(
-    userPlaceIds.map(async (userPlaceId) =>
-      getPlaceDetailsOptimized(userPlaceId),
-    ),
+    places.map(async (place) => getPlaceDetailsOptimized(place)),
   )
 
   // Analyze results
@@ -76,7 +76,6 @@ export const getPlacesWithDetails = async (
   const aggregatedPlaceDetails = await aggregatePlaceData(placeDetails, {
     userId,
     excludeListId,
-    includeEnrichment,
     listId,
   })
 
