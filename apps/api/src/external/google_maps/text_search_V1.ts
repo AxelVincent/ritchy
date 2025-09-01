@@ -182,10 +182,16 @@ export async function postTextSearchV1(
       )
     }
 
+    // Deduplicate results by sourceId before database insertion
+    const uniqueResults = allResults.filter(
+      (place, index, self) =>
+        index === self.findIndex((p) => p.id === place.id),
+    )
+
     const places = await db
       .insert(place)
       .values(
-        allResults.map((place) => ({
+        uniqueResults.map((place) => ({
           source: 'google' as const,
           sourceId: place.id,
           sourceUrl: place.googleMapsUri,
