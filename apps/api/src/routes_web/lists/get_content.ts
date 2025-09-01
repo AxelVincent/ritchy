@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace, place, userPlace } from '../../db/schema'
 import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
+import { getAggregatedUserPlaces } from '../../services/places/queries/get_aggregated_user_places'
 
 export const getListContent = async (
   req: Request<{ id: string }>,
@@ -44,6 +45,16 @@ export const getListContent = async (
       metadata: {
         listId,
         placeCount: places.length,
+      },
+    })
+
+    const placesTest = await getAggregatedUserPlaces(userId, undefined, listId)
+    logger.info({
+      msg: 'Places in list test',
+      event: 'places_in_list_test',
+      metadata: {
+        listId,
+        places: placesTest,
       },
     })
 

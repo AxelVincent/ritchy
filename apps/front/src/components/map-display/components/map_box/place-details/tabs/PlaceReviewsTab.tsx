@@ -24,7 +24,7 @@ const STAR_KEYS = ['star-1', 'star-2', 'star-3', 'star-4', 'star-5'] as const
 
 export const PlaceReviewsTab = ({ place }: { place: Place }) => {
   const [showOriginal, setShowOriginal] = useState<OriginalTextMap>({})
-  const { data, isLoading, error } = usePlaceReviewsQuery(place.sourceId)
+  const { data, isLoading, error } = usePlaceReviewsQuery(place.id)
 
   const toggleOriginalText = (reviewId: string) => {
     setShowOriginal((prev) => ({
@@ -106,9 +106,6 @@ export const PlaceReviewsTab = ({ place }: { place: Place }) => {
                   <div>
                     <div className="font-medium">
                       {review.authorAttribution?.displayName}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {review.relativePublishTimeDescription}
                     </div>
                   </div>
                 </div>

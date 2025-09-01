@@ -47,6 +47,7 @@ export const getPlaceByUserPlaceId = async (
       updatedAt: placeTable.updatedAt,
       userPlaceId: userPlace.id,
       enrichedAt: userPlace.enrichedAt,
+      reviews: placeTable.reviews,
     })
     .from(placeTable)
     .innerJoin(userPlace, eq(placeTable.id, userPlace.placeId))

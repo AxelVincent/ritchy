@@ -4,14 +4,12 @@ import type { PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { CACHE_THRESHOLDS } from '../../config/redis'
 
-import { eq, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import { place as placeTable } from '../../db/schema'
-import { userPlace } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { enqueuePlaceDetailsJob } from '../../internal/bullmq/jobs/google/places/queue'
-import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 import {
@@ -270,6 +268,16 @@ export async function getPlaceDetailsV1(
           data.addressComponents?.find((component) =>
             component.types?.includes('administrative_area_level_3'),
           )?.longText || '',
+        reviews:
+          data.reviews?.map((review) => ({
+            name: review.name,
+            rating: review.rating,
+            text: review.text,
+            originalText: review.originalText,
+            authorAttribution: review.authorAttribution,
+            publishTime: review.publishTime,
+            googleMapsUri: review.googleMapsUri,
+          })) || [],
       })
       .returning({
         id: placeTable.id,
@@ -303,6 +311,7 @@ export async function getPlaceDetailsV1(
         administrativeAreaLevel2: placeTable.administrativeAreaLevel2,
         administrativeAreaLevel3: placeTable.administrativeAreaLevel3,
         isDeleted: placeTable.isDeleted,
+        reviews: placeTable.reviews,
         createdAt: placeTable.createdAt,
         updatedAt: placeTable.updatedAt,
       })
@@ -338,6 +347,7 @@ export async function getPlaceDetailsV1(
           administrativeAreaLevel1: sql`excluded.administrative_area_level_1`,
           administrativeAreaLevel2: sql`excluded.administrative_area_level_2`,
           administrativeAreaLevel3: sql`excluded.administrative_area_level_3`,
+          reviews: sql`excluded.reviews`,
           updatedAt: sql`excluded.updated_at`,
           isDeleted: sql`excluded.is_deleted`,
         },
