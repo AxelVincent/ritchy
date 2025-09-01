@@ -1,5 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { GetReviewsApiResponse, GetReviewsRequest } from '@ritchy/types'
+import { getPlaceByUserPlaceId } from 'apps/api/src/services/places/queries/get_place_by_user_place_id'
 import type { Request, Response } from 'express'
 import type { PreferredPlace } from '../../../external/google_maps/types'
 import { REDIS_KEYS } from '../../../internal/redis/keys'
@@ -9,15 +10,9 @@ export const getPlaceReviews = async (
   req: Request<GetReviewsRequest>,
   res: Response<GetReviewsApiResponse>,
 ) => {
+  const { placeSourceId } = req.params
   try {
-    const { placeSourceId } = req.params
-
-    // Try to get place details from cache first
-    const cachedPlace = await redisClient.get<PreferredPlace>(
-      REDIS_KEYS.place(placeSourceId),
-    )
-
-    const place = cachedPlace?.data
+    const place = await getPlaceByUserPlaceId(placeSourceId)
 
     if (!place) {
       logger.error({
@@ -33,13 +28,22 @@ export const getPlaceReviews = async (
 
     // Return reviews or empty array if no reviews exist
     res.json({
-      reviews: place.reviews || [],
+      reviews:
+        place.reviews?.map((review) => ({
+          name: review.name,
+          rating: review.rating,
+          text: review.text,
+          originalText: review.originalText,
+          authorAttribution: review.authorAttribution,
+          publishTime: review.publishTime,
+          googleMapsUri: review.googleMapsUri,
+        })) || [],
     })
   } catch (error) {
     logger.error({
       msg: 'Failed to get place reviews',
       event: 'get_place_reviews_error',
-      metadata: { error },
+      metadata: { error, placeSourceId },
     })
     res.status(500).json({
       error: 'Failed to get place reviews',

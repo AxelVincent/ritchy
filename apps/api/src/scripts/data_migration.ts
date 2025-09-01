@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
 import { Command } from 'commander'
-import { eq } from 'drizzle-orm'
+import { eq, isNotNull } from 'drizzle-orm'
 import { publicDb } from '../db/db'
 import { place } from '../db/schema'
 import type { PreferredPlace } from '../external/google_maps/types'
@@ -43,6 +43,7 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
     const places = await publicDb
       .select()
       .from(place)
+      .where(isNotNull(place.sourceUrl))
       .limit(batchSize)
       .offset(offset)
 
@@ -175,6 +176,16 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('administrative_area_level_3'),
               )?.longText || '',
+            reviews:
+              cachedPlace.data.reviews?.map((review) => ({
+                name: review.name,
+                rating: review.rating,
+                text: review.text,
+                originalText: review.originalText,
+                authorAttribution: review.authorAttribution,
+                publishTime: review.publishTime,
+                googleMapsUri: review.googleMapsUri,
+              })) || [],
             updatedAt: new Date(),
           })
           .where(eq(place.id, dbPlace.id))

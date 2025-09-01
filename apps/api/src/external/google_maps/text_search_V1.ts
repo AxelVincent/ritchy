@@ -251,6 +251,16 @@ export async function postTextSearchV1(
             place.addressComponents?.find((component) =>
               component.types?.includes('administrative_area_level_3'),
             )?.longText || '',
+          reviews:
+            place.reviews?.map((review) => ({
+              name: review.name,
+              rating: review.rating,
+              text: review.text,
+              originalText: review.originalText,
+              authorAttribution: review.authorAttribution,
+              publishTime: review.publishTime,
+              googleMapsUri: review.googleMapsUri,
+            })) || [],
         })),
       )
       .returning({
@@ -283,6 +293,7 @@ export async function postTextSearchV1(
         administrativeAreaLevel1: place.administrativeAreaLevel1,
         administrativeAreaLevel2: place.administrativeAreaLevel2,
         administrativeAreaLevel3: place.administrativeAreaLevel3,
+        reviews: place.reviews,
         isDeleted: place.isDeleted,
       })
       .onConflictDoUpdate({
@@ -317,6 +328,7 @@ export async function postTextSearchV1(
           administrativeAreaLevel1: sql`excluded.administrative_area_level_1`,
           administrativeAreaLevel2: sql`excluded.administrative_area_level_2`,
           administrativeAreaLevel3: sql`excluded.administrative_area_level_3`,
+          reviews: sql`excluded.reviews`,
           updatedAt: sql`excluded.updated_at`,
           isDeleted: sql`excluded.is_deleted`,
         },

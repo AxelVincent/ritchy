@@ -83,6 +83,28 @@ export const place = pgTable('place', {
   administrativeAreaLevel1: text('administrative_area_level_1'),
   administrativeAreaLevel2: text('administrative_area_level_2'),
   administrativeAreaLevel3: text('administrative_area_level_3'),
+  reviews:
+    jsonb('reviews').$type<
+      {
+        name: string
+        rating: number
+        text?: {
+          text?: string
+          languageCode?: string
+        }
+        originalText?: {
+          text?: string
+          languageCode?: string
+        }
+        authorAttribution?: {
+          displayName?: string
+          uri?: string
+          photoUri?: string
+        }
+        publishTime: string
+        googleMapsUri: string
+      }[]
+    >(),
   isDeleted: boolean('is_deleted').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

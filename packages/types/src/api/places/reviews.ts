@@ -4,7 +4,6 @@ import { LocalizedTextSchema } from './places'
 
 export const ReviewSchema = z.object({
   name: z.string(),
-  relativePublishTimeDescription: z.string(),
   text: LocalizedTextSchema.optional(),
   originalText: LocalizedTextSchema.optional(),
   rating: z.number().min(1).max(5),
@@ -16,7 +15,6 @@ export const ReviewSchema = z.object({
     })
     .optional(),
   publishTime: z.string(),
-  flagContentUri: z.string(),
   googleMapsUri: z.string(),
 })
 

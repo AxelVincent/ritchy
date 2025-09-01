@@ -2,7 +2,9 @@ import type { PlaceBase } from '@ritchy/types'
 import type { Place } from '../../../db/schema/place'
 import type { GooglePlacesTextSearchResponse, PreferredPlace } from './../types'
 
-const objectMapper = (place: Omit<Place, 'id'>): Omit<PlaceBase, 'id'> => {
+const objectMapper = (
+  place: Omit<Place, 'id' | 'reviews'>,
+): Omit<PlaceBase, 'id'> => {
   return {
     sourceId: place.sourceId,
     website: place.website || '',
@@ -47,6 +49,8 @@ export function mapToPlacesSearchResult(
   return [objectMapper(response)]
 }
 
-export function mapToPlaceDetails(place: Place): Omit<PlaceBase, 'id'> {
+export function mapToPlaceDetails(
+  place: Omit<Place, 'reviews'>,
+): Omit<PlaceBase, 'id'> {
   return objectMapper(place)
 }
