@@ -58,6 +58,24 @@ export const updateStatus = async (
       return
     }
 
+    // Add specific handling for user place not found
+    if (error instanceof Error && error.message.includes('not found')) {
+      logger.warn({
+        msg: 'User place not found for status update',
+        event: 'user_place_not_found',
+        metadata: {
+          userPlaceId: req.params.userPlaceId,
+          userId: req.auth.userId,
+        },
+      })
+      res.status(404).json({
+        error: 'Place not found',
+        message:
+          'The place you are trying to update was not found or has been removed.',
+      })
+      return
+    }
+
     logger.error({
       msg: 'Update status error',
       event: 'update_status_error',

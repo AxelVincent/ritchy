@@ -17,7 +17,7 @@ export const SocialMediaList = React.memo(function SocialMediaList({
           <ContactSocialCell
             id={`${id}-${index}`}
             content={social.url}
-            socialType={social.platform}
+            socialType={social.socialMediaPlatform}
             isPin={false}
           />
           {social.isPrimary && (

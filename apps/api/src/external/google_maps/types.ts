@@ -273,7 +273,7 @@ export const AdvancedPlaceSchema = BasicPlaceSchema.extend({
 })
 
 // Stage 4 - Preferred (Complete) Place Information
-const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
+export const PreferredPlaceSchema = AdvancedPlaceSchema.extend({
   allowsDogs: z.boolean().optional(),
   curbsidePickup: z.boolean().optional(),
   delivery: z.boolean().optional(),

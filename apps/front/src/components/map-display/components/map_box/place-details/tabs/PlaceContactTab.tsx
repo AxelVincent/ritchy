@@ -4,11 +4,11 @@ import { EmailsList } from '../../../../../data-table/columns/utils/EmailsList'
 import { SocialMediaList } from '../../../../../data-table/columns/utils/SocialMediaList'
 
 export const PlaceContactTab = ({ place }: { place: Place }) => {
-  const hasEmails = place.emails?.length !== 0
-  const hasPhones = place.phones?.length !== 0
-  const hasLinkedinSocials = place.linkedinSocials?.length !== 0
-  const hasFacebookSocials = place.facebookSocials?.length !== 0
-  const hasInstagramSocials = place.instagramSocials?.length !== 0
+  const hasEmails = place.contactEmails?.length !== 0
+  const hasPhones = place.contactPhones?.length !== 0
+  const hasLinkedinSocials = place.contactLinkedins?.length !== 0
+  const hasFacebookSocials = place.contactFacebooks?.length !== 0
+  const hasInstagramSocials = place.contactInstagrams?.length !== 0
 
   if (
     !hasEmails &&
@@ -31,7 +31,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]w-full">
           <h3 className="mb-2 text-base font-medium">Emails</h3>
           <EmailsList
-            emails={place.emails || []}
+            emails={place.contactEmails || []}
             id={`place-${place.id}-emails`}
           />
         </div>
@@ -41,7 +41,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <h3 className="mb-2 text-base font-medium">Phones</h3>
           <PhonesList
-            phones={place.phones || []}
+            phones={place.contactPhones || []}
             id={`place-${place.id}-phones`}
           />
         </div>
@@ -52,7 +52,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <h3 className="mb-2 text-base font-medium">Facebook</h3>
           <SocialMediaList
-            socials={place.facebookSocials || []}
+            socials={place.contactFacebooks || []}
             id={`place-${place.id}-facebook-socials`}
           />
         </div>
@@ -62,7 +62,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <h3 className="mb-2 text-base font-medium">Instagram</h3>
           <SocialMediaList
-            socials={place.instagramSocials || []}
+            socials={place.contactInstagrams || []}
             id={`place-${place.id}-instagram-socials`}
           />
         </div>
@@ -72,7 +72,7 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <h3 className="mb-2 text-base font-medium">LinkedIn</h3>
           <SocialMediaList
-            socials={place.linkedinSocials || []}
+            socials={place.contactLinkedins || []}
             id={`place-${place.id}-linkedin-socials`}
           />
         </div>

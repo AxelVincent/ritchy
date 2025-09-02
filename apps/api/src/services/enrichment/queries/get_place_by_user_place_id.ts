@@ -6,7 +6,7 @@ export const getPlaceByUserPlaceId = async (userPlaceId: string) => {
   const [place] = await db
     .select()
     .from(placeTable)
-    .innerJoin(userPlace, eq(placeTable.id, userPlace.placeId))
+    .innerJoin(userPlace, eq(placeTable.id, userPlace.place_id))
     .where(eq(userPlace.id, userPlaceId))
     .limit(1)
 

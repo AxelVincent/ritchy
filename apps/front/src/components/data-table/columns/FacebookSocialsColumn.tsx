@@ -21,12 +21,12 @@ export const facebookSocialsColumn: ColumnDef<SearchResult> = {
   },
   accessorFn: (row) => {
     const socialSearchString =
-      row.facebookSocials?.map((social) => social.url).join(', ') ?? ''
+      row.contactFacebooks?.map((social) => social.url).join(', ') ?? ''
     return socialSearchString
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Facebook" />,
   cell: ({ row }) => {
-    const facebookSocials = row.original.facebookSocials
+    const facebookSocials = row.original.contactFacebooks
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     if (!facebookSocials?.length) {

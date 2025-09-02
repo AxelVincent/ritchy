@@ -21,12 +21,12 @@ export const emailsColumn: ColumnDef<SearchResult> = {
   },
   accessorFn: (row) => {
     const emailSearchString =
-      row.emails?.map((email) => email.email).join(', ') ?? ''
+      row.contactEmails?.map((email) => email.email).join(', ') ?? ''
     return emailSearchString
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Emails" />,
   cell: ({ row }) => {
-    const emails = row.original.emails
+    const emails = row.original.contactEmails
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     if (!emails?.length) {

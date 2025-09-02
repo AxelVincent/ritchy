@@ -8,5 +8,5 @@ export const getPlacesStatus = (placeIds: string[], userId: string) =>
     .from(status)
     .innerJoin(userPlace, eq(status.userPlaceId, userPlace.id))
     .where(
-      and(inArray(userPlace.placeId, placeIds), eq(userPlace.userId, userId)),
+      and(inArray(userPlace.place_id, placeIds), eq(userPlace.user_id, userId)),
     )

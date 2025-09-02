@@ -44,7 +44,7 @@ export const usePostContactEmail = () => {
                   return {
                     ...place,
                     emails: [
-                      ...(place.emails || []),
+                      ...(place.contactEmails || []),
                       {
                         id: `temp-${Date.now()}`,
                         email,
@@ -83,7 +83,7 @@ export const usePostContactEmail = () => {
                   return {
                     ...place,
                     emails: [
-                      ...(place.emails || []),
+                      ...(place.contactEmails || []),
                       {
                         id: `temp-${Date.now()}`,
                         email,

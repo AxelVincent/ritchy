@@ -131,9 +131,11 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
                   {place.notes.length === 1 ? 'note' : 'notes'}
                 </span>
                 <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
-                  {formatDistanceToNow(new Date(latestNote?.createdAt || ''), {
-                    addSuffix: true,
-                  })}
+                  {latestNote?.createdAt
+                    ? formatDistanceToNow(new Date(latestNote.createdAt), {
+                        addSuffix: true,
+                      })
+                    : ''}
                 </span>
               </>
             )}

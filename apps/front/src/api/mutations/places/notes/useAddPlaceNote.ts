@@ -49,8 +49,8 @@ export const useAddPlaceNote = () => {
         userPlaceId,
         note,
         userId: 'current-user',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
 
       // Update notes query

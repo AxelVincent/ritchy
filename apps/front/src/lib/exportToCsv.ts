@@ -21,10 +21,10 @@ export function validateAndExportToCsv<T>({
   const validatedData = data.map((item) =>
     schema.parse({
       ...item,
-      emails: item.emails ?? [],
-      linkedinSocials: item.linkedinSocials ?? [],
-      facebookSocials: item.facebookSocials ?? [],
-      instagramSocials: item.instagramSocials ?? [],
+      contactEmails: item.contactEmails ?? [],
+      contactLinkedins: item.contactLinkedins ?? [],
+      contactFacebooks: item.contactFacebooks ?? [],
+      contactInstagrams: item.contactInstagrams ?? [],
       hubspotSynced: item.hubspotSynced ?? false,
     }),
   )

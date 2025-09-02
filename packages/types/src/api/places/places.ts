@@ -151,7 +151,7 @@ export const PlaceSchemaBase = z.object({
   ratingCount: z.number().optional(),
   utcOffsetMinutes: z.number(),
   openingHours: OpeningHoursSchema.optional(),
-  googleMapsUri: z.string(),
+  googleMapsUri: z.string().nullable(),
   phone: z.string().optional(),
   isDeleted: z.boolean(),
   address: z.object({
@@ -189,6 +189,7 @@ export const PhoneTypeEnum = z.enum([
 const EmailSchema = z.object({
   email: z.string().email(),
   isPrimary: z.boolean(),
+  contactId: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })
@@ -204,8 +205,9 @@ const PhoneSchema = z.object({
 export type Phone = z.infer<typeof PhoneSchema>
 const SocialMediaSchema = z.object({
   url: z.string().url(),
-  platform: SocialMediaPlatformEnum,
+  socialMediaPlatform: SocialMediaPlatformEnum,
   isPrimary: z.boolean(),
+  contactId: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })
@@ -219,11 +221,11 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   domainRegisteredAt: z.date().nullable(),
   description: z.string().nullable(),
   shortDescription: z.string().nullable(),
-  emails: z.array(EmailSchema).optional(),
-  phones: z.array(PhoneSchema).optional(),
-  linkedinSocials: z.array(SocialMediaSchema).optional(),
-  facebookSocials: z.array(SocialMediaSchema).optional(),
-  instagramSocials: z.array(SocialMediaSchema).optional(),
+  contactEmails: z.array(EmailSchema).optional(),
+  contactPhones: z.array(PhoneSchema).optional(),
+  contactLinkedins: z.array(SocialMediaSchema).optional(),
+  contactFacebooks: z.array(SocialMediaSchema).optional(),
+  contactInstagrams: z.array(SocialMediaSchema).optional(),
   hubspotSynced: z.boolean(),
   enrichedAt: z.date().nullable(),
 })

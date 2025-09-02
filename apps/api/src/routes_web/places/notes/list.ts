@@ -37,8 +37,8 @@ export const getPlaceNotes = async (
         userPlaceId: n.userPlaceId,
         note: n.note,
         userId: n.userId,
-        createdAt: n.createdAt.toISOString(),
-        updatedAt: n.updatedAt.toISOString(),
+        createdAt: n.createdAt,
+        updatedAt: n.updatedAt,
       })),
     )
 

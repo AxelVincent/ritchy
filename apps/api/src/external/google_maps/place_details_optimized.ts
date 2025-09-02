@@ -1,43 +1,16 @@
 import { logger } from '@ritchy/logger'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { listPlace, search, searchPlace } from '../../db/schema'
+import { search, searchPlace } from '../../db/schema'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 import type { PlaceWithEnrichedAt } from '../../services/places/queries/get_places_by_user_place_ids'
 import { getPlaceDetailsV1 } from './place_details_V1'
 import { postTextSearchV1 } from './text_search_V1'
 import { mapToPlaceDetails } from './utils/mapper'
 
-// How recently a search should have been refreshed to be considered "fresh" (in milliseconds)
-// 1 day = 24 * 60 * 60 * 1000 = 86,400,000 ms
-const SEARCH_FRESHNESS_THRESHOLD = 86_400_000 // 1 day
-
 // Cost constants for Google API calls (in USD)
 const COST_PER_PLACE_DETAILS_CALL = 0.04 // $0.04 per call
-const COST_PER_TEXT_SEARCH_CALL = 0.04 // $0.04 per call
-
-// Track which searches are currently being refreshed
-const activeSearchRefreshes = new Map<
-  string,
-  Promise<Omit<PlaceBase, 'id'>[]>
->()
-
-// Get estimated API calls for a search model
-function getEstimatedApiCallsForModel(model: string): number {
-  switch (model) {
-    case 'ESSENTIALS':
-      return 3 // ~60 results, ~3 API calls
-    case 'NAVIGATOR':
-      return 12 // ~240 results, ~12 API calls
-    case 'EXPLORER':
-      return 48 // ~960 results, ~48 API calls
-    case 'PRO':
-      return 192 // ~3840 results, ~192 API calls
-    default:
-      return 3
-  }
-}
 
 export type PlaceDetailsOptimized = PlaceBase & {
   id: string
@@ -45,288 +18,163 @@ export type PlaceDetailsOptimized = PlaceBase & {
   enrichedAt: Date | null
 }
 
+const isInCache = (place: PlaceWithEnrichedAt): boolean => {
+  return place.source_url != null && place.source_url !== ''
+}
+
 export async function getPlaceDetailsOptimized(
   place: PlaceWithEnrichedAt,
 ): Promise<PlaceDetailsOptimized> {
-  const startTime = Date.now()
-  let scenario = 'unknown'
-  let apiCallsMade = 0
-  let estimatedCost = 0
-
-  if (place.sourceUrl) {
-    scenario = 'cache_hit'
-    // Only log cache hits in summary statistics, not individually
+  if (place.is_deleted) {
+    logger.info({
+      msg: 'Returning cached deleted place data',
+      event: 'cached_deleted_place_data',
+      metadata: {
+        placeId: place.user_place_id,
+      },
+    })
+    return {
+      ...mapToPlaceDetails(place),
+      id: place.user_place_id,
+      fromCache: true,
+      enrichedAt: place.enriched_at,
+    }
+  }
+  if (isInCache(place)) {
+    logger.debug({
+      msg: 'Returning cached place data',
+      event: 'cached_place_data',
+      metadata: {
+        placeId: place.user_place_id,
+      },
+    })
     const placeDetails = mapToPlaceDetails(place)
     return {
       ...placeDetails,
-      id: place.userPlaceId,
+      id: place.user_place_id,
       fromCache: true,
-      enrichedAt: place.enrichedAt,
+      enrichedAt: place.enriched_at,
     }
   }
 
-  logger.info({
-    msg: 'No cached place found, checking for search',
+  logger.debug({
+    msg: 'Place not found in cache, checking for search',
     event: 'no_cached_place_found',
     metadata: {
-      userPlaceId: place.userPlaceId,
+      userPlaceId: place.user_place_id,
     },
   })
   const [searchPlaceResult] = await db
     .select({ searchId: searchPlace.searchId })
     .from(searchPlace)
-    .where(eq(searchPlace.userPlaceId, place.userPlaceId))
+    .where(eq(searchPlace.userPlaceId, place.user_place_id))
     .limit(1)
 
-  // If we have a searchId, check if we should refresh the search
   if (searchPlaceResult) {
     logger.info({
       msg: 'Search place result found',
       event: 'search_place_result_found',
       metadata: {
-        userPlaceId: place.userPlaceId,
+        userPlaceId: place.user_place_id,
         searchPlaceResult,
       },
     })
     // Get search details
-    const searchDetails = await db
-      .select()
+    const [searchDetails] = await db
+      .select({
+        keyword: search.keyword,
+        rectangle: search.rectangle,
+        updatedAt: search.updatedAt,
+        model: search.model,
+      })
       .from(search)
       .where(eq(search.id, searchPlaceResult.searchId))
       .limit(1)
 
-    if (searchDetails.length > 0) {
-      const searchData = searchDetails[0]
+    if (searchDetails) {
+      logger.info({
+        msg: 'Refreshing search for place',
+        event: 'refresh_search_for_place',
+        metadata: {
+          userPlaceId: place.user_place_id,
+          searchId: searchPlaceResult.searchId,
+          model: searchDetails.model,
+        },
+      })
 
-      // Check if the search was recently refreshed
-      const lastRefreshTime = searchData.updatedAt.getTime()
-      const currentTime = Date.now()
-      const isSearchStale =
-        currentTime - lastRefreshTime > SEARCH_FRESHNESS_THRESHOLD
+      // Create search request
+      const searchRequestBody: PlacesSearchRequestBody = {
+        textQuery: searchDetails.keyword,
+        rectangle: searchDetails.rectangle,
+        model: searchDetails.model,
+      }
+      // Execute the search and cache the results
+      await postTextSearchV1(searchRequestBody)
 
-      // Only proceed with search refresh check if the search is stale
-      if (isSearchStale) {
-        // Get the estimated API calls for this search model
-        const estimatedApiCalls = getEstimatedApiCallsForModel(searchData.model)
+      // Update the search timestamp
+      await db
+        .update(search)
+        .set({ updatedAt: new Date() })
+        .where(eq(search.id, searchPlaceResult.searchId))
 
-        // Count how many places in lists are associated with this search
-        const placesFromSearch = await db
-          .select({ count: sql`COUNT(*)` })
-          .from(listPlace)
-          .where(eq(listPlace.searchId, searchPlaceResult.searchId))
+      logger.info({
+        msg: 'Search refresh completed - BILLABLE API CALL OVERVIEW',
+        event: 'search_refresh_completed',
+        metadata: {
+          searchId: searchPlaceResult.searchId,
+          model: searchDetails.model,
+        },
+      })
 
-        const placeCount = Number(placesFromSearch[0]?.count || 0)
-
-        // Only refresh the search if we have more places than API calls
-        if (placeCount > estimatedApiCalls) {
-          scenario = 'search_refreshed'
-
-          // Check if this search is already being refreshed by another request
-          const existingRefresh = activeSearchRefreshes.get(
-            searchPlaceResult.searchId,
-          )
-
-          if (existingRefresh) {
-            logger.info({
-              msg: 'Using already in-progress search refresh',
-              event: 'reuse_search_refresh',
-              metadata: {
-                userPlaceId: place.userPlaceId,
-                searchId: searchPlaceResult.searchId,
-                model: searchData.model,
-              },
-            })
-
-            // Wait for the existing refresh to complete
-            await existingRefresh
-
-            // Check if our place is now in cache after the search refresh
-            const refreshedPlace = await getPlaceByUserPlaceId(
-              place.userPlaceId,
-            )
-
-            if (refreshedPlace.sourceUrl) {
-              const placeDetails = mapToPlaceDetails(refreshedPlace)
-              return {
-                ...placeDetails,
-                id: refreshedPlace.userPlaceId,
-                fromCache: true,
-                enrichedAt: refreshedPlace.enrichedAt,
-              }
-            }
-          } else {
-            // Start a new refresh and track it
-            logger.info({
-              msg: 'Refreshing stale search results to update place cache',
-              event: 'refresh_search_for_place',
-              metadata: {
-                userPlaceId: place.userPlaceId,
-                searchId: searchPlaceResult.searchId,
-                model: searchData.model,
-                lastRefreshTime: searchData.updatedAt.toISOString(),
-                timeSinceRefresh: `${Math.round((currentTime - lastRefreshTime) / 1000 / 60 / 60 / 24)} days`,
-                placeCount,
-                estimatedApiCalls,
-                costEfficiency: (placeCount / estimatedApiCalls).toFixed(2),
-              },
-            })
-
-            // Create search request
-            const searchRequestBody: PlacesSearchRequestBody = {
-              textQuery: searchData.keyword,
-              rectangle: searchData.rectangle,
-              model: searchData.model,
-            }
-
-            // Store the refresh promise
-            const refreshPromise = (async () => {
-              try {
-                // Execute the search and cache the results
-                const results = await postTextSearchV1(searchRequestBody)
-
-                // Update the search timestamp
-                await db
-                  .update(search)
-                  .set({ updatedAt: new Date() })
-                  .where(eq(search.id, searchPlaceResult.searchId))
-
-                logger.info({
-                  msg: 'Search refresh completed - BILLABLE API CALL OVERVIEW',
-                  event: 'search_refresh_completed',
-                  metadata: {
-                    searchId: searchPlaceResult.searchId,
-                    model: searchData.model,
-                    estimatedApiCalls,
-                    estimatedCost:
-                      estimatedApiCalls * COST_PER_TEXT_SEARCH_CALL,
-                    potentialCostSavings: Math.max(
-                      0,
-                      (results.length - estimatedApiCalls) *
-                        COST_PER_PLACE_DETAILS_CALL,
-                    ),
-                  },
-                })
-
-                return results
-              } finally {
-                // Remove from active refreshes when done
-                activeSearchRefreshes.delete(searchPlaceResult.searchId)
-              }
-            })()
-
-            // Store the promise
-            activeSearchRefreshes.set(
-              searchPlaceResult.searchId,
-              refreshPromise,
-            )
-
-            // Wait for the refresh to complete
-            await refreshPromise
-
-            // Check if our place is now in cache
-            const refreshedPlace = await getPlaceByUserPlaceId(
-              place.userPlaceId,
-            )
-            if (refreshedPlace.sourceUrl) {
-              const placeDetails = mapToPlaceDetails(refreshedPlace)
-              return {
-                ...placeDetails,
-                id: refreshedPlace.userPlaceId,
-                fromCache: true,
-                enrichedAt: refreshedPlace.enrichedAt,
-              }
-            }
-          }
-        } else {
-          // Skip search refresh because we don't have enough places to make it cost-effective
-          scenario = 'skip_refresh_not_cost_effective'
-
-          logger.info({
-            msg: 'Skipping search refresh as it is not cost-effective',
-            event: 'skip_refresh_not_cost_effective',
-            metadata: {
-              userPlaceId: place.userPlaceId,
-              searchId: searchPlaceResult.searchId,
-              model: searchData.model,
-              placeCount,
-              estimatedApiCalls,
-              costEfficiency:
-                placeCount > 0
-                  ? (placeCount / estimatedApiCalls).toFixed(2)
-                  : 0,
-            },
-          })
+      // Check if our place is now in cache
+      const refreshedPlace = await getPlaceByUserPlaceId(place.user_place_id)
+      if (isInCache(refreshedPlace)) {
+        const placeDetails = mapToPlaceDetails(refreshedPlace)
+        return {
+          ...placeDetails,
+          id: refreshedPlace.user_place_id,
+          fromCache: true,
+          enrichedAt: refreshedPlace.enriched_at,
         }
-      } else {
-        scenario = 'recent_search_skip_refresh'
-
-        logger.info({
-          msg: 'Skipping search refresh as it was recently updated',
-          event: 'skip_search_refresh',
-          metadata: {
-            userPlaceId: place.userPlaceId,
-            searchId: searchPlaceResult.searchId,
-            lastRefreshTime: searchData.updatedAt.toISOString(),
-            timeSinceRefresh: `${Math.round((currentTime - lastRefreshTime) / 1000 / 60 / 60 / 24)} days`,
-            model: searchData.model,
-          },
-        })
       }
     }
   }
-
-  // If we still don't have the place, fetch it directly
-  scenario = 'direct_fetch'
 
   logger.info({
     msg: 'Fetching individual place details - BILLABLE API CALL',
     event: 'fetch_individual_place',
     metadata: {
-      userPlaceId: place.userPlaceId,
-      // Only include searchId if we have a searchPlaceResult
-      ...(searchPlaceResult && { searchId: searchPlaceResult.searchId }),
+      userPlaceId: place.user_place_id,
       estimatedCost: COST_PER_PLACE_DETAILS_CALL,
     },
   })
 
   try {
-    const result = await getPlaceDetailsV1(place.userPlaceId)
-    apiCallsMade += 1
-    estimatedCost += COST_PER_PLACE_DETAILS_CALL
+    const result = await getPlaceDetailsV1(place.user_place_id)
 
-    const endTime = Date.now()
     logger.info({
       msg: 'Place details optimization metrics',
       event: 'place_details_optimization',
       metadata: {
-        userPlaceId: place.userPlaceId,
+        userPlaceId: place.user_place_id,
         searchId: searchPlaceResult.searchId,
-        scenario,
-        apiCallsMade,
-        estimatedCost,
-        durationMs: endTime - startTime,
         fromCache: result.fromCache,
       },
     })
 
     return {
       ...result,
-      id: place.userPlaceId,
+      id: place.user_place_id,
       fromCache: false,
-      enrichedAt: place.enrichedAt,
+      enrichedAt: place.enriched_at,
     }
   } catch (error) {
-    const endTime = Date.now()
     logger.error({
       msg: 'Place details fetch failed',
       event: 'place_details_fetch_error',
       metadata: {
-        userPlaceId: place.userPlaceId,
+        userPlaceId: place.user_place_id,
         searchId: searchPlaceResult.searchId,
-        scenario,
-        apiCallsMade,
-        estimatedCost,
-        durationMs: endTime - startTime,
         error,
       },
     })
