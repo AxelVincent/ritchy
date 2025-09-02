@@ -115,36 +115,40 @@ describe('DataExport', () => {
         status: null,
         listId: null,
         domainRegisteredAt: new Date(),
-        emails: [
+        contactEmails: [
           {
             email: 'test@example.com',
             isPrimary: true,
+            contactId: '1',
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ],
-        linkedinSocials: [
+        contactLinkedins: [
           {
             url: 'https://test.com',
-            platform: 'LINKEDIN',
+            socialMediaPlatform: 'LINKEDIN',
+            isPrimary: true,
+            contactId: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        contactFacebooks: [
+          {
+            url: 'https://test.com',
+            socialMediaPlatform: 'FACEBOOK',
+            contactId: '1',
             isPrimary: true,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ],
-        facebookSocials: [
+        contactInstagrams: [
           {
             url: 'https://test.com',
-            platform: 'FACEBOOK',
-            isPrimary: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        instagramSocials: [
-          {
-            url: 'https://test.com',
-            platform: 'INSTAGRAM',
+            socialMediaPlatform: 'INSTAGRAM',
+            contactId: '1',
             isPrimary: true,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -221,36 +225,40 @@ describe('DataExport', () => {
         status: null,
         listId: null,
         domainRegisteredAt: new Date(),
-        emails: [
+        contactEmails: [
           {
             email: 'test@example.com',
             isPrimary: true,
+            contactId: '1',
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ],
-        linkedinSocials: [
+        contactLinkedins: [
           {
             url: 'https://test.com',
-            platform: 'LINKEDIN',
+            socialMediaPlatform: 'LINKEDIN',
+            contactId: '1',
             isPrimary: true,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ],
-        facebookSocials: [
+        contactFacebooks: [
           {
             url: 'https://test.com',
-            platform: 'FACEBOOK',
+            socialMediaPlatform: 'FACEBOOK',
+            contactId: '1',
             isPrimary: true,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ],
-        instagramSocials: [
+        contactInstagrams: [
           {
             url: 'https://test.com',
-            platform: 'INSTAGRAM',
+            socialMediaPlatform: 'INSTAGRAM',
+            contactId: '1',
             isPrimary: true,
             createdAt: new Date(),
             updatedAt: new Date(),

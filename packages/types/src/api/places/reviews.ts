@@ -19,7 +19,7 @@ export const ReviewSchema = z.object({
 })
 
 export const GetReviewsParamsSchema = z.object({
-  placeSourceId: z.string(),
+  userPlaceId: z.string(),
 })
 
 export const GetReviewsResponseSchema = z.object({

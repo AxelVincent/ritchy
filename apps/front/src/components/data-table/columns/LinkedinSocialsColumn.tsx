@@ -21,12 +21,12 @@ export const linkedinSocialsColumn: ColumnDef<SearchResult> = {
   },
   accessorFn: (row) => {
     const socialSearchString =
-      row.linkedinSocials?.map((social) => social.url).join(', ') ?? ''
+      row.contactLinkedins?.map((social) => social.url).join(', ') ?? ''
     return socialSearchString
   },
   header: ({ column }) => <HeaderWrapper column={column} title="LinkedIn" />,
   cell: ({ row }) => {
-    const linkedinSocials = row.original.linkedinSocials
+    const linkedinSocials = row.original.contactLinkedins
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     if (!linkedinSocials?.length) {

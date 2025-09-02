@@ -10,14 +10,17 @@ import { place } from '../../db/schema/place'
 import { enqueueTextSearchJob } from '../../internal/bullmq/jobs/google/places/queue'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
+import { sanitizeApiData } from '../../utils/sanitize_api_data'
 import {
+  AdvancedPlaceSchema,
   type GooglePlacesTextSearchRequestBody,
   GooglePlacesTextSearchRequestBodySchema,
   type GooglePlacesTextSearchResponse,
   GooglePlacesTextSearchResponseSchema,
   PREFERRED_PLACE_KEYS_TEXT_SEARCH,
+  PreferredPlaceSchema,
 } from './types'
-import { mapToPlacesSearchResult } from './utils/mapper'
+import { mapToPlaceDetails } from './utils/mapper'
 
 export async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
@@ -187,28 +190,32 @@ export async function postTextSearchV1(
       (place, index, self) =>
         index === self.findIndex((p) => p.id === place.id),
     )
+    const parsedResults = []
+    for (const place of uniqueResults) {
+      parsedResults.push(PreferredPlaceSchema.parse(sanitizeApiData(place)))
+    }
 
     const places = await db
       .insert(place)
       .values(
-        uniqueResults.map((place) => ({
+        parsedResults.map((place) => ({
           source: 'google' as const,
-          sourceId: place.id,
-          sourceUrl: place.googleMapsUri,
+          source_id: place.id,
+          source_url: place.googleMapsUri,
           website: place.websiteUri,
           name: place.displayName?.text,
           location: place.location,
           types: place.types,
-          primaryType: place.primaryType,
-          priceLevel: place.priceLevel,
-          priceRange: place.priceRange,
+          primary_type: place.primaryType,
+          price_level: place.priceLevel,
+          price_range: place.priceRange,
           rating: place.rating,
-          ratingCount: place.userRatingCount,
+          rating_count: place.userRatingCount,
           phone: place.internationalPhoneNumber,
-          utcOffsetMinutes: place.utcOffsetMinutes,
-          openingHours: place.regularOpeningHours,
-          formattedAddress: place.formattedAddress,
-          shortFormattedAddress: place.shortFormattedAddress,
+          utc_offset_minutes: place.utcOffsetMinutes,
+          opening_hours: place.regularOpeningHours,
+          formatted_address: place.formattedAddress,
+          short_formatted_address: place.shortFormattedAddress,
           country:
             place.addressComponents?.find((component) =>
               component.types?.includes('country'),
@@ -221,15 +228,15 @@ export async function postTextSearchV1(
             place.addressComponents?.find((component) =>
               component.types?.includes('sublocality'),
             )?.longText || '',
-          postalCode:
+          postal_code:
             place.addressComponents?.find((component) =>
               component.types?.includes('postal_code'),
             )?.longText || '',
-          postalCodeSuffix:
+          postal_code_suffix:
             place.addressComponents?.find((component) =>
               component.types?.includes('postal_code_suffix'),
             )?.longText || '',
-          plusCode:
+          plus_code:
             place.addressComponents?.find((component) =>
               component.types?.includes('plus_code'),
             )?.longText || '',
@@ -237,7 +244,7 @@ export async function postTextSearchV1(
             place.addressComponents?.find((component) =>
               component.types?.includes('route'),
             )?.longText || '',
-          streetNumber:
+          street_number:
             place.addressComponents?.find((component) =>
               component.types?.includes('street_number'),
             )?.longText || '',
@@ -245,15 +252,15 @@ export async function postTextSearchV1(
             place.addressComponents?.find((component) =>
               component.types?.includes('neighborhood'),
             )?.longText || '',
-          administrativeAreaLevel1:
+          administrative_area_level_1:
             place.addressComponents?.find((component) =>
               component.types?.includes('administrative_area_level_1'),
             )?.longText || '',
-          administrativeAreaLevel2:
+          administrative_area_level_2:
             place.addressComponents?.find((component) =>
               component.types?.includes('administrative_area_level_2'),
             )?.longText || '',
-          administrativeAreaLevel3:
+          administrative_area_level_3:
             place.addressComponents?.find((component) =>
               component.types?.includes('administrative_area_level_3'),
             )?.longText || '',
@@ -271,108 +278,79 @@ export async function postTextSearchV1(
       )
       .returning({
         id: place.id,
-        sourceId: place.sourceId,
-        sourceUrl: place.sourceUrl,
+        source: place.source,
+        source_id: place.source_id,
+        source_url: place.source_url,
         website: place.website,
         name: place.name,
         location: place.location,
         types: place.types,
-        primaryType: place.primaryType,
-        priceLevel: place.priceLevel,
-        priceRange: place.priceRange,
+        primary_type: place.primary_type,
+        price_level: place.price_level,
+        price_range: place.price_range,
         rating: place.rating,
-        ratingCount: place.ratingCount,
+        rating_count: place.rating_count,
         phone: place.phone,
-        utcOffsetMinutes: place.utcOffsetMinutes,
-        openingHours: place.openingHours,
-        formattedAddress: place.formattedAddress,
-        shortFormattedAddress: place.shortFormattedAddress,
+        utc_offset_minutes: place.utc_offset_minutes,
+        opening_hours: place.opening_hours,
+        formatted_address: place.formatted_address,
+        short_formatted_address: place.short_formatted_address,
         country: place.country,
         locality: place.locality,
         sublocality: place.sublocality,
-        postalCode: place.postalCode,
-        postalCodeSuffix: place.postalCodeSuffix,
-        plusCode: place.plusCode,
+        postal_code: place.postal_code,
+        postal_code_suffix: place.postal_code_suffix,
+        plus_code: place.plus_code,
         street: place.street,
-        streetNumber: place.streetNumber,
+        street_number: place.street_number,
         neighborhood: place.neighborhood,
-        administrativeAreaLevel1: place.administrativeAreaLevel1,
-        administrativeAreaLevel2: place.administrativeAreaLevel2,
-        administrativeAreaLevel3: place.administrativeAreaLevel3,
+        administrative_area_level_1: place.administrative_area_level_1,
+        administrative_area_level_2: place.administrative_area_level_2,
+        administrative_area_level_3: place.administrative_area_level_3,
         reviews: place.reviews,
-        isDeleted: place.isDeleted,
+        is_deleted: place.is_deleted,
+        created_at: place.created_at,
+        updated_at: place.updated_at,
       })
       .onConflictDoUpdate({
-        target: place.sourceId,
+        target: place.source_id,
         set: {
           source: sql`excluded.source`,
-          sourceId: sql`excluded.source_id`,
-          sourceUrl: sql`excluded.source_url`,
+          source_id: sql`excluded.source_id`,
+          source_url: sql`excluded.source_url`,
           website: sql`excluded.website`,
           name: sql`excluded.name`,
           location: sql`excluded.location`,
           types: sql`excluded.types`,
-          primaryType: sql`excluded.primary_type`,
-          priceLevel: sql`excluded.price_level`,
-          priceRange: sql`excluded.price_range`,
+          primary_type: sql`excluded.primary_type`,
+          price_level: sql`excluded.price_level`,
+          price_range: sql`excluded.price_range`,
           rating: sql`excluded.rating`,
-          ratingCount: sql`excluded.rating_count`,
+          rating_count: sql`excluded.rating_count`,
           phone: sql`excluded.phone`,
-          utcOffsetMinutes: sql`excluded.utc_offset_minutes`,
-          openingHours: sql`excluded.opening_hours`,
-          formattedAddress: sql`excluded.formatted_address`,
-          shortFormattedAddress: sql`excluded.short_formatted_address`,
+          utc_offset_minutes: sql`excluded.utc_offset_minutes`,
+          opening_hours: sql`excluded.opening_hours`,
+          formatted_address: sql`excluded.formatted_address`,
+          short_formatted_address: sql`excluded.short_formatted_address`,
           country: sql`excluded.country`,
           locality: sql`excluded.locality`,
           sublocality: sql`excluded.sublocality`,
-          postalCode: sql`excluded.postal_code`,
-          postalCodeSuffix: sql`excluded.postal_code_suffix`,
-          plusCode: sql`excluded.plus_code`,
+          postal_code: sql`excluded.postal_code`,
+          postal_code_suffix: sql`excluded.postal_code_suffix`,
+          plus_code: sql`excluded.plus_code`,
           street: sql`excluded.street`,
-          streetNumber: sql`excluded.street_number`,
+          street_number: sql`excluded.street_number`,
           neighborhood: sql`excluded.neighborhood`,
-          administrativeAreaLevel1: sql`excluded.administrative_area_level_1`,
-          administrativeAreaLevel2: sql`excluded.administrative_area_level_2`,
-          administrativeAreaLevel3: sql`excluded.administrative_area_level_3`,
+          administrative_area_level_1: sql`excluded.administrative_area_level_1`,
+          administrative_area_level_2: sql`excluded.administrative_area_level_2`,
+          administrative_area_level_3: sql`excluded.administrative_area_level_3`,
           reviews: sql`excluded.reviews`,
-          updatedAt: sql`excluded.updated_at`,
-          isDeleted: sql`excluded.is_deleted`,
+          updated_at: sql`excluded.updated_at`,
+          is_deleted: sql`excluded.is_deleted`,
         },
       })
 
-    const results = places.map((place) => ({
-      sourceId: place.sourceId,
-      website: place.website || '',
-      name: place.name || '',
-      location: place.location || { latitude: 0, longitude: 0 },
-      types: place.types || [],
-      primaryType: place.primaryType || undefined,
-      priceLevel: place.priceLevel || undefined,
-      priceRange: place.priceRange || undefined,
-      rating: place.rating || undefined,
-      ratingCount: place.ratingCount || undefined,
-      googleMapsUri: place.sourceUrl || '',
-      phone: place.phone || undefined,
-      utcOffsetMinutes: place.utcOffsetMinutes || 0,
-      openingHours: place.openingHours || undefined,
-      isDeleted: place.isDeleted,
-      address: {
-        formattedAddress: place.formattedAddress || '',
-        shortFormattedAddress: place.shortFormattedAddress || '',
-        country: place.country || '',
-        locality: place.locality || '',
-        sublocality: place.sublocality || '',
-        postalCode: place.postalCode || '',
-        postalCodeSuffix: place.postalCodeSuffix || '',
-        plusCode: place.plusCode || '',
-        street: place.street || '',
-        streetNumber: place.streetNumber || '',
-        neighborhood: place.neighborhood || '',
-        administrativeAreaLevel1: place.administrativeAreaLevel1 || '',
-        administrativeAreaLevel2: place.administrativeAreaLevel2 || '',
-        administrativeAreaLevel3: place.administrativeAreaLevel3 || '',
-      },
-    }))
+    const results = places.map((place) => mapToPlaceDetails(place))
 
     const endTime = Date.now()
     logger.info({

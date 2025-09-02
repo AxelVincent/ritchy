@@ -43,7 +43,7 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
     const places = await publicDb
       .select()
       .from(place)
-      .where(isNotNull(place.sourceUrl))
+      .where(isNotNull(place.source_url))
       .limit(batchSize)
       .offset(offset)
 
@@ -65,16 +65,16 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
 
     for (const dbPlace of places) {
       try {
-        const key = REDIS_KEYS.place(dbPlace.sourceId)
+        const key = REDIS_KEYS.place(dbPlace.source_id)
         const cachedPlace = await redisPublicClient.get<PreferredPlace>(key)
 
         if (!cachedPlace) {
           logger.debug({
-            msg: `No Redis data found for place: ${dbPlace.sourceId}`,
+            msg: `No Redis data found for place: ${dbPlace.source_id}`,
             event: 'fill_place_table',
             metadata: {
               placeId: dbPlace.id,
-              sourceId: dbPlace.sourceId,
+              sourceId: dbPlace.source_id,
               run,
             },
           })
@@ -83,11 +83,11 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
         }
 
         logger.info({
-          msg: `Found Redis data for place: ${dbPlace.sourceId}`,
+          msg: `Found Redis data for place: ${dbPlace.source_id}`,
           event: 'fill_place_table',
           metadata: {
             placeId: dbPlace.id,
-            sourceId: dbPlace.sourceId,
+            sourceId: dbPlace.source_id,
             hasData: !!cachedPlace,
             run,
           },
@@ -95,11 +95,11 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
 
         if (isDryRun) {
           logger.info({
-            msg: `Would update place: ${dbPlace.sourceId} ${isDryRun ? '(dry run)' : ''}`,
+            msg: `Would update place: ${dbPlace.source_id} ${isDryRun ? '(dry run)' : ''}`,
             event: 'fill_place_table',
             metadata: {
               placeId: dbPlace.id,
-              sourceId: dbPlace.sourceId,
+              sourceId: dbPlace.source_id,
               run,
             },
           })
@@ -110,7 +110,7 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
         await publicDb
           .update(place)
           .set({
-            sourceUrl: cachedPlace.data.googleMapsUri || null,
+            source_url: cachedPlace.data.googleMapsUri || null,
             website: cachedPlace.data.websiteUri || null,
             name: cachedPlace.data.displayName?.text || null,
             location: cachedPlace.data.location || {
@@ -118,16 +118,17 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
               longitude: 0,
             },
             types: cachedPlace.data.types || [],
-            primaryType: cachedPlace.data.primaryType || null,
-            priceLevel: cachedPlace.data.priceLevel,
-            priceRange: cachedPlace.data.priceRange,
+            primary_type: cachedPlace.data.primaryType || null,
+            price_level: cachedPlace.data.priceLevel,
+            price_range: cachedPlace.data.priceRange,
             rating: cachedPlace.data.rating || null,
-            ratingCount: cachedPlace.data.userRatingCount || null,
+            rating_count: cachedPlace.data.userRatingCount || null,
             phone: cachedPlace.data.internationalPhoneNumber || null,
-            utcOffsetMinutes: cachedPlace.data.utcOffsetMinutes || null,
-            openingHours: cachedPlace.data.regularOpeningHours || null,
-            formattedAddress: cachedPlace.data.formattedAddress || '',
-            shortFormattedAddress: cachedPlace.data.shortFormattedAddress || '',
+            utc_offset_minutes: cachedPlace.data.utcOffsetMinutes || null,
+            opening_hours: cachedPlace.data.regularOpeningHours || null,
+            formatted_address: cachedPlace.data.formattedAddress || '',
+            short_formatted_address:
+              cachedPlace.data.shortFormattedAddress || '',
             country:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('country'),
@@ -140,15 +141,15 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('sublocality'),
               )?.longText || '',
-            postalCode:
+            postal_code:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('postal_code'),
               )?.longText || '',
-            postalCodeSuffix:
+            postal_code_suffix:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('postal_code_suffix'),
               )?.longText || '',
-            plusCode:
+            plus_code:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('plus_code'),
               )?.longText || '',
@@ -156,7 +157,7 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('route'),
               )?.longText || '',
-            streetNumber:
+            street_number:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('street_number'),
               )?.longText || '',
@@ -164,15 +165,15 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('neighborhood'),
               )?.longText || '',
-            administrativeAreaLevel1:
+            administrative_area_level_1:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('administrative_area_level_1'),
               )?.longText || '',
-            administrativeAreaLevel2:
+            administrative_area_level_2:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('administrative_area_level_2'),
               )?.longText || '',
-            administrativeAreaLevel3:
+            administrative_area_level_3:
               cachedPlace.data.addressComponents?.find((component) =>
                 component.types?.includes('administrative_area_level_3'),
               )?.longText || '',
@@ -186,16 +187,16 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
                 publishTime: review.publishTime,
                 googleMapsUri: review.googleMapsUri,
               })) || [],
-            updatedAt: new Date(),
+            updated_at: new Date(),
           })
           .where(eq(place.id, dbPlace.id))
 
         logger.info({
-          msg: `Successfully updated place: ${dbPlace.sourceId}`,
+          msg: `Successfully updated place: ${dbPlace.source_id}`,
           event: 'fill_place_table',
           metadata: {
             placeId: dbPlace.id,
-            sourceId: dbPlace.sourceId,
+            sourceId: dbPlace.source_id,
             run,
           },
         })
@@ -203,11 +204,11 @@ const fillPlaceTable = async (run: boolean, batchSize = 100) => {
         processedCount++
       } catch (error) {
         logger.error({
-          msg: `Error processing place: ${dbPlace.sourceId}`,
+          msg: `Error processing place: ${dbPlace.source_id}`,
           event: 'fill_place_table',
           metadata: {
             placeId: dbPlace.id,
-            sourceId: dbPlace.sourceId,
+            sourceId: dbPlace.source_id,
             error,
             run,
           },

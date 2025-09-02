@@ -11,8 +11,8 @@ export const NoteSchema = z.object({
   userPlaceId: z.string(),
   note: z.string(),
   userId: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 export const NotesResponseSchema = z.array(NoteSchema)

@@ -20,7 +20,7 @@ placesRouter.use('/:userPlaceId/status', statusRouter)
 
 placesRouter.use('/:userPlaceId/notes', notesRouter)
 
-placesRouter.use('/:placeSourceId/reviews', reviewsRouter)
+placesRouter.use('/:userPlaceId/reviews', reviewsRouter)
 
 placesRouter.post(
   '/autocomplete',

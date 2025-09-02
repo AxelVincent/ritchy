@@ -5,6 +5,6 @@ import { userPlace } from '../../../db/schema'
 export const setUserPlaceAsEnriched = async (userPlaceId: string) => {
   await db
     .update(userPlace)
-    .set({ enrichedAt: new Date() })
+    .set({ enriched_at: new Date() })
     .where(eq(userPlace.id, userPlaceId))
 }

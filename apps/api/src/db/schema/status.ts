@@ -16,6 +16,7 @@ export const status = pgTable(
   },
   (table) => [
     unique().on(table.userPlaceId, table.status),
+    unique().on(table.userPlaceId),
     index('idx_user_place_status').on(table.userPlaceId),
   ],
 )

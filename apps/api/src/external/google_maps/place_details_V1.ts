@@ -2,39 +2,22 @@ import 'dotenv/config'
 import { logger } from '@ritchy/logger'
 import type { PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
-import { CACHE_THRESHOLDS } from '../../config/redis'
 
-import { sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import { place as placeTable } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { enqueuePlaceDetailsJob } from '../../internal/bullmq/jobs/google/places/queue'
-import { redisClient } from '../../internal/redis/redis'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
+import { sanitizeApiData } from '../../utils/sanitize_api_data'
 import {
-  AdvancedPlaceSchema,
   PREFERRED_PLACE_KEYS,
   type PreferredPlace,
+  PreferredPlaceSchema,
 } from './types'
 import { calculateOpenNow } from './utils/calculateOpenNow'
 import { mapToPlaceDetails } from './utils/mapper'
-
-// Cache update thresholds imported from config
-const { PLACE_UPDATE_THRESHOLD } = CACHE_THRESHOLDS
-
-/**
- * Checks if cache needs to be updated based on updated_at timestamp
- * @param updatedAt - ISO string of last update time
- * @param maxAgeSeconds - Maximum age in seconds before update is needed
- * @returns True if cache needs update, false if fresh
- */
-function needsUpdate(updatedAt: string, maxAgeSeconds: number): boolean {
-  const updatedAtDate = new Date(updatedAt)
-  const now = new Date()
-  const ageInSeconds = (now.getTime() - updatedAtDate.getTime()) / 1000
-  return ageInSeconds > maxAgeSeconds
-}
 
 /**
  * Gets cache age in seconds
@@ -80,7 +63,10 @@ export async function fetchPlaceDetails(
           durationMs: Date.now() - startTime,
         },
       })
-      await redisClient.markAsDeleted(googlePlaceId)
+      await db
+        .update(placeTable)
+        .set({ is_deleted: true })
+        .where(eq(placeTable.source_id, googlePlaceId))
       throw new Error('PLACE_NOT_FOUND')
     }
 
@@ -120,9 +106,9 @@ export async function getPlaceDetailsV1(
   const dbOrTx = tx ?? db
   const place = await getPlaceByUserPlaceId(userPlaceId, dbOrTx)
 
-  if (place.sourceUrl) {
+  if (place.source_url != null && place.source_url !== '') {
     // If place is marked as deleted, never refresh it
-    if (place.isDeleted) {
+    if (place.is_deleted) {
       const result = mapToPlaceDetails(place)
 
       // Recalculate openNow property for cached places
@@ -138,7 +124,7 @@ export async function getPlaceDetailsV1(
         event: 'place_details_deleted_cache_hit',
         metadata: {
           placeId: place.id,
-          age: getAge(place.updatedAt.toISOString()),
+          age: getAge(place.updated_at.toISOString()),
         },
       })
 
@@ -146,130 +132,116 @@ export async function getPlaceDetailsV1(
         ...result,
         id: userPlaceId,
         fromCache: true,
-        is_deleted: place.isDeleted,
+        is_deleted: place.is_deleted,
       }
     }
 
-    // For non-deleted places, check if cache needs update
-    const shouldUpdate = needsUpdate(
-      place.updatedAt.toISOString(),
-      PLACE_UPDATE_THRESHOLD,
-    )
+    const result = mapToPlaceDetails(place)
 
-    // If cache is fresh, return cached data
-    if (!shouldUpdate) {
-      const result = mapToPlaceDetails(place)
-
-      // Recalculate openNow property for cached places
-      if (result.openingHours) {
-        result.openingHours.openNow = calculateOpenNow(
-          result.openingHours,
-          result.utcOffsetMinutes,
-        )
-      }
-
-      logger.info({
-        msg: 'Returning fresh cached data',
-        event: 'place_details_cache_hit',
-        metadata: {
-          placeSourceId: place.sourceId,
-          age: getAge(place.updatedAt.toISOString()),
-        },
-      })
-
-      return {
-        ...result,
-        id: userPlaceId,
-        fromCache: true,
-        is_deleted: false,
-      }
+    // Recalculate openNow property for cached places
+    if (result.openingHours) {
+      result.openingHours.openNow = calculateOpenNow(
+        result.openingHours,
+        result.utcOffsetMinutes,
+      )
     }
 
-    // If cache needs update, try to fetch fresh data
     logger.info({
-      msg: 'Cache needs update, attempting to fetch fresh data',
-      event: 'place_details_cache_stale',
+      msg: 'Returning fresh cached data',
+      event: 'place_details_cache_hit',
       metadata: {
-        placeSourceId: place.sourceId,
-        age: getAge(place.updatedAt.toISOString()),
+        placeSourceId: place.source_id,
+        age: getAge(place.updated_at.toISOString()),
       },
     })
+
+    return {
+      ...result,
+      id: userPlaceId,
+      fromCache: true,
+      is_deleted: false,
+    }
   }
 
   try {
-    const data = await enqueuePlaceDetailsJob(place.sourceId)
-    AdvancedPlaceSchema.parse(data)
+    const data = await enqueuePlaceDetailsJob(place.source_id)
+    const validatedData = PreferredPlaceSchema.parse(sanitizeApiData(data))
+    logger.info({
+      msg: 'Enqueued place details job',
+      event: 'place_details_job_enqueued',
+      metadata: { data: JSON.stringify(data) },
+    })
 
     const [updatedPlace] = await db
       .insert(placeTable)
       .values({
         source: 'google' as const,
-        sourceId: data.id,
-        sourceUrl: data.googleMapsUri,
-        website: data.websiteUri,
-        name: data.displayName?.text,
-        location: data.location,
-        types: data.types,
-        primaryType: data.primaryType,
-        priceLevel: data.priceLevel,
-        priceRange: data.priceRange,
-        rating: data.rating,
-        ratingCount: data.userRatingCount,
-        phone: data.internationalPhoneNumber,
-        utcOffsetMinutes: data.utcOffsetMinutes,
-        openingHours: data.regularOpeningHours,
-        formattedAddress: data.formattedAddress,
-        shortFormattedAddress: data.shortFormattedAddress,
+        source_id: validatedData.id,
+        source_url: validatedData.googleMapsUri,
+        website: validatedData.websiteUri,
+        name: validatedData.displayName?.text,
+        location: validatedData.location,
+        types: validatedData.types,
+        primary_type: validatedData.primaryType,
+        price_level: validatedData.priceLevel,
+        price_range: validatedData.priceRange,
+        rating: validatedData.rating,
+        rating_count: validatedData.userRatingCount,
+        phone: validatedData.internationalPhoneNumber,
+        utc_offset_minutes: validatedData.utcOffsetMinutes,
+        opening_hours: validatedData.regularOpeningHours,
+        formatted_address: validatedData.formattedAddress,
+        short_formatted_address: validatedData.shortFormattedAddress,
         country:
-          data.addressComponents?.find((component) =>
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('country'),
           )?.longText || '',
         locality:
-          data.addressComponents?.find((component) =>
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('locality'),
           )?.longText || '',
         sublocality:
-          data.addressComponents?.find((component) =>
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('sublocality'),
           )?.longText || '',
-        postalCode:
-          data.addressComponents?.find((component) =>
+        postal_code:
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('postal_code'),
           )?.longText || '',
-        postalCodeSuffix:
-          data.addressComponents?.find((component) =>
+        postal_code_suffix:
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('postal_code_suffix'),
           )?.longText || '',
-        plusCode:
-          data.addressComponents?.find((component) =>
+        plus_code:
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('plus_code'),
           )?.longText || '',
         street:
-          data.addressComponents?.find((component) =>
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('route'),
           )?.longText || '',
-        streetNumber:
-          data.addressComponents?.find((component) =>
+        street_number:
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('street_number'),
           )?.longText || '',
         neighborhood:
-          data.addressComponents?.find((component) =>
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('neighborhood'),
           )?.longText || '',
-        administrativeAreaLevel1:
-          data.addressComponents?.find((component) =>
+        administrative_area_level_1:
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('administrative_area_level_1'),
           )?.longText || '',
-        administrativeAreaLevel2:
-          data.addressComponents?.find((component) =>
+        administrative_area_level_2:
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('administrative_area_level_2'),
           )?.longText || '',
-        administrativeAreaLevel3:
-          data.addressComponents?.find((component) =>
+        administrative_area_level_3:
+          validatedData.addressComponents?.find((component) =>
             component.types?.includes('administrative_area_level_3'),
           )?.longText || '',
         reviews:
-          data.reviews?.map((review) => ({
+          validatedData.reviews?.map((review) => ({
             name: review.name,
             rating: review.rating,
             text: review.text,
@@ -282,74 +254,74 @@ export async function getPlaceDetailsV1(
       .returning({
         id: placeTable.id,
         source: placeTable.source,
-        sourceId: placeTable.sourceId,
-        sourceUrl: placeTable.sourceUrl,
+        source_id: placeTable.source_id,
+        source_url: placeTable.source_url,
         website: placeTable.website,
         name: placeTable.name,
         location: placeTable.location,
         types: placeTable.types,
-        primaryType: placeTable.primaryType,
-        priceLevel: placeTable.priceLevel,
-        priceRange: placeTable.priceRange,
+        primary_type: placeTable.primary_type,
+        price_level: placeTable.price_level,
+        price_range: placeTable.price_range,
         rating: placeTable.rating,
-        ratingCount: placeTable.ratingCount,
+        rating_count: placeTable.rating_count,
         phone: placeTable.phone,
-        utcOffsetMinutes: placeTable.utcOffsetMinutes,
-        openingHours: placeTable.openingHours,
-        formattedAddress: placeTable.formattedAddress,
-        shortFormattedAddress: placeTable.shortFormattedAddress,
+        utc_offset_minutes: placeTable.utc_offset_minutes,
+        opening_hours: placeTable.opening_hours,
+        formatted_address: placeTable.formatted_address,
+        short_formatted_address: placeTable.short_formatted_address,
         country: placeTable.country,
         locality: placeTable.locality,
         sublocality: placeTable.sublocality,
-        postalCode: placeTable.postalCode,
-        postalCodeSuffix: placeTable.postalCodeSuffix,
-        plusCode: placeTable.plusCode,
+        postal_code: placeTable.postal_code,
+        postal_code_suffix: placeTable.postal_code_suffix,
+        plus_code: placeTable.plus_code,
         street: placeTable.street,
-        streetNumber: placeTable.streetNumber,
+        street_number: placeTable.street_number,
         neighborhood: placeTable.neighborhood,
-        administrativeAreaLevel1: placeTable.administrativeAreaLevel1,
-        administrativeAreaLevel2: placeTable.administrativeAreaLevel2,
-        administrativeAreaLevel3: placeTable.administrativeAreaLevel3,
-        isDeleted: placeTable.isDeleted,
+        administrative_area_level_1: placeTable.administrative_area_level_1,
+        administrative_area_level_2: placeTable.administrative_area_level_2,
+        administrative_area_level_3: placeTable.administrative_area_level_3,
+        is_deleted: placeTable.is_deleted,
         reviews: placeTable.reviews,
-        createdAt: placeTable.createdAt,
-        updatedAt: placeTable.updatedAt,
+        created_at: placeTable.created_at,
+        updated_at: placeTable.updated_at,
       })
       .onConflictDoUpdate({
-        target: placeTable.sourceId,
+        target: placeTable.source_id,
         set: {
           source: sql`excluded.source`,
-          sourceId: sql`excluded.source_id`,
-          sourceUrl: sql`excluded.source_url`,
+          source_id: sql`excluded.source_id`,
+          source_url: sql`excluded.source_url`,
           website: sql`excluded.website`,
           name: sql`excluded.name`,
           location: sql`excluded.location`,
           types: sql`excluded.types`,
-          primaryType: sql`excluded.primary_type`,
-          priceLevel: sql`excluded.price_level`,
-          priceRange: sql`excluded.price_range`,
+          primary_type: sql`excluded.primary_type`,
+          price_level: sql`excluded.price_level`,
+          price_range: sql`excluded.price_range`,
           rating: sql`excluded.rating`,
-          ratingCount: sql`excluded.rating_count`,
+          rating_count: sql`excluded.rating_count`,
           phone: sql`excluded.phone`,
-          utcOffsetMinutes: sql`excluded.utc_offset_minutes`,
-          openingHours: sql`excluded.opening_hours`,
-          formattedAddress: sql`excluded.formatted_address`,
-          shortFormattedAddress: sql`excluded.short_formatted_address`,
+          utc_offset_minutes: sql`excluded.utc_offset_minutes`,
+          opening_hours: sql`excluded.opening_hours`,
+          formatted_address: sql`excluded.formatted_address`,
+          short_formatted_address: sql`excluded.short_formatted_address`,
           country: sql`excluded.country`,
           locality: sql`excluded.locality`,
           sublocality: sql`excluded.sublocality`,
-          postalCode: sql`excluded.postal_code`,
-          postalCodeSuffix: sql`excluded.postal_code_suffix`,
-          plusCode: sql`excluded.plus_code`,
+          postal_code: sql`excluded.postal_code`,
+          postal_code_suffix: sql`excluded.postal_code_suffix`,
+          plus_code: sql`excluded.plus_code`,
           street: sql`excluded.street`,
-          streetNumber: sql`excluded.street_number`,
+          street_number: sql`excluded.street_number`,
           neighborhood: sql`excluded.neighborhood`,
-          administrativeAreaLevel1: sql`excluded.administrative_area_level_1`,
-          administrativeAreaLevel2: sql`excluded.administrative_area_level_2`,
-          administrativeAreaLevel3: sql`excluded.administrative_area_level_3`,
+          administrative_area_level_1: sql`excluded.administrative_area_level_1`,
+          administrative_area_level_2: sql`excluded.administrative_area_level_2`,
+          administrative_area_level_3: sql`excluded.administrative_area_level_3`,
           reviews: sql`excluded.reviews`,
-          updatedAt: sql`excluded.updated_at`,
-          isDeleted: sql`excluded.is_deleted`,
+          updated_at: sql`excluded.updated_at`,
+          is_deleted: sql`excluded.is_deleted`,
         },
       })
 
@@ -359,7 +331,7 @@ export async function getPlaceDetailsV1(
     logger.info({
       msg: 'Successfully fetched and cached fresh place data',
       event: 'place_details_fresh_data',
-      metadata: { placeSourceId: place.sourceId },
+      metadata: { placeSourceId: place.source_id },
     })
 
     return { ...result, id: userPlaceId, fromCache: false }
@@ -367,26 +339,27 @@ export async function getPlaceDetailsV1(
     logger.info({
       msg: 'Error fetching place details',
       event: 'place_details_fetch_error',
-      metadata: { placeSourceId: place.sourceId, error },
+      metadata: { placeSourceId: place.source_id, error },
     })
 
     if (error instanceof Error && error.message === 'PLACE_NOT_FOUND') {
-      if (place.sourceUrl) {
-        await redisClient.markAsDeleted(place.sourceId)
-        logger.info({
-          msg: 'Marked existing place as deleted',
-          event: 'place_details_marked_deleted',
-          metadata: { placeSourceId: place.sourceId },
-        })
-      }
+      await db
+        .update(placeTable)
+        .set({ is_deleted: true })
+        .where(eq(placeTable.source_id, place.source_id))
+      logger.info({
+        msg: 'Marked existing place as deleted',
+        event: 'place_details_marked_deleted',
+        metadata: { placeSourceId: place.source_id },
+      })
     }
 
-    if (place.sourceUrl) {
+    if (place.source_url != null && place.source_url !== '') {
       logger.info({
         msg: 'API failed, returning cached data as fallback',
         event: 'place_details_api_fallback',
         metadata: {
-          placeSourceId: place.sourceId,
+          placeSourceId: place.source_id,
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       })
@@ -403,7 +376,7 @@ export async function getPlaceDetailsV1(
         ...result,
         id: userPlaceId,
         fromCache: true,
-        is_deleted: place.isDeleted,
+        is_deleted: place.is_deleted,
       }
     }
 

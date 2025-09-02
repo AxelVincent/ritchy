@@ -7,7 +7,8 @@ import { db } from '../../db/db'
 import { place, search, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
 import { consumeSearchCredits } from '../../services/payment/queries/consume_search_credits'
-import { getPlacesWithDetails } from '../../services/places/get_places_with_details'
+import { getAggregatedUserPlaces } from '../../services/places/queries/get_aggregated_user_places'
+import { refreshPlaces } from '../../services/places/refresh_places'
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
@@ -57,15 +58,15 @@ export const getSearchContent = async (
         .values(
           freshResults.map((place) => ({
             source: 'google' as const,
-            sourceId: place.sourceId,
+            source_id: place.sourceId,
           })),
         )
         .returning({ id: place.id })
         .onConflictDoUpdate({
-          target: place.sourceId,
+          target: place.source_id,
           set: {
             source: sql`excluded.source`,
-            sourceId: sql`excluded.source_id`,
+            source_id: sql`excluded.source_id`,
           },
         })
 
@@ -83,8 +84,8 @@ export const getSearchContent = async (
 
       const resultsToInsert = places
         .map((place) => ({
-          userId,
-          placeId: place.id,
+          user_id: userId,
+          place_id: place.id,
         }))
         .slice(0, creditsUsed)
 
@@ -93,10 +94,10 @@ export const getSearchContent = async (
         .values(resultsToInsert)
         .returning({ id: userPlace.id })
         .onConflictDoUpdate({
-          target: [userPlace.userId, userPlace.placeId],
+          target: [userPlace.user_id, userPlace.place_id],
           set: {
-            placeId: sql`excluded.place_id`,
-            userId: sql`excluded.user_id`,
+            place_id: sql`excluded.place_id`,
+            user_id: sql`excluded.user_id`,
           },
         })
 
@@ -137,25 +138,73 @@ export const getSearchContent = async (
       return
     }
 
-    // Convert place IDs to the format expected by the shared utility
-    const userPlaceIds = cachedResults.map((result) => result.user_place.id)
+    let placesResults = []
+    placesResults = await getAggregatedUserPlaces(userId, searchId, undefined)
 
-    // Use shared utility to get place details and aggregate data
-    const { places: aggregatedResults } = await getPlacesWithDetails(
-      userPlaceIds,
-      {
-        userId,
-      },
+    const cacheMisses = placesResults.filter(
+      (place) => place.googleMapsUri === null || place.googleMapsUri === '',
     )
+    logger.info({
+      msg: 'Cache misses',
+      event: 'cache_misses',
+      metadata: {
+        searchId,
+        places: cacheMisses.map((place) => place.id),
+        cacheMisses: cacheMisses.length,
+      },
+    })
+    if (cacheMisses.length > 0) {
+      logger.error({
+        msg: 'Places in search are not complete, fetching missing places',
+        event: 'places_in_search_not_complete',
+        metadata: {
+          searchId,
+          places: cacheMisses.map((place) => place.id),
+          cacheMisses: cacheMisses.length,
+        },
+      })
+      // Get all place IDs in the list with their searchId
+      const places = await db
+        .select({
+          id: userPlace.id,
+        })
+        .from(searchPlace)
+        .innerJoin(userPlace, eq(searchPlace.userPlaceId, userPlace.id))
+        .innerJoin(place, eq(userPlace.place_id, place.id))
+        .where(eq(searchPlace.searchId, searchId))
+
+      // Use shared utility to get place details and aggregate data
+      await refreshPlaces(
+        places.map((place) => place.id),
+        {
+          userId,
+        },
+      )
+      logger.info({
+        msg: 'Places refreshed',
+        event: 'places_refreshed',
+        metadata: {
+          places: places.map((place) => place.id),
+        },
+      })
+      placesResults = await getAggregatedUserPlaces(userId, searchId, undefined)
+      logger.info({
+        msg: 'Places aggregated',
+        event: 'places_aggregated',
+        metadata: {
+          places: placesResults.length,
+        },
+      })
+    }
 
     logger.info({
       msg: 'Get search content',
       event: 'get_search_content',
       metadata: {
-        results: aggregatedResults.length,
+        results: placesResults.length,
       },
     })
-    res.json(aggregatedResults)
+    res.json(placesResults)
     return
   } catch (error) {
     if (error instanceof z.ZodError) {

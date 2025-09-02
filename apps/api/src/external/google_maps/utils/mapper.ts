@@ -6,7 +6,7 @@ const objectMapper = (
   place: Omit<Place, 'id' | 'reviews'>,
 ): Omit<PlaceBase, 'id'> => {
   return {
-    sourceId: place.sourceId,
+    sourceId: place.source_id,
     website: place.website || '',
     name: place.name || '',
     location: {
@@ -14,39 +14,33 @@ const objectMapper = (
       longitude: place.location?.longitude || 0,
     },
     types: place.types || [],
-    primaryType: place.primaryType || undefined,
-    priceLevel: place.priceLevel || undefined,
-    priceRange: place.priceRange || undefined,
+    primaryType: place.primary_type || undefined,
+    priceLevel: place.price_level || undefined,
+    priceRange: place.price_range || undefined,
     rating: place.rating || undefined,
-    ratingCount: place.ratingCount || undefined,
-    googleMapsUri: place.sourceUrl || '',
+    ratingCount: place.rating_count || undefined,
+    googleMapsUri: place.source_url || '',
     phone: place.phone || undefined,
-    utcOffsetMinutes: place.utcOffsetMinutes || 0,
-    openingHours: place.openingHours || undefined,
-    isDeleted: place.isDeleted,
+    utcOffsetMinutes: place.utc_offset_minutes || 0,
+    openingHours: place.opening_hours || undefined,
+    isDeleted: place.is_deleted,
     address: {
-      formattedAddress: place.formattedAddress || '',
-      shortFormattedAddress: place.shortFormattedAddress || '',
+      formattedAddress: place.formatted_address || '',
+      shortFormattedAddress: place.short_formatted_address || '',
       country: place.country || '',
       locality: place.locality || '',
       sublocality: place.sublocality || '',
-      postalCode: place.postalCode || '',
-      postalCodeSuffix: place.postalCodeSuffix || '',
-      plusCode: place.plusCode || '',
+      postalCode: place.postal_code || '',
+      postalCodeSuffix: place.postal_code_suffix || '',
+      plusCode: place.plus_code || '',
       street: place.street || '',
-      streetNumber: place.streetNumber || '',
+      streetNumber: place.street_number || '',
       neighborhood: place.neighborhood || '',
-      administrativeAreaLevel1: place.administrativeAreaLevel1 || '',
-      administrativeAreaLevel2: place.administrativeAreaLevel2 || '',
-      administrativeAreaLevel3: place.administrativeAreaLevel3 || '',
+      administrativeAreaLevel1: place.administrative_area_level_1 || '',
+      administrativeAreaLevel2: place.administrative_area_level_2 || '',
+      administrativeAreaLevel3: place.administrative_area_level_3 || '',
     },
   }
-}
-
-export function mapToPlacesSearchResult(
-  response: Place,
-): Omit<PlaceBase, 'id'>[] {
-  return [objectMapper(response)]
 }
 
 export function mapToPlaceDetails(

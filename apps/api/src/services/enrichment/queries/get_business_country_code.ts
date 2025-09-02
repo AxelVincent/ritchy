@@ -32,7 +32,7 @@ export const getBusinessCountryCodeByEnrichmentId = async (
     event: 'getting_place_from_enrichment',
     metadata: { place },
   })
-  const key = REDIS_KEYS.place(place.place.sourceId)
+  const key = REDIS_KEYS.place(place.place.source_id)
   const sourcePlace = await redisClient.get<PreferredPlace>(key)
 
   if (!sourcePlace) {

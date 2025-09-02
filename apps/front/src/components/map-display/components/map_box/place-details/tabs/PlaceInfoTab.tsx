@@ -201,10 +201,13 @@ export const PlaceInfoTab = ({ place }: { place: Place }) => {
             </div>
           )}
 
-          {place.emails && place.emails.length > 0 && (
+          {place.contactEmails && place.contactEmails.length > 0 && (
             <div className="flex items-center gap-3 mb-2">
               <Mail className="h-5 w-5 text-muted-foreground shrink-0" />
-              <ContactEmailCell id={place.id} content={place.emails[0].email} />
+              <ContactEmailCell
+                id={place.id}
+                content={place.contactEmails[0].email}
+              />
             </div>
           )}
 

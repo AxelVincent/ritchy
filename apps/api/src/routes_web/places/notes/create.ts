@@ -36,8 +36,8 @@ export const addPlaceNote = async (
       userPlaceId: result.userPlaceId,
       note: result.note,
       userId: result.userId,
-      createdAt: result.createdAt.toISOString(),
-      updatedAt: result.updatedAt.toISOString(),
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
     })
 
     logger.info({

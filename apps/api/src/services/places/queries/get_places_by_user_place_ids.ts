@@ -3,8 +3,8 @@ import { db } from '../../../db/db'
 import { type Place, place, userPlace } from '../../../db/schema'
 
 export type PlaceWithEnrichedAt = Place & {
-  enrichedAt: Date | null
-  userPlaceId: string
+  enriched_at: Date | null
+  user_place_id: string
 }
 
 export const getPlacesByUserPlaceIds = async (
@@ -13,44 +13,44 @@ export const getPlacesByUserPlaceIds = async (
   const places = await db
     .select({
       id: place.id,
-      sourceId: place.sourceId,
+      source_id: place.source_id,
       source: place.source,
-      sourceUrl: place.sourceUrl,
+      source_url: place.source_url,
       website: place.website,
       name: place.name,
       location: place.location,
       types: place.types,
-      primaryType: place.primaryType,
-      priceLevel: place.priceLevel,
-      priceRange: place.priceRange,
+      primary_type: place.primary_type,
+      price_level: place.price_level,
+      price_range: place.price_range,
       rating: place.rating,
-      ratingCount: place.ratingCount,
+      rating_count: place.rating_count,
       phone: place.phone,
-      utcOffsetMinutes: place.utcOffsetMinutes,
-      openingHours: place.openingHours,
-      formattedAddress: place.formattedAddress,
-      shortFormattedAddress: place.shortFormattedAddress,
+      utc_offset_minutes: place.utc_offset_minutes,
+      opening_hours: place.opening_hours,
+      formatted_address: place.formatted_address,
+      short_formatted_address: place.short_formatted_address,
       country: place.country,
       locality: place.locality,
       sublocality: place.sublocality,
-      postalCode: place.postalCode,
-      postalCodeSuffix: place.postalCodeSuffix,
-      plusCode: place.plusCode,
+      postal_code: place.postal_code,
+      postal_code_suffix: place.postal_code_suffix,
+      plus_code: place.plus_code,
       street: place.street,
-      streetNumber: place.streetNumber,
+      street_number: place.street_number,
       neighborhood: place.neighborhood,
-      administrativeAreaLevel1: place.administrativeAreaLevel1,
-      administrativeAreaLevel2: place.administrativeAreaLevel2,
-      administrativeAreaLevel3: place.administrativeAreaLevel3,
-      isDeleted: place.isDeleted,
-      createdAt: place.createdAt,
-      updatedAt: place.updatedAt,
-      userPlaceId: userPlace.id,
-      enrichedAt: userPlace.enrichedAt,
+      administrative_area_level_1: place.administrative_area_level_1,
+      administrative_area_level_2: place.administrative_area_level_2,
+      administrative_area_level_3: place.administrative_area_level_3,
+      is_deleted: place.is_deleted,
+      created_at: place.created_at,
+      updated_at: place.updated_at,
+      user_place_id: userPlace.id,
+      enriched_at: userPlace.enriched_at,
       reviews: place.reviews,
     })
     .from(place)
-    .innerJoin(userPlace, eq(place.id, userPlace.placeId))
+    .innerJoin(userPlace, eq(place.id, userPlace.place_id))
     .where(inArray(userPlace.id, userPlaceIds))
   return places
 }

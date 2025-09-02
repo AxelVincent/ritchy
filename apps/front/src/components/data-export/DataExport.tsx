@@ -139,7 +139,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           ? new Date(row.domainRegisteredAt)
           : null,
         enrichedAt: row.enrichedAt ? new Date(row.enrichedAt) : null,
-        facebookSocials: row.facebookSocials
+        facebookSocials: row.contactFacebooks
           ?.filter((social) => social.url && social.url.trim() !== '')
           ?.map((social) => ({
             ...social,
@@ -150,7 +150,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
               ? new Date(social.updatedAt)
               : social.updatedAt,
           })),
-        instagramSocials: row.instagramSocials
+        instagramSocials: row.contactInstagrams
           ?.filter((social) => social.url && social.url.trim() !== '')
           ?.map((social) => ({
             ...social,
@@ -161,7 +161,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
               ? new Date(social.updatedAt)
               : social.updatedAt,
           })),
-        linkedinSocials: row.linkedinSocials
+        linkedinSocials: row.contactLinkedins
           ?.filter((social) => social.url && social.url.trim() !== '')
           ?.map((social) => ({
             ...social,
@@ -172,7 +172,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
               ? new Date(social.updatedAt)
               : social.updatedAt,
           })),
-        emails: row.emails
+        emails: row.contactEmails
           ?.filter((email) => {
             if (!email.email || email.email.trim() === '') return false
             try {
@@ -192,7 +192,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
               ? new Date(email.updatedAt)
               : email.updatedAt,
           })),
-        phones: row.phones
+        phones: row.contactPhones
           ?.filter((phone) => phone.phone && phone.phone.trim() !== '')
           ?.map((phone) => ({
             ...phone,
@@ -272,17 +272,18 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           header: 'Phones',
           field: 'phones',
           accessor: (row: SearchResult): string =>
-            (row.phones || []).join(', '),
+            (row.contactPhones || []).join(', '),
         },
         {
           header: 'Primary Email',
           field: 'emails',
-          accessor: (row: SearchResult): string => row.emails?.[0]?.email || '',
+          accessor: (row: SearchResult): string =>
+            row.contactEmails?.[0]?.email || '',
         },
         {
           header: 'Secondary Emails',
           accessor: (row: SearchResult): string =>
-            (row.emails || [])
+            (row.contactEmails || [])
               .slice(1)
               .map((e) => e.email)
               .join(', '),
@@ -291,24 +292,24 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           header: 'Primary LinkedIn Social',
           field: 'linkedinSocials',
           accessor: (row: SearchResult): string =>
-            row.linkedinSocials?.[0]?.url || '',
+            row.contactLinkedins?.[0]?.url || '',
         },
         {
           header: 'Primary Facebook Social',
           field: 'facebookSocials',
           accessor: (row: SearchResult): string =>
-            row.facebookSocials?.[0]?.url || '',
+            row.contactFacebooks?.[0]?.url || '',
         },
         {
           header: 'Primary Instagram Social',
           field: 'instagramSocials',
           accessor: (row: SearchResult): string =>
-            row.instagramSocials?.[0]?.url || '',
+            row.contactInstagrams?.[0]?.url || '',
         },
         {
           header: 'Secondary LinkedIn Socials',
           accessor: (row: SearchResult): string =>
-            (row.linkedinSocials || [])
+            (row.contactLinkedins || [])
               .slice(1)
               .map((s) => s.url)
               .join(', '),
@@ -316,7 +317,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         {
           header: 'Secondary Facebook Socials',
           accessor: (row: SearchResult): string =>
-            (row.facebookSocials || [])
+            (row.contactFacebooks || [])
               .slice(1)
               .map((s) => s.url)
               .join(', '),
@@ -324,7 +325,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         {
           header: 'Secondary Instagram Socials',
           accessor: (row: SearchResult): string =>
-            (row.instagramSocials || [])
+            (row.contactInstagrams || [])
               .slice(1)
               .map((s) => s.url)
               .join(', '),

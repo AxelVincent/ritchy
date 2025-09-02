@@ -1,7 +1,8 @@
 import { logger } from '@ritchy/logger'
 import type { Status, StatusType } from '@ritchy/types'
+import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
-import { status as statusTable } from '../../../db/schema'
+import { status as statusTable, userPlace } from '../../../db/schema'
 import { updateHubspotContactStatus } from '../../hubspot/update_hubspot_contact_status'
 import type { HubspotContext } from '../../hubspot/update_place_status'
 
@@ -21,6 +22,24 @@ export const upsertStatus = async (
       },
     })
 
+    // Validate that the userPlaceId exists and belongs to the user
+    const [userPlaceRecord] = await db
+      .select()
+      .from(userPlace)
+      .where(eq(userPlace.id, userPlaceId))
+      .limit(1)
+
+    if (!userPlaceRecord) {
+      throw new Error(`User place with ID ${userPlaceId} not found`)
+    }
+
+    // Verify the user owns this user_place record
+    if (userPlaceRecord.user_id !== context.userId) {
+      throw new Error(
+        `User place with ID ${userPlaceId} does not belong to user ${context.userId}`,
+      )
+    }
+
     const [result] = await db
       .insert(statusTable)
       .values({
@@ -28,7 +47,7 @@ export const upsertStatus = async (
         status,
       })
       .onConflictDoUpdate({
-        target: [statusTable.userPlaceId, statusTable.status],
+        target: [statusTable.userPlaceId],
         set: {
           status,
           updatedAt: new Date(),

@@ -21,12 +21,12 @@ export const instagramSocialsColumn: ColumnDef<SearchResult> = {
   },
   accessorFn: (row) => {
     const socialSearchString =
-      row.instagramSocials?.map((social) => social.url).join(', ') ?? ''
+      row.contactInstagrams?.map((social) => social.url).join(', ') ?? ''
     return socialSearchString
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Instagram" />,
   cell: ({ row }) => {
-    const instagramSocials = row.original.instagramSocials
+    const instagramSocials = row.original.contactInstagrams
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
     if (!instagramSocials?.length) {
