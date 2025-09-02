@@ -7,6 +7,8 @@ const envSchema = z.object({
   PGUSER: z.string(),
   PGPASSWORD: z.string(),
   PG_PUBLIC_URL: z.string(),
+  PGMAX: z.string(),
+  PGMIN: z.string(),
 })
 
 const env = envSchema.parse(process.env)
@@ -18,4 +20,6 @@ export const DRIZZLE_CONFIG = {
   USER: env.PGUSER,
   PASSWORD: env.PGPASSWORD,
   PUBLIC_URL: env.PG_PUBLIC_URL,
+  MAX: Number(env.PGMAX),
+  MIN: Number(env.PGMIN),
 } as const
