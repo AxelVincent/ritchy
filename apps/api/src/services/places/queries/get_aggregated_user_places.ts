@@ -54,8 +54,12 @@ export const getAggregatedUserPlaces = async (
   searchId?: string,
   listId?: string,
 ): Promise<PlaceApi[]> => {
-  const searchCondition = searchId ? sql`AND s.id = ${searchId}` : sql`AND 1=0`
-  const listCondition = listId ? sql`AND l.id = ${listId}` : sql`AND 1=0`
+  const searchCondition = searchId
+    ? sql`AND s.id = ${searchId}`
+    : sql`AND s.id = NULL`
+  const listCondition = listId
+    ? sql`AND l.id = ${listId}`
+    : sql`AND l.id = NULL`
 
   const query = sql`
     SELECT
