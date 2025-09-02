@@ -1,15 +1,23 @@
 import { logger } from '@ritchy/logger'
 import { type Job, Worker } from 'bullmq'
 import { bullmqRedisOptions } from '../../../config'
+import { createLockRenewal } from '../../../utils/lock-renewal'
 import { enqueueEnrichmentUnitJob } from '../unit/queue'
-import type { EnrichmentBatchJobData } from './queue'
+import { type EnrichmentBatchJobData, queueName } from './queue'
 
 const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
+  const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
+    job,
+    queueName,
+  )
   const { enrichments, totalCount } = job.data
   const errors: Array<{ userPlaceId: string; error: string }> = []
   let processedCount = 0
 
   try {
+    // Start lock renewal
+    setupLockRenewal()
+
     await Promise.all(
       enrichments.map(async (enrichment) => {
         try {
@@ -60,12 +68,18 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
       throw new Error(`Completed with ${errors.length} errors`)
     }
 
+    // Clean up lock renewal
+    cleanupLockRenewal()
+
     logger.info({
       msg: 'Enrichment batch completed successfully',
       event: 'enrichment_batch_completed',
       metadata: { jobId: job.id, totalProcessed: processedCount },
     })
   } catch (error) {
+    // Clean up lock renewal on error
+    cleanupLockRenewal()
+
     logger.error({
       msg: 'Enrichment batch failed',
       event: 'enrichment_batch_failed',
@@ -80,11 +94,13 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
 }
 
 const worker = new Worker<EnrichmentBatchJobData>(
-  'enrichment-batch',
+  queueName,
   processEnrichmentBatchJob,
   {
     connection: bullmqRedisOptions,
     concurrency: 10,
+    lockDuration: 60000, // 60 seconds
+    lockRenewTime: 30000, // 30 seconds
   },
 )
 

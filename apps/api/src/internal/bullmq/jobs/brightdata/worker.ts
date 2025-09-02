@@ -1,17 +1,31 @@
 import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { webUnblocker } from '../../../../external/brightdata/web_unlocker'
-import { bullmqRedisOptions } from '../../config'
+import { bullmqRedisOptions, workerConfig } from '../../config'
+import { createLockRenewal } from '../../utils/lock-renewal'
+import { queueName } from './queue'
 
 const brightdataWorker = new Worker(
-  'brightdata-api',
+  queueName,
   async (job) => {
+    const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
+      job,
+      queueName,
+    )
+
     try {
       const { url } = job.data
+
+      // Start lock renewal
+      setupLockRenewal()
+
       const result = await webUnblocker(url)
 
       // Check if the request was successful based on status code
       const isSuccess = result.status_code >= 200 && result.status_code < 300
+
+      // Clean up lock renewal
+      cleanupLockRenewal()
 
       return {
         ...result,
@@ -19,6 +33,9 @@ const brightdataWorker = new Worker(
         error: isSuccess ? undefined : `HTTP ${result.status_code}`,
       }
     } catch (error) {
+      // Clean up lock renewal on error
+      cleanupLockRenewal()
+
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -31,7 +48,9 @@ const brightdataWorker = new Worker(
       max: 1000,
       duration: 60000,
     },
-    concurrency: 1000,
+    concurrency: workerConfig.brightdata.concurrency,
+    lockDuration: 60000, // 60 seconds
+    lockRenewTime: 30000, // 30 seconds
   },
 )
 

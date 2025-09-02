@@ -1,5 +1,4 @@
 import { logger } from '@ritchy/logger'
-import { scrapeWebsiteManager } from './scraper/scrape_website_manager'
 import { getMainDomain } from './scraper/utils/get_main_domain'
 import { isSubPage } from './utils/is_sub_page'
 

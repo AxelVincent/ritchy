@@ -2,17 +2,61 @@ import { logger } from '@ritchy/logger'
 import { scrapeWebsiteManager } from 'apps/api/src/services/enrichment/scraper/scrape_website_manager'
 import { type Job, Worker } from 'bullmq'
 import { bullmqRedisOptions } from '../../config'
+import { workerConfig } from '../../config'
+import { createLockRenewal } from '../../utils/lock-renewal'
+import { queueName } from './queue'
 
 const scraperWorker = new Worker(
-  'scraper',
+  queueName,
   async (job: Job) => {
-    const { url, enrichmentId, onlyMainContent, userPlaceId } = job.data
-    return await scrapeWebsiteManager(
-      url,
-      enrichmentId,
-      onlyMainContent,
-      userPlaceId,
+    const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
+      job,
+      queueName,
     )
+    const { url, enrichmentId, onlyMainContent, userPlaceId } = job.data
+    try {
+      logger.info({
+        msg: 'Starting scraper job',
+        metadata: { jobId: job.id, url },
+        event: 'scraper_started',
+      })
+
+      // Start lock renewal immediately
+      setupLockRenewal()
+
+      const result = await scrapeWebsiteManager(
+        url,
+        enrichmentId,
+        onlyMainContent,
+        userPlaceId,
+      )
+
+      // Clean up lock renewal
+      cleanupLockRenewal()
+
+      logger.info({
+        msg: 'Scraper job completed successfully',
+        metadata: { jobId: job.id },
+        event: 'scraper_completed',
+      })
+
+      return result
+    } catch (error) {
+      // Clean up lock renewal on error
+      cleanupLockRenewal()
+
+      logger.error({
+        msg: 'Scraper job failed',
+        metadata: {
+          jobId: job.id,
+          url,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        event: 'scraper_failed',
+      })
+
+      throw error
+    }
   },
   {
     connection: bullmqRedisOptions,
@@ -20,7 +64,11 @@ const scraperWorker = new Worker(
       max: 1000,
       duration: 60000,
     },
-    concurrency: 200,
+    concurrency: workerConfig.scraper.concurrency,
+    lockDuration: 120000,
+    lockRenewTime: 60000,
+    stalledInterval: 60000,
+    maxStalledCount: 3,
   },
 )
 

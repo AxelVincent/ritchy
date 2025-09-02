@@ -12,9 +12,9 @@ export interface EnrichmentBatchJobData {
     error: string
   }>
 }
-
+export const queueName = 'enrichment-batch'
 export const enrichmentBatchQueue = new Queue<EnrichmentBatchJobData>(
-  'enrichment-batch',
+  queueName,
   {
     connection: bullmqRedisOptions,
     defaultJobOptions: {

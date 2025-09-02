@@ -2,7 +2,7 @@ import { Queue, QueueEvents } from 'bullmq'
 import type { BrightdataWebUnlockerResponse } from '../../../../external/brightdata/web_unlocker'
 import { bullmqRedisOptions } from '../../config'
 
-const queueName = 'brightdata-api'
+export const queueName = 'brightdata-api'
 export const brightdataQueue = new Queue(queueName, {
   connection: bullmqRedisOptions,
   defaultJobOptions: {

@@ -65,7 +65,7 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   const jobStatusQuery = useEnrichmentJobStatus(
     activeJobId || '',
     !!activeJobId,
-    5000,
+    10000,
   )
 
   const handleEnrichClick = async () => {
