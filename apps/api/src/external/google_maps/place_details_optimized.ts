@@ -65,12 +65,17 @@ export async function getPlaceDetailsOptimized(
     },
   })
   const [searchPlaceResult] = await db
-    .select({ searchId: searchPlace.searchId })
+    .select({
+      searchId: searchPlace.searchId,
+      searchUpdatedAt: search.updatedAt,
+    })
     .from(searchPlace)
+    .innerJoin(search, eq(search.id, searchPlace.searchId))
     .where(eq(searchPlace.userPlaceId, place.user_place_id))
     .limit(1)
 
-  if (searchPlaceResult) {
+  const oneHourAgo = new Date(Date.now() - 1000 * 60 * 60)
+  if (searchPlaceResult && searchPlaceResult.searchUpdatedAt < oneHourAgo) {
     logger.info({
       msg: 'Search place result found',
       event: 'search_place_result_found',

@@ -56,19 +56,10 @@ export const getListContent = async (
           cacheMisses: cacheMisses.length,
         },
       })
-      // Get all place IDs in the list with their searchId
-      const places = await db
-        .select({
-          id: userPlace.id,
-        })
-        .from(listPlace)
-        .innerJoin(userPlace, eq(listPlace.userPlaceId, userPlace.id))
-        .innerJoin(place, eq(userPlace.place_id, place.id))
-        .where(eq(listPlace.listId, listId))
 
       // Use shared utility to get place details and aggregate data
       await refreshPlaces(
-        places.map((place) => place.id),
+        cacheMisses.map((place) => place.id),
         {
           userId,
           excludeListId: listId,
