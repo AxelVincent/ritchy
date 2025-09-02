@@ -163,19 +163,10 @@ export const getSearchContent = async (
           cacheMisses: cacheMisses.length,
         },
       })
-      // Get all place IDs in the list with their searchId
-      const places = await db
-        .select({
-          id: userPlace.id,
-        })
-        .from(searchPlace)
-        .innerJoin(userPlace, eq(searchPlace.userPlaceId, userPlace.id))
-        .innerJoin(place, eq(userPlace.place_id, place.id))
-        .where(eq(searchPlace.searchId, searchId))
 
       // Use shared utility to get place details and aggregate data
       await refreshPlaces(
-        places.map((place) => place.id),
+        cacheMisses.map((place) => place.id),
         {
           userId,
         },
@@ -184,7 +175,7 @@ export const getSearchContent = async (
         msg: 'Places refreshed',
         event: 'places_refreshed',
         metadata: {
-          places: places.map((place) => place.id),
+          places: cacheMisses.map((place) => place.id),
         },
       })
       placesResults = await getAggregatedUserPlaces(userId, searchId, undefined)
