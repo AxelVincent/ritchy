@@ -7,6 +7,11 @@ import {
 import { vectorStore } from './utils/vector_store'
 
 export const getWebsiteDescription = async (domain: string) => {
+  logger.debug({
+    msg: 'Getting website description',
+    event: 'get_website_description_start',
+    metadata: { domain },
+  })
   try {
     const content = await vectorStore.similaritySearch('content', 150, {
       must: [

@@ -1,23 +1,27 @@
 import { Queue, QueueEvents } from 'bullmq'
 import { bullmqRedisOptions } from '../../config'
 
-export const scraperQueue = new Queue('scraper', {
+export const queueName = 'scraper'
+export const scraperQueue = new Queue(queueName, {
   connection: bullmqRedisOptions,
   defaultJobOptions: {
-    attempts: 1,
+    attempts: 1, // Increase attempts
     backoff: {
       type: 'exponential',
-      delay: 1000,
+      delay: 2000, // Increase delay
     },
     removeOnComplete: {
       age: 300,
       count: 1000,
     },
-    removeOnFail: false,
+    removeOnFail: {
+      age: 600,
+      count: 100,
+    },
   },
 })
 
-const scraperQueueEvents = new QueueEvents('scraper', {
+const scraperQueueEvents = new QueueEvents(queueName, {
   connection: bullmqRedisOptions,
 })
 
@@ -27,7 +31,7 @@ export const enqueueScraperJob = async (
   onlyMainContent: boolean,
   userPlaceId: string,
 ) => {
-  const job = await scraperQueue.add('scraper', {
+  const job = await scraperQueue.add(queueName, {
     url,
     enrichmentId,
     onlyMainContent,

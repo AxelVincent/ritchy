@@ -1,6 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -133,5 +134,7 @@ export const userPlace = pgTable(
   (table) => [
     uniqueIndex('uniq_user_place').on(table.user_id, table.place_id),
     unique().on(table.place_id, table.user_id),
+    index('idx_user_place_place_id').on(table.place_id),
+    index('idx_user_place_user_id').on(table.user_id),
   ],
 )

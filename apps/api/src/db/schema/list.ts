@@ -10,16 +10,20 @@ import { userPlace } from './place'
 import { search } from './search'
 import { user } from './user'
 
-export const list = pgTable('list', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name').notNull(),
-  emoji: text('emoji').notNull(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+export const list = pgTable(
+  'list',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    emoji: text('emoji').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('idx_list_user_id').on(table.userId)],
+)
 
 export const listPlace = pgTable(
   'list_place',
@@ -40,5 +44,7 @@ export const listPlace = pgTable(
   (table) => [
     unique().on(table.listId, table.userPlaceId),
     index('idx_list_place_list_id').on(table.listId),
+    index('idx_list_place_user_place_id').on(table.userPlaceId),
+    index('idx_list_place_search_id').on(table.searchId),
   ],
 )

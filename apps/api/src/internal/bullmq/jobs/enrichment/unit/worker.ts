@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { websiteEnrichmentManager } from 'apps/api/src/services/enrichment/website_enrichment_manager'
 import { type Job, Worker } from 'bullmq'
-import { bullmqRedisOptions } from '../../../config'
+import { bullmqRedisOptions, workerConfig } from '../../../config'
 
 export interface EnrichmentUnitJobData {
   userPlaceId: string
@@ -21,7 +21,7 @@ const worker = new Worker<EnrichmentUnitJobData>(
       max: 200,
       duration: 60000,
     },
-    concurrency: 75,
+    concurrency: workerConfig.enrichment_unit.concurrency,
   },
 )
 

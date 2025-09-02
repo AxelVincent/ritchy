@@ -2,6 +2,7 @@ import { type InferSelectModel, sql } from 'drizzle-orm'
 import {
   boolean,
   check,
+  index,
   pgEnum,
   pgTable,
   text,
@@ -31,6 +32,7 @@ export const contact = pgTable(
     uniqueIndex('one_primary_per_place')
       .on(table.userPlaceId)
       .where(sql`${table.isPrimary} = true`),
+    index('idx_contact_user_place_id').on(table.userPlaceId),
   ],
 )
 
@@ -53,6 +55,7 @@ export const contactEmail = pgTable(
     uniqueIndex('one_primary_email_per_contact')
       .on(table.contactId)
       .where(sql`${table.isPrimary} = true`),
+    index('idx_contact_email_contact_id').on(table.contactId),
   ],
 )
 
@@ -74,6 +77,7 @@ export const contactSocialMedia = pgTable(
     uniqueIndex('one_primary_social_media_per_contact')
       .on(table.contactId)
       .where(sql`${table.isPrimary} = true`),
+    index('idx_contact_social_media_contact_id').on(table.contactId),
   ],
 )
 
@@ -109,5 +113,6 @@ export const contactPhone = pgTable(
     uniqueIndex('one_primary_phone_per_contact')
       .on(table.contactId)
       .where(sql`${table.isPrimary} = true`),
+    index('idx_contact_phone_contact_id').on(table.contactId),
   ],
 )

@@ -27,20 +27,5 @@ export const getBusinessCountryCodeByEnrichmentId = async (
   if (!place) {
     return null
   }
-  logger.debug({
-    msg: 'Getting place from enrichment',
-    event: 'getting_place_from_enrichment',
-    metadata: { place },
-  })
-  const key = REDIS_KEYS.place(place.place.source_id)
-  const sourcePlace = await redisClient.get<PreferredPlace>(key)
-
-  if (!sourcePlace) {
-    return null
-  }
-  return (
-    sourcePlace.data.addressComponents?.find((component) =>
-      component.types?.includes('country'),
-    )?.shortText ?? null
-  )
+  return place.place.country
 }
