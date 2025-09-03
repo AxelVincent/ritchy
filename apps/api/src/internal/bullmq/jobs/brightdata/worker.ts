@@ -5,18 +5,28 @@ import { bullmqRedisOptions, workerConfig } from '../../config'
 import { createLockRenewal } from '../../utils/lock-renewal'
 import { queueName } from './queue'
 
+// Configuration for Brightdata worker timeout
+const BRIGHTDATA_TIMEOUT_MS = 120000 // 2 minutes
+const BRIGHTDATA_LOCK_DURATION_MS = 60000 // 60 seconds
+const BRIGHTDATA_RENEWAL_INTERVAL_MS = 30000 // 30 seconds
+
 const brightdataWorker = new Worker(
   queueName,
   async (job) => {
     const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
       job,
       queueName,
+      {
+        maxDuration: BRIGHTDATA_TIMEOUT_MS,
+        renewalInterval: BRIGHTDATA_RENEWAL_INTERVAL_MS,
+        lockDuration: BRIGHTDATA_LOCK_DURATION_MS,
+      },
     )
 
     try {
       const { url } = job.data
 
-      // Start lock renewal
+      // Start lock renewal with timeout
       setupLockRenewal()
 
       const result = await webUnblocker(url)
@@ -49,8 +59,8 @@ const brightdataWorker = new Worker(
       duration: 60000,
     },
     concurrency: workerConfig.brightdata.concurrency,
-    lockDuration: 60000, // 60 seconds
-    lockRenewTime: 30000, // 30 seconds
+    lockDuration: BRIGHTDATA_LOCK_DURATION_MS,
+    lockRenewTime: BRIGHTDATA_RENEWAL_INTERVAL_MS,
   },
 )
 
