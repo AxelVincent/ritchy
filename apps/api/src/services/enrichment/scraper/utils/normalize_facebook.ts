@@ -19,6 +19,8 @@ const FACEBOOK_EXCLUDED_PATHS = [
   'ad_campaign',
   'people',
   'pg',
+  'l.php',
+  'Prem',
 ] as const
 
 export function normalizeFacebook(url: string): NormalizedFacebook | null {
