@@ -2,6 +2,12 @@ import { logger } from '@ritchy/logger'
 import { websiteEnrichmentManager } from 'apps/api/src/services/enrichment/website_enrichment_manager'
 import { type Job, Worker } from 'bullmq'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
+import { createLockRenewal } from '../../../utils/lock-renewal'
+import { queueName } from './queue'
+
+const ENRICHMENT_UNIT_TIMEOUT_MS = 600000 // 10 minutes
+const ENRICHMENT_UNIT_LOCK_DURATION_MS = 120000 // 120 seconds
+const ENRICHMENT_UNIT_RENEWAL_INTERVAL_MS = 60000 // 60 seconds
 
 export interface EnrichmentUnitJobData {
   userPlaceId: string
@@ -9,11 +15,37 @@ export interface EnrichmentUnitJobData {
 
 const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
   const { userPlaceId } = job.data
-  await websiteEnrichmentManager({ userPlaceId })
+  const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
+    job,
+    queueName,
+    {
+      maxDuration: ENRICHMENT_UNIT_TIMEOUT_MS,
+      renewalInterval: ENRICHMENT_UNIT_RENEWAL_INTERVAL_MS,
+      lockDuration: ENRICHMENT_UNIT_LOCK_DURATION_MS,
+    },
+  )
+  try {
+    setupLockRenewal()
+
+    await websiteEnrichmentManager({ userPlaceId })
+
+    cleanupLockRenewal()
+  } catch (error) {
+    logger.error({
+      msg: 'Enrichment unit job failed',
+      event: 'enrichment_unit_error',
+      metadata: {
+        jobId: job.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+  } finally {
+    cleanupLockRenewal()
+  }
 }
 
 const worker = new Worker<EnrichmentUnitJobData>(
-  'enrichment-unit',
+  queueName,
   processEnrichmentUnitJob,
   {
     connection: bullmqRedisOptions,

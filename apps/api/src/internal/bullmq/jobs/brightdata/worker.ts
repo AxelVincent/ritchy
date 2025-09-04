@@ -22,34 +22,29 @@ const brightdataWorker = new Worker(
         lockDuration: BRIGHTDATA_LOCK_DURATION_MS,
       },
     )
+    const { url } = job.data
 
     try {
-      const { url } = job.data
-
-      // Start lock renewal with timeout
       setupLockRenewal()
 
       const result = await webUnblocker(url)
-
-      // Check if the request was successful based on status code
       const isSuccess = result.status_code >= 200 && result.status_code < 300
 
-      // Clean up lock renewal
       cleanupLockRenewal()
-
       return {
         ...result,
         success: isSuccess,
         error: isSuccess ? undefined : `HTTP ${result.status_code}`,
       }
     } catch (error) {
-      // Clean up lock renewal on error
       cleanupLockRenewal()
 
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
       }
+    } finally {
+      cleanupLockRenewal()
     }
   },
   {

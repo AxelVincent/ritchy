@@ -15,7 +15,6 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
   let processedCount = 0
 
   try {
-    // Start lock renewal
     setupLockRenewal()
 
     await Promise.all(
@@ -67,8 +66,6 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
     if (errors.length > 0) {
       throw new Error(`Completed with ${errors.length} errors`)
     }
-
-    // Clean up lock renewal
     cleanupLockRenewal()
 
     logger.info({
@@ -77,7 +74,6 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
       metadata: { jobId: job.id, totalProcessed: processedCount },
     })
   } catch (error) {
-    // Clean up lock renewal on error
     cleanupLockRenewal()
 
     logger.error({
