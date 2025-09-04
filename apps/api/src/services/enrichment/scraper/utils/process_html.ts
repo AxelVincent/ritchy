@@ -17,7 +17,7 @@ export type ProcessedHtml = {
  */
 export const processHtml = (html: string, url?: string): ProcessedHtml => {
   let dom: JSDOM | null = null
-  const maxHtmlSize = 1 * 1024 * 1024 // 1MB
+  const maxHtmlSize = 1.5 * 1024 * 1024 // 1.5MB
   if (html.length > maxHtmlSize) {
     logger.error({
       msg: `[Process HTML] HTML size exceeds limit for ${url}`,

@@ -178,7 +178,7 @@ export const getAggregatedUserPlaces = async (
     LEFT JOIN LATERAL (
       SELECT 
         JSONB_AGG(
-          JSONB_BUILD_OBJECT(
+          DISTINCT JSONB_BUILD_OBJECT(
             'id', ce.id,
             'email', ce.email,
             'is_primary', ce.is_primary,
@@ -188,7 +188,7 @@ export const getAggregatedUserPlaces = async (
           )
         ) FILTER (WHERE ce.id IS NOT NULL) as contact_emails,
         JSONB_AGG(
-          JSONB_BUILD_OBJECT(
+          DISTINCT JSONB_BUILD_OBJECT(
             'id', cp.id,
             'phone', cp.phone,
             'type', cp.type,
@@ -198,7 +198,7 @@ export const getAggregatedUserPlaces = async (
           )
         ) FILTER (WHERE cp.id IS NOT NULL) as contact_phones,
         JSONB_AGG(
-          JSONB_BUILD_OBJECT(
+          DISTINCT JSONB_BUILD_OBJECT(
             'id', csm.id,
             'url', csm.url,
             'is_primary', csm.is_primary,
@@ -208,7 +208,7 @@ export const getAggregatedUserPlaces = async (
           )
         ) FILTER (WHERE csm.id IS NOT NULL AND csm.social_media_platform = 'LINKEDIN') as contact_linkedins,
         JSONB_AGG(
-          JSONB_BUILD_OBJECT(
+          DISTINCT JSONB_BUILD_OBJECT(
             'id', csm.id,
             'url', csm.url,
             'is_primary', csm.is_primary,
@@ -218,7 +218,7 @@ export const getAggregatedUserPlaces = async (
           )
         ) FILTER (WHERE csm.id IS NOT NULL AND csm.social_media_platform = 'INSTAGRAM') as contact_instagrams,
         JSONB_AGG(
-          JSONB_BUILD_OBJECT(
+          DISTINCT JSONB_BUILD_OBJECT(
             'id', csm.id,
             'url', csm.url,
             'is_primary', csm.is_primary,
