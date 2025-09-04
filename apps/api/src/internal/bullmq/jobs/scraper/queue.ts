@@ -5,10 +5,10 @@ export const queueName = 'scraper'
 export const scraperQueue = new Queue(queueName, {
   connection: bullmqRedisOptions,
   defaultJobOptions: {
-    attempts: 1, // Increase attempts
+    attempts: 1,
     backoff: {
       type: 'exponential',
-      delay: 2000, // Increase delay
+      delay: 2000,
     },
     removeOnComplete: {
       age: 300,

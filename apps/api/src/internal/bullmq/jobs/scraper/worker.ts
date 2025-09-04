@@ -6,12 +6,21 @@ import { workerConfig } from '../../config'
 import { createLockRenewal } from '../../utils/lock-renewal'
 import { queueName } from './queue'
 
+const SCRAPER_TIMEOUT_MS = 180000 // 3 minutes
+const SCRAPER_LOCK_DURATION_MS = 120000 // 120 seconds
+const SCRAPER_RENEWAL_INTERVAL_MS = 60000 // 60 seconds
+
 const scraperWorker = new Worker(
   queueName,
   async (job: Job) => {
     const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
       job,
       queueName,
+      {
+        maxDuration: SCRAPER_TIMEOUT_MS,
+        renewalInterval: SCRAPER_RENEWAL_INTERVAL_MS,
+        lockDuration: SCRAPER_LOCK_DURATION_MS,
+      },
     )
     const { url, enrichmentId, onlyMainContent, userPlaceId } = job.data
     try {
@@ -21,7 +30,6 @@ const scraperWorker = new Worker(
         event: 'scraper_started',
       })
 
-      // Start lock renewal immediately
       setupLockRenewal()
 
       const result = await scrapeWebsiteManager(
@@ -31,9 +39,7 @@ const scraperWorker = new Worker(
         userPlaceId,
       )
 
-      // Clean up lock renewal
       cleanupLockRenewal()
-
       logger.info({
         msg: 'Scraper job completed successfully',
         metadata: { jobId: job.id },
@@ -42,7 +48,6 @@ const scraperWorker = new Worker(
 
       return result
     } catch (error) {
-      // Clean up lock renewal on error
       cleanupLockRenewal()
 
       logger.error({
