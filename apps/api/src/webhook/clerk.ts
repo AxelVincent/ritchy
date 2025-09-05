@@ -7,7 +7,9 @@ import crypto from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { db } from '../db/db'
 import { user, userDemoCode, webhookEvent } from '../db/schema'
+import { credits } from '../db/schema/credits'
 import { sendSlackNotification } from '../external/slack/slack'
+import { CREDIT_CONFIG } from '../services/payment/config'
 import { deleteUser } from '../services/user/deleteUser'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
@@ -166,6 +168,25 @@ export const clerkWebhook = async (
                   metadata: {
                     userId: createdUser.id,
                     demoCode: demoCodeString,
+                  },
+                })
+                const creditConfig = CREDIT_CONFIG.find(
+                  (config) => config.plan === 'FREE',
+                )
+                const enrichment = creditConfig?.credits.enrichment ?? 0
+                const search = creditConfig?.credits.search ?? 0
+                await db.insert(credits).values({
+                  userId: createdUser.id,
+                  enrichment: enrichment,
+                  search: search,
+                })
+                logger.info({
+                  msg: 'Credits generated for new user',
+                  event: 'credits_generated',
+                  metadata: {
+                    userId: createdUser.id,
+                    enrichment: 20,
+                    search: 200,
                   },
                 })
               } else {
