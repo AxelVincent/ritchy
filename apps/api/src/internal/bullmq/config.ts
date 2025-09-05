@@ -16,11 +16,30 @@ const env = envSchema.parse(process.env)
 export const workerConfig = {
   scraper: {
     concurrency: Number.parseInt(env.SCRAPER_CONCURRENCY),
+    lockDuration: 360000,
+    renewalInterval: 120000,
+    stalledInterval: 60000,
+    maxStalledCount: 2,
   },
   brightdata: {
     concurrency: Number.parseInt(env.BRIGHTDATA_CONCURRENCY),
+    lockDuration: 90000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
   },
   enrichment_unit: {
     concurrency: Number.parseInt(env.ENRICHMENT_UNIT_CONCURRENCY),
+    lockDuration: 3000000,
+    renewalInterval: 600000,
+    stalledInterval: 300000,
+    maxStalledCount: 2,
+  },
+  enrichment_batch: {
+    concurrency: 10,
+    lockDuration: 600000,
+    renewalInterval: 180000,
+    stalledInterval: 120000,
+    maxStalledCount: 2,
   },
 }

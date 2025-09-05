@@ -1,22 +1,15 @@
 import { logger } from '@ritchy/logger'
 import { type Job, Worker } from 'bullmq'
 import { bullmqRedisOptions } from '../../../config'
-import { createLockRenewal } from '../../../utils/lock-renewal'
 import { enqueueEnrichmentUnitJob } from '../unit/queue'
 import { type EnrichmentBatchJobData, queueName } from './queue'
 
 const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
-  const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
-    job,
-    queueName,
-  )
   const { enrichments, totalCount } = job.data
   const errors: Array<{ userPlaceId: string; error: string }> = []
   let processedCount = 0
 
   try {
-    setupLockRenewal()
-
     await Promise.all(
       enrichments.map(async (enrichment) => {
         try {
@@ -66,7 +59,6 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
     if (errors.length > 0) {
       throw new Error(`Completed with ${errors.length} errors`)
     }
-    cleanupLockRenewal()
 
     logger.info({
       msg: 'Enrichment batch completed successfully',
@@ -74,8 +66,6 @@ const processEnrichmentBatchJob = async (job: Job<EnrichmentBatchJobData>) => {
       metadata: { jobId: job.id, totalProcessed: processedCount },
     })
   } catch (error) {
-    cleanupLockRenewal()
-
     logger.error({
       msg: 'Enrichment batch failed',
       event: 'enrichment_batch_failed',
