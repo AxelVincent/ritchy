@@ -3,21 +3,12 @@ import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
 import { useUser } from '@clerk/clerk-react'
-import {
-  type EnrichmentWithStatus,
-  PlaceSchema,
-  SOCIAL_MEDIA_CONFIG,
-  type SearchResult,
-  type SocialMediaPlatformEnum,
-} from '@ritchy/types'
+import { PlaceSchema, type SearchResult } from '@ritchy/types'
 import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
 import posthog from 'posthog-js'
 import { useState } from 'react'
 import React from 'react'
-import { z } from 'zod'
-
-type SocialMediaPlatform = z.infer<typeof SocialMediaPlatformEnum>
 
 interface DataExportProps {
   /** Array of search results to export. If selectedRows is undefined, all data will be exported */
@@ -130,6 +121,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
 
     try {
       setIsExporting(true)
+      console.log('selectedRows', selectedRows)
 
       // Create a copy of the data with properly structured fields
       const exportData = selectedRows.map((row) => ({
@@ -138,94 +130,72 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         domainRegisteredAt: row.domainRegisteredAt
           ? new Date(row.domainRegisteredAt)
           : null,
-        enrichedAt: row.enrichedAt ? new Date(row.enrichedAt) : null,
-        facebookSocials: row.contactFacebooks
-          ?.filter((social) => social.url && social.url.trim() !== '')
-          ?.map((social) => ({
-            ...social,
-            createdAt: social.createdAt
-              ? new Date(social.createdAt)
-              : social.createdAt,
-            updatedAt: social.updatedAt
-              ? new Date(social.updatedAt)
-              : social.updatedAt,
-          })),
-        instagramSocials: row.contactInstagrams
-          ?.filter((social) => social.url && social.url.trim() !== '')
-          ?.map((social) => ({
-            ...social,
-            createdAt: social.createdAt
-              ? new Date(social.createdAt)
-              : social.createdAt,
-            updatedAt: social.updatedAt
-              ? new Date(social.updatedAt)
-              : social.updatedAt,
-          })),
-        linkedinSocials: row.contactLinkedins
-          ?.filter((social) => social.url && social.url.trim() !== '')
-          ?.map((social) => ({
-            ...social,
-            createdAt: social.createdAt
-              ? new Date(social.createdAt)
-              : social.createdAt,
-            updatedAt: social.updatedAt
-              ? new Date(social.updatedAt)
-              : social.updatedAt,
-          })),
-        emails: row.contactEmails
-          ?.filter((email) => {
-            if (!email.email || email.email.trim() === '') return false
-            try {
-              // Use Zod's email validation directly
-              z.string().email().parse(email.email.trim())
-              return true
-            } catch {
-              return false
-            }
-          })
-          ?.map((email) => ({
-            ...email,
-            createdAt: email.createdAt
-              ? new Date(email.createdAt)
-              : email.createdAt,
-            updatedAt: email.updatedAt
-              ? new Date(email.updatedAt)
-              : email.updatedAt,
-          })),
-        phones: row.contactPhones
-          ?.filter((phone) => phone.phone && phone.phone.trim() !== '')
-          ?.map((phone) => ({
+        enrichedStatus: row.enrichedStatus || null,
+        // Ensure contact arrays are properly structured
+        contactEmails: (row.contactEmails || []).map((email) => ({
+          ...email,
+          isPrimary: email.isPrimary ?? false,
+          contactId: email.contactId || row.id,
+          createdAt: email.createdAt ? new Date(email.createdAt) : new Date(),
+          updatedAt: email.updatedAt ? new Date(email.updatedAt) : new Date(),
+        })),
+        contactPhones: (row.contactPhones || [])
+          .filter((phone) => phone?.phone && phone.phone.trim() !== '')
+          .map((phone) => ({
             ...phone,
-            createdAt: phone.createdAt
-              ? new Date(phone.createdAt)
-              : phone.createdAt,
-            updatedAt: phone.updatedAt
-              ? new Date(phone.updatedAt)
-              : phone.updatedAt,
+            isPrimary: phone.isPrimary ?? false,
+            createdAt: phone.createdAt ? new Date(phone.createdAt) : new Date(),
+            updatedAt: phone.updatedAt ? new Date(phone.updatedAt) : new Date(),
           })),
+        contactLinkedins: (row.contactLinkedins || [])
+          .filter((social) => social?.url && social.url.trim() !== '')
+          .map((social) => ({
+            ...social,
+            socialMediaPlatform: 'LINKEDIN' as const,
+            isPrimary: social.isPrimary ?? false,
+            contactId: social.contactId || row.id,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : new Date(),
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : new Date(),
+          })),
+        contactFacebooks: (row.contactFacebooks || [])
+          .filter((social) => social?.url && social.url.trim() !== '')
+          .map((social) => ({
+            ...social,
+            socialMediaPlatform: 'FACEBOOK' as const,
+            isPrimary: social.isPrimary ?? false,
+            contactId: social.contactId || row.id,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : new Date(),
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : new Date(),
+          })),
+        contactInstagrams: (row.contactInstagrams || [])
+          .filter((social) => social?.url && social.url.trim() !== '')
+          .map((social) => ({
+            ...social,
+            socialMediaPlatform: 'INSTAGRAM' as const,
+            isPrimary: social.isPrimary ?? false,
+            contactId: social.contactId || row.id,
+            createdAt: social.createdAt
+              ? new Date(social.createdAt)
+              : new Date(),
+            updatedAt: social.updatedAt
+              ? new Date(social.updatedAt)
+              : new Date(),
+          })),
+        // Ensure lists have required fields
+        lists: (row.lists || []).map((list) => ({
+          ...list,
+          name: list.name || '',
+          emoji: list.emoji || '',
+        })),
       }))
-
-      // Create a Map of website URIs to enrichment data
-      const enrichmentMap = new Map<string, EnrichmentWithStatus>(
-        selectedRows
-          .filter((row) => row.website)
-          .map((row) => {
-            // Ensure we always create a valid EnrichmentState object
-            const baseEnrichmentState: EnrichmentWithStatus = {
-              id: row.id,
-              emails: [],
-              socialLinks: {},
-              isLoading: false,
-              error: undefined,
-            }
-
-            const state = {
-              ...baseEnrichmentState,
-              domainRegisteredAt: row.domainRegisteredAt,
-            }
-            return [row.website, state] as [string, EnrichmentWithStatus]
-          }),
-      )
 
       const columns = [
         {
@@ -270,65 +240,33 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
         },
         {
           header: 'Phones',
-          field: 'phones',
+          field: 'contactPhones',
           accessor: (row: SearchResult): string =>
             (row.contactPhones || []).join(', '),
         },
         {
-          header: 'Primary Email',
-          field: 'emails',
+          header: 'Emails',
+          field: 'contactEmails',
           accessor: (row: SearchResult): string =>
-            row.contactEmails?.[0]?.email || '',
+            row.contactEmails?.map((e) => e.email).join(', ') || '',
         },
         {
-          header: 'Secondary Emails',
+          header: 'LinkedIn Socials',
+          field: 'contactLinkedins',
           accessor: (row: SearchResult): string =>
-            (row.contactEmails || [])
-              .slice(1)
-              .map((e) => e.email)
-              .join(', '),
+            row.contactLinkedins?.map((s) => s.url).join(', ') || '',
         },
         {
-          header: 'Primary LinkedIn Social',
-          field: 'linkedinSocials',
+          header: 'Facebook Socials',
+          field: 'contactFacebooks',
           accessor: (row: SearchResult): string =>
-            row.contactLinkedins?.[0]?.url || '',
+            row.contactFacebooks?.map((s) => s.url).join(', ') || '',
         },
         {
-          header: 'Primary Facebook Social',
-          field: 'facebookSocials',
+          header: 'Instagram Socials',
+          field: 'contactInstagrams',
           accessor: (row: SearchResult): string =>
-            row.contactFacebooks?.[0]?.url || '',
-        },
-        {
-          header: 'Primary Instagram Social',
-          field: 'instagramSocials',
-          accessor: (row: SearchResult): string =>
-            row.contactInstagrams?.[0]?.url || '',
-        },
-        {
-          header: 'Secondary LinkedIn Socials',
-          accessor: (row: SearchResult): string =>
-            (row.contactLinkedins || [])
-              .slice(1)
-              .map((s) => s.url)
-              .join(', '),
-        },
-        {
-          header: 'Secondary Facebook Socials',
-          accessor: (row: SearchResult): string =>
-            (row.contactFacebooks || [])
-              .slice(1)
-              .map((s) => s.url)
-              .join(', '),
-        },
-        {
-          header: 'Secondary Instagram Socials',
-          accessor: (row: SearchResult): string =>
-            (row.contactInstagrams || [])
-              .slice(1)
-              .map((s) => s.url)
-              .join(', '),
+            row.contactInstagrams?.map((s) => s.url).join(', ') || '',
         },
         {
           header: 'Rating',
@@ -515,28 +453,6 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.status || 'NEW',
         },
         {
-          header: 'Emails',
-          accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
-              : null
-            return enrichData?.emails?.join(', ') || ''
-          },
-        },
-        ...Object.keys(SOCIAL_MEDIA_CONFIG).map((platform) => ({
-          header: `${platform.charAt(0).toUpperCase()}${platform.slice(1)}`,
-          accessor: (row: SearchResult): string => {
-            const enrichData = row.website
-              ? enrichmentMap.get(row.website)
-              : null
-            return (
-              enrichData?.socialLinks[platform as SocialMediaPlatform]?.join(
-                ', ',
-              ) || ''
-            )
-          },
-        })),
-        {
           header: 'Domain Registration Date',
           field: 'domainRegisteredAt',
           accessor: (row: SearchResult): string => {
@@ -549,10 +465,9 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           accessor: (row: SearchResult): string => row.description || '',
         },
         {
-          header: 'Enriched At',
-          field: 'enrichedAt',
-          accessor: (row: SearchResult): string =>
-            row.enrichedAt?.toISOString() || '',
+          header: 'Enriched Status',
+          field: 'enrichedStatus',
+          accessor: (row: SearchResult): string => row.enrichedStatus || '',
         },
       ]
 
