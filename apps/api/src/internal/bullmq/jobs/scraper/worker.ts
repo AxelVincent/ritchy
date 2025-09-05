@@ -3,35 +3,19 @@ import { scrapeWebsiteManager } from 'apps/api/src/services/enrichment/scraper/s
 import { type Job, Worker } from 'bullmq'
 import { bullmqRedisOptions } from '../../config'
 import { workerConfig } from '../../config'
-import { createLockRenewal } from '../../utils/lock-renewal'
 import { queueName } from './queue'
-
-const SCRAPER_TIMEOUT_MS = 180000 // 3 minutes
-const SCRAPER_LOCK_DURATION_MS = 120000 // 120 seconds
-const SCRAPER_RENEWAL_INTERVAL_MS = 60000 // 60 seconds
 
 const scraperWorker = new Worker(
   queueName,
   async (job: Job) => {
-    const { setupLockRenewal, cleanupLockRenewal } = createLockRenewal(
-      job,
-      queueName,
-      {
-        maxDuration: SCRAPER_TIMEOUT_MS,
-        renewalInterval: SCRAPER_RENEWAL_INTERVAL_MS,
-        lockDuration: SCRAPER_LOCK_DURATION_MS,
-      },
-    )
     const { url, enrichmentId, onlyMainContent, userPlaceId } = job.data
+
     try {
       logger.info({
         msg: 'Starting scraper job',
         metadata: { jobId: job.id, url },
         event: 'scraper_started',
       })
-
-      setupLockRenewal()
-
       const result = await scrapeWebsiteManager(
         url,
         enrichmentId,
@@ -39,7 +23,6 @@ const scraperWorker = new Worker(
         userPlaceId,
       )
 
-      cleanupLockRenewal()
       logger.info({
         msg: 'Scraper job completed successfully',
         metadata: { jobId: job.id },
@@ -48,8 +31,6 @@ const scraperWorker = new Worker(
 
       return result
     } catch (error) {
-      cleanupLockRenewal()
-
       logger.error({
         msg: 'Scraper job failed',
         metadata: {
@@ -70,10 +51,10 @@ const scraperWorker = new Worker(
       duration: 60000,
     },
     concurrency: workerConfig.scraper.concurrency,
-    lockDuration: 120000,
-    lockRenewTime: 60000,
-    stalledInterval: 60000,
-    maxStalledCount: 3,
+    lockDuration: workerConfig.scraper.lockDuration,
+    lockRenewTime: workerConfig.scraper.renewalInterval,
+    stalledInterval: workerConfig.scraper.stalledInterval,
+    maxStalledCount: workerConfig.scraper.maxStalledCount,
   },
 )
 
