@@ -134,14 +134,21 @@ export const HeaderWrapper = ({
                         <div className="text-sm">
                           Look for the magic wand indicators in enriched cells:
                           <div className="mt-1 space-y-1">
-                            <div className="flex items-center gap-1">
-                              <MagicWandIcon className="h-2.5 w-2.5 mr-1 text-blue-400" />
-                              <span>shows enriched data</span>
+                            <div className="flex items-start gap-2">
+                              <MagicWandIcon className="h-2.5 w-2.5 flex-shrink-0 text-blue-400 mt-1.5" />
+                              <span>Enriched data</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <MagicWandIcon className="h-2.5 w-2.5 mr-1 text-green-400" />
+                            <div className="flex items-start gap-2">
+                              <MagicWandIcon className="h-2.5 w-2.5 flex-shrink-0 text-green-400 mt-1.5" />
                               <span>
-                                shows recently enriched data (last 30 minutes)
+                                Recently enriched data (last 30 minutes)
+                              </span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <MagicWandIcon className="h-2.5 w-2.5 flex-shrink-0 text-red-400 mt-1.5" />
+                              <span>
+                                Enrichment failed, we were unable to scrape the
+                                website (credits refunded)
                               </span>
                             </div>
                           </div>

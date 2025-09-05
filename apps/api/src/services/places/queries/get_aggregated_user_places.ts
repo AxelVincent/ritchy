@@ -1,4 +1,8 @@
-import type { Place as PlaceApi, PlaceListAssociation } from '@ritchy/types'
+import type {
+  EnrichedStatus,
+  Place as PlaceApi,
+  PlaceListAssociation,
+} from '@ritchy/types'
 import { db } from 'apps/api/src/db/db'
 import { type InferSelectModel, sql } from 'drizzle-orm'
 import type {
@@ -47,6 +51,7 @@ export interface AggregatedUserPlace extends Place {
   short_description: Enrichment['shortDescription']
   domain_registered_at: Enrichment['domainRegisteredAt']
   enriched_at: UserPlace['enriched_at']
+  success: Enrichment['success']
 }
 
 export const getAggregatedUserPlaces = async (
@@ -136,7 +141,8 @@ export const getAggregatedUserPlaces = async (
       -- Enrichment fields
       e.description,
       e.short_description,
-      e.domain_registered_at
+      e.domain_registered_at,
+      e.success
     FROM "user" u
     LEFT JOIN "search" s ON s.user_id = u.id ${searchCondition}
     LEFT JOIN "search_place" sp ON sp.search_id = s.id
@@ -239,51 +245,70 @@ export const getAggregatedUserPlaces = async (
 
   const result = (await db.execute(query)) as unknown as AggregatedUserPlace[]
 
-  return result.map((result) => ({
-    id: result.user_place_id,
-    name: result.name ?? '',
-    sourceId: result.source_id,
-    location: result.location ?? { latitude: 0, longitude: 0 },
-    website: result.website ?? undefined,
-    types: result.types ?? [],
-    primaryType: result.primary_type ?? undefined,
-    priceLevel: result.price_level ?? undefined,
-    priceRange: result.price_range ?? undefined,
-    rating: result.rating ?? undefined,
-    ratingCount: result.rating_count ?? undefined,
-    utcOffsetMinutes: result.utc_offset_minutes ?? 0,
-    googleMapsUri: result.source_url ?? null,
-    phone: result.phone ?? undefined,
-    isDeleted: result.is_deleted ?? false,
-    address: {
-      formattedAddress: result.formatted_address ?? undefined,
-      shortFormattedAddress: result.short_formatted_address ?? undefined,
-      country: result.country ?? undefined,
-      locality: result.locality ?? undefined,
-      sublocality: result.sublocality ?? undefined,
-      postalCode: result.postal_code ?? undefined,
-      postalCodeSuffix: result.postal_code_suffix ?? undefined,
-      plusCode: result.plus_code ?? undefined,
-      street: result.street ?? undefined,
-      streetNumber: result.street_number ?? undefined,
-      neighborhood: result.neighborhood ?? undefined,
-      administrativeAreaLevel1: result.administrative_area_level_1 ?? undefined,
-      administrativeAreaLevel2: result.administrative_area_level_2 ?? undefined,
-      administrativeAreaLevel3: result.administrative_area_level_3 ?? undefined,
-    },
-    listId: listId ?? null,
-    lists: result.lists,
-    notes: result.notes,
-    status: result.status,
-    domainRegisteredAt: result.domain_registered_at,
-    description: result.description,
-    shortDescription: result.short_description,
-    contactEmails: result.contact_emails,
-    contactPhones: result.contact_phones,
-    contactLinkedins: result.contact_linkedins,
-    contactInstagrams: result.contact_instagrams,
-    contactFacebooks: result.contact_facebooks,
-    hubspotSynced: false,
-    enrichedAt: result.enriched_at,
-  }))
+  return result.map((result) => {
+    // Calculate enriched status based on enrichment success and timing
+    let enrichedStatus: EnrichedStatus | null = null
+
+    if (result.enriched_at && result.success !== undefined) {
+      if (result.success === false) {
+        enrichedStatus = 'ENRICHMENT_ERROR'
+      } else if (result.success === true) {
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
+        const enrichedAt = new Date(result.enriched_at)
+        enrichedStatus =
+          enrichedAt > thirtyMinutesAgo ? 'RECENTLY_ENRICHED' : 'ENRICHED'
+      }
+    }
+
+    return {
+      id: result.user_place_id,
+      name: result.name ?? '',
+      sourceId: result.source_id,
+      location: result.location ?? { latitude: 0, longitude: 0 },
+      website: result.website ?? undefined,
+      types: result.types ?? [],
+      primaryType: result.primary_type ?? undefined,
+      priceLevel: result.price_level ?? undefined,
+      priceRange: result.price_range ?? undefined,
+      rating: result.rating ?? undefined,
+      ratingCount: result.rating_count ?? undefined,
+      utcOffsetMinutes: result.utc_offset_minutes ?? 0,
+      googleMapsUri: result.source_url ?? null,
+      phone: result.phone ?? undefined,
+      isDeleted: result.is_deleted ?? false,
+      address: {
+        formattedAddress: result.formatted_address ?? undefined,
+        shortFormattedAddress: result.short_formatted_address ?? undefined,
+        country: result.country ?? undefined,
+        locality: result.locality ?? undefined,
+        sublocality: result.sublocality ?? undefined,
+        postalCode: result.postal_code ?? undefined,
+        postalCodeSuffix: result.postal_code_suffix ?? undefined,
+        plusCode: result.plus_code ?? undefined,
+        street: result.street ?? undefined,
+        streetNumber: result.street_number ?? undefined,
+        neighborhood: result.neighborhood ?? undefined,
+        administrativeAreaLevel1:
+          result.administrative_area_level_1 ?? undefined,
+        administrativeAreaLevel2:
+          result.administrative_area_level_2 ?? undefined,
+        administrativeAreaLevel3:
+          result.administrative_area_level_3 ?? undefined,
+      },
+      listId: listId ?? null,
+      lists: result.lists,
+      notes: result.notes,
+      status: result.status,
+      domainRegisteredAt: result.domain_registered_at,
+      description: result.description,
+      shortDescription: result.short_description,
+      contactEmails: result.contact_emails,
+      contactPhones: result.contact_phones,
+      contactLinkedins: result.contact_linkedins,
+      contactInstagrams: result.contact_instagrams,
+      contactFacebooks: result.contact_facebooks,
+      hubspotSynced: false,
+      enrichedStatus,
+    }
+  })
 }

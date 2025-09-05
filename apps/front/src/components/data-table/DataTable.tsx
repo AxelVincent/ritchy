@@ -331,22 +331,26 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       }}
                     >
                       {cell.column.columnDef.meta?.isEnrichment &&
-                        row.original.enrichedAt && (
+                        row.original.enrichedStatus && (
                           <div className="absolute top-1 right-1">
                             <MagicWandIcon
                               className={cn('h-2.5 w-2.5', {
-                                'text-blue-400 dark:text-blue-500':
-                                  new Date(row.original.enrichedAt) <=
-                                  new Date(Date.now() - 1000 * 60 * 30),
                                 'text-green-400 dark:text-green-500':
-                                  new Date(row.original.enrichedAt) >
-                                  new Date(Date.now() - 1000 * 60 * 30),
+                                  row.original.enrichedStatus ===
+                                  'RECENTLY_ENRICHED',
+                                'text-blue-400 dark:text-blue-500':
+                                  row.original.enrichedStatus === 'ENRICHED',
+                                'text-red-400 dark:text-red-500':
+                                  row.original.enrichedStatus ===
+                                  'ENRICHMENT_ERROR',
                               })}
                               aria-label={
-                                new Date(row.original.enrichedAt) >
-                                new Date(Date.now() - 1000 * 60 * 30)
+                                row.original.enrichedStatus ===
+                                'RECENTLY_ENRICHED'
                                   ? 'Recently enriched'
-                                  : 'Previously enriched'
+                                  : row.original.enrichedStatus === 'ENRICHED'
+                                    ? 'Previously enriched'
+                                    : 'Enrichment error'
                               }
                             />
                           </div>

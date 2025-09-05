@@ -114,6 +114,12 @@ export const PriceLevelEnum = z.enum([
   'PRICE_LEVEL_VERY_EXPENSIVE',
 ])
 
+export const EnrichedStatusEnum = z.enum([
+  'RECENTLY_ENRICHED',
+  'ENRICHED',
+  'ENRICHMENT_ERROR',
+])
+
 export const MoneySchema = z.object({
   currencyCode: z.string(),
   units: z.string().optional(),
@@ -227,7 +233,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   contactFacebooks: z.array(SocialMediaSchema).optional(),
   contactInstagrams: z.array(SocialMediaSchema).optional(),
   hubspotSynced: z.boolean(),
-  enrichedAt: z.date().nullable(),
+  enrichedStatus: EnrichedStatusEnum.nullable(),
 })
 
 // Type inference from schemas
@@ -239,3 +245,4 @@ export type PlacesSearchRequestBody = z.infer<
   typeof PlacesSearchRequestBodySchema
 >
 export type PlaceListAssociation = z.infer<typeof PlaceListAssociationSchema>
+export type EnrichedStatus = z.infer<typeof EnrichedStatusEnum>
