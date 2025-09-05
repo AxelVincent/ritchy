@@ -233,6 +233,7 @@ export const websiteEnrichmentManager = async ({
           keywords: metadata.keywords,
           favicon: metadata.favicon,
           robots: metadata.robots,
+          success: true,
           domainRegisteredAt: whoisData?.registrationDate
             ? new Date(whoisData.registrationDate)
             : null,

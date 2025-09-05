@@ -158,7 +158,7 @@ describe('DataExport', () => {
         description: 'Test Description',
         shortDescription: 'Test Short Description',
         isDeleted: false,
-        enrichedAt: new Date(),
+        enrichedStatus: 'RECENTLY_ENRICHED',
       },
     ]
 
@@ -268,7 +268,7 @@ describe('DataExport', () => {
         description: 'Test Description',
         shortDescription: 'Test Short Description',
         isDeleted: false,
-        enrichedAt: new Date(),
+        enrichedStatus: 'RECENTLY_ENRICHED',
       },
     ]
 
