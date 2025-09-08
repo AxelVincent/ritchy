@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { getFirecrawlClient } from '../../../../external/firecrawl'
-import { bullmqRedisOptions } from '../../config'
+import { bullmqRedisOptions, workerConfig } from '../../config'
 
 const TIMEOUT = 30000
 const worker = new Worker(
@@ -12,24 +12,28 @@ const worker = new Worker(
     return app.scrapeUrl(url, {
       ...options,
       maxAge: 604800000,
-      timeout: TIMEOUT,
+      timeout: TIMEOUT
     })
   },
   {
     connection: bullmqRedisOptions,
     limiter: {
       max: 500,
-      duration: 60000,
+      duration: 60000
     },
-    concurrency: 50,
-  },
+    concurrency: workerConfig.firecrawl.concurrency,
+    lockDuration: workerConfig.firecrawl.lockDuration,
+    lockRenewTime: workerConfig.firecrawl.renewalInterval,
+    stalledInterval: workerConfig.firecrawl.stalledInterval,
+    maxStalledCount: workerConfig.firecrawl.maxStalledCount
+  }
 )
 
 worker.on('completed', (job) => {
   logger.info({
     msg: 'Firecrawl job completed',
     event: 'firecrawl_success',
-    metadata: { jobId: job.id },
+    metadata: { jobId: job.id }
   })
 })
 
@@ -37,6 +41,6 @@ worker.on('failed', (job, err) => {
   logger.error({
     msg: 'Firecrawl job failed',
     event: 'firecrawl_error',
-    metadata: { jobId: job?.id, error: err.message },
+    metadata: { jobId: job?.id, error: err.message }
   })
 })

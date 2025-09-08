@@ -24,17 +24,17 @@ type CommonOptions = {
   country?: string
 }
 
-const USE_FIRECRAWL = false
+const USE_FIRECRAWL = true
 
 export const scrapeWithFallbacks = async (
   url: string,
   userPlaceId: string,
-  options: CommonOptions,
+  options: CommonOptions
 ): Promise<ScrapeResult> => {
   logger.debug({
     msg: `[Scrape Manager] Attempting Brightdata scraper for ${url}`,
     event: 'brightdata_scrape_attempt',
-    metadata: { url },
+    metadata: { url }
   })
 
   const brightdataResult = await brightdataScraper(url)
@@ -42,7 +42,7 @@ export const scrapeWithFallbacks = async (
     logger.debug({
       msg: `[Scrape Manager] Brightdata scraper succeeded for ${url}`,
       event: 'brightdata_scrape_success',
-      metadata: { url, userPlaceId },
+      metadata: { url, userPlaceId }
     })
     return brightdataResult
   }
@@ -51,20 +51,20 @@ export const scrapeWithFallbacks = async (
     logger.debug({
       msg: `[Scrape Manager] Brightdata scraper failed for ${url}, falling back to firecrawl`,
       event: 'brightdata_scrape_fallback',
-      metadata: { url, userPlaceId, brightdataError: brightdataResult.error },
+      metadata: { url, userPlaceId, brightdataError: brightdataResult.error }
     })
 
     const { country, ...commonOptions } = options
 
     const result = await scrapeWithRetry(url, {
       ...commonOptions,
-      location: country ? { country } : undefined,
+      location: country ? { country } : undefined
     } as FirecrawlOptions)
 
     logger.debug({
       msg: `[Scrape Manager] Firecrawl scrape result for ${url}`,
       event: 'firecrawl_scrape_result',
-      metadata: { url, userPlaceId },
+      metadata: { url, userPlaceId }
     })
 
     return result
