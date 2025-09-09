@@ -24,7 +24,7 @@ type CommonOptions = {
   country?: string
 }
 
-const USE_FIRECRAWL = false
+const USE_FIRECRAWL = true
 
 export const scrapeWithFallbacks = async (
   url: string,

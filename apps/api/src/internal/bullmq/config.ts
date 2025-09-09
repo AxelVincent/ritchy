@@ -28,6 +28,13 @@ export const workerConfig = {
     stalledInterval: 30000,
     maxStalledCount: 2,
   },
+  firecrawl: {
+    concurrency: 50,
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
   enrichment_unit: {
     concurrency: Number.parseInt(env.ENRICHMENT_UNIT_CONCURRENCY),
     lockDuration: 3000000,

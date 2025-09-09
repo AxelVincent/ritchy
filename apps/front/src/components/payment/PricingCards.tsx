@@ -11,11 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from '@/hooks/use-toast'
@@ -26,8 +21,7 @@ import {
   Building2,
   CheckIcon,
   Copy,
-  Info,
-  Plus,
+  Search,
   Users,
   Zap,
 } from 'lucide-react'
@@ -40,12 +34,15 @@ interface PricingTier {
   quarterlyPrice: number
   yearlyPrice: number
   description: string
+  tagline: string
   features: string[]
   isPopular?: boolean
   isEnterprise?: boolean
   icon: React.ReactNode
   seatCount: string
-  businessListings: string
+  searchResults: string
+  enrichmentLimit: string
+  accountLimit: string
 }
 
 const pricingTiers: PricingTier[] = [
@@ -57,19 +54,24 @@ const pricingTiers: PricingTier[] = [
     yearlyPrice: 1199,
     description:
       'Perfect for solo entrepreneurs and small agencies just getting started',
+    tagline: 'Prospecting made easy',
     features: [
-      '240 business listings per locale',
-      'Unlimited locales',
-      '10,000 enrichments/month (email, social network)',
-      'Advanced sorting and filters',
-      'CRM features',
-      'Calendar integration',
-      'CSV Export',
+      '+260M businesses available',
+      'Precise search by keyword',
+      'Search history',
+      'Map and spreadsheet display',
+      'Real time and verified data',
+      'Complete AI customer website analysis',
+      'Create personalised lists',
+      'Keep track of your progress with statuses',
+      'Take notes during calls',
     ],
-    isPopular: true,
-    icon: <CheckIcon className="h-6 w-6" />,
+    isPopular: false,
+    icon: <Search className="h-6 w-6" />,
     seatCount: '1 seat',
-    businessListings: '240 business listings per locale',
+    searchResults: '5,000 search results/month',
+    enrichmentLimit: '1,500 enrichment/month',
+    accountLimit: 'Add up to 5k accounts in lists',
   },
   {
     name: 'Pro',
@@ -78,33 +80,52 @@ const pricingTiers: PricingTier[] = [
     quarterlyPrice: 999,
     yearlyPrice: 3499,
     description: 'For growing businesses with established sales processes',
+    tagline: 'Fuel Your Growth',
     features: [
-      'Unlimited enrichments (email, social network)',
-      'Advanced sorting and filters',
-      'CRM Integration (Hubspot, Salesforce & more)',
       'Organization management',
-      'Dedicated slack support',
-      'Onboarding session',
+      'Dedicated slack channel',
+      'Roadmap prioritization',
     ],
-    isPopular: false,
+    isPopular: true,
     icon: <Zap className="h-6 w-6" />,
-    seatCount: '2 seats',
-    businessListings: '240 business listings per locale',
+    seatCount: 'Unlimited seats',
+    searchResults: '15,000 search results/month',
+    enrichmentLimit: '5,000 enrichment/month',
+    accountLimit: 'Add up to 20k accounts in lists',
   },
   {
     name: 'Enterprise',
     plan: 'ENTERPRISE',
-    monthlyPrice: 999,
-    quarterlyPrice: 999,
-    yearlyPrice: 999,
-    description: 'Enterprise-grade solution for scaling companies',
-    features: ['Customer success manager', 'Custom integrations'],
+    monthlyPrice: 0, // Will show "Ask for a quote"
+    quarterlyPrice: 0,
+    yearlyPrice: 0,
+    description:
+      'Strategic GTM Workflows, Made for you. High-impact, entreprise-grade automations tailored for your pipeline.',
+    tagline: 'Your market. Fully covered',
+    features: [
+      'Dedicated GTM expert & tech lead',
+      'Tailored to capture your exact TAM',
+      'Ready-to-contact lead list',
+      'Deep enrichment - LinkedIn company & profiles, Instagram accounts & posts, external APIs, AI & more',
+      'ICP & needs assessment',
+      'Custom data exports, business owner contact, WhatsApp verified number, your choice!',
+    ],
     isEnterprise: true,
     icon: <Building2 className="h-6 w-6" />,
     seatCount: '',
-    businessListings: '',
+    searchResults: '',
+    enrichmentLimit: '',
+    accountLimit: '',
   },
 ]
+
+// Plan hierarchy for determining upgrades vs downgrades
+const planHierarchy = {
+  FREE: 0,
+  ESSENTIALS: 1,
+  PRO: 2,
+  ENTERPRISE: 3,
+}
 
 interface PromoOffer {
   code: string
@@ -126,109 +147,6 @@ interface PricingCardsProps {
   onCurrencyChange?: (currency: 'usd' | 'eur') => void
 }
 
-// Seat upsell content component
-const SeatUpsellContent = ({
-  currency = 'usd',
-}: { currency?: 'usd' | 'eur' }) => {
-  const currencySymbol = currency === 'eur' ? '€' : '$'
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <CardTitle className="text-lg">Purchase additional seats</CardTitle>
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Each additional user</Label>
-          <Badge variant="secondary" className="text-primary font-semibold">
-            {currencySymbol}69
-          </Badge>
-        </div>
-      </div>
-
-      <Separator />
-
-      <div className="space-y-3">
-        <div className="flex items-start gap-3">
-          <CheckIcon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-          <span className="text-sm">Full platform access</span>
-        </div>
-        <div className="flex items-start gap-3">
-          <CheckIcon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-          <span className="text-sm">240 search results included</span>
-        </div>
-        <div className="flex items-start gap-3">
-          <CheckIcon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-          <span className="text-sm">Can upgrade search power separately</span>
-        </div>
-      </div>
-
-      <div className="pt-2">
-        <CalButton variant="outline" size="sm" className="w-full">
-          Contact us to add seats
-        </CalButton>
-      </div>
-    </div>
-  )
-}
-
-// Search power options content component
-const SearchPowerContent = ({
-  currency = 'usd',
-}: { currency?: 'usd' | 'eur' }) => {
-  const currencySymbol = currency === 'eur' ? '€' : '$'
-
-  const searchTiers = [
-    {
-      name: 'Advanced',
-      price: `${currencySymbol}90`,
-      results: '1,000 search results (17x more)',
-      capabilities: 'Advanced search capabilities',
-      variant: 'secondary' as const,
-    },
-    {
-      name: 'Enterprise',
-      price: `${currencySymbol}280`,
-      results: '4,000 search results (67x more)',
-      capabilities: 'Enterprise-grade search capabilities',
-      variant: 'secondary' as const,
-    },
-  ]
-
-  return (
-    <div className="space-y-4">
-      <CardTitle className="text-lg">Search power options</CardTitle>
-
-      <div className="space-y-3">
-        {searchTiers.map((tier) => (
-          <Card key={tier.name} className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="font-medium">{tier.name}</Label>
-              <Badge variant={tier.variant} className="text-primary">
-                {tier.price}
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <CheckIcon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-sm">{tier.results}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckIcon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-sm">{tier.capabilities}</span>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="pt-2">
-        <CalButton variant="outline" size="sm" className="w-full">
-          Contact us to upgrade search power
-        </CalButton>
-      </div>
-    </div>
-  )
-}
-
 export const PricingCards = ({
   billingPeriod,
   activePromos = [],
@@ -239,6 +157,23 @@ export const PricingCards = ({
 
   // Get currency symbol based on currency prop
   const currencySymbol = currency === 'eur' ? '€' : '$'
+
+  // Check if user has any active subscription
+  const hasActiveSubscription = me?.plan && me.plan !== 'FREE'
+
+  // Function to determine if this is an upgrade or downgrade
+  const getPlanAction = (tierPlan: string) => {
+    if (!hasActiveSubscription) return 'Try for free'
+
+    const currentPlanLevel =
+      planHierarchy[me?.plan as keyof typeof planHierarchy] || 0
+    const tierPlanLevel =
+      planHierarchy[tierPlan as keyof typeof planHierarchy] || 0
+
+    if (tierPlanLevel > currentPlanLevel) return 'Upgrade plan'
+    if (tierPlanLevel < currentPlanLevel) return 'Downgrade plan'
+    return 'Manage subscription'
+  }
 
   // Function to copy promo code to clipboard
   const copyPromoCode = (code: string) => {
@@ -265,8 +200,6 @@ export const PricingCards = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
       {pricingTiers.map((tier) => {
-        const isCurrentPlan = me?.plan === tier.plan
-
         // Find applicable promo for this tier
         const applicablePromo = activePromos.find(
           (promo) => promo.planId === tier.plan,
@@ -362,6 +295,11 @@ export const PricingCards = ({
                 <CardDescription className="text-sm mt-2">
                   {tier.description}
                 </CardDescription>
+                <div className="mt-2">
+                  <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    {tier.tagline}
+                  </span>
+                </div>
               </div>
 
               {/* Fixed height pricing section - dynamic height based on billing period */}
@@ -370,13 +308,7 @@ export const PricingCards = ({
               >
                 {tier.isEnterprise ? (
                   <div>
-                    <div className="text-4xl font-bold">
-                      {currencySymbol}
-                      {finalPrice}+
-                    </div>
-                    <Label className="text-muted-foreground text-sm">
-                      per month spent
-                    </Label>
+                    <div className="text-4xl font-bold">Ask for a quote</div>
                   </div>
                 ) : (
                   <div>
@@ -422,67 +354,42 @@ export const PricingCards = ({
 
             {/* Flexible content that grows to fill available space */}
             <CardContent className="flex-1 space-y-6">
-              {/* Seat count section with upsell hover card - only for non-enterprise */}
+              {/* Seat count section - only for non-enterprise */}
               {!tier.isEnterprise && (
                 <div className="flex items-center gap-2 text-sm min-h-[24px]">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <Label>{tier.seatCount}</Label>
-                  {tier.plan === 'PRO' && (
-                    <HoverCard>
-                      <HoverCardTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 rounded-full"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80" align="start">
-                        <SeatUpsellContent currency={currency} />
-                      </HoverCardContent>
-                    </HoverCard>
-                  )}
                 </div>
               )}
 
-              {/* Business listings section with search power hover card - only for non-enterprise */}
-              {tier.businessListings && !tier.isEnterprise && (
-                <div className="space-y-2 min-h-[60px]">
-                  <div className="flex items-start gap-3 text-sm">
-                    <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <Label className="flex items-center gap-2">
-                      {tier.businessListings}
-                      {tier.plan === 'PRO' && (
-                        <HoverCard>
-                          <HoverCardTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 rounded-full"
-                            >
-                              <Info className="h-3 w-3" />
-                            </Button>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="w-80" align="start">
-                            <SearchPowerContent currency={currency} />
-                          </HoverCardContent>
-                        </HoverCard>
-                      )}
-                    </Label>
-                  </div>
-                  <div className="flex items-start gap-3 text-sm">
-                    <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <Label>Unlimited locales</Label>
-                  </div>
+              {/* Search results section - only for non-enterprise */}
+              {tier.searchResults && !tier.isEnterprise && (
+                <div className="flex items-start gap-3 text-sm">
+                  <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <Label>{tier.searchResults}</Label>
+                </div>
+              )}
+
+              {/* Enrichment limit section - only for non-enterprise */}
+              {tier.enrichmentLimit && !tier.isEnterprise && (
+                <div className="flex items-start gap-3 text-sm">
+                  <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <Label>{tier.enrichmentLimit}</Label>
+                </div>
+              )}
+
+              {/* Account limit section - only for non-enterprise */}
+              {tier.accountLimit && !tier.isEnterprise && (
+                <div className="flex items-start gap-3 text-sm">
+                  <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <Label>{tier.accountLimit}</Label>
                 </div>
               )}
 
               {/* Add equivalent spacing for Enterprise to align with other cards */}
               {tier.isEnterprise && (
-                <div className="min-h-[0px]">
-                  {' '}
-                  {/* 24px (seat) + 60px (business listings) + 24px (separator gap) */}
+                <div className="min-h-[120px]">
+                  {/* Equivalent spacing for seat + search results + enrichment + account limits */}
                 </div>
               )}
 
@@ -494,7 +401,9 @@ export const PricingCards = ({
                 <Label className="font-semibold text-sm uppercase text-muted-foreground">
                   {tier.isEnterprise
                     ? 'Everything in Pro, plus :'
-                    : 'Key features:'}
+                    : tier.plan === 'PRO'
+                      ? 'Everything in Essentials, plus :'
+                      : 'Key features:'}
                 </Label>
                 <div className="space-y-3">
                   {tier.features.map((feature) => (
@@ -531,10 +440,17 @@ export const PricingCards = ({
                     to={`/checkout?plan=${tier.plan}&billingInterval=${billingPeriod}&currency=${currency}`}
                     className="flex items-center justify-center"
                   >
-                    {isCurrentPlan ? 'Manage subscription' : 'Start now'}
+                    {getPlanAction(tier.plan)}
                     <ArrowRightIcon className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
+              )}
+
+              {/* No credit card required text for non-enterprise */}
+              {!tier.isEnterprise && !hasActiveSubscription && (
+                <p className="text-xs text-muted-foreground text-center">
+                  No credit card required
+                </p>
               )}
             </CardFooter>
           </Card>

@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { getFirecrawlClient } from '../../../../external/firecrawl'
-import { bullmqRedisOptions } from '../../config'
+import { bullmqRedisOptions, workerConfig } from '../../config'
 
 const TIMEOUT = 30000
 const worker = new Worker(
@@ -21,7 +21,11 @@ const worker = new Worker(
       max: 500,
       duration: 60000,
     },
-    concurrency: 50,
+    concurrency: workerConfig.firecrawl.concurrency,
+    lockDuration: workerConfig.firecrawl.lockDuration,
+    lockRenewTime: workerConfig.firecrawl.renewalInterval,
+    stalledInterval: workerConfig.firecrawl.stalledInterval,
+    maxStalledCount: workerConfig.firecrawl.maxStalledCount,
   },
 )
 
