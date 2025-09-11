@@ -6,10 +6,6 @@ export const enrichmentUnitQueue = new Queue(queueName, {
   connection: bullmqRedisOptions,
   defaultJobOptions: {
     attempts: 1,
-    backoff: {
-      type: 'exponential',
-      delay: 1000,
-    },
     removeOnComplete: {
       age: 3600,
       count: 1000,
