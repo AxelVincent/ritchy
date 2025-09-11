@@ -178,7 +178,6 @@ export const websiteEnrichmentManager = async ({
         .update(enrichmentTable)
         .set({
           error: scrapeResult.error.message,
-          success: false,
         })
         .where(eq(enrichmentTable.id, enrichment.id))
       return

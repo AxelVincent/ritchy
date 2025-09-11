@@ -45,7 +45,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
   const currentTab = activeTab || 'details'
 
   return (
-    <div className="flex flex-col h-[500px]">
+    <div className="flex flex-col h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px] xl:h-[500px]">
       {/* Header */}
       <div className="pb-2 pt-3 px-4 shrink-0">
         <div className="flex items-center justify-between">
