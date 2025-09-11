@@ -28,7 +28,7 @@ export const verifyEmailForSaving = async (
   const verificationResult = await verifyWithMillionVerifier(normalizedEmail)
 
   if (
-    safeToSave &&
+    !safeToSave &&
     verificationResult.result !== 'ok' &&
     verificationResult.result !== 'unknown'
   ) {
