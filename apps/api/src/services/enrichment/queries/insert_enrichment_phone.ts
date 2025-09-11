@@ -4,7 +4,7 @@ import { db } from '../../../db/db'
 import { enrichmentPhone } from '../../../db/schema'
 import {
   type ParsedPhoneResult,
-  parseAndValidatePhone
+  parseAndValidatePhone,
 } from '../../../utils/phone_utils'
 import { getBusinessCountryCodeByEnrichmentId } from './get_business_country_code'
 
@@ -12,12 +12,12 @@ export const insertEnrichmentPhone = async (
   userPlaceId: string,
   enrichmentId: string,
   source: string,
-  phone: string
+  phone: string,
 ) => {
   logger.debug({
     msg: 'Inserting enrichment phone',
     event: 'inserting_enrichment_phone',
-    metadata: { userPlaceId, enrichmentId, source, phone }
+    metadata: { userPlaceId, enrichmentId, source, phone },
   })
 
   const countryCode = await getBusinessCountryCodeByEnrichmentId(enrichmentId)
@@ -39,8 +39,8 @@ export const insertEnrichmentPhone = async (
         originalPhone: phone,
         formattedPhone: parsedResult.formattedPhone,
         type: parsedResult.type,
-        country: parsedResult.country
-      }
+        country: parsedResult.country,
+      },
     })
 
     try {
@@ -50,7 +50,7 @@ export const insertEnrichmentPhone = async (
           enrichmentId,
           type: parsedResult.type ?? 'FIXED_LINE_OR_MOBILE',
           phone: parsedResult.phoneNumber.format('E.164'),
-          source
+          source,
         })
         .onConflictDoNothing()
 
@@ -61,8 +61,8 @@ export const insertEnrichmentPhone = async (
           userPlaceId,
           enrichmentId,
           source,
-          phone: parsedResult.formattedPhone
-        }
+          phone: parsedResult.formattedPhone,
+        },
       })
     } catch (error) {
       if (
@@ -70,7 +70,7 @@ export const insertEnrichmentPhone = async (
           error.message.includes('duplicate key')) ||
         (error instanceof Error &&
           error.message.includes(
-            'duplicate key value violates unique constraint'
+            'duplicate key value violates unique constraint',
           ))
       ) {
         logger.info({
@@ -80,8 +80,8 @@ export const insertEnrichmentPhone = async (
             userPlaceId,
             enrichmentId,
             source,
-            phone: parsedResult.formattedPhone
-          }
+            phone: parsedResult.formattedPhone,
+          },
         })
         return
       }
@@ -96,7 +96,7 @@ export const insertEnrichmentPhone = async (
           enrichmentId,
           type: 'FIXED_LINE_OR_MOBILE',
           phone,
-          source
+          source,
         })
         .onConflictDoNothing()
     } catch (error) {
@@ -105,20 +105,20 @@ export const insertEnrichmentPhone = async (
           error.message.includes('duplicate key')) ||
         (error instanceof Error &&
           error.message.includes(
-            'duplicate key value violates unique constraint'
+            'duplicate key value violates unique constraint',
           ))
       ) {
         logger.info({
           msg: 'Enrichment phone already exists',
           event: 'enrichment_phone_already_exists',
-          metadata: { userPlaceId, enrichmentId, source, phone }
+          metadata: { userPlaceId, enrichmentId, source, phone },
         })
         return
       }
       logger.error({
         msg: 'Failed to insert enrichment phone',
         event: 'failed_to_insert_enrichment_phone',
-        metadata: { userPlaceId, enrichmentId, source, phone, error }
+        metadata: { userPlaceId, enrichmentId, source, phone, error },
       })
       throw error
     }

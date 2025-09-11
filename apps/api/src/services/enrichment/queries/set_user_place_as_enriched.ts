@@ -1,7 +1,7 @@
+import { logger } from '@ritchy/logger'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { userPlace } from '../../../db/schema'
-import { logger } from '@ritchy/logger'
 
 export const setUserPlaceAsEnriched = async (userPlaceId: string) => {
   try {
@@ -13,7 +13,7 @@ export const setUserPlaceAsEnriched = async (userPlaceId: string) => {
     logger.error({
       msg: 'Failed to set user place as enriched',
       event: 'failed_to_set_user_place_as_enriched',
-      metadata: { userPlaceId, error }
+      metadata: { userPlaceId, error },
     })
     throw error
   }

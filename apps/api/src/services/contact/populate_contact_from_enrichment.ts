@@ -8,7 +8,7 @@ import { getOrCreatePrimaryContact } from './queries/insert_primary_contact'
 
 export const populateContactFromEnrichment = async ({
   enrichmentId,
-  userPlaceId
+  userPlaceId,
 }: {
   enrichmentId: string
   userPlaceId: string
@@ -20,13 +20,13 @@ export const populateContactFromEnrichment = async ({
       logger.info({
         msg: 'Populating enrichment contact data',
         event: 'populating_enrichment_contact_data',
-        metadata: { contactId: contact.id, enrichmentId, userPlaceId }
+        metadata: { contactId: contact.id, enrichmentId, userPlaceId },
       })
 
       await Promise.all([
         populateContactSocialMediasFromEnrichment(enrichmentId, contact.id, tx),
         populateContactEmailsFromEnrichment(enrichmentId, contact.id, tx),
-        populateContactPhonesFromEnrichment(enrichmentId, contact.id, tx)
+        populateContactPhonesFromEnrichment(enrichmentId, contact.id, tx),
       ])
 
       return contact
@@ -35,7 +35,7 @@ export const populateContactFromEnrichment = async ({
     logger.info({
       msg: 'Enrichment contact data populated',
       event: 'enrichment_contact_data_populated',
-      metadata: { contactId: contact.id, enrichmentId, userPlaceId }
+      metadata: { contactId: contact.id, enrichmentId, userPlaceId },
     })
 
     return contact
@@ -43,7 +43,7 @@ export const populateContactFromEnrichment = async ({
     logger.error({
       msg: 'Failed to populate contact from enrichment',
       event: 'failed_to_populate_contact_from_enrichment',
-      metadata: { enrichmentId, userPlaceId, error }
+      metadata: { enrichmentId, userPlaceId, error },
     })
     throw error
   }

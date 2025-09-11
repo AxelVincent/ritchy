@@ -15,10 +15,9 @@ import {
   createColumnPinNoteActions,
 } from './createColumnActions'
 
-import { Badge } from '@/components/ui/badge'
+import { QualityBadge } from '@/components/contact/QualityBadge'
 import { formatDistanceToNow } from 'date-fns'
 import posthog from 'posthog-js'
-import { QualityBadge } from '@/components/contact/QualityBadge'
 
 interface BaseColumnCellProps {
   id: string

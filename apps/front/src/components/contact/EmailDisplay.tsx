@@ -10,7 +10,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import type { Email, EmailQualityEnum } from '@ritchy/types'
+import type { Email } from '@ritchy/types'
 import {
   AlertCircle,
   CheckCircle,
