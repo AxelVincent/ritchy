@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import { Worker } from 'bullmq'
+import { UnrecoverableError, Worker } from 'bullmq'
 import { webUnblocker } from '../../../../external/brightdata/web_unlocker'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 import { queueName } from './queue'
@@ -19,6 +19,31 @@ const brightdataWorker = new Worker(
         error: isSuccess ? undefined : `HTTP ${result.status_code}`,
       }
     } catch (error) {
+      if (error instanceof UnrecoverableError) {
+        logger.error({
+          msg: 'Brightdata job timed out',
+          event: 'brightdata_timeout',
+          metadata: {
+            jobId: job.id,
+            url,
+            error: error.message,
+          },
+        })
+        // Re-throw UnrecoverableError to mark job as failed
+        throw error
+      }
+
+      // Handle other errors
+      logger.error({
+        msg: 'Brightdata job failed with error',
+        event: 'brightdata_error',
+        metadata: {
+          jobId: job.id,
+          url,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      })
+
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -51,6 +76,10 @@ brightdataWorker.on('failed', (job, err) => {
   logger.error({
     msg: 'Brightdata job failed',
     event: 'brightdata_error',
-    metadata: { jobId: job?.id, error: err.message },
+    metadata: {
+      jobId: job?.id,
+      error: err.message,
+      isTimeout: err instanceof UnrecoverableError && err.message === 'Timeout',
+    },
   })
 })
