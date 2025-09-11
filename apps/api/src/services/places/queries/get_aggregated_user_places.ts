@@ -122,6 +122,7 @@ export const getAggregatedUserPlaces = async (
       p.is_deleted,
       p.created_at,
       p.updated_at,
+      p.opening_hours,
       -- User place fields
       up.id as user_place_id,
       up.enriched_at,
@@ -306,6 +307,7 @@ export const getAggregatedUserPlaces = async (
         administrativeAreaLevel3:
           result.administrative_area_level_3 ?? undefined,
       },
+      openingHours: result.opening_hours ?? undefined,
       listId: listId ?? null,
       lists: result.lists,
       notes: result.notes,
