@@ -11,10 +11,13 @@ export const enrichmentUnitQueue = new Queue(queueName, {
       delay: 1000,
     },
     removeOnComplete: {
-      age: 300,
+      age: 3600,
       count: 1000,
     },
-    removeOnFail: false,
+    removeOnFail: {
+      age: 24 * 3600,
+      count: 1000,
+    },
   },
 })
 

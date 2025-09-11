@@ -11,11 +11,11 @@ export const scraperQueue = new Queue(queueName, {
       delay: 2000,
     },
     removeOnComplete: {
-      age: 300,
+      age: 3600,
       count: 1000,
     },
     removeOnFail: {
-      age: 600,
+      age: 24 * 3600,
       count: 100,
     },
   },
