@@ -58,7 +58,6 @@ export const scrapeWithFallbacks = async (
 
     const result = await scrapeWithRetry(url, {
       ...commonOptions,
-      location: country ? { country } : undefined,
     } as FirecrawlOptions)
 
     logger.debug({

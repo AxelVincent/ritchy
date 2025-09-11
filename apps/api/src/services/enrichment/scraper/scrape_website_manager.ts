@@ -148,7 +148,10 @@ const processHtmlChunk = (
       event: 'chunk_processing_error',
       metadata: {
         url,
-        error: error instanceof Error ? error.message : String(error),
+        error: (error instanceof Error ? error.message : String(error)).slice(
+          0,
+          250,
+        ),
       },
     })
   }
