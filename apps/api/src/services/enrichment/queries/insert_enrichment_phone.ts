@@ -115,6 +115,11 @@ export const insertEnrichmentPhone = async (
         })
         return
       }
+      logger.error({
+        msg: 'Failed to insert enrichment phone',
+        event: 'failed_to_insert_enrichment_phone',
+        metadata: { userPlaceId, enrichmentId, source, phone, error },
+      })
       throw error
     }
   }

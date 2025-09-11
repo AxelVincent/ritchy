@@ -1,12 +1,6 @@
-import {
-  boolean,
-  text,
-  timestamp,
-  unique,
-  uniqueIndex,
-} from 'drizzle-orm/pg-core'
+import { boolean, text, timestamp, unique } from 'drizzle-orm/pg-core'
 import { pgTable, uuid } from 'drizzle-orm/pg-core'
-import { phoneTypeEnum } from './enum'
+import { emailQualityEnum, emailResultEnum, phoneTypeEnum } from './enum'
 import { place } from './place'
 
 export const enrichment = pgTable('enrichment', {
@@ -79,20 +73,21 @@ export const enrichmentEmail = pgTable(
   'enrichment_email',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    enrichmentId: uuid('enrichment_id')
+    enrichment_id: uuid('enrichment_id')
       .notNull()
       .references(() => enrichment.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
     source: text('source'),
-    quality: text('quality'),
-    result: text('result'),
+    quality: emailQualityEnum('quality'),
+    result: emailResultEnum('result'),
     role: boolean('role').notNull().default(false),
     free: boolean('free').notNull().default(false),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    created_at: timestamp('created_at').notNull().defaultNow(),
+    updated_at: timestamp('updated_at').notNull().defaultNow(),
   },
-  (table) => [unique().on(table.enrichmentId, table.email)],
+  (table) => [unique().on(table.enrichment_id, table.email)],
 )
+export type EnrichmentEmail = typeof enrichmentEmail.$inferSelect
 
 export const enrichmentPhone = pgTable(
   'enrichment_phone',

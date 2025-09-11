@@ -1,14 +1,5 @@
 import { z } from 'zod'
-
-export const ContactEmailSchema = z.object({
-  id: z.string(),
-  contactId: z.string(),
-  email: z.string().email(),
-  isPrimary: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-})
-
+import { EmailSchema } from './places'
 export const ContactSocialSchema = z.object({
   id: z.string(),
   contactId: z.string(),
@@ -27,12 +18,11 @@ export const ContactSchema = z.object({
   lastname: z.string().nullable(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
-  emails: z.array(ContactEmailSchema),
+  emails: z.array(EmailSchema),
   socials: z.array(ContactSocialSchema),
   createdAt: z.date(),
   updatedAt: z.date(),
 })
 
 export type Contact = z.infer<typeof ContactSchema>
-export type ContactEmail = z.infer<typeof ContactEmailSchema>
 export type ContactSocial = z.infer<typeof ContactSocialSchema>

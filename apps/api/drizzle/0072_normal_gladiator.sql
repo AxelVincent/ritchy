@@ -1,0 +1,1 @@
+ALTER TYPE "public"."email_quality" ADD VALUE 'bad' BEFORE 'unknown';

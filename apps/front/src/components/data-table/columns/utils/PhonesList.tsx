@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import type { Phone } from '@ritchy/types'
-import { Star } from 'lucide-react'
+import { Phone as PhoneIcon, Star } from 'lucide-react'
 import { ContactPhoneCell } from './ColumnCells'
 
 export const PhonesList = ({
@@ -38,6 +38,11 @@ export const PhonesList = ({
 
   return (
     <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <PhoneIcon className="h-5 w-5 text-muted-foreground" />
+        <h3 className="text-sm font-semibold">Phones</h3>
+        <Badge variant="secondary">{phones.length}</Badge>
+      </div>
       {phones.map((phoneObj) => (
         <div
           key={phoneObj.phone}

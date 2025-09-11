@@ -136,6 +136,8 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           ...email,
           isPrimary: email.isPrimary ?? false,
           contactId: email.contactId || row.id,
+          source: email.source || '',
+          isVerified: email.isVerified ?? false,
           createdAt: email.createdAt ? new Date(email.createdAt) : new Date(),
           updatedAt: email.updatedAt ? new Date(email.updatedAt) : new Date(),
         })),
@@ -194,6 +196,16 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           ...list,
           name: list.name || '',
           emoji: list.emoji || '',
+        })),
+        // Ensure notes have required fields
+        notes: (row.notes || []).map((note) => ({
+          ...note,
+          id: note.id || crypto.randomUUID(),
+          userPlaceId: note.userPlaceId || row.id,
+          note: note.note || '',
+          userId: note.userId || '',
+          createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
+          updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
         })),
       }))
 

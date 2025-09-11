@@ -5,7 +5,7 @@ import { MAP_SETTINGS } from '@/components/map-display/types'
 import type { Location } from '@/components/search/search-map'
 import { debounce } from '@/lib/debounce'
 import type { Place } from '@ritchy/types'
-import { type FC, Suspense, lazy, useEffect, useMemo, useRef } from 'react'
+import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
 const DEBUG = false
 
@@ -21,13 +21,6 @@ interface MapBoxProps {
   userLocation: Location
   filteredPlaceIds: Set<string>
 }
-
-// Move PlaceCard to a separate lazy-loaded component
-const PlaceCard = lazy(() =>
-  import('./place-details/PlaceCard').then((module) => ({
-    default: module.PlaceCard,
-  })),
-)
 
 export const MapBox: FC<MapBoxProps> = ({
   searchResults,
@@ -179,12 +172,6 @@ export const MapBox: FC<MapBoxProps> = ({
   return (
     <div className="relative h-full w-full">
       <div ref={mapContainerRef} className="h-full w-full" />
-      <Suspense fallback={<div>Loading...</div>}>
-        <PlaceCard
-          places={searchResults}
-          displayedPlaceIds={filteredPlaceIds}
-        />
-      </Suspense>
     </div>
   )
 }
