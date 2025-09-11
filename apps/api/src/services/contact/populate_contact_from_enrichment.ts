@@ -8,34 +8,43 @@ import { getOrCreatePrimaryContact } from './queries/insert_primary_contact'
 
 export const populateContactFromEnrichment = async ({
   enrichmentId,
-  userPlaceId,
+  userPlaceId
 }: {
   enrichmentId: string
   userPlaceId: string
 }) => {
-  const contact = await db.transaction(async (tx) => {
-    const contact = await getOrCreatePrimaryContact(userPlaceId, tx)
+  try {
+    const contact = await db.transaction(async (tx) => {
+      const contact = await getOrCreatePrimaryContact(userPlaceId, tx)
 
-    logger.info({
-      msg: 'Populating enrichment contact data',
-      event: 'populating_enrichment_contact_data',
-      metadata: { contactId: contact.id, enrichmentId, userPlaceId },
+      logger.info({
+        msg: 'Populating enrichment contact data',
+        event: 'populating_enrichment_contact_data',
+        metadata: { contactId: contact.id, enrichmentId, userPlaceId }
+      })
+
+      await Promise.all([
+        populateContactSocialMediasFromEnrichment(enrichmentId, contact.id, tx),
+        populateContactEmailsFromEnrichment(enrichmentId, contact.id, tx),
+        populateContactPhonesFromEnrichment(enrichmentId, contact.id, tx)
+      ])
+
+      return contact
     })
 
-    await Promise.all([
-      populateContactSocialMediasFromEnrichment(enrichmentId, contact.id, tx),
-      populateContactEmailsFromEnrichment(enrichmentId, contact.id, tx),
-      populateContactPhonesFromEnrichment(enrichmentId, contact.id, tx),
-    ])
+    logger.info({
+      msg: 'Enrichment contact data populated',
+      event: 'enrichment_contact_data_populated',
+      metadata: { contactId: contact.id, enrichmentId, userPlaceId }
+    })
 
     return contact
-  })
-
-  logger.info({
-    msg: 'Enrichment contact data populated',
-    event: 'enrichment_contact_data_populated',
-    metadata: { contactId: contact.id, enrichmentId, userPlaceId },
-  })
-
-  return contact
+  } catch (error) {
+    logger.error({
+      msg: 'Failed to populate contact from enrichment',
+      event: 'failed_to_populate_contact_from_enrichment',
+      metadata: { enrichmentId, userPlaceId, error }
+    })
+    throw error
+  }
 }

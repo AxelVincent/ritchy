@@ -1,45 +1,56 @@
+import { usePostContactEmail } from '@/api/mutations/contacts/usePostContactEmail'
+import { EmailDisplay } from '@/components/contact/EmailDisplay'
 import { PhonesList } from '@/components/data-table/columns/utils/PhonesList'
 import type { Place } from '@ritchy/types'
-import { EmailsList } from '../../../../../data-table/columns/utils/EmailsList'
 import { SocialMediaList } from '../../../../../data-table/columns/utils/SocialMediaList'
+import { EMPTY_MESSAGE } from '../SelectedPlaceCard'
 
 export const PlaceContactTab = ({ place }: { place: Place }) => {
-  const hasEmails = place.contactEmails?.length !== 0
   const hasPhones = place.contactPhones?.length !== 0
   const hasLinkedinSocials = place.contactLinkedins?.length !== 0
   const hasFacebookSocials = place.contactFacebooks?.length !== 0
   const hasInstagramSocials = place.contactInstagrams?.length !== 0
 
-  if (
-    !hasEmails &&
-    !hasPhones &&
-    !hasLinkedinSocials &&
-    !hasFacebookSocials &&
-    !hasInstagramSocials
-  ) {
-    return (
-      <div className="p-4 text-center text-muted-foreground">
-        No contact information available
-      </div>
-    )
+  const postContactEmailMutation = usePostContactEmail()
+
+  const handleAddEmail = async (email: string) => {
+    await postContactEmailMutation.mutateAsync({
+      userPlaceId: place.id,
+      email,
+    })
   }
 
+  const hasOtherContact =
+    hasPhones || hasLinkedinSocials || hasFacebookSocials || hasInstagramSocials
+
   return (
-    <div className="flex flex-wrap gap-6 p-4">
-      {/* Emails section - takes full width due to typically longer content */}
-      {hasEmails && (
-        <div className="min-w-[200px] flex-1 max-w-[400px]w-full">
-          <h3 className="mb-2 text-base font-medium">Emails</h3>
-          <EmailsList
-            emails={place.contactEmails || []}
-            id={`place-${place.id}-emails`}
-          />
+    <div className="flex flex-col gap-6 p-4">
+      {/* Emails section - always show to allow adding emails */}
+      <div className="min-w-[350px] flex-1 max-w-[400px]w-full">
+        <EmailDisplay
+          emails={place.contactEmails || []}
+          onAddEmail={handleAddEmail}
+          onDeleteEmail={async () => {}}
+          onSetPrimary={async () => {}}
+        />
+      </div>
+
+      {/* Show enrichment message for other contact types when missing */}
+      {!hasOtherContact && place.website && (
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-sm space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-muted-foreground">
+                Enrichment required for contact information
+              </h3>
+              <p className="text-sm text-muted-foreground">{EMPTY_MESSAGE}</p>
+            </div>
+          </div>
         </div>
       )}
 
       {hasPhones && (
         <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <h3 className="mb-2 text-base font-medium">Phones</h3>
           <PhonesList
             phones={place.contactPhones || []}
             id={`place-${place.id}-phones`}
@@ -50,30 +61,30 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
       {/* Social media sections - will wrap based on available space */}
       {hasFacebookSocials && (
         <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <h3 className="mb-2 text-base font-medium">Facebook</h3>
           <SocialMediaList
             socials={place.contactFacebooks || []}
             id={`place-${place.id}-facebook-socials`}
+            platform="FACEBOOK"
           />
         </div>
       )}
 
       {hasInstagramSocials && (
         <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <h3 className="mb-2 text-base font-medium">Instagram</h3>
           <SocialMediaList
             socials={place.contactInstagrams || []}
             id={`place-${place.id}-instagram-socials`}
+            platform="INSTAGRAM"
           />
         </div>
       )}
 
       {hasLinkedinSocials && (
         <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <h3 className="mb-2 text-base font-medium">LinkedIn</h3>
           <SocialMediaList
             socials={place.contactLinkedins || []}
             id={`place-${place.id}-linkedin-socials`}
+            platform="LINKEDIN"
           />
         </div>
       )}

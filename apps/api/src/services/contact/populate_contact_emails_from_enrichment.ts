@@ -17,8 +17,12 @@ export const populateContactEmailsFromEnrichment = async (
   const emails = await getEnrichmentEmails(enrichmentId, tx)
 
   await insertContactEmails(
-    contactId,
-    emails.map((email) => email.email),
+    emails.map((email) => ({
+      ...email,
+      contact_id: contactId,
+      is_primary: false,
+      is_verified: email.result !== null,
+    })),
     tx,
   )
 

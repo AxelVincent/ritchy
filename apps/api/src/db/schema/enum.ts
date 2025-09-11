@@ -1,6 +1,8 @@
 import {
   CompanyFieldEnum,
   ContactFieldEnum,
+  EmailQualityEnum,
+  EmailResultEnum,
   PhoneTypeEnum,
   PlanEnum,
   PriceLevelEnum,
@@ -61,4 +63,12 @@ export const internalFieldEnum = pgEnum('internal_field', [
   ...CompanyFieldEnum.options,
   ...ContactFieldEnum.options,
   ...StatusFieldEnum.options,
+])
+
+export const emailQualityEnum = pgEnum('email_quality', [
+  ...EmailQualityEnum.options,
+])
+
+export const emailResultEnum = pgEnum('email_result', [
+  ...EmailResultEnum.options,
 ])

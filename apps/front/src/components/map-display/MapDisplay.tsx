@@ -12,6 +12,8 @@ import type { RowSelectionState } from '@tanstack/react-table'
 import { ListIcon, MapIcon } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
+import { SelectedPlaceCard } from './components/map_box/place-details/SelectedPlaceCard'
+import { useMapStore } from './store/useMapStore'
 
 interface MapDisplayProps {
   listId?: string
@@ -30,6 +32,7 @@ const TableLoadingFallback = () => (
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const isMobile = useIsMobile()
+  const { selectedPlaceId } = useMapStore()
   const [mobileView, setMobileView] = useState<'map' | 'table'>(() => {
     const savedView = localStorage.getItem('mobileMapView')
     return savedView === 'map' || savedView === 'table' ? savedView : 'map'
@@ -189,6 +192,14 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
             listId={listId}
             searchId={searchId}
           />
+          {selectedPlaceId && (
+            <div className="border-t bg-background">
+              <SelectedPlaceCard
+                places={places}
+                displayedPlaceIds={safeFilteredPlaceIds}
+              />
+            </div>
+          )}
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={panelSizes[1]} className="flex-1">

@@ -8,6 +8,7 @@ import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { contact, contactEmail } from '../../db/schema'
 import { getOrCreatePrimaryContact } from '../../services/contact/queries/insert_primary_contact'
+import { verifyAndInsertContactEmail } from '../../services/contact/verify_and_insert_contact_email'
 
 export const postContactEmail = async (
   req: Request<
@@ -27,17 +28,14 @@ export const postContactEmail = async (
 
     const contactResult = await getOrCreatePrimaryContact(userPlaceId)
 
-    const [contactEmailResult] = await db
-      .insert(contactEmail)
-      .values({
-        email,
-        contactId: contactResult.id,
-        isPrimary: false,
-      })
-      .returning()
+    const contactEmailResult = await verifyAndInsertContactEmail(
+      contactResult.id,
+      '',
+      email,
+    )
 
     res.json({
-      id: contactEmailResult.id,
+      id: contactEmailResult?.id ?? '',
     })
   } catch (error) {
     logger.error({

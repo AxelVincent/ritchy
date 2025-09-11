@@ -103,23 +103,26 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
   },
   filterFn: (row, columnId, value: [Date | undefined, Date | undefined]) => {
     const [from, to] = value
-    const cellValue = row.getValue(columnId) as Date | null
+    const date = row.getValue(columnId)
+      ? new Date(row.getValue(columnId))
+      : null
+    console.log('cellValue', date)
 
     // Only apply date filtering if we have a filter value
     if (!from && !to) return true
 
     // If we have filter dates but no cell value, exclude the row
-    if (!cellValue) return false
+    if (!date) return false
 
     // Now we know we have a valid cellValue and at least one filter date
     if (from && to) {
-      return cellValue >= from && cellValue <= to
+      return date >= from && date <= to
     }
     if (from) {
-      return cellValue >= from
+      return date >= from
     }
     if (to) {
-      return cellValue <= to
+      return date <= to
     }
     return true
   },

@@ -173,6 +173,7 @@ export const getAggregatedUserPlaces = async (
           DISTINCT JSONB_BUILD_OBJECT(
             'id', all_lists.id,
             'emoji', all_lists.emoji,
+            'name', all_lists.name,
             'created_at', all_lists.created_at,
             'updated_at', all_lists.updated_at
           )
@@ -190,7 +191,14 @@ export const getAggregatedUserPlaces = async (
             'is_primary', ce.is_primary,
             'contact_id', c.id,
             'contact_name', CONCAT(c.first_name, ' ', c.last_name),
-            'created_at', ce.created_at
+            'source', COALESCE(ce.source, 'unknown'),
+            'is_verified', ce.is_verified,
+            'quality', ce.quality,
+            'result', ce.result,
+            'role', ce.role,
+            'free', ce.free,
+            'created_at', ce.created_at,
+            'updated_at', ce.updated_at
           )
         ) FILTER (WHERE ce.id IS NOT NULL) as contact_emails,
         JSONB_AGG(
@@ -200,7 +208,9 @@ export const getAggregatedUserPlaces = async (
             'type', cp.type,
             'contact_id', c.id,
             'contact_name', CONCAT(c.first_name, ' ', c.last_name),
-            'created_at', cp.created_at
+            'is_primary', cp.is_primary,
+            'created_at', cp.created_at,
+            'updated_at', cp.updated_at
           )
         ) FILTER (WHERE cp.id IS NOT NULL) as contact_phones,
         JSONB_AGG(
@@ -210,7 +220,8 @@ export const getAggregatedUserPlaces = async (
             'is_primary', csm.is_primary,
             'contact_id', c.id,
             'contact_name', CONCAT(c.first_name, ' ', c.last_name),
-            'created_at', csm.created_at
+            'created_at', csm.created_at,
+            'updated_at', csm.updated_at
           )
         ) FILTER (WHERE csm.id IS NOT NULL AND csm.social_media_platform = 'LINKEDIN') as contact_linkedins,
         JSONB_AGG(
@@ -302,7 +313,20 @@ export const getAggregatedUserPlaces = async (
       domainRegisteredAt: result.domain_registered_at,
       description: result.description,
       shortDescription: result.short_description,
-      contactEmails: result.contact_emails,
+      contactEmails: result.contact_emails.map((email) => ({
+        id: email.id,
+        email: email.email,
+        isPrimary: email.is_primary,
+        contactId: email.contact_id,
+        isVerified: email.is_verified,
+        source: email.source,
+        quality: email.quality,
+        result: email.result,
+        role: email.role,
+        free: email.free,
+        createdAt: new Date(email.created_at),
+        updatedAt: new Date(email.updated_at),
+      })),
       contactPhones: result.contact_phones,
       contactLinkedins: result.contact_linkedins,
       contactInstagrams: result.contact_instagrams,

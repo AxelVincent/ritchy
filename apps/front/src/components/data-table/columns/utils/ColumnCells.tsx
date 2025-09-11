@@ -1,9 +1,13 @@
 import { type Action, TextWrapper } from '@/components/common/TextWrapper'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { formatPhoneNumberWithCountry } from '@/lib/utils/phone-utils'
 import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
-import type { Note, SearchResult, SocialMediaPlatform } from '@ritchy/types'
-import React, { useState } from 'react'
+import type {
+  Email,
+  Note,
+  SearchResult,
+  SocialMediaPlatform,
+} from '@ritchy/types'
+import React from 'react'
 import {
   createColumnPinActions,
   createColumnPinCopyActions,
@@ -11,12 +15,10 @@ import {
   createColumnPinNoteActions,
 } from './createColumnActions'
 
-import { usePostContactEmail } from '@/api/mutations/contacts/usePostContactEmail'
-import { Notes } from '@/components/notes/Notes'
-import { Input } from '@/components/ui/input'
-import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import posthog from 'posthog-js'
+import { QualityBadge } from '@/components/contact/QualityBadge'
 
 interface BaseColumnCellProps {
   id: string
@@ -32,6 +34,7 @@ export interface NotesColumnCellProps {
   id: string
   place: SearchResult
   content: Note | null
+  onClick?: () => void
 }
 
 interface CopyCellProps {
@@ -91,19 +94,14 @@ export const ColumnPinCell = React.memo(function ColumnPinCell({
 export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
   id,
   place,
+  onClick,
 }: NotesColumnCellProps) {
   const actions = createColumnPinNoteActions(id, () => {
-    const dialogTrigger = document.querySelector(
-      `[data-notes-dialog-trigger="${id}"]`,
-    ) as HTMLButtonElement
-    dialogTrigger?.click()
+    onClick?.()
   })
 
   const handleClick = () => {
-    const dialogTrigger = document.querySelector(
-      `[data-notes-dialog-trigger="${id}"]`,
-    ) as HTMLButtonElement
-    dialogTrigger?.click()
+    onClick?.()
   }
 
   // Get the most recent note
@@ -111,46 +109,36 @@ export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
 
   return (
     <TextWrapper id={id} actions={actions}>
-      <Dialog modal={false}>
-        <div
-          className="group flex items-center w-full cursor-pointer min-h-[24px]"
-          onClick={handleClick}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              handleClick()
-            }
-          }}
-          aria-label="Open notes"
-        >
-          <span className="flex items-center gap-1.5 text-sm w-full">
-            <span className="truncate flex-1">{latestNote?.note}</span>
-            {place.notes && place.notes.length > 0 && (
-              <>
-                <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                  {place.notes.length}{' '}
-                  {place.notes.length === 1 ? 'note' : 'notes'}
-                </span>
-                <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
-                  {latestNote?.createdAt
-                    ? formatDistanceToNow(new Date(latestNote.createdAt), {
-                        addSuffix: true,
-                      })
-                    : ''}
-                </span>
-              </>
-            )}
-          </span>
-          <div className="flex-1" />
-          <DialogTrigger asChild>
-            <div data-notes-dialog-trigger={id} className="hidden" />
-          </DialogTrigger>
-        </div>
-        <DialogContent className="max-w-md h-[60vh] flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-hidden">
-            <Notes userPlaceId={place.id} listId={place.listId} />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <div
+        className="group flex items-center w-full cursor-pointer min-h-[24px]"
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick()
+          }
+        }}
+        aria-label="Open notes"
+      >
+        <span className="flex items-center gap-1.5 text-sm w-full">
+          <span className="truncate flex-1">{latestNote?.note}</span>
+          {place.notes && place.notes.length > 0 && (
+            <>
+              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                {place.notes.length}{' '}
+                {place.notes.length === 1 ? 'note' : 'notes'}
+              </span>
+              <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
+                {latestNote?.createdAt
+                  ? formatDistanceToNow(new Date(latestNote.createdAt), {
+                      addSuffix: true,
+                    })
+                  : ''}
+              </span>
+            </>
+          )}
+        </span>
+        <div className="flex-1" />
+      </div>
     </TextWrapper>
   )
 })
@@ -216,117 +204,121 @@ export const PhoneCell = ({
 
 export const ContactEmailCell = ({
   id,
-  content,
+  emails,
+  onClick,
 }: {
   id: string
-  content: string | null
+  emails: Email[]
+  onClick: () => void
 }) => {
-  const [isEditing, setIsEditing] = useState(false)
-  const [newEmail, setNewEmail] = useState('')
-  const { toast } = useToast()
-  const { mutate: addEmail, isPending } = usePostContactEmail()
-
-  const handleAddEmail = () => {
-    if (!newEmail) {
-      setIsEditing(false)
-      return
-    }
-
-    addEmail(
-      {
-        userPlaceId: id,
-        email: newEmail,
-      },
-      {
-        onSuccess: () => {
-          setNewEmail('')
-          setIsEditing(false)
-          toast({
-            title: 'Email added successfully',
-            description: `Added ${newEmail} to contact`,
-          })
-        },
-        onError: (error) => {
-          toast({
-            title: 'Failed to add email',
-            description: error.message,
-            variant: 'destructive',
-          })
-        },
-      },
-    )
-  }
+  // Add null check to prevent the error
+  const safeEmails = emails || []
 
   const actions = React.useMemo(() => {
-    const baseActions = content ? createColumnPinMailtoActions(id, content) : []
+    const baseActions =
+      safeEmails.length > 0
+        ? createColumnPinMailtoActions(id, safeEmails[0].email)
+        : createColumnPinActions(id)
     return [
       ...baseActions,
       {
         icon: 'Plus' as const,
-        onClick: () => setIsEditing(true),
+        onClick: () => onClick?.(),
         label: 'Add email',
       },
     ]
-  }, [id, content])
+  }, [id, safeEmails, onClick])
 
-  if (isEditing) {
+  // Empty state - no emails
+  if (safeEmails.length === 0) {
     return (
-      <TextWrapper id={id} actions={[]}>
-        <Input
-          type="email"
-          placeholder="Add new email"
-          value={newEmail}
-          onChange={(e) => setNewEmail(e.target.value)}
+      <TextWrapper id={id} actions={actions}>
+        <div
+          className="text-muted-foreground hover:text-muted-foreground/80 cursor-pointer w-full h-full min-h-[24px] flex items-center"
+          onClick={() => onClick?.()}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !isPending) {
-              handleAddEmail()
-            } else if (e.key === 'Escape') {
-              setIsEditing(false)
-              setNewEmail('')
+            if (e.key === 'Enter' || e.key === ' ') {
+              onClick?.()
             }
           }}
-          onBlur={handleAddEmail}
-          autoFocus
-          className="w-full h-full min-h-[24px] px-2 py-0 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-          disabled={isPending}
         />
       </TextWrapper>
     )
   }
 
-  if (!content) {
+  // Single email
+  if (safeEmails.length === 1) {
+    const email = safeEmails[0]
     return (
-      <div
-        className="text-muted-foreground hover:text-muted-foreground/80 cursor-pointer w-full h-full"
-        onClick={() => setIsEditing(true)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            setIsEditing(true)
-          }
-        }}
-      />
+      <TextWrapper id={id} actions={actions}>
+        <div
+          className="flex items-center gap-2 w-full cursor-pointer"
+          onClick={onClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              onClick?.()
+            }
+          }}
+        >
+          <span
+            className="text-blue-600 hover:text-blue-800 hover:underline truncate"
+            onClick={(e) => {
+              e.stopPropagation()
+              posthog.capture('click_mailto_button', { property: 'value' })
+              window.open(`mailto:${email.email}`, '_blank')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation()
+                posthog.capture('click_mailto_button', { property: 'value' })
+                window.open(`mailto:${email.email}`, '_blank')
+              }
+            }}
+          >
+            {email.email}
+          </span>
+          {QualityBadge(email)}
+        </div>
+      </TextWrapper>
     )
   }
 
+  // Multiple emails
   return (
     <TextWrapper id={id} actions={actions}>
-      <span
-        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation()
-          posthog.capture('click_mailto_button', { property: 'value' })
-          window.open(`mailto:${content}`, '_blank')
-        }}
+      <div
+        className="flex items-center gap-2 w-full cursor-pointer"
+        onClick={onClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            e.stopPropagation()
-            posthog.capture('click_mailto_button', { property: 'value' })
-            window.open(`mailto:${content}`, '_blank')
+            onClick?.()
           }
         }}
       >
-        {content}
-      </span>
+        <div className="min-w-0 flex-1 flex items-center gap-2">
+          <span
+            className="text-blue-600 hover:text-blue-800 hover:underline truncate"
+            onClick={(e) => {
+              e.stopPropagation()
+              posthog.capture('click_mailto_button', { property: 'value' })
+              window.open(`mailto:${safeEmails[0].email}`, '_blank')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation()
+                posthog.capture('click_mailto_button', { property: 'value' })
+                window.open(`mailto:${safeEmails[0].email}`, '_blank')
+              }
+            }}
+          >
+            {safeEmails[0].email}
+          </span>
+          {QualityBadge(safeEmails[0])}
+        </div>
+        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap ml-1.5 flex-shrink-0">
+          +{safeEmails.length - 1} more
+        </span>
+      </div>
     </TextWrapper>
   )
 }

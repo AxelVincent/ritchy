@@ -117,9 +117,16 @@ describe('DataExport', () => {
         domainRegisteredAt: new Date(),
         contactEmails: [
           {
+            id: '1',
             email: 'test@example.com',
             isPrimary: true,
             contactId: '1',
+            isVerified: true,
+            source: 'test',
+            quality: 'good',
+            result: 'ok',
+            role: false,
+            free: false,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -227,9 +234,16 @@ describe('DataExport', () => {
         domainRegisteredAt: new Date(),
         contactEmails: [
           {
+            id: '1',
             email: 'test@example.com',
             isPrimary: true,
             contactId: '1',
+            isVerified: true,
+            source: 'test',
+            quality: 'good',
+            result: 'ok',
+            role: false,
+            free: false,
             createdAt: new Date(),
             updatedAt: new Date(),
           },

@@ -12,7 +12,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 
-import { socialPlatformEnum } from './enum'
+import { emailQualityEnum, emailResultEnum, socialPlatformEnum } from './enum'
 import { userPlace } from './place'
 
 export const contact = pgTable(
@@ -42,22 +42,29 @@ export const contactEmail = pgTable(
   'contact_email',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    contactId: uuid('contact_id')
+    contact_id: uuid('contact_id')
       .notNull()
       .references(() => contact.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
-    isPrimary: boolean('is_primary').notNull().default(false),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    is_primary: boolean('is_primary').notNull().default(false),
+    is_verified: boolean('is_verified').notNull().default(false),
+    source: text('source'),
+    quality: emailQualityEnum('quality'),
+    result: emailResultEnum('result'),
+    role: boolean('role').notNull().default(false),
+    free: boolean('free').notNull().default(false),
+    created_at: timestamp('created_at').notNull().defaultNow(),
+    updated_at: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
-    unique().on(table.contactId, table.email),
+    unique().on(table.contact_id, table.email),
     uniqueIndex('one_primary_email_per_contact')
-      .on(table.contactId)
-      .where(sql`${table.isPrimary} = true`),
-    index('idx_contact_email_contact_id').on(table.contactId),
+      .on(table.contact_id)
+      .where(sql`${table.is_primary} = true`),
+    index('idx_contact_email_contact_id').on(table.contact_id),
   ],
 )
+export type ContactEmail = typeof contactEmail.$inferSelect
 
 export const contactSocialMedia = pgTable(
   'contact_social_media',

@@ -192,10 +192,29 @@ export const PhoneTypeEnum = z.enum([
   'VOICEMAIL',
 ])
 
-const EmailSchema = z.object({
+export const EmailQualityEnum = z.enum(['good', 'risky', 'bad', 'unknown'])
+export type EmailQuality = z.infer<typeof EmailQualityEnum>
+export const EmailResultEnum = z.enum([
+  'ok',
+  'catch_all',
+  'unknown',
+  'error',
+  'disposable',
+  'invalid',
+])
+export type EmailResult = z.infer<typeof EmailResultEnum>
+
+export const EmailSchema = z.object({
+  id: z.string().uuid(),
   email: z.string().email(),
   isPrimary: z.boolean(),
   contactId: z.string(),
+  source: z.string().nullable().optional(),
+  isVerified: z.boolean(),
+  quality: EmailQualityEnum.nullable().optional(),
+  result: EmailResultEnum.nullable().optional(),
+  role: z.boolean().nullable().optional(),
+  free: z.boolean().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })

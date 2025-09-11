@@ -1,15 +1,12 @@
 import { logger } from '@ritchy/logger'
+import { EmailQualityEnum } from '@ritchy/types'
 import { z } from 'zod'
-import {
-  enqueueMillionVerifierJob,
-  millionVerifierQueue,
-  millionVerifierQueueEvents,
-} from '../../internal/bullmq/jobs/million_verifier/queue'
+import { enqueueMillionVerifierJob } from '../../internal/bullmq/jobs/million_verifier/queue'
 import { sendSlackNotification } from '../slack/slack'
 
 export const MillionVerifierResponseSchema = z.object({
   email: z.string().email(),
-  quality: z.enum(['', 'good', 'bad', 'risky']),
+  quality: EmailQualityEnum,
   result: z.enum([
     'ok',
     'catch_all',
