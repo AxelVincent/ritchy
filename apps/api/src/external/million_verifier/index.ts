@@ -3,6 +3,7 @@ import { EmailQualityEnum } from '@ritchy/types'
 import { z } from 'zod'
 import { enqueueMillionVerifierJob } from '../../internal/bullmq/jobs/million_verifier/queue'
 import { sendSlackNotification } from '../slack/slack'
+import { redisClient } from '../../internal/redis/redis'
 
 export const MillionVerifierResponseSchema = z.object({
   email: z.string().email(),
@@ -13,7 +14,7 @@ export const MillionVerifierResponseSchema = z.object({
     'unknown',
     'error',
     'disposable',
-    'invalid',
+    'invalid'
   ]),
   resultcode: z.number().int().min(1).max(6),
   subresult: z.enum([
@@ -49,7 +50,7 @@ export const MillionVerifierResponseSchema = z.object({
     'anti_spam_system',
     'dns_no_domain',
     'dns_refused',
-    'timeout',
+    'timeout'
   ]),
   free: z.boolean(),
   role: z.boolean(),
@@ -57,7 +58,7 @@ export const MillionVerifierResponseSchema = z.object({
   credits: z.number().int().positive(),
   executiontime: z.number().int(),
   error: z.string(),
-  livemode: z.boolean(),
+  livemode: z.boolean()
 })
 
 export type MillionVerifierResponse = z.infer<
@@ -65,15 +66,25 @@ export type MillionVerifierResponse = z.infer<
 >
 
 export const verifyWithMillionVerifier = async (
-  email: string,
+  email: string
 ): Promise<MillionVerifierResponse> => {
   try {
+    const cachedResult = await redisClient.get<MillionVerifierResponse>(
+      `million_verifier:${email}`
+    )
+    if (cachedResult) {
+      return cachedResult.data
+    }
+
     const result = await enqueueMillionVerifierJob(email)
+    await redisClient.set(`million_verifier:${email}`, result, {
+      ttl: 60 * 60 * 24 * 7 // 7 days
+    })
 
     logger.debug({
       msg: '[Million Verifier] Email verified with result',
       event: 'email_verified_with_result',
-      metadata: { email, result: result },
+      metadata: { email, result: result }
     })
 
     if (!result) {
@@ -83,19 +94,19 @@ export const verifyWithMillionVerifier = async (
     if (result.credits < 500) {
       sendSlackNotification({
         channel: 'tech_monitoring',
-        text: `[Million Verifier] Email credits are running low: ${result.credits} credits remaining.`,
+        text: `[Million Verifier] Email credits are running low: ${result.credits} credits remaining.`
       })
       logger.warn({
         msg: '[Million Verifier] Email credits are running low',
         event: 'email_credits_low',
-        metadata: { email, credits: result.credits },
+        metadata: { email, credits: result.credits }
       })
     }
 
     logger.debug({
       msg: '[Million Verifier] Email verified',
       event: 'email_verified',
-      metadata: { email, result },
+      metadata: { email, result }
     })
 
     return result
@@ -103,7 +114,7 @@ export const verifyWithMillionVerifier = async (
     logger.error({
       msg: 'Failed to verify email',
       event: 'failed_to_verify_email',
-      metadata: { email, error },
+      metadata: { email, error }
     })
     throw error
   }
