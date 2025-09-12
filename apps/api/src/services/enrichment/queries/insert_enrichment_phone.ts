@@ -2,11 +2,7 @@ import { logger } from '@ritchy/logger'
 import { DrizzleError } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { enrichmentPhone } from '../../../db/schema'
-import {
-  type ParsedPhoneResult,
-  parseAndValidatePhone,
-} from '../../../utils/phone_utils'
-import { getBusinessCountryCodeByEnrichmentId } from './get_business_country_code'
+import { parseAndValidatePhone } from '../../../utils/phone_utils'
 
 export const insertEnrichmentPhone = async (
   userPlaceId: string,
@@ -20,13 +16,7 @@ export const insertEnrichmentPhone = async (
     metadata: { userPlaceId, enrichmentId, source, phone },
   })
 
-  const countryCode = await getBusinessCountryCodeByEnrichmentId(enrichmentId)
-  let parsedResult: ParsedPhoneResult | null = null
-  if (!countryCode) {
-    parsedResult = parseAndValidatePhone(phone)
-  } else {
-    parsedResult = parseAndValidatePhone(phone, countryCode)
-  }
+  const parsedResult = parseAndValidatePhone(phone)
 
   if (parsedResult) {
     logger.debug({
