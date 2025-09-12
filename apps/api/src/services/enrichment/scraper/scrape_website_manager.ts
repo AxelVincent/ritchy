@@ -181,13 +181,12 @@ export const scrapeWebsiteManager = async (
       event: 'scraping_website',
       metadata: { url, userPlaceId },
     })
-    const countryCode = await getBusinessCountryCodeByEnrichmentId(enrichmentId)
 
     const { html, markdown, metadata, success, error } =
       await scrapeWithFallbacks(url, userPlaceId, {
         formats: ['markdown', 'html'],
         excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
-        country: countryCode ?? 'US',
+        country: 'US',
         proxy: 'auto',
         onlyMainContent,
       })
