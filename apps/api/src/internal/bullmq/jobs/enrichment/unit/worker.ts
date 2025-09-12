@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
 import { websiteEnrichmentManager } from 'apps/api/src/services/enrichment/website_enrichment_manager'
-import { type Job, Worker } from 'bullmq'
+import { type Job, UnrecoverableError, Worker } from 'bullmq'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -13,6 +13,17 @@ const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
   try {
     await websiteEnrichmentManager({ userPlaceId })
   } catch (error) {
+    if (error instanceof UnrecoverableError) {
+      logger.error({
+        msg: 'Enrichment unit job timed out',
+        event: 'enrichment_unit_timeout',
+        metadata: {
+          jobId: job.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      })
+      throw error
+    }
     logger.error({
       msg: 'Enrichment unit job failed',
       event: 'enrichment_unit_error',

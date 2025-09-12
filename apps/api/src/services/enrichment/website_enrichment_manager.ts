@@ -9,6 +9,7 @@ import { getCrawlStrategy } from '../../external/langchain/get_crawl_strategy'
 import { getBusinessName } from './queries/get_business_name'
 import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
+import { UnrecoverableError } from 'bullmq'
 import { getWebsiteDescription } from '../../external/langchain/get_website_description'
 import { deleteWebsiteVectors } from '../../external/qdrant/queries/delete_website_vectors'
 import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vectors'
@@ -258,7 +259,7 @@ export const websiteEnrichmentManager = async ({
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    const errorDetails = {
+    logger.error({
       msg: 'Error enriching website',
       event: 'error_enriching_website',
       metadata: {
@@ -276,7 +277,7 @@ export const websiteEnrichmentManager = async ({
             : error,
         timestamp: new Date().toISOString(),
       },
-    }
+    })
 
     // If the error is because of no enrichment credits available, we don't need to refund the credit
     if (
@@ -289,12 +290,7 @@ export const websiteEnrichmentManager = async ({
         event: 'consume_enrichment_credit_no_credits',
         metadata: { userId },
       })
-      return {
-        success: false,
-        message: `Website enrichment failed: ${errorMessage}`,
-        error:
-          process.env.NODE_ENV === 'development' ? errorDetails : undefined,
-      }
+      throw new UnrecoverableError(errorMessage)
     }
 
     await Promise.all([
@@ -309,10 +305,6 @@ export const websiteEnrichmentManager = async ({
         .where(eq(enrichmentTable.id, enrichment.id)),
     ])
 
-    return {
-      success: false,
-      message: `Website enrichment failed: ${errorMessage}`,
-      error: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
-    }
+    throw new UnrecoverableError(errorMessage)
   }
 }

@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
 import { scrapeWebsiteManager } from 'apps/api/src/services/enrichment/scraper/scrape_website_manager'
-import { type Job, Worker } from 'bullmq'
+import { type Job, UnrecoverableError, Worker } from 'bullmq'
 import { bullmqRedisOptions } from '../../config'
 import { workerConfig } from '../../config'
 import { queueName } from './queue'
@@ -31,6 +31,18 @@ const scraperWorker = new Worker(
 
       return result
     } catch (error) {
+      if (error instanceof UnrecoverableError) {
+        logger.error({
+          msg: 'Scraper job timed out',
+          metadata: {
+            jobId: job.id,
+            url,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          event: 'scraper_timeout',
+        })
+        throw error
+      }
       logger.error({
         msg: 'Scraper job failed',
         metadata: {
