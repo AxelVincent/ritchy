@@ -253,19 +253,6 @@ export const SearchMap: FC<MapBoxProps> = ({
     if (!mapRef.current) return
 
     const map = mapRef.current
-    const currentCenter = map.getCenter()
-    const targetCenter = [
-      userLocation.center.longitude,
-      userLocation.center.latitude,
-    ]
-
-    // Skip if we're already at the target location
-    if (
-      currentCenter.lng === targetCenter[0] &&
-      currentCenter.lat === targetCenter[1]
-    ) {
-      return
-    }
 
     map.fitBounds(
       [
