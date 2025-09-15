@@ -52,7 +52,16 @@ const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
   const sw = bounds.getSouthWest()
 
   // Get container dimensions
-  const { width, height } = map.getContainer().getBoundingClientRect()
+  const container = map.getContainer()
+  const containerRect = container.getBoundingClientRect()
+
+  // Add container readiness check
+  if (containerRect.width === 0 || containerRect.height === 0) {
+    debugLog('Container not ready, using original bounds')
+    return bounds
+  }
+
+  const { width, height } = containerRect
   const isPortrait = height > width
 
   if (isPortrait) {
