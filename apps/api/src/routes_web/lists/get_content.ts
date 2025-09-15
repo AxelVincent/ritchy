@@ -43,9 +43,7 @@ export const getListContent = async (
 
     const cacheMisses = placesResults
       .filter((place) => !place.isDeleted)
-      .filter(
-        (place) => place.googleMapsUri === null || place.googleMapsUri === '',
-      )
+      .filter((place) => place.sourceUrl === null || place.sourceUrl === '')
     if (cacheMisses.length > 0) {
       logger.error({
         msg: 'Places in list are not complete, fetching missing places',

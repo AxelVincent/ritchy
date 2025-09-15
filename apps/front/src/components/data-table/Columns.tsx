@@ -33,6 +33,9 @@ import { facebookSocialsColumn } from './columns/FacebookSocialsColumn'
 import { instagramSocialsColumn } from './columns/InstagramSocialsColumn'
 import { linkedinSocialsColumn } from './columns/LinkedinSocialsColumn'
 import { shortDescriptionColumn } from './columns/ShortDescriptionColumn'
+import { sourceColumn } from './columns/SourceColumn'
+import { sourceIdColumn } from './columns/SourceIdColumn'
+import { sourceUrlColumn } from './columns/SourceUrlColumn'
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
@@ -71,5 +74,8 @@ export const columns: ColumnDef<SearchResult>[] = [
   administrativeAreaLevel1Column,
   administrativeAreaLevel2Column,
   administrativeAreaLevel3Column,
+  sourceColumn,
+  sourceIdColumn,
+  sourceUrlColumn,
   // actionsColumn,
 ]

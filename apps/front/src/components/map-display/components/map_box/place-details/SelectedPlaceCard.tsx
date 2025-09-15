@@ -77,7 +77,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
               className="h-8 w-8 p-0"
               onClick={() => {
                 const mapsUrl =
-                  currentPlace.googleMapsUri ||
+                  currentPlace.sourceUrl ||
                   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                     `${currentPlace.name} ${currentPlace.address.formattedAddress || ''}`,
                   )}`
