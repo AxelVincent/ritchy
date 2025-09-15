@@ -7,6 +7,8 @@ const objectMapper = (
 ): Omit<PlaceBase, 'id'> => {
   return {
     sourceId: place.source_id,
+    sourceUrl: place.source_url || '',
+    source: place.source || 'google',
     website: place.website || '',
     name: place.name || '',
     location: {
@@ -19,7 +21,6 @@ const objectMapper = (
     priceRange: place.price_range || undefined,
     rating: place.rating || undefined,
     ratingCount: place.rating_count || undefined,
-    googleMapsUri: place.source_url || '',
     phone: place.phone || undefined,
     utcOffsetMinutes: place.utc_offset_minutes || 0,
     openingHours: place.opening_hours || undefined,

@@ -230,11 +230,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           field: 'shortDescription',
           accessor: (row: SearchResult): string => row.shortDescription || '',
         },
-        {
-          header: 'Google Maps URL',
-          field: 'googleMapsUri',
-          accessor: (row: SearchResult): string => row.googleMapsUri || '',
-        },
+
         {
           header: 'Primary Category',
           field: 'primaryType',
@@ -451,6 +447,21 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           field: 'location.longitude',
           accessor: (row: SearchResult): string =>
             row.location?.longitude?.toString() || '',
+        },
+        {
+          header: 'Source',
+          field: 'source',
+          accessor: (row: SearchResult): string => row.source,
+        },
+        {
+          header: 'Source ID',
+          field: 'sourceId',
+          accessor: (row: SearchResult): string => row.sourceId,
+        },
+        {
+          header: 'Source URL',
+          field: 'sourceUrl',
+          accessor: (row: SearchResult): string => row.sourceUrl || '',
         },
         {
           header: 'Lists',

@@ -142,7 +142,7 @@ export const getSearchContent = async (
     placesResults = await getAggregatedUserPlaces(userId, searchId, undefined)
 
     const cacheMisses = placesResults.filter(
-      (place) => place.googleMapsUri === null || place.googleMapsUri === '',
+      (place) => place.sourceUrl === null || place.sourceUrl === '',
     )
     logger.info({
       msg: 'Cache misses',

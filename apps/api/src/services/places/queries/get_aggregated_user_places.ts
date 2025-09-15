@@ -93,6 +93,7 @@ export const getAggregatedUserPlaces = async (
      -- Essential place fields only (explicit selection)
      p.id,
       p.source_id,
+      p.source,
       p.source_url,
       p.website,
       p.name,
@@ -276,6 +277,8 @@ export const getAggregatedUserPlaces = async (
       id: result.user_place_id,
       name: result.name ?? '',
       sourceId: result.source_id,
+      source: result.source,
+      sourceUrl: result.source_url,
       location: result.location ?? { latitude: 0, longitude: 0 },
       website: result.website ?? undefined,
       types: result.types ?? [],
@@ -285,7 +288,6 @@ export const getAggregatedUserPlaces = async (
       rating: result.rating ?? undefined,
       ratingCount: result.rating_count ?? undefined,
       utcOffsetMinutes: result.utc_offset_minutes ?? 0,
-      googleMapsUri: result.source_url ?? null,
       phone: result.phone ?? undefined,
       isDeleted: result.is_deleted ?? false,
       address: {

@@ -146,6 +146,8 @@ export const PlaceListAssociationSchema = z.object({
 export const PlaceSchemaBase = z.object({
   id: z.string().uuid(),
   sourceId: z.string(),
+  source: z.string(),
+  sourceUrl: z.string().nullable(),
   name: z.string(),
   website: z.string().optional(),
   location: LocationSchema,
@@ -157,7 +159,6 @@ export const PlaceSchemaBase = z.object({
   ratingCount: z.number().optional(),
   utcOffsetMinutes: z.number(),
   openingHours: OpeningHoursSchema.optional(),
-  googleMapsUri: z.string().nullable(),
   phone: z.string().optional(),
   isDeleted: z.boolean(),
   address: z.object({

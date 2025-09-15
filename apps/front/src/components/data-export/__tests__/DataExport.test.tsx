@@ -83,6 +83,8 @@ describe('DataExport', () => {
       {
         id: '1',
         sourceId: '1',
+        sourceUrl: '',
+        source: 'google',
         name: 'Test Place',
         website: 'https://test.com',
         types: ['restaurant'],
@@ -102,7 +104,6 @@ describe('DataExport', () => {
           administrativeAreaLevel2: '',
           administrativeAreaLevel3: '',
         },
-        googleMapsUri: '',
         phone: '',
         rating: undefined,
         ratingCount: undefined,
@@ -202,6 +203,8 @@ describe('DataExport', () => {
       {
         id: '1',
         sourceId: '1',
+        sourceUrl: '',
+        source: 'google',
         name: 'Test Place',
         website: 'https://test.com',
         types: ['restaurant'],
@@ -219,7 +222,6 @@ describe('DataExport', () => {
           administrativeAreaLevel1: 'Test State',
           administrativeAreaLevel2: '',
         },
-        googleMapsUri: '',
         phone: '',
         rating: undefined,
         ratingCount: undefined,
