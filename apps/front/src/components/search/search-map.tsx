@@ -282,7 +282,7 @@ export const SearchMap: FC<MapBoxProps> = ({
         maxZoom: 16,
       },
     )
-  }, [userLocation.center.latitude, userLocation.center.longitude])
+  }, [userLocation])
 
   return (
     <>
