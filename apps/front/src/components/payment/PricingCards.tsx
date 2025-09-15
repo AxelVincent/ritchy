@@ -163,7 +163,7 @@ export const PricingCards = ({
 
   // Function to determine if this is an upgrade or downgrade
   const getPlanAction = (tierPlan: string) => {
-    if (!hasActiveSubscription) return 'Try for free'
+    if (!hasActiveSubscription) return 'Get started'
 
     const currentPlanLevel =
       planHierarchy[me?.plan as keyof typeof planHierarchy] || 0
