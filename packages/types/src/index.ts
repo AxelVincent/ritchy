@@ -1,5 +1,6 @@
 export * from './api/enrich'
-export * from './api/lists'
+export * from './api/lists/lists'
+export * from './api/lists/add_item_from_geocode'
 export * from './api/places/notes'
 export * from './api/places/places'
 export * from './api/places/reviews'
