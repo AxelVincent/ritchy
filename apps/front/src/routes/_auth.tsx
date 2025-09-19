@@ -24,26 +24,6 @@ export const Route = createFileRoute('/_auth')({
 const MODAL_EXEMPT_PATHS = ['/pricing', '/checkout']
 
 function AuthedLayout() {
-  useEffect(() => {
-    // Initialize Sleekplan
-    window.$sleek = []
-    window.SLEEK_PRODUCT_ID = 26548954
-
-    const script = document.createElement('script')
-    script.src = 'https://client.sleekplan.com/sdk/e.js'
-    script.async = true
-    document.head.appendChild(script)
-
-    return () => {
-      // Cleanup on unmount
-      document.head.removeChild(script)
-      // biome-ignore lint/performance/noDelete: temporary for sleekplan script
-      delete window.$sleek
-      // biome-ignore lint/performance/noDelete: temporary for sleekplan script
-      delete window.SLEEK_PRODUCT_ID
-    }
-  }, [])
-
   return (
     <>
       <SignedIn>

@@ -64,12 +64,19 @@ const calculateInitialBounds = (
   return new mapboxgl.LngLatBounds(initialCenter, initialCenter)
 }
 
-export const useMapInitialization = (
-  mapContainerRef: React.RefObject<HTMLDivElement>,
-  initialCenter: [number, number],
-  settings: MapSettings,
-  searchResults?: Place[],
-) => {
+export const useMapInitialization = ({
+  mapContainerRef,
+  initialCenter,
+  settings,
+  initialBounds,
+  searchResults,
+}: {
+  mapContainerRef: React.RefObject<HTMLDivElement>
+  initialCenter: [number, number]
+  settings: MapSettings
+  initialBounds?: mapboxgl.LngLatBounds
+  searchResults?: Place[]
+}) => {
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const isMobile = useIsMobile()
   const firstRender = useRef(true)
@@ -85,7 +92,10 @@ export const useMapInitialization = (
     performance.mark('map-init-start')
 
     try {
-      const initialBounds = calculateInitialBounds(initialCenter, searchResults)
+      // Use initialBounds if provided, otherwise calculate from initialCenter
+      const bounds = searchResults
+        ? calculateInitialBounds(initialCenter, searchResults)
+        : initialBounds
 
       // Initialize map with performance options
       mapRef.current = new mapboxgl.Map({
@@ -101,13 +111,11 @@ export const useMapInitialization = (
         localIdeographFontFamily:
           MAP_PERFORMANCE_OPTIONS.localIdeographFontFamily,
         transformRequest: transformMapboxRequest,
-        ...(initialBounds && {
-          bounds: initialBounds,
-          fitBoundsOptions: {
-            padding: { top: 50, bottom: 50, left: 50, right: 50 },
-            maxZoom: 15,
-          },
-        }),
+        bounds: bounds,
+        fitBoundsOptions: {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          maxZoom: 15,
+        },
       })
 
       // Add passive touch events
@@ -129,7 +137,7 @@ export const useMapInitialization = (
       })
 
       // Add controls
-      const controls = createControls(searchResults)
+      const controls = createControls(undefined) // Pass undefined as searchResults is now handled by initialBounds
       for (const control of controls) {
         mapRef.current?.addControl(control)
       }
@@ -192,30 +200,27 @@ export const useMapInitialization = (
     mapRef.current.setZoom(settings.zoom)
   }, [settings])
 
-  // Handle updates to search results
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // Handle updates to search results and bounds
   useEffect(() => {
-    if (!mapRef.current || !searchResults?.length) return
+    if (!mapRef.current) return
 
-    // Only calculate and fit bounds on first render
-    if (!firstRender.current) {
+    // Calculate bounds from search results if available
+    const bounds =
+      searchResults && searchResults.length > 0
+        ? calculateInitialBounds(initialCenter, searchResults)
+        : initialBounds
+
+    if (!bounds) return
+
+    // Only calculate and fit bounds on first render for initialBounds
+    // Always update bounds when search results change
+    if (!firstRender.current && !searchResults) {
       return
     }
 
     // Wait for the map to be fully loaded before setting bounds
     if (!mapRef.current.loaded()) {
       mapRef.current.once('load', () => {
-        const bounds = new mapboxgl.LngLatBounds()
-        bounds.extend(initialCenter)
-
-        for (const place of searchResults) {
-          const coordinates = [
-            place.location.longitude,
-            place.location.latitude,
-          ] as [number, number]
-          bounds.extend(coordinates)
-        }
-
         mapRef.current?.fitBounds(bounds, {
           padding: { top: 50, bottom: 50, left: 50, right: 50 },
           maxZoom: 15,
@@ -226,17 +231,6 @@ export const useMapInitialization = (
       })
     } else {
       // Map is already loaded, set bounds immediately
-      const bounds = new mapboxgl.LngLatBounds()
-      bounds.extend(initialCenter)
-
-      for (const place of searchResults) {
-        const coordinates = [
-          place.location.longitude,
-          place.location.latitude,
-        ] as [number, number]
-        bounds.extend(coordinates)
-      }
-
       mapRef.current.fitBounds(bounds, {
         padding: { top: 50, bottom: 50, left: 50, right: 50 },
         maxZoom: 15,
@@ -245,7 +239,7 @@ export const useMapInitialization = (
 
       firstRender.current = false
     }
-  }, [searchResults])
+  }, [initialBounds, searchResults, initialCenter])
 
   // Handle updates to isMobile state
   useEffect(() => {

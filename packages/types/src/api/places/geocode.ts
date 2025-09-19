@@ -30,6 +30,7 @@ export type Geometry = z.infer<typeof GeometrySchema>
 export const GeocodeLocationSchema = z.object({
   formatted_address: z.string(),
   geometry: GeometrySchema,
+  place_id: z.string(),
 })
 
 export type GeocodeLocation = z.infer<typeof GeocodeLocationSchema>

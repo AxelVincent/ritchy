@@ -9,7 +9,9 @@ import { db } from '../../db/db'
 import { place as placeTable } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { enqueuePlaceDetailsJob } from '../../internal/bullmq/jobs/google/places/queue'
+import { getPlaceBySourceId } from '../../services/places/queries/get_place_by_source_id'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
+import type { PlaceWithEnrichedAt } from '../../services/places/queries/get_places_by_user_place_ids'
 import { sanitizeApiData } from '../../utils/sanitize_api_data'
 import {
   PREFERRED_PLACE_KEYS,
@@ -100,11 +102,25 @@ export async function fetchPlaceDetails(
 }
 
 export async function getPlaceDetailsV1(
-  userPlaceId: string,
+  params: { sourceId?: string; userPlaceId?: string },
   tx?: PostgresJsDatabase<typeof schema>,
 ): Promise<PlaceBase & { fromCache: boolean; is_deleted?: boolean }> {
   const dbOrTx = tx ?? db
-  const place = await getPlaceByUserPlaceId(userPlaceId, dbOrTx)
+  const { sourceId, userPlaceId } = params
+
+  if (sourceId && userPlaceId) {
+    throw new Error('Only one of sourceId or userPlaceId should be provided')
+  }
+
+  let place: PlaceWithEnrichedAt
+
+  if (userPlaceId) {
+    place = await getPlaceByUserPlaceId(userPlaceId, dbOrTx)
+  } else if (sourceId) {
+    place = await getPlaceBySourceId(sourceId, dbOrTx)
+  } else {
+    throw new Error('Either sourceId or userPlaceId must be provided')
+  }
 
   if (place.source_url != null && place.source_url !== '') {
     // If place is marked as deleted, never refresh it
@@ -130,7 +146,7 @@ export async function getPlaceDetailsV1(
 
       return {
         ...result,
-        id: userPlaceId,
+        id: place.id,
         fromCache: true,
         is_deleted: place.is_deleted,
       }
@@ -157,7 +173,7 @@ export async function getPlaceDetailsV1(
 
     return {
       ...result,
-      id: userPlaceId,
+      id: place.id,
       fromCache: true,
       is_deleted: false,
     }
@@ -334,7 +350,7 @@ export async function getPlaceDetailsV1(
       metadata: { placeSourceId: place.source_id },
     })
 
-    return { ...result, id: userPlaceId, fromCache: false }
+    return { ...result, id: updatedPlace.id, fromCache: false }
   } catch (error) {
     logger.info({
       msg: 'Error fetching place details',
@@ -374,7 +390,7 @@ export async function getPlaceDetailsV1(
 
       return {
         ...result,
-        id: userPlaceId,
+        id: place.id,
         fromCache: true,
         is_deleted: place.is_deleted,
       }

@@ -20,7 +20,12 @@ export function NavMain() {
           tooltip="Explore places"
           isActive={match?.pathname === '/search/'}
         >
-          <Link to="/search">
+          <Link
+            to="/search"
+            search={{
+              mode: 'keyword',
+            }}
+          >
             <Search className="text-muted-foreground text-sm" />
             <p className="pl-2 font-medium">Explore places</p>
           </Link>
