@@ -19,7 +19,9 @@ export const EmptyListState = ({ listId }: EmptyListStateProps) => {
       <p className="mb-6 text-sm text-muted-foreground">
         Start exploring and add leads to this list to build your collection
       </p>
-      <Button onClick={() => navigate({ to: '/search' })}>
+      <Button
+        onClick={() => navigate({ to: '/search', search: { mode: 'keyword' } })}
+      >
         Explore places
       </Button>
     </div>

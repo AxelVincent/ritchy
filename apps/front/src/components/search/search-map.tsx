@@ -1,21 +1,10 @@
-import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { useMapInitialization } from '@/components/map-display/hooks/useMapInitialization'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 
-import { Button } from '@/components/ui/button'
 import { debounce } from '@/lib/debounce'
-import type { Rectangle } from '@ritchy/types'
-import { Search } from 'lucide-react'
+import type { GeocodeLocation } from '@ritchy/types'
 import mapboxgl from 'mapbox-gl'
 import { type FC, useCallback, useEffect, useMemo, useRef } from 'react'
-
-const DEBUG = false
-
-const debugLog = (...args: unknown[]) => {
-  if (DEBUG) {
-    console.log('[MapBox]', ...args)
-  }
-}
 
 type center = {
   latitude: number
@@ -36,13 +25,7 @@ export type Location = {
 interface MapBoxProps {
   onLocationChange: (location: Location) => void
   userLocation: Location
-  onSearchArea: () => void
-  searchInfo: {
-    keyword: string
-    placeName: string
-    model: string
-  }
-  isLoading?: boolean
+  selectedPlace?: GeocodeLocation | null
 }
 
 const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
@@ -57,7 +40,6 @@ const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
 
   // Add container readiness check
   if (containerRect.width === 0 || containerRect.height === 0) {
-    debugLog('Container not ready, using original bounds')
     return bounds
   }
 
@@ -86,57 +68,112 @@ const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
 export const SearchMap: FC<MapBoxProps> = ({
   onLocationChange,
   userLocation,
-  onSearchArea,
-  searchInfo,
-  isLoading: propIsLoading,
+  selectedPlace,
 }) => {
-  debugLog('MapBox render:', { userLocation })
-
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
+  const uniquePlaceMarkerRef = useRef<mapboxgl.Marker | null>(null)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // Track programmatic moves to prevent infinite loops
+  const isProgrammaticMoveRef = useRef(false)
+  const lastUserLocationRef = useRef<Location | null>(null)
+  const pendingMoveUpdateRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Add a ref to track if the location change came from map interaction
+  const isMapInteractionRef = useRef(false)
+  const mapInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   const initialCenter = useMemo(() => {
-    debugLog('Calculating initial center:', userLocation)
     return [userLocation.center.longitude, userLocation.center.latitude] as [
       number,
       number,
     ]
   }, [userLocation.center.latitude, userLocation.center.longitude])
 
-  const mapRef = useMapInitialization(
+  const initialBounds = useMemo(() => {
+    return new mapboxgl.LngLatBounds(
+      [
+        userLocation.bounds.southWest.longitude,
+        userLocation.bounds.southWest.latitude,
+      ],
+      [
+        userLocation.bounds.northEast.longitude,
+        userLocation.bounds.northEast.latitude,
+      ],
+    )
+  }, [userLocation.bounds])
+
+  const mapRef = useMapInitialization({
     mapContainerRef,
     initialCenter,
-    MAP_SETTINGS,
+    settings: MAP_SETTINGS,
+    initialBounds,
+    searchResults: [],
+  })
+
+  // Create unique place marker
+  const createUniquePlaceMarker = useCallback(
+    (place: GeocodeLocation) => {
+      if (!mapRef.current) return
+
+      // Remove existing unique place marker
+      if (uniquePlaceMarkerRef.current) {
+        uniquePlaceMarkerRef.current.remove()
+      }
+
+      // Create custom marker element
+      const markerElement = document.createElement('div')
+      markerElement.className = 'unique-place-marker'
+      markerElement.innerHTML = `
+      <div class="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full border-2 border-white shadow-lg">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+        </svg>
+      </div>
+    `
+
+      // Create marker
+      const marker = new mapboxgl.Marker({
+        element: markerElement,
+        anchor: 'center',
+      })
+        .setLngLat([place.geometry.location.lng, place.geometry.location.lat])
+        .addTo(mapRef.current)
+
+      uniquePlaceMarkerRef.current = marker
+
+      // Add popup with place information
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: true,
+        closeOnClick: false,
+      })
+
+      marker.setPopup(popup)
+    },
+    [mapRef],
   )
 
-  // Record user activity
+  // Handle unique place marker updates
   useEffect(() => {
-    const recordActivity = () => {
-      localStorage.setItem('lastMapActivity', Date.now().toString())
+    if (selectedPlace) {
+      createUniquePlaceMarker(selectedPlace)
+    } else {
+      // Remove marker when no place is selected
+      if (uniquePlaceMarkerRef.current) {
+        uniquePlaceMarkerRef.current.remove()
+        uniquePlaceMarkerRef.current = null
+      }
     }
-
-    window.addEventListener('mousemove', recordActivity)
-    window.addEventListener('keydown', recordActivity)
-    window.addEventListener('touchstart', recordActivity)
-
-    return () => {
-      window.removeEventListener('mousemove', recordActivity)
-      window.removeEventListener('keydown', recordActivity)
-      window.removeEventListener('touchstart', recordActivity)
-    }
-  }, [])
+  }, [selectedPlace, createUniquePlaceMarker])
 
   // Resize observer effect
   useEffect(() => {
-    debugLog('Setting up resize observer')
     if (!mapRef.current || !mapContainerRef.current) {
-      debugLog('Resize observer: Missing refs')
       return
     }
 
     const debouncedResize = debounce(() => {
-      debugLog('Resizing map')
       mapRef.current?.resize()
     }, 300)
 
@@ -144,7 +181,6 @@ export const SearchMap: FC<MapBoxProps> = ({
     resizeObserver.observe(mapContainerRef.current)
 
     return () => {
-      debugLog('Cleaning up resize observer')
       if (mapContainerRef.current) {
         resizeObserver.unobserve(mapContainerRef.current)
       }
@@ -153,34 +189,29 @@ export const SearchMap: FC<MapBoxProps> = ({
     }
   }, [mapRef])
 
-  // Create a memoized debounced handler
-  const debouncedLocationChange = useMemo(
-    () =>
-      debounce((center: mapboxgl.LngLat, rectangle: Rectangle) => {
-        onLocationChange({
-          center: {
-            latitude: center.lat,
-            longitude: center.lng,
-          },
-          bounds: {
-            northEast: {
-              latitude: rectangle.northEast.latitude,
-              longitude: rectangle.northEast.longitude,
-            },
-            southWest: {
-              latitude: rectangle.southWest.latitude,
-              longitude: rectangle.southWest.longitude,
-            },
-          },
-        })
-      }, 500),
-    [onLocationChange],
-  )
+  // Handle moveend events for immediate processing when animation completes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: //
+  const handleMapMoveEnd = useCallback(() => {
+    // Skip if this is a programmatic move
+    if (isProgrammaticMoveRef.current) {
+      return
+    }
 
-  // Memoize the location update handler
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const handleMapMove = useCallback(() => {
     if (!mapRef.current) return
+
+    // Clear any existing timeout
+    if (mapInteractionTimeoutRef.current) {
+      clearTimeout(mapInteractionTimeoutRef.current)
+    }
+
+    // Set flag to indicate this location change came from map interaction
+    isMapInteractionRef.current = true
+
+    // Clear any pending timeout since we have the final values now
+    if (pendingMoveUpdateRef.current) {
+      clearTimeout(pendingMoveUpdateRef.current)
+      pendingMoveUpdateRef.current = null
+    }
 
     const map = mapRef.current
     const center = map.getCenter()
@@ -231,28 +262,55 @@ export const SearchMap: FC<MapBoxProps> = ({
     }
 
     centerMarkerRef.current?.setLngLat(center)
-    debouncedLocationChange(center, normalizedRectangle)
-  }, [debouncedLocationChange])
+    onLocationChange({
+      center: {
+        latitude: center.lat,
+        longitude: center.lng,
+      },
+      bounds: normalizedRectangle,
+    })
+
+    // Reset the flag after the debounced function has had time to execute
+    // The debounce is 1000ms, so we wait 1100ms to be safe
+    mapInteractionTimeoutRef.current = setTimeout(() => {
+      isMapInteractionRef.current = false
+    }, 1000)
+  }, [onLocationChange])
 
   // Set up map movement handlers once
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: //
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current) {
+      return
+    }
 
     const map = mapRef.current
-    map.on('move', handleMapMove)
+    // map.on('move', handleMapMove)
+    map.on('moveend', handleMapMoveEnd)
 
     return () => {
-      map.off('move', handleMapMove)
+      // map.off('move', handleMapMove)
+      map.off('moveend', handleMapMoveEnd)
+
+      // Clean up pending timeout
+      if (pendingMoveUpdateRef.current) {
+        clearTimeout(pendingMoveUpdateRef.current)
+      }
     }
-  }, [handleMapMove])
+  }, [handleMapMoveEnd])
 
-  // Improve location update effect
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // Handle userLocation changes - only update map if it's a meaningful change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: //
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current) {
+      return
+    }
 
+    lastUserLocationRef.current = userLocation
     const map = mapRef.current
+
+    // Set flag to indicate programmatic move
+    isProgrammaticMoveRef.current = true
 
     map.fitBounds(
       [
@@ -267,30 +325,32 @@ export const SearchMap: FC<MapBoxProps> = ({
       ],
       {
         maxZoom: 16,
+        duration: 500,
       },
     )
+
+    setTimeout(() => {
+      isProgrammaticMoveRef.current = false
+    }, 600)
   }, [userLocation])
 
-  return (
-    <>
-      <div ref={mapContainerRef} className="h-full w-full" />
-      {searchInfo.keyword && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
-          <Button
-            size="lg"
-            onClick={onSearchArea}
-            className="shadow-lg h-[40px]"
-            disabled={propIsLoading}
-          >
-            {propIsLoading ? (
-              <LoadingSpinner className="w-4 h-4 mr-2" />
-            ) : (
-              <Search className="w-4 h-4 mr-2" />
-            )}
-            Search in this area
-          </Button>
-        </div>
-      )}
-    </>
-  )
+  // Cleanup markers on unmount
+  useEffect(() => {
+    return () => {
+      if (uniquePlaceMarkerRef.current) {
+        uniquePlaceMarkerRef.current.remove()
+      }
+    }
+  }, [])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (mapInteractionTimeoutRef.current) {
+        clearTimeout(mapInteractionTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  return <div ref={mapContainerRef} className="h-full w-full" />
 }

@@ -155,7 +155,7 @@ export async function getPlaceDetailsOptimized(
   })
 
   try {
-    const result = await getPlaceDetailsV1(place.user_place_id)
+    const result = await getPlaceDetailsV1({ userPlaceId: place.user_place_id })
 
     logger.info({
       msg: 'Place details optimization metrics',
