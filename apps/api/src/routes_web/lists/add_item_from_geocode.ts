@@ -19,6 +19,14 @@ export const addItemFromGeocode = async (
   >,
   res: Response<AddItemFromGeocodeApiResponse>,
 ): Promise<void> => {
+  logger.info({
+    msg: 'Add item from geocode',
+    event: 'add_item_from_geocode',
+    metadata: {
+      googleMapsPlaceId: req.body.googleMapsPlaceId,
+      listId: req.body.listId,
+    },
+  })
   try {
     const { googleMapsPlaceId, listId } = req.body
     const { userId } = req.auth

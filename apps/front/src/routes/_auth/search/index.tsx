@@ -189,27 +189,11 @@ function RouteComponent() {
 
   const handlePlaceSelect = useCallback(
     (place: GeocodeLocation) => {
-      const updatedLocation = {
-        center: {
-          latitude: place.geometry.location.lat,
-          longitude: place.geometry.location.lng,
-        },
-        bounds: {
-          northEast: {
-            latitude: place.geometry.viewport.northeast.lat,
-            longitude: place.geometry.viewport.northeast.lng,
-          },
-          southWest: {
-            latitude: place.geometry.viewport.southwest.lat,
-            longitude: place.geometry.viewport.southwest.lng,
-          },
-        },
-      }
       updateSearchParams({
-        northEastLat: updatedLocation.bounds.northEast.latitude,
-        northEastLng: updatedLocation.bounds.northEast.longitude,
-        southWestLat: updatedLocation.bounds.southWest.latitude,
-        southWestLng: updatedLocation.bounds.southWest.longitude,
+        northEastLat: place.geometry.viewport.northeast.lat,
+        northEastLng: place.geometry.viewport.northeast.lng,
+        southWestLat: place.geometry.viewport.southwest.lat,
+        southWestLng: place.geometry.viewport.southwest.lng,
       })
       setSelectedPlace(place)
     },

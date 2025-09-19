@@ -180,7 +180,8 @@ export async function getPlaceDetailsV1(
   }
 
   try {
-    const data = await enqueuePlaceDetailsJob(place.source_id)
+    const googlePlaceId = place.source_id ?? sourceId
+    const data = await enqueuePlaceDetailsJob(googlePlaceId)
     const validatedData = PreferredPlaceSchema.parse(sanitizeApiData(data))
     logger.info({
       msg: 'Enqueued place details job',
