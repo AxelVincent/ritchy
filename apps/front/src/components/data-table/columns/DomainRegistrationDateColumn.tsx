@@ -106,6 +106,7 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
     const date = row.getValue(columnId)
       ? new Date(row.getValue(columnId))
       : null
+    console.log('cellValue', date)
 
     // Only apply date filtering if we have a filter value
     if (!from && !to) return true

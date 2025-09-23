@@ -9,7 +9,7 @@ export const getPlaces = (userPlaceIds: string[]) =>
         event: 'get_places',
         metadata: { userPlaceId },
       })
-      const place = await getPlaceDetailsV1({ userPlaceId })
+      const place = await getPlaceDetailsV1(userPlaceId)
       return {
         ...place,
         userPlaceId,

@@ -121,6 +121,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
 
     try {
       setIsExporting(true)
+      console.log('selectedRows', selectedRows)
 
       // Create a copy of the data with properly structured fields
       const exportData = selectedRows.map((row) => ({

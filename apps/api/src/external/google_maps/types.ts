@@ -11,7 +11,7 @@ import { z } from 'zod'
 
 const LocalizedTextSchema = z.object({
   text: z.string(),
-  languageCode: z.string().optional(),
+  languageCode: z.string(),
 })
 
 const PlusCodeSchema = z.object({

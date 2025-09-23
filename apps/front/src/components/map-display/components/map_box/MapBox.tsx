@@ -44,12 +44,12 @@ export const MapBox: FC<MapBoxProps> = ({
     ]
   }, [userLocation.center.latitude, userLocation.center.longitude])
 
-  const mapRef = useMapInitialization({
+  const mapRef = useMapInitialization(
     mapContainerRef,
     initialCenter,
-    settings: MAP_SETTINGS,
-    searchResults: searchResults ?? [],
-  })
+    MAP_SETTINGS,
+    searchResults ?? [],
+  )
 
   // Resize observer effect
   useEffect(() => {

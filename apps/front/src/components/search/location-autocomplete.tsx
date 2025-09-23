@@ -12,14 +12,12 @@ interface LocationAutocompleteProps {
   onLocationSelect: (location: GeocodeLocation) => void
   initialAddress?: string
   autoFocus?: boolean
-  onClear?: () => void
 }
 
 export function LocationAutocomplete({
   onLocationSelect,
   initialAddress,
   autoFocus,
-  onClear,
 }: LocationAutocompleteProps) {
   const [value, setValue] = React.useState('')
   const [inputValue, setInputValue] = React.useState(initialAddress || '')
@@ -93,14 +91,15 @@ export function LocationAutocomplete({
       onLocationSelect({
         formatted_address: inputValue,
         geometry: geocodeData.result.geometry,
-        place_id:
-          'place_id' in geocodeData.result ? geocodeData.result.place_id : '',
       })
       setShouldFetchGeocode(false)
     }
   }, [geocodeData, onLocationSelect, inputValue])
 
   const getLocationIcon = (types: string[]) => {
+    if (types.includes('street_address')) {
+      return <MapPin className="h-4 w-4 shrink-0" />
+    }
     if (types.includes('establishment')) {
       return <Store className="h-4 w-4 shrink-0" />
     }
@@ -119,7 +118,6 @@ export function LocationAutocomplete({
             setPredictions([])
             setSelectedPlaceId(null)
             setIsEditing(false)
-            onClear?.()
           }}
           autoFocus={autoFocus}
         />

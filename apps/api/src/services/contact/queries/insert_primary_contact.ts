@@ -16,7 +16,7 @@ export const getOrCreatePrimaryContact = async (
     event: 'getting_or_creating_primary_contact',
     metadata: { userPlaceId },
   })
-  const place = await getPlaceDetailsV1({ userPlaceId }, tx)
+  const place = await getPlaceDetailsV1(userPlaceId, tx)
 
   const [existingContact] = await dbOrTx
     .select()

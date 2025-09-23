@@ -50,6 +50,7 @@ export const EmailDisplay = ({
   // onSetPrimary,
   className,
 }: EmailDisplayProps) => {
+  console.log(emails)
   const [newEmail, setNewEmail] = useState('')
   const [isAdding, setIsAdding] = useState(false)
   // const [isDeleting, setIsDeleting] = useState<string | null>(null)

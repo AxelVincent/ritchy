@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from '../../common'
-import { PlaceSchema } from '../places/places'
+import { ApiErrorResponseSchema } from '../common'
+import { PlaceSchema } from './places/places'
 
 // Basic/Common Schemas
 export const ListResponseSchema = z.object({
