@@ -109,7 +109,8 @@ export const PlacesUniqueSearch = ({
         ) {
           toast({
             title: 'Already in list',
-            description: 'This place is already in the selected list',
+            description:
+              'This place is already in the selected list, no credits consumed',
             variant: 'default',
           })
         } else {

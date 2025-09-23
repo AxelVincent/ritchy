@@ -16,7 +16,6 @@ import { Loader2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface PlacesKeywordSearchProps {
-  location: Location
   updateSearchParams: (
     updates: Partial<{
       mode: 'keyword' | 'unique'

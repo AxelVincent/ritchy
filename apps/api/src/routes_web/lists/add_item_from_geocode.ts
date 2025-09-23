@@ -10,6 +10,9 @@ import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { list, listPlace, userPlace } from '../../db/schema'
 import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
+import { consumeSearchCredits } from '../../services/payment/queries/consume_search_credits'
+import { getUserCredits } from '../../services/payment/queries/get_user_credits'
+import { refundSearchCredits } from '../../services/payment/queries/refund_search_credits'
 
 export const addItemFromGeocode = async (
   req: Request<
@@ -27,9 +30,19 @@ export const addItemFromGeocode = async (
       listId: req.body.listId,
     },
   })
+  const { googleMapsPlaceId, listId } = req.body
+  const { userId } = req.auth
   try {
-    const { googleMapsPlaceId, listId } = req.body
-    const { userId } = req.auth
+    const userCredits = await getUserCredits(req.auth.userId)
+
+    if (userCredits.search < 3) {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: 'You have less than 3 credits left. Please upgrade your plan.',
+      })
+      return
+    }
+    await consumeSearchCredits(userId, 3)
 
     // Verify list ownership
     const listResult = await db
@@ -78,9 +91,10 @@ export const addItemFromGeocode = async (
       .limit(1)
 
     if (existingListPlace.length > 0) {
+      await refundSearchCredits(userId, 3)
       res.status(409).json({
         success: false,
-        message: 'Place is already in this list',
+        message: 'Place is already in this list, no credits consumed',
       })
       return
     }
@@ -98,6 +112,7 @@ export const addItemFromGeocode = async (
       success: true,
     })
   } catch (error) {
+    await refundSearchCredits(userId, 3)
     logger.error({
       msg: 'Add item from geocode error',
       event: 'add_item_from_geocode_error',
@@ -105,7 +120,7 @@ export const addItemFromGeocode = async (
     })
     res.status(500).json({
       success: false,
-      message: 'Failed to add item from geocode',
+      message: 'Failed to add item from geocode, credits refunded',
     })
   }
 }
