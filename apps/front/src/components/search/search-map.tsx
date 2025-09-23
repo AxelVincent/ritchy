@@ -4,7 +4,7 @@ import { MAP_SETTINGS } from '@/components/map-display/types'
 import { debounce } from '@/lib/debounce'
 import type { GeocodeLocation } from '@ritchy/types'
 import mapboxgl from 'mapbox-gl'
-import { type FC, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type FC, useCallback, useEffect, useRef } from 'react'
 
 type center = {
   latitude: number
@@ -23,9 +23,21 @@ export type Location = {
 
 // Improve props interface with more specific types
 interface MapBoxProps {
-  onLocationChange: (location: Location) => void
   userLocation: Location
   selectedPlace?: GeocodeLocation | null
+  updateSearchParams: (
+    updates: Partial<{
+      mode: 'keyword' | 'unique'
+      keyword: string
+      placeName: string
+      model: 'BASIC' | 'ENHANCED'
+      northEastLat: number
+      northEastLng: number
+      southWestLat: number
+      southWestLng: number
+      lng: number
+    }>,
+  ) => void
 }
 
 const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
@@ -66,48 +78,22 @@ const calculateAspectRatioBounds = (map: mapboxgl.Map) => {
 }
 
 export const SearchMap: FC<MapBoxProps> = ({
-  onLocationChange,
   userLocation,
   selectedPlace,
+  updateSearchParams,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const centerMarkerRef = useRef<mapboxgl.Marker | null>(null)
   const uniquePlaceMarkerRef = useRef<mapboxgl.Marker | null>(null)
 
-  // Track programmatic moves to prevent infinite loops
-  const isProgrammaticMoveRef = useRef(false)
-  const lastUserLocationRef = useRef<Location | null>(null)
-  const pendingMoveUpdateRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Add a ref to track if the location change came from map interaction
-  const isMapInteractionRef = useRef(false)
-  const mapInteractionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const initialCenter = useMemo(() => {
-    return [userLocation.center.longitude, userLocation.center.latitude] as [
-      number,
-      number,
-    ]
-  }, [userLocation.center.latitude, userLocation.center.longitude])
-
-  const initialBounds = useMemo(() => {
-    return new mapboxgl.LngLatBounds(
-      [
-        userLocation.bounds.southWest.longitude,
-        userLocation.bounds.southWest.latitude,
-      ],
-      [
-        userLocation.bounds.northEast.longitude,
-        userLocation.bounds.northEast.latitude,
-      ],
-    )
-  }, [userLocation.bounds])
+  const initialCenter = useRef<[number, number]>([
+    userLocation.center.longitude,
+    userLocation.center.latitude,
+  ]).current
 
   const mapRef = useMapInitialization({
     mapContainerRef,
     initialCenter,
     settings: MAP_SETTINGS,
-    initialBounds,
     searchResults: [],
   })
 
@@ -192,26 +178,7 @@ export const SearchMap: FC<MapBoxProps> = ({
   // Handle moveend events for immediate processing when animation completes
   // biome-ignore lint/correctness/useExhaustiveDependencies: //
   const handleMapMoveEnd = useCallback(() => {
-    // Skip if this is a programmatic move
-    if (isProgrammaticMoveRef.current) {
-      return
-    }
-
     if (!mapRef.current) return
-
-    // Clear any existing timeout
-    if (mapInteractionTimeoutRef.current) {
-      clearTimeout(mapInteractionTimeoutRef.current)
-    }
-
-    // Set flag to indicate this location change came from map interaction
-    isMapInteractionRef.current = true
-
-    // Clear any pending timeout since we have the final values now
-    if (pendingMoveUpdateRef.current) {
-      clearTimeout(pendingMoveUpdateRef.current)
-      pendingMoveUpdateRef.current = null
-    }
 
     const map = mapRef.current
     const center = map.getCenter()
@@ -231,51 +198,13 @@ export const SearchMap: FC<MapBoxProps> = ({
     const ne = bounds.getNorthEast()
     const sw = bounds.getSouthWest()
 
-    // Validate bound coordinates
-    if (
-      !Number.isFinite(ne.lat) ||
-      !Number.isFinite(ne.lng) ||
-      !Number.isFinite(sw.lat) ||
-      !Number.isFinite(sw.lng)
-    ) {
-      console.warn('Invalid bounds coordinates:', { ne, sw })
-      return
-    }
-
-    // Add bounds width validation
-    const width = Math.abs(ne.lng - sw.lng)
-    if (width > 180) {
-      console.warn('Viewport too wide, skipping update:', width)
-      return
-    }
-
-    // Ensure coordinates are within valid ranges
-    const normalizedRectangle = {
-      northEast: {
-        latitude: Math.min(Math.max(ne.lat, -90), 90),
-        longitude: Math.min(Math.max(ne.lng, -180), 180),
-      },
-      southWest: {
-        latitude: Math.min(Math.max(sw.lat, -90), 90),
-        longitude: Math.min(Math.max(sw.lng, -180), 180),
-      },
-    }
-
-    centerMarkerRef.current?.setLngLat(center)
-    onLocationChange({
-      center: {
-        latitude: center.lat,
-        longitude: center.lng,
-      },
-      bounds: normalizedRectangle,
+    updateSearchParams({
+      northEastLat: ne.lat,
+      northEastLng: ne.lng,
+      southWestLat: sw.lat,
+      southWestLng: sw.lng,
     })
-
-    // Reset the flag after the debounced function has had time to execute
-    // The debounce is 1000ms, so we wait 1100ms to be safe
-    mapInteractionTimeoutRef.current = setTimeout(() => {
-      isMapInteractionRef.current = false
-    }, 1000)
-  }, [onLocationChange])
+  }, [])
 
   // Set up map movement handlers once
   // biome-ignore lint/correctness/useExhaustiveDependencies: //
@@ -285,53 +214,41 @@ export const SearchMap: FC<MapBoxProps> = ({
     }
 
     const map = mapRef.current
-    // map.on('move', handleMapMove)
     map.on('moveend', handleMapMoveEnd)
 
     return () => {
-      // map.off('move', handleMapMove)
       map.off('moveend', handleMapMoveEnd)
-
-      // Clean up pending timeout
-      if (pendingMoveUpdateRef.current) {
-        clearTimeout(pendingMoveUpdateRef.current)
-      }
     }
-  }, [handleMapMoveEnd])
+  }, [])
 
-  // Handle userLocation changes - only update map if it's a meaningful change
-  // biome-ignore lint/correctness/useExhaustiveDependencies: //
+  // Track the previous userLocation to detect intentional changes (not from map movement)
+  const prevUserLocationRef = useRef(userLocation)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!mapRef.current) {
       return
     }
 
-    lastUserLocationRef.current = userLocation
     const map = mapRef.current
-
-    // Set flag to indicate programmatic move
-    isProgrammaticMoveRef.current = true
-
+    const currentLocation = userLocation
     map.fitBounds(
       [
         [
-          userLocation.bounds.southWest.longitude,
-          userLocation.bounds.southWest.latitude,
+          currentLocation.bounds.southWest.longitude,
+          currentLocation.bounds.southWest.latitude,
         ],
         [
-          userLocation.bounds.northEast.longitude,
-          userLocation.bounds.northEast.latitude,
+          currentLocation.bounds.northEast.longitude,
+          currentLocation.bounds.northEast.latitude,
         ],
       ],
       {
-        maxZoom: 16,
         duration: 500,
       },
     )
 
-    setTimeout(() => {
-      isProgrammaticMoveRef.current = false
-    }, 600)
+    prevUserLocationRef.current = currentLocation
   }, [userLocation])
 
   // Cleanup markers on unmount
@@ -339,15 +256,6 @@ export const SearchMap: FC<MapBoxProps> = ({
     return () => {
       if (uniquePlaceMarkerRef.current) {
         uniquePlaceMarkerRef.current.remove()
-      }
-    }
-  }, [])
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (mapInteractionTimeoutRef.current) {
-        clearTimeout(mapInteractionTimeoutRef.current)
       }
     }
   }, [])
