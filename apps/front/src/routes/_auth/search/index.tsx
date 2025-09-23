@@ -50,17 +50,13 @@ function RouteComponent() {
     false,
   )
 
-  // Keep location state for map stability
-  const [currentLocation, setCurrentLocation] = useState<Location>(() => {
-    // Initialize from search params if available
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const initialLocation = useMemo(() => {
     if (northEastLat && northEastLng && southWestLat && southWestLng) {
-      const centerLat = (northEastLat + southWestLat) / 2
-      const centerLng = (northEastLng + southWestLng) / 2
-
       return {
         center: {
-          latitude: centerLat,
-          longitude: centerLng,
+          latitude: (northEastLat + southWestLat) / 2,
+          longitude: (northEastLng + southWestLng) / 2,
         },
         bounds: {
           northEast: {
@@ -75,8 +71,11 @@ function RouteComponent() {
       }
     }
 
-    return defaultLocation
-  })
+    return geoLocation
+  }, [geoLocation])
+
+  const [currentLocation, setCurrentLocation] =
+    useState<Location>(initialLocation)
 
   const createSearchMutation = useCreateSearch()
 
@@ -106,14 +105,8 @@ function RouteComponent() {
       bounds: Location['bounds']
     }) => {
       setCurrentLocation(newLocation)
-      updateSearchParams({
-        northEastLat: newLocation.bounds.northEast.latitude,
-        northEastLng: newLocation.bounds.northEast.longitude,
-        southWestLat: newLocation.bounds.southWest.latitude,
-        southWestLng: newLocation.bounds.southWest.longitude,
-      })
     },
-    [updateSearchParams],
+    [],
   )
 
   const [isSearching, setIsSearching] = useState(false)
@@ -187,18 +180,9 @@ function RouteComponent() {
     isSearching,
   ])
 
-  const handlePlaceSelect = useCallback(
-    (place: GeocodeLocation) => {
-      updateSearchParams({
-        northEastLat: place.geometry.viewport.northeast.lat,
-        northEastLng: place.geometry.viewport.northeast.lng,
-        southWestLat: place.geometry.viewport.southwest.lat,
-        southWestLng: place.geometry.viewport.southwest.lng,
-      })
-      setSelectedPlace(place)
-    },
-    [updateSearchParams],
-  )
+  const handlePlaceSelect = useCallback((place: GeocodeLocation) => {
+    setSelectedPlace(place)
+  }, [])
 
   const debouncedTriggerSearch = useMemo(
     () => debounce(triggerSearch, 1000),
@@ -216,14 +200,8 @@ function RouteComponent() {
   useEffect(() => {
     if (geoLocation && currentLocation === defaultLocation) {
       setCurrentLocation(geoLocation)
-      updateSearchParams({
-        northEastLat: geoLocation.bounds.northEast.latitude,
-        northEastLng: geoLocation.bounds.northEast.longitude,
-        southWestLat: geoLocation.bounds.southWest.latitude,
-        southWestLng: geoLocation.bounds.southWest.longitude,
-      })
     }
-  }, [geoLocation, currentLocation, defaultLocation, updateSearchParams])
+  }, [geoLocation, currentLocation, defaultLocation])
 
   if (loading) {
     return <LoadingSpinner message="Detecting your location..." />
@@ -241,7 +219,7 @@ function RouteComponent() {
         setSelectedPlace={setSelectedPlace}
       />
       <SearchMap
-        onLocationChange={handleLocationChange}
+        updateSearchParams={updateSearchParams}
         userLocation={currentLocation}
         selectedPlace={selectedPlace}
       />

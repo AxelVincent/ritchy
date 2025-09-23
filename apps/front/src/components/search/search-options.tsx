@@ -86,7 +86,6 @@ export const SearchOptions = ({
     if (searchMode === 'keyword') {
       return (
         <PlacesKeywordSearch
-          location={location}
           updateSearchParams={updateSearchParams}
           onLocationChange={onLocationChange}
         />
