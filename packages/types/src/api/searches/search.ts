@@ -3,19 +3,6 @@ import { ApiErrorResponseSchema } from '../../common'
 import { SearchModelEnum } from '../payments/checkout'
 import { PlaceSchema } from '../places/places'
 
-export const SearchItemSchema = z.object({
-  id: z.string().uuid(),
-  locationFormatted: z.string().min(1),
-  keyword: z.string().min(1),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-})
-
-export const SearchSchema = z.array(SearchItemSchema)
-
-export type SearchItem = z.infer<typeof SearchItemSchema>
-export type Search = z.infer<typeof SearchSchema>
-
 export const CoordinateSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
@@ -26,6 +13,20 @@ export const RectangleSchema = z.object({
   southWest: CoordinateSchema,
 })
 
+export const SearchItemSchema = z.object({
+  id: z.string().uuid(),
+  locationFormatted: z.string().min(1),
+  keyword: z.string().min(1),
+  model: SearchModelEnum,
+  rectangle: RectangleSchema,
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export const SearchSchema = z.array(SearchItemSchema)
+
+export type SearchItem = z.infer<typeof SearchItemSchema>
+export type Search = z.infer<typeof SearchSchema>
 export type Coordinate = z.infer<typeof CoordinateSchema>
 export type Rectangle = z.infer<typeof RectangleSchema>
 

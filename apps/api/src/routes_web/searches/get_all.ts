@@ -23,6 +23,7 @@ export const getSearches = async (
         id: search.id,
         model: search.model,
         keyword: search.keyword,
+        rectangle: search.rectangle,
         locationFormatted: search.placeName,
         createdAt: search.createdAt,
         updatedAt: search.updatedAt,
