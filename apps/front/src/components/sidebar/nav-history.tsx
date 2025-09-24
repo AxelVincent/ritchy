@@ -3,15 +3,28 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 import type { Search } from '@ritchy/types'
-import { Link, useMatch } from '@tanstack/react-router'
-import { History, Loader2, Minus, MoreHorizontal } from 'lucide-react'
+import { Link, useMatch, useNavigate } from '@tanstack/react-router'
+import {
+  History,
+  Loader2,
+  Minus,
+  MoreHorizontal,
+  RotateCcw,
+} from 'lucide-react'
 import React from 'react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 
 type SearchGroup = {
   label: string
@@ -68,6 +81,7 @@ function groupSearchesByDate(searches: Search): SearchGroup[] {
 
 export function NavHistory() {
   const { open } = useSidebar()
+  const navigate = useNavigate()
   const match = useMatch({
     from: '/_auth/search/$searchId',
     shouldThrow: false,
@@ -149,6 +163,45 @@ export function NavHistory() {
                         )}
                       </Link>
                     </SidebarMenuButton>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuAction showOnHover>
+                          <MoreHorizontal />
+                          <p className="sr-only">More</p>
+                        </SidebarMenuAction>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-48 rounded-lg"
+                        side={open ? 'bottom' : 'right'}
+                        align={open ? 'end' : 'start'}
+                      >
+                        <DropdownMenuItem
+                          onClick={() => {
+                            navigate({
+                              to: '/search',
+                              search: {
+                                mode: 'keyword',
+                                model: search.model as 'BASIC' | 'ENHANCED',
+                                northEastLat:
+                                  search.rectangle.northEast.latitude,
+                                northEastLng:
+                                  search.rectangle.northEast.longitude,
+                                southWestLat:
+                                  search.rectangle.southWest.latitude,
+                                southWestLng:
+                                  search.rectangle.southWest.longitude,
+                                placeName: search.locationFormatted,
+                                keyword: search.keyword,
+                                navTimestamp: Date.now(),
+                              },
+                            })
+                          }}
+                        >
+                          <RotateCcw className="text-muted-foreground" />
+                          Repeat search
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

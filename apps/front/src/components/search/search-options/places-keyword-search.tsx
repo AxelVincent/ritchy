@@ -54,14 +54,14 @@ export const PlacesKeywordSearch = ({
 
   // Pre-select the highest available model for the user
   useEffect(() => {
-    if (me?.plan) {
+    if (me?.plan && !model) {
       if (isModelAvailable(me.plan, 'ENHANCED')) {
         updateSearchParams({ model: 'ENHANCED' })
       } else {
         updateSearchParams({ model: 'BASIC' })
       }
     }
-  }, [me?.plan, updateSearchParams])
+  }, [me?.plan, updateSearchParams, model])
 
   const handleLocationSelect = useCallback(
     (location: GeocodeLocation) => {

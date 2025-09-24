@@ -24,6 +24,7 @@ const searchSchema = z.object({
   southWestLng: z.number().optional(),
   selectedPlaceId: z.string().optional(),
   selectedPlaceAddress: z.string().optional(),
+  navTimestamp: z.number().optional(),
 })
 export type SearchParams = z.infer<typeof searchSchema>
 
@@ -42,6 +43,7 @@ function RouteComponent() {
     northEastLng,
     southWestLat,
     southWestLng,
+    navTimestamp,
   } = Route.useSearch()
   const navigate = useNavigate()
   const defaultLocation = DEFAULT_LOCATION
@@ -50,8 +52,8 @@ function RouteComponent() {
     false,
   )
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const initialLocation = useMemo(() => {
+  const [currentLocation, setCurrentLocation] = useState<Location>(() => {
+    // If we have bounds from URL, use them
     if (northEastLat && northEastLng && southWestLat && southWestLng) {
       return {
         center: {
@@ -70,12 +72,9 @@ function RouteComponent() {
         },
       }
     }
-
-    return geoLocation
-  }, [geoLocation])
-
-  const [currentLocation, setCurrentLocation] =
-    useState<Location>(initialLocation)
+    // Otherwise use geolocation if available, or default location
+    return geoLocation || defaultLocation
+  })
 
   const createSearchMutation = useCreateSearch()
 
@@ -196,12 +195,58 @@ function RouteComponent() {
     }
   }, [debouncedTriggerSearch])
 
-  // Update from geolocation only on initial load
+  // Only update when navTimestamp changes (indicating programmatic navigation)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: //
   useEffect(() => {
-    if (geoLocation && currentLocation === defaultLocation) {
+    if (
+      navTimestamp &&
+      northEastLat &&
+      northEastLng &&
+      southWestLat &&
+      southWestLng
+    ) {
+      setCurrentLocation({
+        center: {
+          latitude: (northEastLat + southWestLat) / 2,
+          longitude: (northEastLng + southWestLng) / 2,
+        },
+        bounds: {
+          northEast: {
+            latitude: northEastLat,
+            longitude: northEastLng,
+          },
+          southWest: {
+            latitude: southWestLat,
+            longitude: southWestLng,
+          },
+        },
+      })
+    }
+  }, [navTimestamp])
+
+  // Update from geolocation when no navigation parameters are present
+  // biome-ignore lint/correctness/useExhaustiveDependencies: //
+  useEffect(() => {
+    // Only use geolocation if:
+    // 1. No navTimestamp (not a navigation event)
+    // 2. No bounds in URL (fresh page load)
+    // 3. geoLocation is available and different
+    if (
+      !navTimestamp &&
+      (!northEastLat || !northEastLng || !southWestLat || !southWestLng) &&
+      geoLocation &&
+      geoLocation !== currentLocation
+    ) {
       setCurrentLocation(geoLocation)
     }
-  }, [geoLocation, currentLocation, defaultLocation])
+  }, [
+    geoLocation,
+    navTimestamp,
+    northEastLat,
+    northEastLng,
+    southWestLat,
+    southWestLng,
+  ])
 
   if (loading) {
     return <LoadingSpinner message="Detecting your location..." />
@@ -219,6 +264,7 @@ function RouteComponent() {
         setSelectedPlace={setSelectedPlace}
       />
       <SearchMap
+        key={navTimestamp}
         updateSearchParams={updateSearchParams}
         userLocation={currentLocation}
         selectedPlace={selectedPlace}
