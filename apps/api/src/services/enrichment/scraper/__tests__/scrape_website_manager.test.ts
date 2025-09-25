@@ -382,8 +382,8 @@ describe('scrapeWebsiteManager', () => {
     expect('error' in result).toBe(true)
     if (!('error' in result)) return // TypeScript guard
 
-    expect(result.error.name).toBe('ScrapeError')
-    expect(result.error.message).toBe('Failed to scrape website')
+    expect((result.error as Error).name).toBe('ScrapeError')
+    expect((result.error as Error).message).toBe('Failed to scrape website')
   })
 
   it('should handle empty HTML responses', async () => {
@@ -408,8 +408,10 @@ describe('scrapeWebsiteManager', () => {
 
     expect('error' in result).toBe(true)
     if ('error' in result) {
-      expect(result.error.name).toBe('ScrapeError')
-      expect(result.error.message).toBe('No response returned from scrape')
+      expect((result.error as Error).name).toBe('ScrapeError')
+      expect((result.error as Error).message).toBe(
+        'No response returned from scrape',
+      )
     }
   })
 
@@ -458,9 +460,9 @@ describe('scrapeWebsiteManager', () => {
     expect('error' in result).toBe(true)
     if (!('error' in result)) return // TypeScript guard
 
-    expect(result.error.name).toBe('ScrapeError')
-    expect(result.error.message).toBe('Unexpected error')
-    expect(result.error.stack).toBeDefined()
+    expect((result.error as Error).name).toBe('ScrapeError')
+    expect((result.error as Error).message).toBe('Unexpected error')
+    expect((result.error as Error).stack).toBeDefined()
   })
 
   it('should not consider social media URLs as internal links even if they contain part of main domain', async () => {

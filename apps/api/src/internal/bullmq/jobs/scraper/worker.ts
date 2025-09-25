@@ -16,6 +16,7 @@ const scraperWorker = new Worker(
         metadata: { jobId: job.id, url },
         event: 'scraper_started',
       })
+
       const result = await scrapeWebsiteManager(
         url,
         enrichmentId,
@@ -41,7 +42,6 @@ const scraperWorker = new Worker(
           },
           event: 'scraper_timeout',
         })
-        throw error
       }
       logger.error({
         msg: 'Scraper job failed',

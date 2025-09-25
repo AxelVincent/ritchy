@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { websiteEnrichmentManager } from 'apps/api/src/services/enrichment/website_enrichment_manager'
 import { type Job, UnrecoverableError, Worker } from 'bullmq'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
+import { jobTracker } from '../../../utils/job_progress_tracker'
 import { queueName } from './queue'
 
 export interface EnrichmentUnitJobData {
@@ -10,15 +11,24 @@ export interface EnrichmentUnitJobData {
 
 const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
   const { userPlaceId } = job.data
+  const jobId = String(job.id)
   try {
-    await websiteEnrichmentManager({ userPlaceId })
+    jobTracker.startTracking(jobId)
+
+    jobTracker.updateProgress(jobId, 'Starting enrichment')
+    await websiteEnrichmentManager({ userPlaceId, jobId })
+
+    jobTracker.updateProgress(jobId, 'Enrichment completed')
+    jobTracker.cleanup(jobId)
   } catch (error) {
+    jobTracker.cleanup(jobId)
     if (error instanceof UnrecoverableError) {
       logger.error({
         msg: 'Enrichment unit job timed out',
         event: 'enrichment_unit_timeout',
         metadata: {
           jobId: job.id,
+          elapsedMs: jobTracker.getElapsedTime(jobId),
           error: error instanceof Error ? error.message : String(error),
         },
       })
@@ -28,6 +38,7 @@ const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
       event: 'enrichment_unit_error',
       metadata: {
         jobId: job.id,
+        elapsedMs: jobTracker.getElapsedTime(jobId),
         error: error instanceof Error ? error.message : String(error),
       },
     })

@@ -152,13 +152,13 @@ export const getEnrichmentJobStatus = async (
       data: {
         jobId: job.id ?? '',
         totalMessages: data.totalCount,
-        processedMessages: data.processedCount,
-        remainingMessages: data.totalCount - data.processedCount,
+        processedMessages: data.processedCount ?? 0,
+        remainingMessages: data.totalCount - (data.processedCount ?? 0),
         startedAt: job.timestamp.toString(),
         completedAt: job.finishedOn
           ? new Date(job.finishedOn).toISOString()
           : undefined,
-        errors: data.errors.map((error) => error.error),
+        errors: data.errors?.map((error) => error.error) ?? [],
       },
     })
   } catch (error) {
