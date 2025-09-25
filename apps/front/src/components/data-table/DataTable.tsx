@@ -162,6 +162,22 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
   const virtualRows = rowVirtualizer.getVirtualItems()
 
+  useEffect(() => {
+    if (selectedPlaceId && rows.length > 0) {
+      const selectedRowIndex = rows.findIndex(
+        (row) => row.original.id === selectedPlaceId,
+      )
+
+      if (selectedRowIndex !== -1) {
+        // Scroll to the selected row with smooth behavior
+        rowVirtualizer.scrollToIndex(selectedRowIndex, {
+          align: 'start',
+          behavior: 'auto',
+        })
+      }
+    }
+  }, [selectedPlaceId, rows, rowVirtualizer])
+
   // Add effect to track filtered results
   // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
   useEffect(() => {
