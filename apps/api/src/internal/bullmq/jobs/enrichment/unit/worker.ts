@@ -22,7 +22,6 @@ const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
           error: error instanceof Error ? error.message : String(error),
         },
       })
-      throw error
     }
     logger.error({
       msg: 'Enrichment unit job failed',
@@ -32,6 +31,7 @@ const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
         error: error instanceof Error ? error.message : String(error),
       },
     })
+    throw error
   }
 }
 

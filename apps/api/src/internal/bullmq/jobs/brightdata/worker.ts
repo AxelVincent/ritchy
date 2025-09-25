@@ -44,10 +44,7 @@ const brightdataWorker = new Worker(
         },
       })
 
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      }
+      throw error
     }
   },
   {
