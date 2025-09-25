@@ -2,15 +2,15 @@ import { Queue } from 'bullmq'
 import { bullmqRedisOptions } from '../../../config'
 
 export interface EnrichmentBatchJobData {
-  enrichments: Array<{
-    userPlaceId: string
-  }>
+  enrichments: Array<{ userPlaceId: string }>
   totalCount: number
-  processedCount: number
-  errors: Array<{
-    userPlaceId: string
-    error: string
-  }>
+  // Add these optional properties for tracking
+  processedCount?: number
+  successCount?: number
+  errorCount?: number
+  successRate?: number
+  errors?: Array<{ userPlaceId: string; error: string }>
+  successes?: Array<{ userPlaceId: string }>
 }
 export const queueName = 'enrichment-batch'
 export const enrichmentBatchQueue = new Queue<EnrichmentBatchJobData>(

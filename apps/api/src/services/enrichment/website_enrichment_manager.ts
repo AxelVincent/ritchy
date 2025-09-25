@@ -10,10 +10,13 @@ import { getBusinessName } from './queries/get_business_name'
 import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
 import { UnrecoverableError } from 'bullmq'
+import { countryToAlpha2 } from 'country-to-iso'
 import { getWebsiteDescription } from '../../external/langchain/get_website_description'
+import { PAPPERS_COUNTRY_CODES } from '../../external/pappers/international_search_v1'
 import { deleteWebsiteVectors } from '../../external/qdrant/queries/delete_website_vectors'
 import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vectors'
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
+import { enqueuePappersJob } from '../../internal/bullmq/jobs/pappers/queue'
 import { enqueueScraperJob } from '../../internal/bullmq/jobs/scraper/queue'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
 import {
@@ -86,6 +89,26 @@ export const websiteEnrichmentManager = async ({
       })
       return
     }
+
+    // const countryCode = countryToAlpha2(place.place.country ?? '')
+    // const parsedCountryCode = PAPPERS_COUNTRY_CODES.safeParse(countryCode)
+    // if (place.place.name && countryCode && parsedCountryCode.success) {
+    //   logger.debug({
+    //     msg: 'Enqueuing Pappers job',
+    //     event: 'enqueuing_pappers_job',
+    //     metadata: { countryCode, placeName: place.place.name },
+    //   })
+    //   const pappersResult = await enqueuePappersJob({
+    //     countryCode: parsedCountryCode.data,
+    //     q: place.place.name,
+    //   })
+    //   logger.info({
+    //     msg: 'Pappers result',
+    //     event: 'pappers_result',
+    //     metadata: { pappersResult },
+    //   })
+    //   return
+    // }
 
     const website = await getBusinessWebsite(userPlaceId)
     if (!website) {
@@ -178,9 +201,10 @@ export const websiteEnrichmentManager = async ({
       await db
         .update(enrichmentTable)
         .set({
-          error: scrapeResult.error.message,
+          error: scrapeResult?.error?.message || 'Failed to scrape website',
+          success: false,
         })
-        .where(eq(enrichmentTable.id, enrichment.id))
+        .where(eq(enrichmentTable.id, insertedEnrichment.id))
       return
     }
 
@@ -203,11 +227,50 @@ export const websiteEnrichmentManager = async ({
       })
     }
 
-    await Promise.all(
+    // Handle subpage scraping with better error handling
+    const subpageResults = await Promise.allSettled(
       crawlStrategy.map(async (url: string) => {
-        await enqueueScraperJob(url, insertedEnrichment.id, true, userPlaceId)
+        try {
+          return await enqueueScraperJob(
+            url,
+            insertedEnrichment.id,
+            true,
+            userPlaceId,
+          )
+        } catch (error) {
+          logger.warn({
+            msg: `Failed to scrape subpage: ${url}`,
+            event: 'subpage_scrape_failed',
+            metadata: {
+              url,
+              userPlaceId,
+              enrichmentId: insertedEnrichment.id,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          })
+          return {
+            error: error instanceof Error ? error.message : String(error),
+          }
+        }
       }),
     )
+
+    // Count successful vs failed subpage scrapes
+    const successfulSubpages = subpageResults.filter(
+      (result) => result.status === 'fulfilled' && !('error' in result.value),
+    ).length
+    const failedSubpages = subpageResults.length - successfulSubpages
+
+    logger.info({
+      msg: 'Subpage scraping completed',
+      event: 'subpage_scraping_completed',
+      metadata: {
+        totalSubpages: crawlStrategy.length,
+        successfulSubpages,
+        failedSubpages,
+        userPlaceId,
+      },
+    })
 
     logger.info({
       msg: 'Scraped website',
@@ -233,7 +296,7 @@ export const websiteEnrichmentManager = async ({
           keywords: metadata.keywords,
           favicon: metadata.favicon,
           robots: metadata.robots,
-          success: true,
+          success: true, // Main page scraped successfully
           domainRegisteredAt: whoisData?.registrationDate
             ? new Date(whoisData.registrationDate)
             : null,
@@ -251,7 +314,15 @@ export const websiteEnrichmentManager = async ({
     logger.info({
       msg: `Website enrichment manager completed [regular website] in ${duration / 1000} seconds`,
       event: 'website_enrichment_manager_completed',
-      metadata: { userPlaceId, duration },
+      metadata: {
+        userPlaceId,
+        duration,
+        subpageStats: {
+          total: crawlStrategy.length,
+          successful: successfulSubpages,
+          failed: failedSubpages,
+        },
+      },
     })
     return {
       success: true,
@@ -293,7 +364,8 @@ export const websiteEnrichmentManager = async ({
       throw new UnrecoverableError(errorMessage)
     }
 
-    await Promise.all([
+    // Only update enrichment record if we have an insertedEnrichment
+    const updatePromises = [
       updateEnrichmentCredit(userId, true),
       setUserPlaceAsEnriched(userPlaceId),
       db
@@ -303,7 +375,9 @@ export const websiteEnrichmentManager = async ({
           success: false,
         })
         .where(eq(enrichmentTable.id, enrichment.id)),
-    ])
+    ]
+
+    await Promise.all(updatePromises)
 
     throw new UnrecoverableError(errorMessage)
   }

@@ -41,14 +41,6 @@ type Links = {
   internal: string[]
 }
 
-type ScrapeError = {
-  error: {
-    name: string
-    message: string
-    stack: string
-  }
-}
-
 /**
  * Processes a single HTML chunk to extract contacts and links
  */
@@ -162,7 +154,7 @@ export const scrapeWebsiteManager = async (
   enrichmentId: string,
   onlyMainContent: boolean,
   userPlaceId: string,
-): Promise<ScrapeResult | ScrapeError> => {
+): Promise<ScrapeResult> => {
   // Modify the uniqueLinks structure
   const uniqueLinks = {
     emails: new Set<string>(),
@@ -345,12 +337,7 @@ export const scrapeWebsiteManager = async (
             : String(error),
       },
     })
-    return {
-      error: {
-        name: 'ScrapeError',
-        message: errorMessage,
-        stack: error instanceof Error ? (error.stack ?? '') : '',
-      },
-    }
+
+    throw new Error(`Scraping failed: ${errorMessage}`)
   }
 }
