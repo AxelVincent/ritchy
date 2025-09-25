@@ -18,6 +18,7 @@ import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vec
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { enqueuePappersJob } from '../../internal/bullmq/jobs/pappers/queue'
 import { enqueueScraperJob } from '../../internal/bullmq/jobs/scraper/queue'
+import { jobTracker } from '../../internal/bullmq/utils/job_progress_tracker'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
 import {
   NO_ENRICHMENT_CREDITS_AVAILABLE_ERROR,
@@ -32,8 +33,10 @@ import { isSocialMediaUrl } from './utils/is_social_media_url'
 
 export const websiteEnrichmentManager = async ({
   userPlaceId,
+  jobId,
 }: {
   userPlaceId: string
+  jobId: string
 }) => {
   const startTime = Date.now()
   const memoryUsage = process.memoryUsage()
@@ -49,6 +52,8 @@ export const websiteEnrichmentManager = async ({
       },
     },
   })
+
+  jobTracker.updateProgress(jobId, 'Fetching user and place data')
   const [userId, place] = await Promise.all([
     getUserIdByUserPlaceId(userPlaceId),
     getPlaceByUserPlaceId(userPlaceId),
@@ -62,8 +67,10 @@ export const websiteEnrichmentManager = async ({
     return
   }
   try {
+    jobTracker.updateProgress(jobId, 'Updating enrichment credit')
     await updateEnrichmentCredit(userId)
 
+    jobTracker.updateProgress(jobId, 'Checking existing enrichment')
     const [existingEnrichment] = await db
       .select()
       .from(enrichmentTable)
@@ -71,6 +78,7 @@ export const websiteEnrichmentManager = async ({
       .limit(1)
 
     if (existingEnrichment) {
+      jobTracker.updateProgress(jobId, 'Using existing enrichment')
       await Promise.all([
         populateContactFromEnrichment({
           enrichmentId: existingEnrichment.id,
@@ -110,6 +118,7 @@ export const websiteEnrichmentManager = async ({
     //   return
     // }
 
+    jobTracker.updateProgress(jobId, 'Getting business website')
     const website = await getBusinessWebsite(userPlaceId)
     if (!website) {
       await db.insert(enrichmentTable).values({
@@ -125,6 +134,7 @@ export const websiteEnrichmentManager = async ({
       return
     }
 
+    jobTracker.updateProgress(jobId, 'Scraping main page')
     const domain = getMainDomain(website)
     const [insertedEnrichment] = await db
       .insert(enrichmentTable)
@@ -208,6 +218,7 @@ export const websiteEnrichmentManager = async ({
       return
     }
 
+    jobTracker.updateProgress(jobId, 'Processing subpages')
     const { metadata, links } = scrapeResult
     let crawlStrategy = links.internal
     if (links.internal.length > 10) {
@@ -281,10 +292,14 @@ export const websiteEnrichmentManager = async ({
       },
     })
 
+    jobTracker.updateProgress(jobId, 'Producing description')
     const { description, shortDescription } =
       await getWebsiteDescription(domain)
 
+    jobTracker.updateProgress(jobId, 'Performing whois lookup')
     const whoisData = await performWhoisLookup(domain)
+
+    jobTracker.updateProgress(jobId, 'Updating enrichment')
     await Promise.all([
       db
         .update(enrichmentTable)
@@ -309,6 +324,7 @@ export const websiteEnrichmentManager = async ({
       setUserPlaceAsEnriched(userPlaceId),
     ])
 
+    jobTracker.updateProgress(jobId, 'Enrichment completed')
     const endTime = Date.now()
     const duration = endTime - startTime
     logger.info({

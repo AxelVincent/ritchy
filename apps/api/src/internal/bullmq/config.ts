@@ -14,6 +14,13 @@ const envSchema = z.object({
 const env = envSchema.parse(process.env)
 
 export const workerConfig = {
+  pappers: {
+    concurrency: 100,
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
   scraper: {
     concurrency: Number.parseInt(env.SCRAPER_CONCURRENCY),
     lockDuration: 360000,
@@ -37,16 +44,16 @@ export const workerConfig = {
   },
   enrichment_unit: {
     concurrency: Number.parseInt(env.ENRICHMENT_UNIT_CONCURRENCY),
-    lockDuration: 3000000,
-    renewalInterval: 600000,
-    stalledInterval: 300000,
+    lockDuration: 600000,
+    renewalInterval: 300000,
+    stalledInterval: 180000,
     maxStalledCount: 2,
   },
   enrichment_batch: {
     concurrency: 10,
-    lockDuration: 600000,
-    renewalInterval: 180000,
-    stalledInterval: 120000,
+    lockDuration: 300000,
+    renewalInterval: 120000,
+    stalledInterval: 90000,
     maxStalledCount: 2,
   },
 }
