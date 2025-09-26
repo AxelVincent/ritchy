@@ -5,9 +5,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import type { Column } from '@tanstack/react-table'
+import { Sparkles } from 'lucide-react'
 import { ArrowDown, ArrowUp, ArrowUpDown, HelpCircle } from 'lucide-react'
 import { Filter } from './Filter'
 
@@ -82,7 +82,7 @@ export const HeaderWrapper = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="ml-2 cursor-help text-muted-foreground flex-shrink-0">
-                  <MagicWandIcon
+                  <Sparkles
                     className="h-4 w-4 text-primary"
                     aria-label="Help"
                   />
@@ -95,9 +95,9 @@ export const HeaderWrapper = ({
                 <Card className="shadow-md">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center gap-2">
-                      <MagicWandIcon
+                      <Sparkles
                         className="h-5 w-5 text-primary"
-                        aria-label="Magic Wand"
+                        aria-label="Sparkles"
                       />
                       <div className="font-semibold text-base">
                         Quick enrichment guide
@@ -109,8 +109,8 @@ export const HeaderWrapper = ({
                           <span className="text-primary">1.</span>
                         </div>
                         <div>
-                          Find the enrichment button with the magic wand icon{' '}
-                          <MagicWandIcon className="h-4 w-4 inline-block text-primary" />{' '}
+                          Find the enrichment button with the sparkles icon{' '}
+                          <Sparkles className="h-4 w-4 inline-block text-primary" />{' '}
                           at the top of your table
                         </div>
                       </div>
@@ -132,23 +132,23 @@ export const HeaderWrapper = ({
                       </div>
                       <div className="mt-3 bg-muted/30 p-2.5 rounded-md flex items-start gap-2">
                         <div className="text-sm">
-                          Look for the magic wand indicators in enriched cells:
+                          Look for the sparkles indicators in enriched cells:
                           <div className="mt-1 space-y-1">
                             <div className="flex items-start gap-2">
-                              <MagicWandIcon className="h-2.5 w-2.5 flex-shrink-0 text-blue-400 mt-1.5" />
+                              <Sparkles className="h-2.5 w-2.5 flex-shrink-0 text-blue-600 mt-1.5" />
                               <span>Enriched data</span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <MagicWandIcon className="h-2.5 w-2.5 flex-shrink-0 text-green-400 mt-1.5" />
+                              <Sparkles className="h-2.5 w-2.5 flex-shrink-0 text-purple-600 mt-1.5" />
                               <span>
                                 Recently enriched data (last 30 minutes)
                               </span>
                             </div>
                             <div className="flex items-start gap-2">
-                              <MagicWandIcon className="h-2.5 w-2.5 flex-shrink-0 text-red-400 mt-1.5" />
+                              <Sparkles className="h-2.5 w-2.5 flex-shrink-0 text-red-600 mt-1.5" />
                               <span>
-                                Enrichment failed, we were unable to scrape the
-                                website (credits refunded)
+                                Enrichment failed, we were unable to find the
+                                data (credits refunded)
                               </span>
                             </div>
                           </div>

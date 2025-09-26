@@ -5,23 +5,31 @@ import {
   ChevronDown,
   ChevronRight,
   CreditCard,
+  DownloadIcon,
   Plus,
-  Search,
+  Sparkles,
 } from 'lucide-react'
 import { useState } from 'react'
 
 import { useUserMe } from '@/api/queries/users/useUserMe'
+import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { MagicWandIcon } from '@radix-ui/react-icons'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useNavigate } from '@tanstack/react-router'
 import dayjs from 'dayjs'
-import { Card } from '../ui/card'
+import { Card, CardContent } from '../ui/card'
 
 export function NavCredits() {
   const { data: me } = useUserMe()
@@ -29,12 +37,8 @@ export function NavCredits() {
   const [isExpanded, setIsExpanded] = useState(false)
   const { open } = useSidebar()
 
-  const searchResultsPercentage =
-    ((me?.credits.search.credits ?? 0) / (me?.credits.search.plan ?? 0)) * 100
-  const enrichmentPercentage =
-    ((me?.credits.enrichment.credits ?? 0) /
-      (me?.credits.enrichment.plan ?? 0)) *
-    100
+  const creditsPercentage =
+    ((me?.credits.credits ?? 0) / (me?.credits.plan ?? 1)) * 100
 
   const handleAddCredits = () => {
     navigate({ to: '/pricing' })
@@ -48,78 +52,147 @@ export function NavCredits() {
     return dayjs(date).format('MMM D, YYYY')
   }
 
+  const getCreditsStatus = () => {
+    if (creditsPercentage >= 80) return 'high'
+    if (creditsPercentage >= 30) return 'medium'
+    return 'low'
+  }
+
+  const getStatusColor = () => {
+    const status = getCreditsStatus()
+    switch (status) {
+      case 'high':
+        return 'text-green-600'
+      case 'medium':
+        return 'text-yellow-600'
+      case 'low':
+        return 'text-red-600'
+      default:
+        return 'text-muted-foreground'
+    }
+  }
+
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
-          <span>Credits</span>
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          <SidebarMenuButton
-            tooltip="Add credits"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleAddCredits()
-            }}
-          >
-            <Plus size={16} />
-          </SidebarMenuButton>
-          <SidebarMenuButton
-            tooltip={isExpanded ? 'Collapse' : 'Expand'}
-            onClick={handleToggle}
-          >
-            {isExpanded ? (
-              <ChevronDown size={16} />
-            ) : (
-              <ChevronRight size={16} />
-            )}
-          </SidebarMenuButton>
-        </div>
-      </SidebarGroupLabel>
-      {isExpanded && open && (
-        <Card className="p-4">
-          <div className="w-full space-y-3">
-            {/* Search Result Credits */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5">
-                  <Search className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-muted-foreground">Search Result</span>
-                </div>
-                <span className="font-medium">
-                  {me?.credits.search.credits.toLocaleString()}/
-                  {me?.credits.search.plan.toLocaleString()}
-                </span>
-              </div>
-              <Progress value={searchResultsPercentage} className="h-1.5" />
-            </div>
-
-            {/* Enrichment Credits */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5">
-                  <MagicWandIcon className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-muted-foreground">Enrichment</span>
-                </div>
-                <span className="font-medium">
-                  {me?.credits.enrichment.credits.toLocaleString()}/
-                  {me?.credits.enrichment.plan.toLocaleString()}
-                </span>
-              </div>
-              <Progress value={enrichmentPercentage} className="h-1.5" />
-            </div>
-
-            {/* Renewal Date */}
-            {me?.nextRenewalDate && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/50">
-                <Calendar className="h-3 w-3" />
-                <span>Renews {formatRenewalDate(me.nextRenewalDate)}</span>
-              </div>
+    <TooltipProvider>
+      <SidebarGroup>
+        <SidebarGroupLabel className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <span>Credits</span>
+            {me?.credits && (
+              <Badge
+                variant="outline"
+                className="h-5 px-1.5 font-medium text-xs"
+              >
+                {me.credits.credits.toLocaleString()}
+              </Badge>
             )}
           </div>
-        </Card>
-      )}
-    </SidebarGroup>
+          <div className="flex items-center justify-end gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleAddCredits()
+                  }}
+                >
+                  <Plus size={16} />
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add credits</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton onClick={handleToggle}>
+                  {isExpanded ? (
+                    <ChevronDown size={16} />
+                  ) : (
+                    <ChevronRight size={16} />
+                  )}
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isExpanded ? 'Collapse' : 'Expand'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </SidebarGroupLabel>
+        {isExpanded && open && (
+          <Card className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="w-full space-y-4">
+                {/* Credits Overview */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 justify-between w-full">
+                    <div className="flex items-center gap-2 flex-1">
+                      <Progress value={creditsPercentage} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-semibold ${getStatusColor()}`}
+                      >
+                        {me?.credits.credits.toLocaleString()}
+                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        / {me?.credits.plan.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Credit Usage Info */}
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-3 w-3 text-blue-600" />
+                        <span className="text-xs font-medium">Enrichment</span>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="h-5 px-2 font-medium text-xs"
+                      >
+                        5 credits
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2">
+                      <div className="flex items-center gap-2">
+                        <DownloadIcon className="h-3 w-3 text-blue-600" />
+                        <span className="text-xs font-medium">Lead import</span>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="h-5 px-2 font-medium text-xs"
+                      >
+                        1 credit
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Renewal Date */}
+                {me?.nextRenewalDate && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        Renews {formatRenewalDate(me.nextRenewalDate)}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </SidebarGroup>
+    </TooltipProvider>
   )
 }

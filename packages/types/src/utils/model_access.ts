@@ -13,6 +13,7 @@ const PLAN_TO_SEARCH_MODEL: Record<Plan, SearchModel> = {
   FREE: 'BASIC',
   ESSENTIALS: 'ENHANCED',
   PRO: 'ADVANCED',
+  ENTERPRISE: 'EXPERT',
 } as const
 
 /**

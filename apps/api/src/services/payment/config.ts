@@ -1,23 +1,18 @@
 export const CREDIT_CONFIG = [
   {
     plan: 'FREE',
-    credits: {
-      search: 200,
-      enrichment: 20,
-    },
+    credits: 100,
   },
   {
     plan: 'ESSENTIALS',
-    credits: {
-      search: 5000,
-      enrichment: 1500,
-    },
+    credits: 1000,
   },
   {
     plan: 'PRO',
-    credits: {
-      search: 15000,
-      enrichment: 5000,
-    },
+    credits: 3000,
+  },
+  {
+    plan: 'ENTERPRISE',
+    credits: 10000,
   },
 ]

@@ -86,8 +86,18 @@ function PricingComponent() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center">
           <h1 className="text-3xl sm:text-4xl font-bold pt-12">
-            Simple pricing, upgrade as you scale
+            The perfect prospecting engine, built for you
           </h1>
+          <div className="text-center mt-4 max-w-4xl mx-auto">
+            {' '}
+            <p className="text-lg sm:text-lg text-muted-foreground">
+              Pay to save time, avoid costly mistakes, and preserve your
+              resources.
+              <br />
+              Learn from our expansion marketplace expertise and avoid the
+              mistakes we've made for you.
+            </p>
+          </div>
 
           <div className="mt-4 sm:mt-6 flex items-center justify-center gap-4">
             <div className="inline-flex rounded-full bg-secondary p-1">

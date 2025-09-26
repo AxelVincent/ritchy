@@ -1,19 +1,19 @@
 import { logger } from '@ritchy/logger'
-import {
-  type AddItemFromGeocodeApiResponse,
-  type AddItemFromGeocodeRequestBody,
-  AddItemFromGeocodeRequestBodySchema,
-  type AddItemFromGeocodeResponse,
+import type {
+  AddItemFromGeocodeApiResponse,
+  AddItemFromGeocodeRequestBody,
+  AddItemFromGeocodeResponse,
 } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { list, listPlace, userPlace } from '../../db/schema'
 import { getPlaceDetailsV1 } from '../../external/google_maps/place_details_V1'
-import { consumeSearchCredits } from '../../services/payment/queries/consume_search_credits'
+import { consumeCredits } from '../../services/payment/queries/consume_credits'
 import { getUserCredits } from '../../services/payment/queries/get_user_credits'
-import { refundSearchCredits } from '../../services/payment/queries/refund_search_credits'
+import { refundCredits } from '../../services/payment/queries/refund_credits'
 
+const IMPORT_CREDITS = 1
 export const addItemFromGeocode = async (
   req: Request<
     Record<string, never>,
@@ -35,14 +35,14 @@ export const addItemFromGeocode = async (
   try {
     const userCredits = await getUserCredits(req.auth.userId)
 
-    if (userCredits.search < 3) {
+    if (userCredits < IMPORT_CREDITS) {
       res.status(403).json({
         error: 'Forbidden',
         message: 'You have less than 3 credits left. Please upgrade your plan.',
       })
       return
     }
-    await consumeSearchCredits(userId, 3)
+    await consumeCredits(userId, IMPORT_CREDITS)
 
     // Verify list ownership
     const listResult = await db
@@ -91,7 +91,7 @@ export const addItemFromGeocode = async (
       .limit(1)
 
     if (existingListPlace.length > 0) {
-      await refundSearchCredits(userId, 3)
+      await refundCredits(userId, IMPORT_CREDITS)
       res.status(409).json({
         success: false,
         message: 'Place is already in this list, no credits consumed',
@@ -112,7 +112,7 @@ export const addItemFromGeocode = async (
       success: true,
     })
   } catch (error) {
-    await refundSearchCredits(userId, 3)
+    await refundCredits(userId, IMPORT_CREDITS)
     logger.error({
       msg: 'Add item from geocode error',
       event: 'add_item_from_geocode_error',

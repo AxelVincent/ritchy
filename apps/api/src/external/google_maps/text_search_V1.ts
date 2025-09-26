@@ -8,11 +8,8 @@ import { sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { place } from '../../db/schema/place'
 import { enqueueTextSearchJob } from '../../internal/bullmq/jobs/google/places/queue'
-import { REDIS_KEYS } from '../../internal/redis/keys'
-import { redisClient } from '../../internal/redis/redis'
 import { sanitizeApiData } from '../../utils/sanitize_api_data'
 import {
-  AdvancedPlaceSchema,
   type GooglePlacesTextSearchRequestBody,
   GooglePlacesTextSearchRequestBodySchema,
   type GooglePlacesTextSearchResponse,
@@ -113,6 +110,7 @@ export async function postTextSearchV1(
   // 12 * 4 = 48 requests
   // 48 * 0.04 = 1.92 $
   // 1.92 / 2 = 0.96 $
+  // 1.92 / 4 = 0.48 $
   const squares960 = squares240.flatMap((square) =>
     divideRectangleIntoFour(square, ratio),
   )

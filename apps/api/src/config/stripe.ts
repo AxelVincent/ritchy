@@ -7,12 +7,16 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   STRIPE_PRO_PRODUCT_ID: z.string().min(1),
   STRIPE_ESSENTIALS_PRODUCT_ID: z.string().min(1),
+  STRIPE_ENTERPRISE_PRODUCT_ID: z.string().min(1),
   STRIPE_PRO_MONTHLY_PRICE_ID: z.string().min(1),
-  STRIPE_ESSENTIALS_MONTHLY_PRICE_ID: z.string().min(1),
-  STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID: z.string().min(1),
   STRIPE_PRO_QUARTERLY_PRICE_ID: z.string().min(1),
   STRIPE_PRO_YEARLY_PRICE_ID: z.string().min(1),
+  STRIPE_ESSENTIALS_MONTHLY_PRICE_ID: z.string().min(1),
+  STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID: z.string().min(1),
   STRIPE_ESSENTIALS_YEARLY_PRICE_ID: z.string().min(1),
+  STRIPE_ENTERPRISE_MONTHLY_PRICE_ID: z.string().min(1),
+  STRIPE_ENTERPRISE_QUARTERLY_PRICE_ID: z.string().min(1),
+  STRIPE_ENTERPRISE_YEARLY_PRICE_ID: z.string().min(1),
 })
 
 const env = envSchema.parse(process.env)
@@ -27,14 +31,17 @@ export const STRIPE_CONFIG = {
     MONTHLY: {
       PRO: env.STRIPE_PRO_MONTHLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_MONTHLY_PRICE_ID,
+      ENTERPRISE: env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID,
     },
     QUARTERLY: {
       PRO: env.STRIPE_PRO_QUARTERLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID,
+      ENTERPRISE: env.STRIPE_ENTERPRISE_QUARTERLY_PRICE_ID,
     },
     YEARLY: {
       PRO: env.STRIPE_PRO_YEARLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_YEARLY_PRICE_ID,
+      ENTERPRISE: env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID,
     },
   },
   PRODUCT_IDS: {
@@ -66,6 +73,15 @@ export const STRIPE_PLANS = {
       yearly: env.STRIPE_PRO_YEARLY_PRICE_ID,
     },
     productId: env.STRIPE_PRO_PRODUCT_ID,
+  },
+  ENTERPRISE: {
+    name: 'ENTERPRISE',
+    price: {
+      monthly: env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID,
+      quarterly: env.STRIPE_ENTERPRISE_QUARTERLY_PRICE_ID,
+      yearly: env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID,
+    },
+    productId: env.STRIPE_ENTERPRISE_PRODUCT_ID,
   },
 } as const
 

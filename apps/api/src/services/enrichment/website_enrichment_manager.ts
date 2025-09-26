@@ -21,16 +21,18 @@ import { enqueueScraperJob } from '../../internal/bullmq/jobs/scraper/queue'
 import { jobTracker } from '../../internal/bullmq/utils/job_progress_tracker'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
 import {
-  NO_ENRICHMENT_CREDITS_AVAILABLE_ERROR,
+  INSUFFICIENT_CREDITS_ERROR,
   USER_CREDITS_NOT_FOUND_ERROR,
-  updateEnrichmentCredit,
-} from '../payment/queries/update_enrichment_credit'
+  consumeCredits,
+} from '../payment/queries/consume_credits'
+import { refundCredits } from '../payment/queries/refund_credits'
 import { getUserIdByUserPlaceId } from '../places/queries/get_user_id_by_user_place_id'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
 import { isSocialMediaUrl } from './utils/is_social_media_url'
 
+const ENRICHMENT_CREDITS = 5
 export const websiteEnrichmentManager = async ({
   userPlaceId,
   jobId,
@@ -67,9 +69,13 @@ export const websiteEnrichmentManager = async ({
     return
   }
   try {
-    jobTracker.updateProgress(jobId, 'Updating enrichment credit')
-    await updateEnrichmentCredit(userId)
-
+    // TODO : We should improve the frontend to let the user know that the place is already enriched
+    // This way it will know that the place is already enriched and will not consume credits
+    // Or it will enrich on purpose
+    if (place.user_place.enriched_at !== null) {
+      jobTracker.updateProgress(jobId, 'Consuming enrichment credits')
+      await consumeCredits(userId, ENRICHMENT_CREDITS)
+    }
     jobTracker.updateProgress(jobId, 'Checking existing enrichment')
     const [existingEnrichment] = await db
       .select()
@@ -369,7 +375,7 @@ export const websiteEnrichmentManager = async ({
     // If the error is because of no enrichment credits available, we don't need to refund the credit
     if (
       error instanceof Error &&
-      (error.message === NO_ENRICHMENT_CREDITS_AVAILABLE_ERROR ||
+      (error.message === INSUFFICIENT_CREDITS_ERROR ||
         error.message === USER_CREDITS_NOT_FOUND_ERROR)
     ) {
       logger.info({
@@ -382,7 +388,7 @@ export const websiteEnrichmentManager = async ({
 
     // Only update enrichment record if we have an insertedEnrichment
     const updatePromises = [
-      updateEnrichmentCredit(userId, true),
+      refundCredits(userId, ENRICHMENT_CREDITS),
       setUserPlaceAsEnriched(userPlaceId),
       db
         .update(enrichmentTable)
