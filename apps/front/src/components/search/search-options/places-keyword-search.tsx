@@ -90,18 +90,6 @@ export const PlacesKeywordSearch = ({
   )
 
   const handleModelChange = (value: typeof model) => {
-    const plan = me?.plan || undefined
-
-    if (
-      !isModelAvailable(
-        plan,
-        value as 'BASIC' | 'ENHANCED' | 'ADVANCED' | 'EXPERT',
-      )
-    ) {
-      navigate({ to: '/pricing' })
-      return
-    }
-
     updateSearchParams({ model: value as 'BASIC' | 'ENHANCED' })
   }
 
