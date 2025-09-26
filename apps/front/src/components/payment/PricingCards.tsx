@@ -56,13 +56,13 @@ const pricingByCurrency = {
     },
     PRO: {
       monthlyPrice: 267,
-      quarterlyPrice: 722,
-      yearlyPrice: 2196,
+      quarterlyPrice: 723,
+      yearlyPrice: 2570,
     },
     ENTERPRISE: {
-      monthlyPrice: 815,
-      quarterlyPrice: 1617,
-      yearlyPrice: 6712,
+      monthlyPrice: 699,
+      quarterlyPrice: 1890,
+      yearlyPrice: 6723,
     },
   },
   eur: {
