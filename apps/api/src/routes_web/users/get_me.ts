@@ -67,16 +67,10 @@ export const getMe = async (
     })
 
     const creditsData = {
-      search: {
-        plan: CREDIT_CONFIG.find((c) => c.plan === plan)?.credits.search ?? 0,
-        credits: credits.search,
-      },
-      enrichment: {
-        plan:
-          CREDIT_CONFIG.find((c) => c.plan === plan)?.credits.enrichment ?? 0,
-        credits: credits.enrichment,
-      },
+      plan: CREDIT_CONFIG.find((c) => c.plan === plan)?.credits ?? 0,
+      credits,
     }
+
     res.json({ plan, isDemoValidated, credits: creditsData, nextRenewalDate })
   } catch (error) {
     logger.error({

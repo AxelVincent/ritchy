@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
-export const PlanEnum = z.enum(['FREE', 'ESSENTIALS', 'PRO'])
+export const PlanEnum = z.enum(['FREE', 'ESSENTIALS', 'PRO', 'ENTERPRISE'])
 
 export const SearchModelEnum = z.enum([
   'BASIC',

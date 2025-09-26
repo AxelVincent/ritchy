@@ -11,19 +11,15 @@ export const getUserCredits = async (
   const dbOrTx = tx ?? db
   const [result] = await dbOrTx
     .select({
-      search: credits.search,
-      enrichment: credits.enrichment,
+      credits: credits.credits,
     })
     .from(credits)
     .where(eq(credits.userId, userId))
     .limit(1)
 
   if (!result) {
-    return {
-      search: 0,
-      enrichment: 0,
-    }
+    return 0
   }
 
-  return result
+  return result.credits
 }

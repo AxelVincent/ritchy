@@ -3,10 +3,10 @@ import { useEnrichmentJobStatus } from '@/api/queries/enrich/useEnrichmentJobSta
 import { listContentKeys } from '@/api/queries/lists/useListContent'
 import { searchContentKeys } from '@/api/queries/search/useSearchContent'
 import { Button } from '@/components/ui/button'
-import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Table } from '@tanstack/react-table'
+import { Sparkles } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -146,7 +146,7 @@ export const EnrichmentButtons = <TData extends SearchResult>({
 
     return (
       <>
-        <MagicWandIcon className="mr-2 h-4 w-4" />
+        <Sparkles className="mr-2 h-4 w-4" />
         {label} ({itemCount})
       </>
     )

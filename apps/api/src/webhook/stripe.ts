@@ -5,7 +5,7 @@ import Stripe from 'stripe'
 import { STRIPE_CONFIG, getPlanFromProductId } from '../config/stripe'
 import { db } from '../db/db'
 import { subscription, user as userTable } from '../db/schema'
-import { credits } from '../db/schema/credits'
+import { credits as creditsTable } from '../db/schema/credits'
 import { sendSlackNotification } from '../external/slack/slack'
 import { CREDIT_CONFIG } from '../services/payment/config'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
@@ -309,21 +309,18 @@ export const stripeWebhook = async (
               (config) => config.plan === planType,
             )
 
-            const enrichment = creditConfig?.credits.enrichment ?? 0
-            const search = creditConfig?.credits.search ?? 0
+            const credits = creditConfig?.credits ?? 0
 
             await db
-              .insert(credits)
+              .insert(creditsTable)
               .values({
                 userId,
-                enrichment,
-                search,
+                credits,
               })
               .onConflictDoUpdate({
-                target: credits.userId,
+                target: creditsTable.userId,
                 set: {
-                  enrichment,
-                  search,
+                  credits,
                 },
               })
 

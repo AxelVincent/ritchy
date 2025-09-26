@@ -3,7 +3,6 @@ import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
-import { MagicWandIcon } from '@radix-ui/react-icons'
 import type { SearchResult } from '@ritchy/types'
 import {
   type ColumnDef,
@@ -21,6 +20,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { HubspotSyncManagementButtons } from '../integrations/hubspot/HubspotSyncManagementButtons'
 import { ListManagementButtons } from '../lists/ListManagementButtons'
@@ -346,14 +346,14 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       {cell.column.columnDef.meta?.isEnrichment &&
                         row.original.enrichedStatus && (
                           <div className="absolute top-1 right-1">
-                            <MagicWandIcon
+                            <Sparkles
                               className={cn('h-2.5 w-2.5', {
-                                'text-green-400 dark:text-green-500':
+                                'text-purple-600':
                                   row.original.enrichedStatus ===
                                   'RECENTLY_ENRICHED',
-                                'text-blue-400 dark:text-blue-500':
+                                'text-blue-600':
                                   row.original.enrichedStatus === 'ENRICHED',
-                                'text-red-400 dark:text-red-500':
+                                'text-red-600':
                                   row.original.enrichedStatus ===
                                   'ENRICHMENT_ERROR',
                               })}

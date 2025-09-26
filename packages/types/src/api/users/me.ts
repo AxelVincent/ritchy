@@ -6,14 +6,8 @@ export const UserMeDataSchema = z.object({
   plan: PlanEnum,
   isDemoValidated: z.boolean(),
   credits: z.object({
-    search: z.object({
-      plan: z.number(),
-      credits: z.number(),
-    }),
-    enrichment: z.object({
-      plan: z.number(),
-      credits: z.number(),
-    }),
+    plan: z.number(),
+    credits: z.number(),
   }),
   nextRenewalDate: z.string().datetime().nullable(),
 })

@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { place, search, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
-import { consumeSearchCredits } from '../../services/payment/queries/consume_search_credits'
 import { getAggregatedUserPlaces } from '../../services/places/queries/get_aggregated_user_places'
 import { refreshPlaces } from '../../services/places/refresh_places'
 
@@ -77,17 +76,11 @@ export const getSearchContent = async (
           places: places.length,
         },
       })
-      const creditsUsed = await consumeSearchCredits(
-        userId,
-        freshResults.length,
-      )
 
-      const resultsToInsert = places
-        .map((place) => ({
-          user_id: userId,
-          place_id: place.id,
-        }))
-        .slice(0, creditsUsed)
+      const resultsToInsert = places.map((place) => ({
+        user_id: userId,
+        place_id: place.id,
+      }))
 
       const userPlaces = await db
         .insert(userPlace)

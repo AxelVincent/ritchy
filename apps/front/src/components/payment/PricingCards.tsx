@@ -35,9 +35,6 @@ import { useState } from 'react'
 interface PricingTier {
   name: string
   plan: Plan | 'ENTERPRISE'
-  monthlyPrice: number
-  quarterlyPrice: number
-  yearlyPrice: number
   description: string
   tagline: string
   features: string[]
@@ -49,13 +46,48 @@ interface PricingTier {
   leadLimit: string
 }
 
+// Currency-based pricing configuration
+const pricingByCurrency = {
+  usd: {
+    ESSENTIALS: {
+      monthlyPrice: 149,
+      quarterlyPrice: 406,
+      yearlyPrice: 1445,
+    },
+    PRO: {
+      monthlyPrice: 267,
+      quarterlyPrice: 722,
+      yearlyPrice: 2196,
+    },
+    ENTERPRISE: {
+      monthlyPrice: 815,
+      quarterlyPrice: 1617,
+      yearlyPrice: 6712,
+    },
+  },
+  eur: {
+    ESSENTIALS: {
+      monthlyPrice: 129,
+      quarterlyPrice: 348,
+      yearlyPrice: 1238,
+    },
+    PRO: {
+      monthlyPrice: 229,
+      quarterlyPrice: 619,
+      yearlyPrice: 2198,
+    },
+    ENTERPRISE: {
+      monthlyPrice: 599,
+      quarterlyPrice: 1617,
+      yearlyPrice: 5750,
+    },
+  },
+}
+
 const pricingTiers: PricingTier[] = [
   {
     name: 'Essentials',
     plan: 'ESSENTIALS',
-    monthlyPrice: 129,
-    quarterlyPrice: 348,
-    yearlyPrice: 1238,
     description: 'Perfect for entrepreneurs',
     tagline: 'Prospecting made easy',
     features: [
@@ -78,9 +110,6 @@ const pricingTiers: PricingTier[] = [
   {
     name: 'Pro',
     plan: 'PRO',
-    monthlyPrice: 229,
-    quarterlyPrice: 619,
-    yearlyPrice: 2198,
     description: 'Built for small sales teams',
     tagline: 'Fuel your growth',
     features: [
@@ -98,14 +127,11 @@ const pricingTiers: PricingTier[] = [
   {
     name: 'Enterprise',
     plan: 'ENTERPRISE',
-    monthlyPrice: 399,
-    quarterlyPrice: 1077,
-    yearlyPrice: 3830,
     description: 'Scale across your organization',
     tagline: 'Dominate your market',
     features: [
       'Custom limits',
-      'Playbook with personalized 1:1 coaching included',
+      'Playbook included',
       'Dedicated account manager',
     ],
     isEnterprise: false,
@@ -158,6 +184,13 @@ export const PricingCards = ({
   // Check if user has any active subscription
   const hasActiveSubscription = me?.plan && me.plan !== 'FREE'
 
+  // Function to get pricing for a specific plan and currency
+  const getPricing = (plan: string, currency: 'usd' | 'eur') => {
+    return pricingByCurrency[currency][
+      plan as keyof typeof pricingByCurrency.usd
+    ]
+  }
+
   // Function to determine if this is an upgrade or downgrade
   const getPlanAction = (tierPlan: string) => {
     if (!hasActiveSubscription) return 'Get started'
@@ -205,17 +238,20 @@ export const PricingCards = ({
 
           const hasPromo = !!applicablePromo
 
+          // Get pricing for current currency
+          const tierPricing = getPricing(tier.plan, currency)
+
           // Get price based on billing period
-          let currentPrice = tier.monthlyPrice
+          let currentPrice = tierPricing.monthlyPrice
           let periodsPerYear = 12
           let periodLabel = 'per month'
 
           if (billingPeriod === 'quarterly') {
-            currentPrice = tier.quarterlyPrice
+            currentPrice = tierPricing.quarterlyPrice
             periodsPerYear = 4
             periodLabel = 'per quarter'
           } else if (billingPeriod === 'yearly') {
-            currentPrice = tier.yearlyPrice
+            currentPrice = tierPricing.yearlyPrice
             periodsPerYear = 1
             periodLabel = 'per year'
           }
@@ -234,8 +270,8 @@ export const PricingCards = ({
           const savingsPercentage =
             billingPeriod !== 'monthly' && monthlyEquivalent
               ? Math.round(
-                  ((tier.monthlyPrice - monthlyEquivalent) /
-                    tier.monthlyPrice) *
+                  ((tierPricing.monthlyPrice - monthlyEquivalent) /
+                    tierPricing.monthlyPrice) *
                     100,
                 )
               : null

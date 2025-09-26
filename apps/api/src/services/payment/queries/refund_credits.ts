@@ -6,7 +6,7 @@ import { credits as creditsTable } from '../../../db/schema'
 
 export const USER_CREDITS_NOT_FOUND_ERROR = 'user_credits_not_found'
 
-export const refundSearchCredits = async (
+export const refundCredits = async (
   userId: string,
   creditsToRefund: number,
 ) => {
@@ -18,7 +18,7 @@ export const refundSearchCredits = async (
     await db.transaction(async (tx) => {
       // Lock the row to prevent race conditions
       const [currentCredits] = await tx
-        .select({ search: creditsTable.search })
+        .select({ credits: creditsTable.credits })
         .from(creditsTable)
         .where(eq(creditsTable.userId, userId))
         .for('update') // This locks the row
@@ -31,22 +31,22 @@ export const refundSearchCredits = async (
       const [updatedCredits] = await tx
         .update(creditsTable)
         .set({
-          search: sql`search + ${creditsToRefund}`,
+          credits: sql`credits + ${creditsToRefund}`,
         })
         .where(eq(creditsTable.userId, userId))
-        .returning({ search: creditsTable.search })
+        .returning({ credits: creditsTable.credits })
 
       if (!updatedCredits) {
         throw new Error(USER_CREDITS_NOT_FOUND_ERROR)
       }
 
       logger.info({
-        msg: 'Search credits refunded atomically',
-        event: 'search_credits_refunded',
+        msg: 'Credits refunded atomically',
+        event: 'credits_refunded',
         metadata: {
           userId,
           creditsToRefund,
-          newBalance: updatedCredits.search,
+          newBalance: updatedCredits.credits,
         },
       })
 
@@ -61,14 +61,14 @@ export const refundSearchCredits = async (
     ) {
       logger.info({
         msg: 'User credits not found for refund',
-        event: 'refund_search_credits_user_not_found',
+        event: 'refund_credits_user_not_found',
         metadata: { userId, creditsToRefund },
       })
       throw error
     }
     logger.error({
-      msg: 'Error refunding search credits',
-      event: 'refund_search_credits_error',
+      msg: 'Error refunding credits',
+      event: 'refund_credits_error',
       metadata: { userId, creditsToRefund, error },
     })
     throw error

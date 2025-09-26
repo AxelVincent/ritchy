@@ -3,14 +3,11 @@ import {
   type CreateSearchApiResponse,
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
-  hasModelAccess,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { search } from '../../db/schema'
-import { getUserCredits } from '../../services/payment/queries/get_user_credits'
-import { getUserSearchModel } from '../../services/payment/queries/get_user_search_model'
 
 export const createSearch = async (
   req: Request<
@@ -30,43 +27,14 @@ export const createSearch = async (
 
   try {
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
-    const userSearchModel = await getUserSearchModel(req.auth.userId)
 
     logger.info({
       msg: 'Search request validated',
       event: 'search_validation_passed',
       metadata: {
-        userSearchModel,
         requestedModel: parsedBody.model,
       },
     })
-
-    // Check if user's search model allows the requested model
-    if (!hasModelAccess(userSearchModel, parsedBody.model)) {
-      logger.warn({
-        msg: 'Model access denied',
-        event: 'search_model_access_denied',
-        metadata: {
-          userSearchModel,
-          requestedModel: parsedBody.model,
-        },
-      })
-      res.status(403).json({
-        error: 'Forbidden',
-        message: `Your current subscription allows up to ${userSearchModel} searches. Please upgrade to access ${parsedBody.model} searches.`,
-      })
-      return
-    }
-
-    const userCredits = await getUserCredits(req.auth.userId)
-
-    if (userCredits.search <= 0) {
-      res.status(403).json({
-        error: 'Forbidden',
-        message: 'You have no credits left. Please upgrade your plan.',
-      })
-      return
-    }
 
     const [result] = await db
       .insert(search)
@@ -86,7 +54,6 @@ export const createSearch = async (
       event: 'search_created',
       metadata: {
         searchId: result.id,
-        userSearchModel,
         requestedModel: parsedBody.model,
         rectangle: parsedBody.rectangle,
       },
