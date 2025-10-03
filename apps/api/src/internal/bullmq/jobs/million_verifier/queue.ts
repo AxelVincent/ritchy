@@ -1,5 +1,5 @@
-import type { MillionVerifierResponse } from 'apps/api/src/external/million_verifier'
 import { Queue, QueueEvents } from 'bullmq'
+import type { MillionVerifierResponse } from '../../../../external/million_verifier'
 import { bullmqRedisOptions } from '../../config'
 
 const queueName = 'million-verifier'

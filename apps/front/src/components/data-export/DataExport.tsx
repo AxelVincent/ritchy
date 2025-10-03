@@ -482,11 +482,6 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           },
         },
         {
-          header: 'Description',
-          field: 'description',
-          accessor: (row: SearchResult): string => row.description || '',
-        },
-        {
           header: 'Enriched Status',
           field: 'enrichedStatus',
           accessor: (row: SearchResult): string => row.enrichedStatus || '',

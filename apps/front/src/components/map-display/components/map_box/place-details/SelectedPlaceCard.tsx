@@ -6,8 +6,8 @@ import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { Place } from '@ritchy/types'
 import { ExternalLink, X } from 'lucide-react'
+import { PlaceCompanyDetailsTab } from './tabs/PlaceCompanyDetailsTab'
 import { PlaceContactTab } from './tabs/PlaceContactTab'
-import { PlaceDescriptionTab } from './tabs/PlaceDescriptionTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
 import { PlaceReviewsTab } from './tabs/PlaceReviewsTab'
@@ -45,7 +45,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
   const currentTab = activeTab || 'details'
 
   return (
-    <div className="flex flex-col h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px] xl:h-[500px]">
+    <div className="flex flex-col h-full min-h-[200px]">
       {/* Header */}
       <div className="pb-2 pt-3 px-4 shrink-0">
         <div className="flex items-center justify-between">
@@ -118,11 +118,11 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
               Informations
             </TabsTrigger>
             <TabsTrigger
-              value="description"
+              value="company_details"
               aria-label="Description"
               className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
             >
-              Description
+              Company Details
             </TabsTrigger>
             <TabsTrigger
               value="contact"
@@ -143,7 +143,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
               aria-label="Reviews"
               className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
             >
-              Top reviews
+              Top Reviews
             </TabsTrigger>
           </TabsList>
 
@@ -156,10 +156,10 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
             </TabsContent>
 
             <TabsContent
-              value="description"
+              value="company_details"
               className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
             >
-              <PlaceDescriptionTab place={currentPlace} />
+              <PlaceCompanyDetailsTab place={currentPlace} />
             </TabsContent>
 
             <TabsContent

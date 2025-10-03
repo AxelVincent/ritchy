@@ -10,13 +10,10 @@ import { getBusinessName } from './queries/get_business_name'
 import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
 import { UnrecoverableError } from 'bullmq'
-import { countryToAlpha2 } from 'country-to-iso'
 import { getWebsiteDescription } from '../../external/langchain/get_website_description'
-import { PAPPERS_COUNTRY_CODES } from '../../external/pappers/international_search_v1'
 import { deleteWebsiteVectors } from '../../external/qdrant/queries/delete_website_vectors'
 import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vectors'
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
-import { enqueuePappersJob } from '../../internal/bullmq/jobs/pappers/queue'
 import { enqueueScraperJob } from '../../internal/bullmq/jobs/scraper/queue'
 import { jobTracker } from '../../internal/bullmq/utils/job_progress_tracker'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
@@ -27,6 +24,7 @@ import {
 } from '../payment/queries/consume_credits'
 import { refundCredits } from '../payment/queries/refund_credits'
 import { getUserIdByUserPlaceId } from '../places/queries/get_user_id_by_user_place_id'
+import { governmentalData } from './governmental_data'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
@@ -76,6 +74,7 @@ export const websiteEnrichmentManager = async ({
       jobTracker.updateProgress(jobId, 'Consuming enrichment credits')
       await consumeCredits(userId, ENRICHMENT_CREDITS)
     }
+
     jobTracker.updateProgress(jobId, 'Checking existing enrichment')
     const [existingEnrichment] = await db
       .select()
@@ -84,54 +83,87 @@ export const websiteEnrichmentManager = async ({
       .limit(1)
 
     if (existingEnrichment) {
-      jobTracker.updateProgress(jobId, 'Using existing enrichment')
-      await Promise.all([
-        populateContactFromEnrichment({
-          enrichmentId: existingEnrichment.id,
-          userPlaceId,
-        }),
-        setUserPlaceAsEnriched(userPlaceId),
-      ])
+      if (!existingEnrichment.isStale) {
+        jobTracker.updateProgress(jobId, 'Using existing enrichment')
+        await Promise.all([
+          populateContactFromEnrichment({
+            enrichmentId: existingEnrichment.id,
+            userPlaceId,
+          }),
+          setUserPlaceAsEnriched(userPlaceId),
+        ])
+        logger.info({
+          msg: 'Website already enriched, skipping enrichment',
+          event: 'website_already_enriched',
+          metadata: {
+            website: existingEnrichment.domain,
+            userPlaceId,
+            timeToEnrich: Date.now() - startTime,
+          },
+        })
+        return
+      }
+
+      jobTracker.updateProgress(jobId, 'Refreshing stale enrichment data')
       logger.info({
-        msg: 'Website already enriched, skipping enrichment',
-        event: 'website_already_enriched',
+        msg: 'Refreshing stale enrichment',
+        event: 'stale_enrichment_refresh_start',
         metadata: {
-          website: existingEnrichment.domain,
+          enrichmentId: enrichment.id,
+          domain: enrichment.domain,
           userPlaceId,
-          timeToEnrich: Date.now() - startTime,
         },
       })
-      return
-    }
 
-    // const countryCode = countryToAlpha2(place.place.country ?? '')
-    // const parsedCountryCode = PAPPERS_COUNTRY_CODES.safeParse(countryCode)
-    // if (place.place.name && countryCode && parsedCountryCode.success) {
-    //   logger.debug({
-    //     msg: 'Enqueuing Pappers job',
-    //     event: 'enqueuing_pappers_job',
-    //     metadata: { countryCode, placeName: place.place.name },
-    //   })
-    //   const pappersResult = await enqueuePappersJob({
-    //     countryCode: parsedCountryCode.data,
-    //     q: place.place.name,
-    //   })
-    //   logger.info({
-    //     msg: 'Pappers result',
-    //     event: 'pappers_result',
-    //     metadata: { pappersResult },
-    //   })
-    //   return
-    // }
+      await db
+        .update(enrichmentTable)
+        .set({
+          isStale: false,
+          success: false,
+          error: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(enrichmentTable.id, existingEnrichment.id))
+    }
 
     jobTracker.updateProgress(jobId, 'Getting business website')
     const website = await getBusinessWebsite(userPlaceId)
     if (!website) {
-      await db.insert(enrichmentTable).values({
-        placeId: place.place.id,
-        domain: null,
-        domainRegisteredAt: null,
+      const [insertedEnrichment] = await db
+        .insert(enrichmentTable)
+        .values({
+          placeId: place.place.id,
+          domain: null,
+          domainRegisteredAt: null,
+        })
+        .onConflictDoUpdate({
+          target: [enrichmentTable.placeId],
+          set: {
+            placeId: place.place.id,
+            domain: null,
+            domainRegisteredAt: null,
+          },
+        })
+        .returning()
+
+      // Run governmental data when no website is provided
+      jobTracker.updateProgress(
+        jobId,
+        'Enriching with governmental data (no website)',
+      )
+      const governmentalDataResult = await governmentalData({
+        place: place.place,
+        enrichmentId: insertedEnrichment.id,
       })
+
+      if (governmentalDataResult.companyData) {
+        logger.info({
+          msg: '[pappers] Governmental data found (no website scenario)',
+          event: 'governmental_data_found_no_website',
+          metadata: { governmentalDataResult },
+        })
+      }
+
       logger.error({
         msg: 'Website not found, skipping enrichment',
         event: 'website_not_found',
@@ -147,6 +179,13 @@ export const websiteEnrichmentManager = async ({
       .values({
         placeId: place.place.id,
         domain,
+      })
+      .onConflictDoUpdate({
+        target: [enrichmentTable.placeId],
+        set: {
+          placeId: place.place.id,
+          domain,
+        },
       })
       .returning()
 
@@ -214,11 +253,36 @@ export const websiteEnrichmentManager = async ({
         event: 'failed_to_scrape_website',
         metadata: { website, userPlaceId },
       })
+
+      // Run governmental data as fallback when scraping fails
+      jobTracker.updateProgress(
+        jobId,
+        'Enriching with governmental data (scraping failed)',
+      )
+      const [governmentalDataResult, whoisData] = await Promise.all([
+        governmentalData({
+          place: place.place,
+          enrichmentId: insertedEnrichment.id,
+        }),
+        performWhoisLookup(domain),
+      ])
+
+      if (governmentalDataResult.companyData) {
+        logger.info({
+          msg: '[pappers] Governmental data found (scraping failed scenario)',
+          event: 'governmental_data_found_scraping_failed',
+          metadata: { governmentalDataResult },
+        })
+      }
+
       await db
         .update(enrichmentTable)
         .set({
           error: scrapeResult?.error?.message || 'Failed to scrape website',
           success: false,
+          domainRegisteredAt: whoisData?.registrationDate
+            ? new Date(whoisData.registrationDate)
+            : null,
         })
         .where(eq(enrichmentTable.id, insertedEnrichment.id))
       return
@@ -298,12 +362,29 @@ export const websiteEnrichmentManager = async ({
       },
     })
 
-    jobTracker.updateProgress(jobId, 'Producing description')
-    const { description, shortDescription } =
-      await getWebsiteDescription(domain)
+    // Run governmental data when scraping is successful
+    jobTracker.updateProgress(jobId, 'Enriching with external data')
 
-    jobTracker.updateProgress(jobId, 'Performing whois lookup')
-    const whoisData = await performWhoisLookup(domain)
+    const [
+      governmentalDataResult,
+      { description, shortDescription },
+      whoisData,
+    ] = await Promise.all([
+      governmentalData({
+        place: place.place,
+        enrichmentId: insertedEnrichment.id,
+      }),
+      getWebsiteDescription(domain),
+      performWhoisLookup(domain),
+    ])
+
+    if (governmentalDataResult.companyData) {
+      logger.info({
+        msg: '[pappers] Governmental data found (scraping successful scenario)',
+        event: 'governmental_data_found_scraping_successful',
+        metadata: { governmentalDataResult },
+      })
+    }
 
     jobTracker.updateProgress(jobId, 'Updating enrichment')
     await Promise.all([

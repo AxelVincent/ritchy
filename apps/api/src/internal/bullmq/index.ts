@@ -6,6 +6,7 @@ import './jobs/brightdata/worker'
 import './jobs/scraper/worker'
 import './jobs/whois/worker'
 import './jobs/google/places/worker'
+import './jobs/pappers/worker'
 import type { Queue } from 'bullmq'
 import { brightdataQueue } from './jobs/brightdata/queue'
 import { enrichmentBatchQueue } from './jobs/enrichment/batch/queue'
@@ -13,6 +14,7 @@ import { enrichmentUnitQueue } from './jobs/enrichment/unit/queue'
 import { firecrawlQueue } from './jobs/firecrawl/queue'
 import { googlePlacesQueue } from './jobs/google/places/queue'
 import { millionVerifierQueue } from './jobs/million_verifier/queue'
+import { pappersQueue } from './jobs/pappers/queue'
 import { scraperQueue } from './jobs/scraper/queue'
 import { whoisQueue } from './jobs/whois/queue'
 
@@ -59,6 +61,11 @@ export const bullmqQueues: {
   {
     queue: googlePlacesQueue,
     displayName: 'Google Places',
+    type: 'bullmq',
+  },
+  {
+    queue: pappersQueue,
+    displayName: 'Pappers',
     type: 'bullmq',
   },
 ]

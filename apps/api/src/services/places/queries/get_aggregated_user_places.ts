@@ -3,8 +3,8 @@ import type {
   Place as PlaceApi,
   PlaceListAssociation,
 } from '@ritchy/types'
-import { db } from 'apps/api/src/db/db'
 import { type InferSelectModel, sql } from 'drizzle-orm'
+import { db } from '../../../db/db'
 import type {
   contactEmail,
   contactPhone,
@@ -47,7 +47,6 @@ export interface AggregatedUserPlace extends Place {
   contact_facebooks: ContactSocialMedia[]
 
   // Enrichment fields
-  description: Enrichment['description']
   short_description: Enrichment['shortDescription']
   domain_registered_at: Enrichment['domainRegisteredAt']
   enriched_at: UserPlace['enriched_at']
@@ -141,7 +140,6 @@ export const getAggregatedUserPlaces = async (
       COALESCE(contacts_data.contact_instagrams, '[]'::jsonb) as contact_instagrams,
       COALESCE(contacts_data.contact_facebooks, '[]'::jsonb) as contact_facebooks,
       -- Enrichment fields
-      e.description,
       e.short_description,
       e.domain_registered_at,
       e.success
@@ -315,7 +313,6 @@ export const getAggregatedUserPlaces = async (
       notes: result.notes,
       status: result.status,
       domainRegisteredAt: result.domain_registered_at,
-      description: result.description,
       shortDescription: result.short_description,
       contactEmails: result.contact_emails.map((email) => ({
         id: email.id,

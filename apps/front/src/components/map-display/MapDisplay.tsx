@@ -183,20 +183,44 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
           defaultSize={panelSizes[0]}
           className="flex-1 flex flex-col overflow-hidden"
         >
-          <DataTable
-            columns={columns}
-            data={tableData}
-            setDataTableRowSelection={setDataTableRowSelection}
-            dataTableRowSelection={dataTableRowSelection}
-            onFilteredDataChange={setFilteredPlaceIds}
-            listId={listId}
-            searchId={searchId}
-          />
-          {selectedPlaceId && (
-            <div className="border-t bg-background">
-              <SelectedPlaceCard
-                places={places}
-                displayedPlaceIds={safeFilteredPlaceIds}
+          {selectedPlaceId ? (
+            <ResizablePanelGroup direction="vertical" className="h-full">
+              <ResizablePanel
+                defaultSize={70}
+                className="flex flex-col overflow-hidden"
+              >
+                <div className="flex flex-col h-full overflow-hidden">
+                  <DataTable
+                    columns={columns}
+                    data={tableData}
+                    setDataTableRowSelection={setDataTableRowSelection}
+                    dataTableRowSelection={dataTableRowSelection}
+                    onFilteredDataChange={setFilteredPlaceIds}
+                    listId={listId}
+                    searchId={searchId}
+                  />
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={30} minSize={20} maxSize={60}>
+                <div className="border-t bg-background h-full">
+                  <SelectedPlaceCard
+                    places={places}
+                    displayedPlaceIds={safeFilteredPlaceIds}
+                  />
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : (
+            <div className="flex flex-col h-full overflow-hidden">
+              <DataTable
+                columns={columns}
+                data={tableData}
+                setDataTableRowSelection={setDataTableRowSelection}
+                dataTableRowSelection={dataTableRowSelection}
+                onFilteredDataChange={setFilteredPlaceIds}
+                listId={listId}
+                searchId={searchId}
               />
             </div>
           )}

@@ -1,5 +1,26 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "ignore": [
+      "node_modules",
+      "dist",
+      "build",
+      ".next",
+      "out",
+      "coverage",
+      ".cache",
+      "public",
+      "*.min.js",
+      "*.bundle.js"
+    ],
+    "maxSize": 1048576
+  },
   "organizeImports": {
     "enabled": true
   },

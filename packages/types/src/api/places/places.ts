@@ -1,7 +1,7 @@
 import { z } from 'zod'
+import { RectangleSchema } from '../../common'
 import { SocialMediaPlatformEnum } from '../enrich'
 import { SearchModelEnum } from '../payments/checkout'
-import { RectangleSchema } from '../searches/search'
 import { NoteSchema } from './notes'
 import { StatusEnum } from './status'
 
@@ -245,7 +245,6 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   notes: z.array(NoteSchema).optional().nullable(),
   status: StatusEnum.nullable(),
   domainRegisteredAt: z.date().nullable(),
-  description: z.string().nullable(),
   shortDescription: z.string().nullable(),
   contactEmails: z.array(EmailSchema).optional(),
   contactPhones: z.array(PhoneSchema).optional(),

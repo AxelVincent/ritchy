@@ -47,6 +47,7 @@
     "commander": "14.0.0",
     "connect-timeout": "1.9.0",
     "cors": "2.8.5",
+    "country-to-iso": "1.6.1",
     "dayjs": "1.11.13",
     "dompurify": "3.2.6",
     "dotenv": "16.4.7",

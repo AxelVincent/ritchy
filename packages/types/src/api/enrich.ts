@@ -178,7 +178,7 @@ export const BatchEnrichmentRequestBodySchema = z.object({
     .array(
       z.object({
         userPlaceId: z.string(),
-        website: UrlSchema,
+        website: z.string().optional(),
       }),
     )
     .min(1)

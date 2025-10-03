@@ -1,0 +1,52 @@
+import { Queue, QueueEvents } from 'bullmq'
+import type { InternationalCompanyResponse } from '../../../../external/pappers/international_company_v1'
+import type { InternationalCompanyV1Params } from '../../../../external/pappers/international_company_v1'
+import type {
+  InterantionalSearchV1,
+  InternationalSearchResponse,
+} from '../../../../external/pappers/international_search_v1'
+import { bullmqRedisOptions } from '../../config'
+
+export const queueName = 'pappers-api'
+export const pappersQueue = new Queue(queueName, {
+  connection: bullmqRedisOptions,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 2000,
+    },
+    removeOnComplete: {
+      age: 3600,
+      count: 1000,
+    },
+    removeOnFail: {
+      age: 24 * 3600,
+      count: 1000,
+    },
+  },
+})
+
+const pappersQueueEvents = new QueueEvents(queueName, {
+  connection: bullmqRedisOptions,
+})
+
+export const enqueuePappersSearchJob = async (
+  data: InterantionalSearchV1,
+): Promise<InternationalSearchResponse> => {
+  const job = await pappersQueue.add('search', {
+    type: 'search',
+    data,
+  })
+  return await job.waitUntilFinished(pappersQueueEvents)
+}
+
+export const enqueuePappersCompanyJob = async (
+  data: InternationalCompanyV1Params,
+): Promise<InternationalCompanyResponse> => {
+  const job = await pappersQueue.add('company', {
+    type: 'company',
+    data,
+  })
+  return await job.waitUntilFinished(pappersQueueEvents)
+}
