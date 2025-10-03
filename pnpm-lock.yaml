@@ -83,6 +83,9 @@ importers:
       cors:
         specifier: 2.8.5
         version: 2.8.5
+      country-to-iso:
+        specifier: 1.6.1
+        version: 1.6.1
       dayjs:
         specifier: 1.11.13
         version: 1.11.13
@@ -4275,6 +4278,9 @@ packages:
   cors@2.8.5:
     resolution: {integrity: sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g==}
     engines: {node: '>= 0.10'}
+
+  country-to-iso@1.6.1:
+    resolution: {integrity: sha512-rJi4AyD4rgy7OPtIpdmpbFcL2IRuV67tO1BjrKAefKhLoSfz7n9V1pwjfiNHVVbyznP0h9pjMfUce8AdRQyrnA==}
 
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
@@ -11661,6 +11667,8 @@ snapshots:
     dependencies:
       object-assign: 4.1.1
       vary: 1.1.2
+
+  country-to-iso@1.6.1: {}
 
   create-require@1.1.1:
     optional: true

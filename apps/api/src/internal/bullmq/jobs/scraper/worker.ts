@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
-import { scrapeWebsiteManager } from 'apps/api/src/services/enrichment/scraper/scrape_website_manager'
 import { type Job, UnrecoverableError, Worker } from 'bullmq'
+import { scrapeWebsiteManager } from '../../../../services/enrichment/scraper/scrape_website_manager'
 import { bullmqRedisOptions } from '../../config'
 import { workerConfig } from '../../config'
 import { queueName } from './queue'

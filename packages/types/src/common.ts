@@ -15,3 +15,16 @@ export const ApiErrorResponseSchema = z.object({
 })
 
 export type ApiErrorResponse = z.infer<typeof ApiErrorResponseSchema>
+
+export const CoordinateSchema = z.object({
+  latitude: z.number(),
+  longitude: z.number(),
+})
+
+export const RectangleSchema = z.object({
+  northEast: CoordinateSchema,
+  southWest: CoordinateSchema,
+})
+
+export type Coordinate = z.infer<typeof CoordinateSchema>
+export type Rectangle = z.infer<typeof RectangleSchema>

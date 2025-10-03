@@ -8,6 +8,7 @@ import {
 } from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../middleware/zodValidation'
+import enrichmentRouter from './enrichment'
 import { getGeocode } from './get_geocode'
 import notesRouter from './notes'
 import { postAutocomplete } from './post_autocomplete'
@@ -21,6 +22,8 @@ placesRouter.use('/:userPlaceId/status', statusRouter)
 placesRouter.use('/:userPlaceId/notes', notesRouter)
 
 placesRouter.use('/:userPlaceId/reviews', reviewsRouter)
+
+placesRouter.use('/:userPlaceId/enrichment', enrichmentRouter)
 
 placesRouter.post(
   '/autocomplete',
