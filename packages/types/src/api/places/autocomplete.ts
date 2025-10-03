@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
-import { CoordinateSchema, RectangleSchema } from '../searches/search'
+import { CoordinateSchema, RectangleSchema } from '../../common'
 
 export const AutocompleteRequestBodySchema = z.object({
   input: z.string().min(1),

@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import { and, eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { contact } from '../../db/schema'
-import { getEnrichmentByUserPlaceId } from '../enrichment/queries/get_enrichment_by_user_place_id'
+import { getEnrichmentIdByUserPlaceId } from '../enrichment/queries/get_enrichment_id_by_user_place_id'
 import { populateContactFromEnrichment } from './populate_contact_from_enrichment'
 import { getOrCreatePrimaryContact } from './queries/insert_primary_contact'
 
@@ -24,9 +24,9 @@ const fetchOrCreateContact = async (userPlaceId: string, userId: string) => {
     )
 
   if (!existingPrimaryContact) {
-    const enrichment = await getEnrichmentByUserPlaceId(userPlaceId)
+    const { id: enrichmentId } = await getEnrichmentIdByUserPlaceId(userPlaceId)
 
-    if (!enrichment) {
+    if (!enrichmentId) {
       const newContact = await getOrCreatePrimaryContact(userPlaceId)
       logger.info({
         msg: 'No enrichment found, creating new contact',
@@ -37,7 +37,7 @@ const fetchOrCreateContact = async (userPlaceId: string, userId: string) => {
     }
 
     const newContact = await populateContactFromEnrichment({
-      enrichmentId: enrichment.enrichment.id,
+      enrichmentId,
       userPlaceId,
     })
 

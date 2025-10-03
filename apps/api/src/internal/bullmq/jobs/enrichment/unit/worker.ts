@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
-import { websiteEnrichmentManager } from 'apps/api/src/services/enrichment/website_enrichment_manager'
 import { type Job, UnrecoverableError, Worker } from 'bullmq'
+import { websiteEnrichmentManager } from '../../../../../services/enrichment/website_enrichment_manager'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { jobTracker } from '../../../utils/job_progress_tracker'
 import { queueName } from './queue'

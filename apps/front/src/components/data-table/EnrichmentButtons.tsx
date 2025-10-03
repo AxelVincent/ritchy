@@ -54,13 +54,10 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   const [progress, setProgress] = useState<number>(0)
   const selectedRows = table.getSelectedRowModel().rows
   const hasSelectedRows = selectedRows.length > 0
-  const hasSelectedRowsWithWebsite = selectedRows.some(
-    (row) => row.original.website,
-  )
   const batchEnrichmentMutation = useBatchEnrichment()
   const rowsToEnrich = hasSelectedRows
-    ? selectedRows.filter((row) => row.original.website)
-    : table.getFilteredRowModel().rows.filter((row) => row.original.website)
+    ? selectedRows
+    : table.getFilteredRowModel().rows
 
   const jobStatusQuery = useEnrichmentJobStatus(
     activeJobId || '',
@@ -72,8 +69,8 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     try {
       const response = await batchEnrichmentMutation.mutateAsync({
         enrichments: rowsToEnrich.map((row) => ({
-          website: row.original.website || '',
           userPlaceId: row.original.id,
+          ...(row.original.website && { website: row.original.website }),
         })),
       })
       if ('error' in response) {
@@ -153,21 +150,18 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   }
 
   if (hasSelectedRows) {
-    // Only show "Enrich Selected" when rows are selected
-    return hasSelectedRowsWithWebsite ? (
+    // Show "Enrich Selected" when rows are selected (regardless of website presence)
+    return (
       <div className="flex flex-col gap-2">
         <Button
           onClick={handleEnrichClick}
           disabled={!!activeJobId}
           className={activeJobId ? 'h-auto' : ''}
         >
-          {renderButtonContent(
-            selectedRows.filter((row) => row.original.website).length,
-            'Enrich Selected',
-          )}
+          {renderButtonContent(selectedRows.length, 'Enrich Selected')}
         </Button>
       </div>
-    ) : null
+    )
   }
 
   // Show "Enrich All" only when no rows are selected

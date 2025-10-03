@@ -90,7 +90,6 @@ export function LocationAutocomplete({
       'result' in geocodeData &&
       'formatted_address' in geocodeData.result
     ) {
-      console.log('geocodeData', geocodeData)
       onLocationSelect({
         formatted_address: inputValue,
         geometry: geocodeData.result.geometry,
