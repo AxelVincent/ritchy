@@ -75,8 +75,8 @@ const UboSchema = z.object({
   city: z.string().nullable(),
   country: z.string().nullable(),
   country_code: z.string().nullable(),
-  percentage_of_shares: z.number().nullable(),
-  voting_percentage: z.number().nullable(),
+  percentage_of_shares: z.string().nullable(),
+  voting_percentage: z.string().nullable(),
 })
 
 const FinancialRatiosSchema = z.object({

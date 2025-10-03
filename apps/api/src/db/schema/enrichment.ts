@@ -258,8 +258,8 @@ export const enrichmentCompanyUbo = pgTable('enrichment_company_ubo', {
   country_code: text('country_code'),
 
   // Ownership information
-  percentage_of_shares: numeric('percentage_of_shares'),
-  voting_percentage: numeric('voting_percentage'),
+  percentage_of_shares: text('percentage_of_shares'),
+  voting_percentage: text('voting_percentage'),
 
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })

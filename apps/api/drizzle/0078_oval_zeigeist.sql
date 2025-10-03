@@ -1,0 +1,2 @@
+ALTER TABLE "enrichment_company_ubo" ALTER COLUMN "percentage_of_shares" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "enrichment_company_ubo" ALTER COLUMN "voting_percentage" SET DATA TYPE text;

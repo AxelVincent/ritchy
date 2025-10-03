@@ -8,6 +8,23 @@ import { extractCompanyIdentifiers } from '../../../external/qdrant/queries/extr
 import { enqueuePappersCompanyJob } from '../../../internal/bullmq/jobs/pappers/queue'
 import { insertEnrichmentCompany } from '../queries/insert_enrichment_company'
 
+// Helper function to map ISO alpha-2 codes to Pappers country codes
+const mapToPappersCountryCode = (isoCountryCode: string | null): string => {
+  if (!isoCountryCode) return ''
+  const countryCodeMapping: Record<string, string> = {
+    GB: 'UK',
+    FR: 'FR',
+    BE: 'BE',
+    CH: 'CH',
+    NL: 'NL',
+    LU: 'LU',
+    DE: 'DE',
+    ES: 'ES',
+  }
+
+  return countryCodeMapping[isoCountryCode] || isoCountryCode
+}
+
 // Helper function to detect placeholder values from LLM
 const isPlaceholderValue = (value: string | null | undefined): boolean => {
   if (!value) return true
@@ -29,10 +46,21 @@ export const governmentalData = async ({
   place,
   enrichmentId,
 }: { place: Place; enrichmentId: string }) => {
-  const countryCode = countryToAlpha2(place.country ?? '')
+  const isoCountryCode = countryToAlpha2(place.country ?? '')
+  const countryCode = mapToPappersCountryCode(isoCountryCode)
   const parsedCountryCode = PAPPERS_COUNTRY_CODES.safeParse(countryCode)
 
-  if (!place.name || !countryCode || !parsedCountryCode.success) {
+  if (!place.name || !isoCountryCode || !parsedCountryCode.success) {
+    logger.warn({
+      msg: '[pappers] Invalid place name or country code',
+      event: 'governmental_data_invalid_place',
+      metadata: {
+        placeName: place.name,
+        isoCountryCode,
+        countryCode,
+        parsedCountryCode,
+      },
+    })
     return { companyData: null, searchAttempts: 0 }
   }
 
