@@ -1,6 +1,7 @@
 import { useBatchEnrichment } from '@/api/mutations/enrichment/useBatchEnrichment'
 import { useEnrichmentJobStatus } from '@/api/queries/enrich/useEnrichmentJobStatus'
 import { listContentKeys } from '@/api/queries/lists/useListContent'
+import { placeEnrichmentKeys } from '@/api/queries/places/enrichment/usePlaceEnrichment'
 import { searchContentKeys } from '@/api/queries/search/useSearchContent'
 import { Button } from '@/components/ui/button'
 import type { SearchResult } from '@ritchy/types'
@@ -91,6 +92,9 @@ export const EnrichmentButtons = <TData extends SearchResult>({
       )
       if (status === 'completed' || status === 'failed') {
         // Invalidate queries one last time to get the final data
+        queryClient.invalidateQueries({
+          queryKey: placeEnrichmentKeys.all,
+        })
         if (listId) {
           queryClient.invalidateQueries({
             queryKey: listContentKeys.list(listId),

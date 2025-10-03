@@ -1,7 +1,7 @@
 import { useApiQuery } from '@/hooks/useApi'
 import type { GetPlacesEnrichmentApiResponse } from '@ritchy/types'
 
-const placeEnrichmentKeys = {
+export const placeEnrichmentKeys = {
   all: ['placeEnrichment'] as const,
   place: (userPlaceId: string) =>
     [...placeEnrichmentKeys.all, userPlaceId] as const,

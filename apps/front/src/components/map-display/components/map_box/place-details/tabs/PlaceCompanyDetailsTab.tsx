@@ -444,11 +444,8 @@ export const PlaceCompanyDetailsTab = ({ place }: { place: Place }) => {
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <div className="max-w-sm space-y-4">
           <h3 className="text-lg font-semibold text-muted-foreground">
-            Enrichment required for description
+            Enrichment required for description and governmental data
           </h3>
-          <p className="text-sm text-muted-foreground">
-            This place needs a website URL to be enriched.
-          </p>
         </div>
       </div>
     )
@@ -459,11 +456,8 @@ export const PlaceCompanyDetailsTab = ({ place }: { place: Place }) => {
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <div className="max-w-sm space-y-4">
           <h3 className="text-lg font-semibold text-muted-foreground">
-            Enrichment required for description
+            Enrichment required for description and governmental data
           </h3>
-          <p className="text-sm text-muted-foreground">
-            This place needs a website URL to be enriched.
-          </p>
         </div>
       </div>
     )
