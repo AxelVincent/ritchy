@@ -15,6 +15,10 @@ export default defineConfig({
       project: 'javascript-react',
     }),
   ],
+  optimizeDeps: {
+    include: ['lucide-react', '@tanstack/react-table', '@tanstack/react-query'],
+    exclude: [],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
