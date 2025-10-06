@@ -1,15 +1,9 @@
-import { useBatchEnrichment } from '@/api/mutations/enrichment/useBatchEnrichment'
-import { useEnrichmentJobStatus } from '@/api/queries/enrich/useEnrichmentJobStatus'
-import { listContentKeys } from '@/api/queries/lists/useListContent'
-import { placeEnrichmentKeys } from '@/api/queries/places/enrichment/usePlaceEnrichment'
-import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import { useBulkEnrichment } from '@/api/mutations/enrichment/useBulkEnrichment'
 import { Button } from '@/components/ui/button'
 import type { SearchResult } from '@ritchy/types'
-import { useQueryClient } from '@tanstack/react-query'
 import type { Table } from '@tanstack/react-table'
 import { Sparkles } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 interface EnrichmentButtonsProps<TData extends SearchResult> {
   table: Table<TData>
@@ -17,130 +11,54 @@ interface EnrichmentButtonsProps<TData extends SearchResult> {
   searchId?: string
 }
 
-// Simple helper to handle storage with TTL
-const withTTL = {
-  set: (key: string, value: string) => {
-    localStorage.setItem(
-      key,
-      JSON.stringify({
-        value,
-        expiry: Date.now() + 30 * 60 * 1000, // 30 min TTL
-      }),
-    )
-  },
-  get: (key: string) => {
-    const item = localStorage.getItem(key)
-    if (!item) return null
-
-    const { value, expiry } = JSON.parse(item)
-    if (Date.now() > expiry) {
-      localStorage.removeItem(key)
-      return null
-    }
-    return value
-  },
-  remove: (key: string) => localStorage.removeItem(key),
+// Helper to chunk array into smaller arrays
+const chunkArray = <T,>(array: T[], size: number): T[][] => {
+  const chunks: T[][] = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
 }
 
 export const EnrichmentButtons = <TData extends SearchResult>({
   table,
-  listId,
-  searchId,
+  // listId,
+  // searchId,
 }: EnrichmentButtonsProps<TData>) => {
-  const queryClient = useQueryClient()
-  const storageKey = `jobId_${listId || searchId}`
-  const [activeJobId, setActiveJobId] = useState<string | null>(() =>
-    withTTL.get(storageKey),
-  )
-  const [progress, setProgress] = useState<number>(0)
   const selectedRows = table.getSelectedRowModel().rows
   const hasSelectedRows = selectedRows.length > 0
-  const batchEnrichmentMutation = useBatchEnrichment()
+  const bulkEnrichmentMutation = useBulkEnrichment()
+
   const rowsToEnrich = hasSelectedRows
     ? selectedRows
     : table.getFilteredRowModel().rows
 
-  const jobStatusQuery = useEnrichmentJobStatus(
-    activeJobId || '',
-    !!activeJobId,
-    10000,
-  )
-
   const handleEnrichClick = async () => {
     try {
-      const response = await batchEnrichmentMutation.mutateAsync({
-        enrichments: rowsToEnrich.map((row) => ({
-          userPlaceId: row.original.id,
-          ...(row.original.website && { website: row.original.website }),
-        })),
-      })
-      if ('error' in response) {
-        throw new Error(response.error)
+      const userPlaceIds = rowsToEnrich.map((row) => row.original.id)
+      const chunks = chunkArray(userPlaceIds, 500)
+
+      // Process each chunk sequentially
+      for (let i = 0; i < chunks.length; i++) {
+        const response = await bulkEnrichmentMutation.mutateAsync({
+          userPlaceIds: chunks[i],
+        })
+
+        if ('error' in response) {
+          throw new Error(response.error)
+        }
       }
-      setActiveJobId(response.jobId)
-      withTTL.set(storageKey, response.jobId)
     } catch (error) {
       console.error('Enrichment failed:', error)
     }
   }
 
-  useEffect(() => {
-    if (jobStatusQuery.data && 'data' in jobStatusQuery.data) {
-      const { data, status } = jobStatusQuery.data
-      setProgress(
-        Math.round((data.processedMessages / data.totalMessages) * 100),
-      )
-      if (status === 'completed' || status === 'failed') {
-        // Invalidate queries one last time to get the final data
-        queryClient.invalidateQueries({
-          queryKey: placeEnrichmentKeys.all,
-        })
-        if (listId) {
-          queryClient.invalidateQueries({
-            queryKey: listContentKeys.list(listId),
-          })
-        }
-        if (searchId) {
-          queryClient.invalidateQueries({
-            queryKey: searchContentKeys.search(searchId),
-          })
-        }
-
-        setActiveJobId(null) // This will stop polling automatically
-        withTTL.remove(storageKey)
-        setProgress(100)
-      }
-      if (status === 'active') {
-        const updatedProgress = Math.round(
-          (data.processedMessages / data.totalMessages) * 100,
-        )
-        if (updatedProgress > progress) {
-          if (listId) {
-            queryClient.invalidateQueries({
-              queryKey: listContentKeys.list(listId),
-            })
-          }
-          if (searchId) {
-            queryClient.invalidateQueries({
-              queryKey: searchContentKeys.search(searchId),
-            })
-          }
-          setProgress(updatedProgress)
-        }
-      }
-    }
-  }, [jobStatusQuery.data, listId, searchId, queryClient, progress, storageKey])
-
   const renderButtonContent = (itemCount: number, label: string) => {
-    if (activeJobId && jobStatusQuery.data && 'data' in jobStatusQuery.data) {
-      const { processedMessages, totalMessages } = jobStatusQuery.data.data
-
+    if (bulkEnrichmentMutation.isPending) {
       return (
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">
-            {progress}% ({processedMessages}/{totalMessages})
-          </span>
+          <span className="text-sm">Starting enrichment...</span>
         </div>
       )
     }
@@ -153,14 +71,16 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     )
   }
 
+  const isProcessing = bulkEnrichmentMutation.isPending
+
   if (hasSelectedRows) {
-    // Show "Enrich Selected" when rows are selected (regardless of website presence)
+    // Show "Enrich Selected" when rows are selected
     return (
       <div className="flex flex-col gap-2">
         <Button
           onClick={handleEnrichClick}
-          disabled={!!activeJobId}
-          className={activeJobId ? 'h-auto' : ''}
+          disabled={isProcessing}
+          className={isProcessing ? 'h-auto' : ''}
         >
           {renderButtonContent(selectedRows.length, 'Enrich Selected')}
         </Button>
@@ -173,8 +93,8 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     <div className="flex flex-col gap-2">
       <Button
         onClick={handleEnrichClick}
-        disabled={!!activeJobId}
-        className={activeJobId ? 'h-auto' : ''}
+        disabled={isProcessing}
+        className={isProcessing ? 'h-auto' : ''}
       >
         {renderButtonContent(rowsToEnrich.length, 'Enrich All')}
       </Button>

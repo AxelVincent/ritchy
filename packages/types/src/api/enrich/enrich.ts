@@ -10,8 +10,8 @@ import {
   Youtube,
 } from 'lucide-react'
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from '../common'
-import { UrlSchema } from '../schemas'
+import { ApiErrorResponseSchema } from '../../common'
+import { UrlSchema } from '../../schemas'
 
 type SocialMediaConfigType = {
   [K: string]: {
