@@ -1,27 +1,31 @@
 import { activeEnrichmentsKeys } from '@/api/queries/enrichment/useActiveEnrichments'
 import { enrichmentStatusKeys } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { useApiMutation } from '@/hooks/useApi'
-import { validateUUIDs } from '@/lib/validation'
+import { isValidUUID } from '@/lib/validation'
 import type {
   BatchEnrichmentStatusResponse,
   BulkEnrichmentApiResponse,
-  BulkEnrichmentRequestBody,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
-export const useBulkEnrichment = () => {
+export const useSingleEnrichment = () => {
   const queryClient = useQueryClient()
 
-  return useApiMutation<BulkEnrichmentApiResponse, BulkEnrichmentRequestBody>(
+  return useApiMutation<BulkEnrichmentApiResponse, { userPlaceId: string }>(
     '/enrich/bulk',
     {
       method: 'POST',
+      getBody: (variables) => ({
+        userPlaceIds: [variables.userPlaceId],
+      }),
       onMutate: async (variables) => {
-        // Validate UUIDs before processing
-        const validIds = validateUUIDs(variables.userPlaceIds)
-        if (validIds.length === 0) {
-          console.error('No valid UUIDs provided to bulk enrichment mutation')
-          throw new Error('No valid user place IDs provided')
+        // Validate UUID before processing
+        if (!isValidUUID(variables.userPlaceId)) {
+          console.error(
+            'Invalid UUID provided to enrichment mutation:',
+            variables.userPlaceId,
+          )
+          throw new Error('Invalid user place ID')
         }
 
         // Cancel any outgoing refetches to prevent race conditions
@@ -31,7 +35,7 @@ export const useBulkEnrichment = () => {
         queryClient.setQueryData<string[]>(
           activeEnrichmentsKeys.all,
           (old = []) => {
-            return Array.from(new Set([...old, ...validIds]))
+            return Array.from(new Set([...old, variables.userPlaceId]))
           },
         )
 
@@ -56,24 +60,21 @@ export const useBulkEnrichment = () => {
         // Optimistically update the batch query with proper typing
         queryClient.setQueryData<BatchEnrichmentStatusResponse>(
           enrichmentStatusKeys.batch(activeEnrichments),
-          (old = {}) => {
-            const updates: Record<string, typeof optimisticStatus> = {}
-            for (const userPlaceId of validIds) {
-              updates[userPlaceId] = optimisticStatus
-            }
-            return { ...old, ...updates }
-          },
+          (old = {}) => ({
+            ...old,
+            [variables.userPlaceId]: optimisticStatus,
+          }),
         )
 
         return { previousBatchStatus, activeEnrichments }
       },
-      onError: (_, variables, context) => {
+      onError: (_error, variables, context) => {
         const typedContext = context as {
           activeEnrichments?: string[]
           previousBatchStatus?: BatchEnrichmentStatusResponse
         }
 
-        // Rollback on error
+        // Rollback optimistic updates on error
         if (
           typedContext?.activeEnrichments &&
           typedContext?.previousBatchStatus
@@ -88,12 +89,12 @@ export const useBulkEnrichment = () => {
         queryClient.setQueryData<string[]>(
           activeEnrichmentsKeys.all,
           (old = []) => {
-            return old.filter((id) => !variables.userPlaceIds.includes(id))
+            return old.filter((id) => id !== variables.userPlaceId)
           },
         )
       },
       onSuccess: () => {
-        // Invalidate batch status query
+        // Invalidate batch status query to refetch latest
         queryClient.invalidateQueries({
           queryKey: enrichmentStatusKeys.all,
         })

@@ -25,7 +25,7 @@ import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
 
-import { selectColumn } from './columns/SelectColumn'
+import { actionColumn } from './columns/ActionColumn'
 
 import { domainRegistrationDateColumn } from './columns/DomainRegistrationDateColumn'
 import { emailsColumn } from './columns/EmailsColumn'
@@ -42,7 +42,7 @@ import { websiteColumn } from './columns/WebsiteColumn'
 
 // Compose the columns array
 export const columns: ColumnDef<SearchResult>[] = [
-  selectColumn,
+  actionColumn,
   nameColumn,
   statusColumn,
   notesColumn,

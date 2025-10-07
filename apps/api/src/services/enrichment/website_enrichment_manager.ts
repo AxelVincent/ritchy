@@ -28,6 +28,7 @@ import { governmentalData } from './governmental_data'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
+import { setEnrichmentStatus } from './status_manager'
 import { isSocialMediaUrl } from './utils/is_social_media_url'
 
 const ENRICHMENT_CREDITS = 5
@@ -53,6 +54,13 @@ export const websiteEnrichmentManager = async ({
     },
   })
 
+  await setEnrichmentStatus(
+    userPlaceId,
+    'processing',
+    'Fetching user and place data',
+    5,
+    jobId,
+  )
   jobTracker.updateProgress(jobId, 'Fetching user and place data')
   const [userId, place] = await Promise.all([
     getUserIdByUserPlaceId(userPlaceId),
@@ -71,10 +79,24 @@ export const websiteEnrichmentManager = async ({
     // This way it will know that the place is already enriched and will not consume credits
     // Or it will enrich on purpose
     if (place.user_place.enriched_at !== null) {
+      await setEnrichmentStatus(
+        userPlaceId,
+        'processing',
+        'Consuming enrichment credits',
+        10,
+        jobId,
+      )
       jobTracker.updateProgress(jobId, 'Consuming enrichment credits')
       await consumeCredits(userId, ENRICHMENT_CREDITS)
     }
 
+    await setEnrichmentStatus(
+      userPlaceId,
+      'processing',
+      'Checking existing enrichment',
+      15,
+      jobId,
+    )
     jobTracker.updateProgress(jobId, 'Checking existing enrichment')
     const [existingEnrichment] = await db
       .select()
@@ -84,6 +106,13 @@ export const websiteEnrichmentManager = async ({
 
     if (existingEnrichment) {
       if (!existingEnrichment.isStale) {
+        await setEnrichmentStatus(
+          userPlaceId,
+          'processing',
+          'Using existing enrichment',
+          95,
+          jobId,
+        )
         jobTracker.updateProgress(jobId, 'Using existing enrichment')
         await Promise.all([
           populateContactFromEnrichment({
@@ -92,6 +121,13 @@ export const websiteEnrichmentManager = async ({
           }),
           setUserPlaceAsEnriched(userPlaceId),
         ])
+        await setEnrichmentStatus(
+          userPlaceId,
+          'completed',
+          'Enrichment completed',
+          100,
+          jobId,
+        )
         logger.info({
           msg: 'Website already enriched, skipping enrichment',
           event: 'website_already_enriched',
@@ -126,6 +162,13 @@ export const websiteEnrichmentManager = async ({
         .where(eq(enrichmentTable.id, existingEnrichment.id))
     }
 
+    await setEnrichmentStatus(
+      userPlaceId,
+      'processing',
+      'Getting business website',
+      20,
+      jobId,
+    )
     jobTracker.updateProgress(jobId, 'Getting business website')
     const website = await getBusinessWebsite(userPlaceId)
     if (!website) {
@@ -147,6 +190,13 @@ export const websiteEnrichmentManager = async ({
         .returning()
 
       // Run governmental data when no website is provided
+      await setEnrichmentStatus(
+        userPlaceId,
+        'processing',
+        'Enriching with governmental data',
+        50,
+        jobId,
+      )
       jobTracker.updateProgress(
         jobId,
         'Enriching with governmental data (no website)',
@@ -172,6 +222,13 @@ export const websiteEnrichmentManager = async ({
       return
     }
 
+    await setEnrichmentStatus(
+      userPlaceId,
+      'processing',
+      'Scraping main page',
+      30,
+      jobId,
+    )
     jobTracker.updateProgress(jobId, 'Scraping main page')
     const domain = getMainDomain(website)
     const [insertedEnrichment] = await db
@@ -255,6 +312,13 @@ export const websiteEnrichmentManager = async ({
       })
 
       // Run governmental data as fallback when scraping fails
+      await setEnrichmentStatus(
+        userPlaceId,
+        'processing',
+        'Enriching with governmental data',
+        60,
+        jobId,
+      )
       jobTracker.updateProgress(
         jobId,
         'Enriching with governmental data (scraping failed)',
@@ -288,6 +352,13 @@ export const websiteEnrichmentManager = async ({
       return
     }
 
+    await setEnrichmentStatus(
+      userPlaceId,
+      'processing',
+      'Processing subpages',
+      50,
+      jobId,
+    )
     jobTracker.updateProgress(jobId, 'Processing subpages')
     const { metadata, links } = scrapeResult
     let crawlStrategy = links.internal
@@ -363,6 +434,13 @@ export const websiteEnrichmentManager = async ({
     })
 
     // Run governmental data when scraping is successful
+    await setEnrichmentStatus(
+      userPlaceId,
+      'processing',
+      'Enriching with external data',
+      70,
+      jobId,
+    )
     jobTracker.updateProgress(jobId, 'Enriching with external data')
 
     const [
@@ -386,6 +464,13 @@ export const websiteEnrichmentManager = async ({
       })
     }
 
+    await setEnrichmentStatus(
+      userPlaceId,
+      'processing',
+      'Updating enrichment',
+      90,
+      jobId,
+    )
     jobTracker.updateProgress(jobId, 'Updating enrichment')
     await Promise.all([
       db
@@ -411,6 +496,13 @@ export const websiteEnrichmentManager = async ({
       setUserPlaceAsEnriched(userPlaceId),
     ])
 
+    await setEnrichmentStatus(
+      userPlaceId,
+      'completed',
+      'Enrichment completed',
+      100,
+      jobId,
+    )
     jobTracker.updateProgress(jobId, 'Enrichment completed')
     const endTime = Date.now()
     const duration = endTime - startTime
@@ -433,6 +525,14 @@ export const websiteEnrichmentManager = async ({
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
+    await setEnrichmentStatus(
+      userPlaceId,
+      'failed',
+      'Enrichment failed',
+      100,
+      jobId,
+      errorMessage,
+    )
     logger.error({
       msg: 'Error enriching website',
       event: 'error_enriching_website',

@@ -1,3 +1,5 @@
+import { useActiveEnrichments } from '@/api/queries/enrichment/useActiveEnrichments'
+import { useBatchEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { DataExport } from '@/components/data-export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
@@ -26,7 +28,8 @@ import { HubspotSyncManagementButtons } from '../integrations/hubspot/HubspotSyn
 import { ListManagementButtons } from '../lists/ListManagementButtons'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
-import { EnrichmentButtons } from './EnrichmentButtons'
+import { EnrichmentButtons } from './enrich/EnrichmentButtons'
+import { EnrichmentCellIndicator } from './enrich/EnrichmentCellIndicator'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -72,6 +75,17 @@ export const DataTable = <TData extends SearchResult, TValue>({
     },
   )
 
+  // Use query-based active enrichments (single source of truth)
+  const { activeEnrichments, removeEnrichments } = useActiveEnrichments()
+
+  // Track IDs that are scheduled for cleanup to prevent duplicate timeouts
+  const cleanupScheduledRef = useRef<Set<string>>(new Set())
+
+  const { data: batchStatus } = useBatchEnrichmentStatus(
+    activeEnrichments,
+    activeEnrichments.length > 0,
+  )
+
   const table = useReactTable({
     data,
     columns,
@@ -87,6 +101,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getRowId: (row) => row.id,
+    meta: {
+      batchStatus,
+    },
     defaultColumn: {
       minSize: 60,
       maxSize: 800,
@@ -186,6 +203,46 @@ export const DataTable = <TData extends SearchResult, TValue>({
     )
     onFilteredDataChange(filteredIds)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
+
+  // Clean up completed/failed enrichments from active list after a delay
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    if (!batchStatus) return
+
+    // Find completed/failed enrichments that haven't been scheduled for cleanup yet
+    const completedOrFailed = Object.entries(batchStatus)
+      .filter(
+        ([_, statusData]) =>
+          statusData.status === 'completed' || statusData.status === 'failed',
+      )
+      .map(([userPlaceId]) => userPlaceId)
+      .filter((id) => !cleanupScheduledRef.current.has(id))
+
+    if (completedOrFailed.length === 0) return
+
+    // Mark these IDs as scheduled for cleanup
+    for (const id of completedOrFailed) {
+      cleanupScheduledRef.current.add(id)
+    }
+
+    // Delay removal to allow UI to show completed state and give time for data refetch
+    const timeoutId = setTimeout(() => {
+      // Remove from active enrichments via query cache
+      removeEnrichments(completedOrFailed)
+      // Remove from scheduled set after cleanup completes
+      for (const id of completedOrFailed) {
+        cleanupScheduledRef.current.delete(id)
+      }
+    }, 5000) // 5 seconds delay
+
+    return () => {
+      clearTimeout(timeoutId)
+      // If effect cleanup happens before timeout, remove from scheduled set
+      for (const id of completedOrFailed) {
+        cleanupScheduledRef.current.delete(id)
+      }
+    }
+  }, [batchStatus])
 
   // If there are no visible columns, show a message
   if (visibleColumns.length === 0) {
@@ -318,62 +375,83 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   }}
                   className="border-b border-border"
                 >
-                  {visibleCells.map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={cn('border-r border-border relative', {
-                        'bg-background':
-                          cell.column.id === visibleCells[0].column.id,
-                        'bg-primary-foreground':
-                          selectedPlaceId === row.original.id,
-                      })}
-                      style={{
-                        display: 'flex',
-                        width: cell.column.getSize(),
-                        position:
-                          cell.column.id === visibleCells[0].column.id
-                            ? 'sticky'
-                            : 'relative',
-                        left:
-                          cell.column.id === visibleCells[0].column.id
-                            ? 0
-                            : undefined,
-                        zIndex:
-                          cell.column.id === visibleCells[0].column.id ? 1 : 0,
-                        alignItems: 'center',
-                      }}
-                    >
-                      {cell.column.columnDef.meta?.isEnrichment &&
-                        row.original.enrichedStatus && (
-                          <div className="absolute top-1 right-1">
-                            <Sparkles
-                              className={cn('h-2.5 w-2.5', {
-                                'text-purple-600':
-                                  row.original.enrichedStatus ===
-                                  'RECENTLY_ENRICHED',
-                                'text-blue-600':
-                                  row.original.enrichedStatus === 'ENRICHED',
-                                'text-red-600':
-                                  row.original.enrichedStatus ===
-                                  'ENRICHMENT_ERROR',
-                              })}
-                              aria-label={
-                                row.original.enrichedStatus ===
-                                'RECENTLY_ENRICHED'
-                                  ? 'Recently enriched'
-                                  : row.original.enrichedStatus === 'ENRICHED'
-                                    ? 'Previously enriched'
-                                    : 'Enrichment error'
-                              }
-                            />
-                          </div>
+                  {visibleCells.map((cell) => {
+                    const isEnrichmentCell =
+                      cell.column.columnDef.meta?.isEnrichment
+                    const cellStatus = batchStatus?.[row.original.id]
+
+                    return (
+                      <td
+                        key={cell.id}
+                        className={cn('border-r border-border relative', {
+                          'bg-background':
+                            cell.column.id === visibleCells[0].column.id,
+                          'bg-primary-foreground':
+                            selectedPlaceId === row.original.id,
+                        })}
+                        style={{
+                          display: 'flex',
+                          width: cell.column.getSize(),
+                          position:
+                            cell.column.id === visibleCells[0].column.id
+                              ? 'sticky'
+                              : 'relative',
+                          left:
+                            cell.column.id === visibleCells[0].column.id
+                              ? 0
+                              : undefined,
+                          zIndex:
+                            cell.column.id === visibleCells[0].column.id
+                              ? 1
+                              : 0,
+                          alignItems: 'center',
+                        }}
+                      >
+                        {isEnrichmentCell && cellStatus ? (
+                          <EnrichmentCellIndicator status={cellStatus}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </EnrichmentCellIndicator>
+                        ) : (
+                          <>
+                            {cell.column.columnDef.meta?.isEnrichment &&
+                              row.original.enrichedStatus && (
+                                <div className="absolute top-1 right-1 z-10">
+                                  <Sparkles
+                                    className={cn('h-2.5 w-2.5', {
+                                      'text-purple-600':
+                                        row.original.enrichedStatus ===
+                                        'RECENTLY_ENRICHED',
+                                      'text-blue-600':
+                                        row.original.enrichedStatus ===
+                                        'ENRICHED',
+                                      'text-red-600':
+                                        row.original.enrichedStatus ===
+                                        'ENRICHMENT_ERROR',
+                                    })}
+                                    aria-label={
+                                      row.original.enrichedStatus ===
+                                      'RECENTLY_ENRICHED'
+                                        ? 'Recently enriched'
+                                        : row.original.enrichedStatus ===
+                                            'ENRICHED'
+                                          ? 'Previously enriched'
+                                          : 'Enrichment error'
+                                    }
+                                  />
+                                </div>
+                              )}
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </>
                         )}
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
+                      </td>
+                    )
+                  })}
                 </tr>
               )
             })}

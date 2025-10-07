@@ -8,6 +8,7 @@ import {
   enrichmentUnitQueue,
   queueName,
 } from '../../internal/bullmq/jobs/enrichment/unit/queue'
+import { setEnrichmentStatus } from '../../services/enrichment/status_manager'
 
 /**
  * Bulk enrichment endpoint for processing multiple places
@@ -34,6 +35,12 @@ export const bulkEnrich = async (
 
     // Add each place to the enrichment queue
     for (const userPlaceId of userPlaceIds) {
+      await setEnrichmentStatus(
+        userPlaceId,
+        'queued',
+        'Queued for enrichment',
+        0,
+      )
       await enrichmentUnitQueue.add(queueName, { userPlaceId })
     }
 

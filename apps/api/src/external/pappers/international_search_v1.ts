@@ -116,17 +116,50 @@ export const internationalSearchV1 = async ({
         data,
       },
     })
-    const parsedData = InternationalSearchResponseSchema.parse(data)
+
+    if (!response.ok || (data.statusCode && data.statusCode >= 400)) {
+      logger.error({
+        msg: 'International Search API returned error',
+        event: 'international_search_api_error_response',
+        metadata: {
+          httpStatus: response.status,
+          statusText: response.statusText,
+          errorData: data,
+          url: url.toString(),
+        },
+      })
+      throw new Error(
+        `Pappers API error (HTTP ${response.status}${data.statusCode ? `, API ${data.statusCode}` : ''}): ${data.message || data.description || JSON.stringify(data)}`,
+      )
+    }
+
+    const parsedData = InternationalSearchResponseSchema.safeParse(data)
+
+    if (!parsedData.success) {
+      logger.error({
+        msg: 'International Search API response validation failed',
+        event: 'international_search_api_validation_error',
+        metadata: {
+          validationErrors: parsedData.error.issues,
+          receivedData: data,
+        },
+      })
+      throw new Error(
+        `Invalid Pappers API response structure: ${JSON.stringify(parsedData.error.issues)}`,
+      )
+    }
 
     logger.info({
-      msg: 'International Search API response',
-      event: 'international_search_api_response',
+      msg: 'International Search API parsed successfully',
+      event: 'international_search_api_parsed',
       metadata: {
-        data,
+        data: parsedData.data.toString().slice(0, 150),
+        resultsCount: parsedData.data.results.length,
+        total: parsedData.data.total,
       },
     })
 
-    return parsedData
+    return parsedData.data
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       logger.error({

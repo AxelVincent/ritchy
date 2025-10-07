@@ -1,4 +1,5 @@
 import '@tanstack/react-table'
+import type { BatchEnrichmentStatusResponse } from '@ritchy/types'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta {
@@ -20,6 +21,7 @@ declare module '@tanstack/react-table' {
       element: HTMLElement,
     ) => void
     onCellLeave?: () => void
+    batchStatus?: BatchEnrichmentStatusResponse
   }
 
   interface FilterFns {

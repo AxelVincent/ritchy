@@ -1,4 +1,5 @@
 import { DataTable } from '@/components/data-table/DataTable'
+import { EnrichmentErrorBoundary } from '@/components/data-table/enrich/EnrichmentErrorBoundary'
 import { EmptyListState } from '@/components/lists/empty-list-state'
 import { MapBox } from '@/components/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
@@ -6,6 +7,7 @@ import type { Location } from '@/components/search/search-map'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
+import { EnrichmentMutationProvider } from '@/contexts/EnrichmentMutationContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import type { Place } from '@ritchy/types'
 import type { RowSelectionState } from '@tanstack/react-table'
@@ -105,91 +107,122 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   // On mobile, show only the DataTable
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full">
-        <div className="flex flex-col h-full relative">
-          {/* Content area with both views always mounted but conditionally visible */}
-          <div className="flex-1 relative">
-            <div
-              className={`h-full w-full absolute inset-0 ${mobileView === 'map' ? 'block' : 'hidden'}`}
-            >
-              <MapBox
-                searchResults={searchResults}
-                userLocation={currentLocation}
-                filteredPlaceIds={safeFilteredPlaceIds}
-              />
+      <EnrichmentMutationProvider>
+        <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full relative">
+            {/* Content area with both views always mounted but conditionally visible */}
+            <div className="flex-1 relative">
+              <div
+                className={`h-full w-full absolute inset-0 ${mobileView === 'map' ? 'block' : 'hidden'}`}
+              >
+                <MapBox
+                  searchResults={searchResults}
+                  userLocation={currentLocation}
+                  filteredPlaceIds={safeFilteredPlaceIds}
+                />
+              </div>
+              <div
+                className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
+              >
+                <div className="h-full overflow-auto">
+                  <Suspense fallback={<TableLoadingFallback />}>
+                    <EnrichmentErrorBoundary>
+                      <DataTable
+                        columns={columns}
+                        data={tableData}
+                        setDataTableRowSelection={setDataTableRowSelection}
+                        dataTableRowSelection={dataTableRowSelection}
+                        onFilteredDataChange={setFilteredPlaceIds}
+                        listId={listId}
+                        searchId={searchId}
+                      />
+                    </EnrichmentErrorBoundary>
+                  </Suspense>
+                </div>
+              </div>
             </div>
-            <div
-              className={`h-full w-full absolute inset-0 ${mobileView === 'table' ? 'block' : 'hidden'}`}
-            >
-              <div className="h-full overflow-auto">
-                <Suspense fallback={<TableLoadingFallback />}>
-                  <DataTable
-                    columns={columns}
-                    data={tableData}
-                    setDataTableRowSelection={setDataTableRowSelection}
-                    dataTableRowSelection={dataTableRowSelection}
-                    onFilteredDataChange={setFilteredPlaceIds}
-                    listId={listId}
-                    searchId={searchId}
-                  />
-                </Suspense>
+
+            {/* Toggle as a fixed element at the bottom */}
+            <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
+              <div className="inline-flex items-center rounded-md border border-input bg-background/95 backdrop-blur-sm shadow-md p-1 text-sm pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={() => setMobileView('map')}
+                  className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
+                    mobileView === 'map'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  <MapIcon className="h-3.5 w-3.5" />
+                  Map
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileView('table')}
+                  className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
+                    mobileView === 'table'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  <ListIcon className="h-3.5 w-3.5" />
+                  List
+                </button>
               </div>
             </div>
           </div>
-
-          {/* Toggle as a fixed element at the bottom */}
-          <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
-            <div className="inline-flex items-center rounded-md border border-input bg-background/95 backdrop-blur-sm shadow-md p-1 text-sm pointer-events-auto">
-              <button
-                type="button"
-                onClick={() => setMobileView('map')}
-                className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
-                  mobileView === 'map'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                <MapIcon className="h-3.5 w-3.5" />
-                Map
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileView('table')}
-                className={`px-3 py-1.5 flex items-center gap-1.5 rounded-sm ${
-                  mobileView === 'table'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                <ListIcon className="h-3.5 w-3.5" />
-                List
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
+      </EnrichmentMutationProvider>
     )
   }
 
   // Desktop view with resizable panels
   return (
-    <div className="flex flex-col h-full">
-      <ResizablePanelGroup
-        direction="horizontal"
-        onLayout={handlePanelResize}
-        className="min-h-[200px]"
-      >
-        <ResizablePanel
-          defaultSize={panelSizes[0]}
-          className="flex-1 flex flex-col overflow-hidden"
+    <EnrichmentMutationProvider>
+      <div className="flex flex-col h-full">
+        <ResizablePanelGroup
+          direction="horizontal"
+          onLayout={handlePanelResize}
+          className="min-h-[200px]"
         >
-          {selectedPlaceId ? (
-            <ResizablePanelGroup direction="vertical" className="h-full">
-              <ResizablePanel
-                defaultSize={70}
-                className="flex flex-col overflow-hidden"
-              >
-                <div className="flex flex-col h-full overflow-hidden">
+          <ResizablePanel
+            defaultSize={panelSizes[0]}
+            className="flex-1 flex flex-col overflow-hidden"
+          >
+            {selectedPlaceId ? (
+              <ResizablePanelGroup direction="vertical" className="h-full">
+                <ResizablePanel
+                  defaultSize={70}
+                  className="flex flex-col overflow-hidden"
+                >
+                  <div className="flex flex-col h-full overflow-hidden">
+                    <EnrichmentErrorBoundary>
+                      <DataTable
+                        columns={columns}
+                        data={tableData}
+                        setDataTableRowSelection={setDataTableRowSelection}
+                        dataTableRowSelection={dataTableRowSelection}
+                        onFilteredDataChange={setFilteredPlaceIds}
+                        listId={listId}
+                        searchId={searchId}
+                      />
+                    </EnrichmentErrorBoundary>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={30} minSize={20} maxSize={60}>
+                  <div className="border-t bg-background h-full">
+                    <SelectedPlaceCard
+                      places={places}
+                      displayedPlaceIds={safeFilteredPlaceIds}
+                    />
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            ) : (
+              <div className="flex flex-col h-full overflow-hidden">
+                <EnrichmentErrorBoundary>
                   <DataTable
                     columns={columns}
                     data={tableData}
@@ -199,41 +232,20 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
                     listId={listId}
                     searchId={searchId}
                   />
-                </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={30} minSize={20} maxSize={60}>
-                <div className="border-t bg-background h-full">
-                  <SelectedPlaceCard
-                    places={places}
-                    displayedPlaceIds={safeFilteredPlaceIds}
-                  />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          ) : (
-            <div className="flex flex-col h-full overflow-hidden">
-              <DataTable
-                columns={columns}
-                data={tableData}
-                setDataTableRowSelection={setDataTableRowSelection}
-                dataTableRowSelection={dataTableRowSelection}
-                onFilteredDataChange={setFilteredPlaceIds}
-                listId={listId}
-                searchId={searchId}
-              />
-            </div>
-          )}
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={panelSizes[1]} className="flex-1">
-          <MapBox
-            searchResults={searchResults}
-            userLocation={currentLocation}
-            filteredPlaceIds={safeFilteredPlaceIds}
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+                </EnrichmentErrorBoundary>
+              </div>
+            )}
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={panelSizes[1]} className="flex-1">
+            <MapBox
+              searchResults={searchResults}
+              userLocation={currentLocation}
+              filteredPlaceIds={safeFilteredPlaceIds}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+    </EnrichmentMutationProvider>
   )
 }
