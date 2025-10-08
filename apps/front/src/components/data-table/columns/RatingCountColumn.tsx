@@ -1,6 +1,6 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCell } from './utils/ColumnCells'
+import { SimpleCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const ratingCountColumn: ColumnDef<SearchResult> = {
@@ -21,16 +21,13 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
     const count = row.original.ratingCount
 
     return (
-      <ColumnPinCell
-        id={row.original.id}
-        content={
-          count ? (
-            <span>{count.toLocaleString()} reviews</span>
-          ) : (
-            <span className="text-muted-foreground">0 reviews</span>
-          )
-        }
-      />
+      <SimpleCell>
+        {count ? (
+          <span>{count.toLocaleString()} reviews</span>
+        ) : (
+          <span className="text-muted-foreground">0 reviews</span>
+        )}
+      </SimpleCell>
     )
   },
 }

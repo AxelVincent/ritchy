@@ -61,28 +61,48 @@ const EnrichmentActionButtonComponent = ({
       switch (liveStatus.status) {
         case 'queued':
           return {
-            icon: <Clock className="h-4 w-4 text-blue-500" />,
+            icon: (
+              <Clock
+                style={{ width: '14px', height: '14px' }}
+                className="text-blue-500"
+              />
+            ),
             tooltip: 'Queued for enrichment',
             variant: 'ghost' as const,
             disabled: true,
           }
         case 'processing':
           return {
-            icon: <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />,
+            icon: (
+              <Loader2
+                style={{ width: '14px', height: '14px' }}
+                className="text-blue-500 animate-spin"
+              />
+            ),
             tooltip: `${liveStatus.step || 'Processing'} (${liveStatus.progress}%)`,
             variant: 'ghost' as const,
             disabled: true,
           }
         case 'completed':
           return {
-            icon: <Sparkles className="h-4 w-4 text-purple-600" />,
+            icon: (
+              <Sparkles
+                style={{ width: '14px', height: '14px' }}
+                className="text-purple-600"
+              />
+            ),
             tooltip: 'Recently enriched - click to re-enrich',
             variant: 'ghost' as const,
             disabled: false,
           }
         case 'failed':
           return {
-            icon: <XCircle className="h-4 w-4 text-red-500" />,
+            icon: (
+              <XCircle
+                style={{ width: '14px', height: '14px' }}
+                className="text-red-500"
+              />
+            ),
             tooltip: liveStatus.error || 'Enrichment failed - click to retry',
             variant: 'ghost' as const,
             disabled: false,
@@ -94,7 +114,12 @@ const EnrichmentActionButtonComponent = ({
     // Local state prevents other buttons from re-rendering
     if (isLocalPending) {
       return {
-        icon: <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />,
+        icon: (
+          <Loader2
+            style={{ width: '14px', height: '14px' }}
+            className="text-blue-500 animate-spin"
+          />
+        ),
         tooltip: 'Starting enrichment...',
         variant: 'ghost' as const,
         disabled: true,
@@ -106,21 +131,36 @@ const EnrichmentActionButtonComponent = ({
       switch (enrichedStatus) {
         case 'RECENTLY_ENRICHED':
           return {
-            icon: <Sparkles className="h-4 w-4 text-purple-600" />,
+            icon: (
+              <Sparkles
+                style={{ width: '14px', height: '14px' }}
+                className="text-purple-600"
+              />
+            ),
             tooltip: 'Recently enriched - click to re-enrich',
             variant: 'ghost' as const,
             disabled: false,
           }
         case 'ENRICHED':
           return {
-            icon: <Sparkles className="h-4 w-4 text-blue-600" />,
+            icon: (
+              <Sparkles
+                style={{ width: '14px', height: '14px' }}
+                className="text-blue-600"
+              />
+            ),
             tooltip: 'Previously enriched - click to re-enrich',
             variant: 'ghost' as const,
             disabled: false,
           }
         case 'ENRICHMENT_ERROR':
           return {
-            icon: <XCircle className="h-4 w-4 text-red-500" />,
+            icon: (
+              <XCircle
+                style={{ width: '14px', height: '14px' }}
+                className="text-red-500"
+              />
+            ),
             tooltip: 'Previous enrichment failed - click to retry',
             variant: 'ghost' as const,
             disabled: false,
@@ -130,7 +170,12 @@ const EnrichmentActionButtonComponent = ({
 
     // Default: not enriched
     return {
-      icon: <Sparkles className="h-4 w-4 text-muted-foreground" />,
+      icon: (
+        <Sparkles
+          style={{ width: '14px', height: '14px' }}
+          className="text-muted-foreground"
+        />
+      ),
       tooltip: 'Click to enrich this row',
       variant: 'ghost' as const,
       disabled: false,

@@ -1,7 +1,7 @@
 import { DynamicBadgeList } from '@/components/common/DynamicBadgeList'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCell } from './utils/ColumnCells'
+import { SimpleCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const typesColumn: ColumnDef<SearchResult> = {
@@ -22,16 +22,13 @@ export const typesColumn: ColumnDef<SearchResult> = {
     const types = row.original.types
 
     return (
-      <ColumnPinCell
-        id={row.original.id}
-        content={
-          <DynamicBadgeList
-            items={types}
-            badgeVariant="secondary"
-            containerPadding={60}
-          />
-        }
-      />
+      <SimpleCell>
+        <DynamicBadgeList
+          items={types}
+          badgeVariant="secondary"
+          containerPadding={60}
+        />
+      </SimpleCell>
     )
   },
 }

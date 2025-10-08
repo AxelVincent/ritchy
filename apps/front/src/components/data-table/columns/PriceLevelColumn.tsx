@@ -1,6 +1,6 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCell } from './utils/ColumnCells'
+import { SimpleCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const noPriceLevel = 'No price level'
@@ -29,10 +29,9 @@ export const priceLevelColumn: ColumnDef<SearchResult> = {
   cell: ({ row }) => {
     const formattedLevel = formatPriceLevel(row.original.priceLevel)
     return (
-      <ColumnPinCell
-        id={row.original.id}
-        content={formattedLevel === noPriceLevel ? null : formattedLevel}
-      />
+      <SimpleCell>
+        {formattedLevel === noPriceLevel ? null : formattedLevel}
+      </SimpleCell>
     )
   },
 }

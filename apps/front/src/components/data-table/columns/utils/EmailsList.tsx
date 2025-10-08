@@ -19,7 +19,7 @@ export const EmailsList = ({
           id={id}
           className="flex items-center gap-2 truncate"
         >
-          <CopyCell id={`${id}-${emailObj.email}`} content={emailObj.email} />
+          <CopyCell content={emailObj.email} />
           {emailObj.isPrimary && (
             <Star
               className="h-4 w-4 flex-shrink-0 text-yellow-400"

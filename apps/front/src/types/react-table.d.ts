@@ -15,12 +15,7 @@ declare module '@tanstack/react-table' {
     setSelectedPlaceId?: (placeId: string) => void
     setData?: React.Dispatch<React.SetStateAction<TData[]>>
     hoveredRowId?: string | null
-    onCellHover?: (
-      id: string,
-      displayName: string,
-      element: HTMLElement,
-    ) => void
-    onCellLeave?: () => void
+    setHoveredRowId?: (rowId: string | null) => void
     batchStatus?: BatchEnrichmentStatusResponse
   }
 

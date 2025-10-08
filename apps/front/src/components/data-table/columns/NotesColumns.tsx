@@ -1,7 +1,7 @@
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinNoteCell } from './utils/ColumnCells'
+import { SimpleNotesCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const notesColumn: ColumnDef<SearchResult> = {
@@ -42,19 +42,12 @@ export const notesColumn: ColumnDef<SearchResult> = {
   size: 200,
   header: ({ column }) => <HeaderWrapper column={column} title="Notes" />,
   cell: ({ row }) => {
-    const place = row.original
     const { selectPlaceAndTab } = useMapStore()
 
-    const handleClick = () => {
-      selectPlaceAndTab(row.original.id, 'notes')
-    }
-
     return (
-      <ColumnPinNoteCell
-        id={row.original.id}
-        place={place}
-        content={place.notes?.[0] || null}
-        onClick={handleClick}
+      <SimpleNotesCell
+        notes={row.original.notes}
+        onClick={() => selectPlaceAndTab(row.original.id, 'notes')}
       />
     )
   },

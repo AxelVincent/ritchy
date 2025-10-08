@@ -373,7 +373,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     width: '100%',
                     height: ROW_HEIGHT,
                   }}
-                  className="border-b border-border"
+                  className="border-b border-border group/row hover:bg-accent/50"
                 >
                   {visibleCells.map((cell) => {
                     const isEnrichmentCell =

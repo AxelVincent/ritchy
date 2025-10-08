@@ -63,7 +63,6 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <SocialMediaList
             socials={place.contactFacebooks || []}
-            id={`place-${place.id}-facebook-socials`}
             platform="FACEBOOK"
           />
         </div>
@@ -73,7 +72,6 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <SocialMediaList
             socials={place.contactInstagrams || []}
-            id={`place-${place.id}-instagram-socials`}
             platform="INSTAGRAM"
           />
         </div>
@@ -83,7 +81,6 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <SocialMediaList
             socials={place.contactLinkedins || []}
-            id={`place-${place.id}-linkedin-socials`}
             platform="LINKEDIN"
           />
         </div>

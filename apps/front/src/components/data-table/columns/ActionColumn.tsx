@@ -2,11 +2,18 @@ import { EnrichmentActionButton } from '@/components/data-table/enrich/Enrichmen
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+} from '@/components/ui/tooltip'
+import { TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 import type { EnrichmentStatusResponse, SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { MapPinned, Sparkles } from 'lucide-react'
+import { Maximize } from 'lucide-react'
 import posthog from 'posthog-js'
-import { memo, useState } from 'react'
+import { memo } from 'react'
 
 // Memoized cell content to prevent re-renders when batchStatus object reference changes
 const ActionCellContent = memo(
@@ -27,41 +34,58 @@ const ActionCellContent = memo(
     onToggleSelected: (value: boolean) => void
     onFocus: () => void
   }) => {
-    const [isHovered, setIsHovered] = useState(false)
-
     return (
-      <div 
-        className="w-full flex items-center justify-between gap-1 px-1"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* Row number or checkbox on hover */}
-        <div className="w-6 flex items-center justify-center">
-          {isHovered || isSelected ? (
+      <div className="w-full flex items-center justify-between gap-1 px-1">
+        {/* Use CSS to toggle visibility */}
+        <div className="w-6 flex items-center justify-center relative">
+          {/* Checkbox - visible on group/row hover or when selected */}
+          <div
+            className={cn(
+              'absolute inset-0 flex items-center justify-center transition-opacity duration-75',
+              isSelected
+                ? 'opacity-100 pointer-events-auto'
+                : 'opacity-0 group-hover/row:opacity-100 pointer-events-none group-hover/row:pointer-events-auto',
+            )}
+          >
             <Checkbox
               checked={isSelected}
               onCheckedChange={(value) => onToggleSelected(!!value)}
               aria-label="Select row"
             />
-          ) : (
-            <div className="text-xs text-muted-foreground">
-              {rowIndex + 1}
-            </div>
-          )}
+          </div>
+          {/* Row number - hidden on group/row hover when not selected */}
+          <div
+            className={cn(
+              'absolute inset-0 flex items-center justify-center text-xs text-muted-foreground transition-opacity duration-75',
+              isSelected
+                ? 'opacity-0 pointer-events-none'
+                : 'opacity-100 group-hover/row:opacity-0 pointer-events-auto group-hover/row:pointer-events-none',
+            )}
+          >
+            {rowIndex + 1}
+          </div>
         </div>
 
-        {/* Focus button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={onFocus}
-          aria-label="Focus row"
-        >
-          <MapPinned className="h-4 w-4 text-muted-foreground" />
-        </Button>
+        {/* Rest stays the same */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn('h-7 w-7 p-0', 'hover:bg-accent')}
+                onClick={onFocus}
+                disabled={false}
+              >
+                <Maximize style={{ width: '14px', height: '14px' }} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Expand</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        {/* Enrichment button */}
         <EnrichmentActionButton
           userPlaceId={rowId}
           enrichedStatus={enrichedStatus}
@@ -71,7 +95,6 @@ const ActionCellContent = memo(
     )
   },
   (prev, next) => {
-    // Prevent re-render if nothing actually changed
     return (
       prev.rowIndex === next.rowIndex &&
       prev.rowId === next.rowId &&
@@ -92,30 +115,25 @@ export const actionColumn: ColumnDef<SearchResult> = {
   enableColumnFilter: false,
   size: 100,
   header: ({ table }) => (
-    <div className="w-full flex flex-row items-center justify-between gap-1 px-1">
-            <div className="flex items-center justify-center">
-            <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value: boolean) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
+    <div className="w-full relative min-h-[85px]">
+      <div className="absolute bottom-0 left-2">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value: boolean) =>
+            table.toggleAllPageRowsSelected(!!value)
+          }
+          aria-label="Select all"
+        />
       </div>
-      <div className="h-6 w-6 flex items-center justify-center">
-        <MapPinned className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="h-6 w-6 flex items-center justify-center">
-        <Sparkles className="h-4 w-4 text-muted-foreground" />
-      </div>
-
     </div>
   ),
   cell: ({ row, table }) => {
     const batchStatus = table.options.meta?.batchStatus
     const liveStatus = batchStatus?.[row.original.id]
-    const { selectedPlaceId, setSelectedPlaceId } = useMapStore()
+    const { setSelectedPlaceId } = useMapStore()
 
     const handleFocus = () => {
       posthog.capture('pin_cell_place', { property: 'action_column' })

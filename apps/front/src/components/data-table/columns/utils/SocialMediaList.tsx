@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { SocialMedia, SocialMediaPlatform } from '@ritchy/types'
 import { Star } from 'lucide-react'
 import React from 'react'
-import { ContactSocialCell } from './ColumnCells'
+import { CopyCell } from './ColumnCells'
 
 const getSocialMediaIcon = (platform: SocialMediaPlatform) => {
   switch (platform) {
@@ -38,11 +38,9 @@ const getPlatformTitle = (platform: SocialMediaPlatform) => {
 
 export const SocialMediaList = React.memo(function SocialMediaList({
   socials,
-  id,
   platform,
 }: {
   socials: SocialMedia[]
-  id: string
   platform?: SocialMediaPlatform
 }) {
   // Determine the platform from the first social media item if not provided
@@ -61,15 +59,10 @@ export const SocialMediaList = React.memo(function SocialMediaList({
         <h3 className="text-sm font-semibold">{platformTitle}</h3>
         <Badge variant="secondary">{socials.length}</Badge>
       </div>
-      {socials.map((social, index) => (
+      {socials.map((social) => (
         <div key={social.url} className="flex items-center justify-between p-2">
           <div className="flex items-center gap-2">
-            <ContactSocialCell
-              id={`${id}-${index}`}
-              content={social.url}
-              socialType={social.socialMediaPlatform}
-              isPin={false}
-            />
+            <CopyCell content={social.url} />
           </div>
           {social.isPrimary && (
             <Star

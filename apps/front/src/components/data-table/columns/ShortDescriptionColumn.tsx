@@ -1,22 +1,13 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCopyCell } from './utils/ColumnCells'
-import { HeaderWrapper } from './utils/HeaderWrapper'
+import { createTextColumn } from './utils/createTextColumn'
 
-export const shortDescriptionColumn: ColumnDef<SearchResult> = {
-  id: 'shortDescription',
-  accessorKey: 'shortDescription',
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Short Description" />
-  ),
-  meta: {
+export const shortDescriptionColumn: ColumnDef<SearchResult> = createTextColumn(
+  {
+    id: 'shortDescription',
+    accessorKey: 'shortDescription',
+    title: 'Short Description',
     filterVariant: 'text',
     isEnrichment: true,
   },
-  cell: ({ row }) => {
-    const shortDescription = row.original.shortDescription
-    if (!shortDescription) return null
-
-    return <ColumnPinCopyCell id={row.original.id} content={shortDescription} />
-  },
-}
+)
