@@ -3,7 +3,6 @@ import { useBatchEnrichmentStatus } from '@/api/queries/enrichment/useEnrichment
 import { DataExport } from '@/components/data-export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
-import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -42,6 +41,7 @@ interface DataTableProps<TData, TValue> {
   searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
   storageKey?: string
+  isMobile?: boolean
 }
 
 // Add a fixed height for table rows
@@ -56,10 +56,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
   searchId,
   onFilteredDataChange,
   storageKey,
+  isMobile,
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId from the store
   const { selectedPlaceId } = useMapStore()
-  const isMobile = useIsMobile()
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -259,8 +259,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
-        <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto md:pl-2 pl-16 md:mt-0 mt-2">
-          <div className="flex gap-2">
+        <div className="flex flex-row justify-between items-center md:p-4 p-2 md:gap-2 gap-1 overflow-x-auto md:pl-2 pl-2">
+          <div className="flex md:gap-2 gap-1">
             <EnrichmentButtons
               table={table}
               listId={listId}
@@ -269,7 +269,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
             <ListManagementButtons table={table} listId={listId} />
             <HubspotSyncManagementButtons table={table} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex md:gap-2 gap-1">
             {!isMobile && (
               <DataExport
                 selectedRows={
@@ -458,14 +458,16 @@ export const DataTable = <TData extends SearchResult, TValue>({
           </tbody>
         </table>
       </div>
-      <div className="flex justify-between items-center p-4 gap-4">
-        <Label className="flex-shrink-0">
-          {table.getRowModel().rows.length} Results
-        </Label>
-        <div className="flex-1 min-w-0">
-          <ActiveFilters table={table} />
+      {!isMobile && (
+        <div className="flex justify-between items-center p-4 gap-4">
+          <Label className="flex-shrink-0">
+            {table.getRowModel().rows.length} Results
+          </Label>
+          <div className="flex-1 min-w-0">
+            <ActiveFilters table={table} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

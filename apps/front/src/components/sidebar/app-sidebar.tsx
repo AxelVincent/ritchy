@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/sidebar'
 
 import { useIsMobile } from '@/hooks/use-mobile'
+import { Button } from '../ui/button'
 import { NavCredits } from './nav-credits'
 import { NavHistory } from './nav-history'
 import { NavMain } from './nav-main'
@@ -36,9 +37,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarRail />
       </Sidebar>
       {isMobile && (
-        <div className="fixed top-4 left-2 z-50 bg-background rounded-md shadow-md p-2">
-          <SidebarTrigger />
-        </div>
+        <Button className="fixed top-2 left-2 z-50 bg-background border border-border">
+          <SidebarTrigger className="h-5 w-5 text-foreground" />
+        </Button>
       )}
     </>
   )

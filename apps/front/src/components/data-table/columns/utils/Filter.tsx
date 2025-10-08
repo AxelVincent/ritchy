@@ -322,7 +322,7 @@ export function Filter({
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
             >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex flex-row gap-2 sm:flex-row sm:items-center">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
