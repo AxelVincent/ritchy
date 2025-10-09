@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { Copy } from 'lucide-react'
-import React from 'react'
+import * as React from 'react'
 
 // Add this type definition near the top of the file, after imports
 export type BadgeConfig = {
