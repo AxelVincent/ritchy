@@ -83,18 +83,27 @@ const EnrichmentActionButtonComponent = ({
             variant: 'ghost' as const,
             disabled: true,
           }
-        case 'completed':
+        case 'completed': {
+          // Check if enrichment completed within last 30 minutes
+          const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000
+          const isRecentlyCompleted = liveStatus.updatedAt > thirtyMinutesAgo
+
           return {
             icon: (
               <Sparkles
                 style={{ width: '14px', height: '14px' }}
-                className="text-purple-600"
+                className={
+                  isRecentlyCompleted ? 'text-purple-600' : 'text-blue-600'
+                }
               />
             ),
-            tooltip: 'Recently enriched - click to re-enrich',
+            tooltip: isRecentlyCompleted
+              ? 'Recently enriched - click to re-enrich'
+              : 'Previously enriched - click to re-enrich',
             variant: 'ghost' as const,
             disabled: false,
           }
+        }
         case 'failed':
           return {
             icon: (

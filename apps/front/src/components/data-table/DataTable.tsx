@@ -1,4 +1,3 @@
-import { useActiveEnrichments } from '@/api/queries/enrichment/useActiveEnrichments'
 import { DataExport } from '@/components/data-export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
@@ -73,9 +72,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
       return saved ? JSON.parse(saved) : {}
     },
   )
-
-  // Get active enrichments for tracking which cells need WebSocket
-  const { activeEnrichments } = useActiveEnrichments()
 
   const table = useReactTable({
     data,
@@ -329,9 +325,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   {visibleCells.map((cell) => {
                     const isEnrichmentCell =
                       cell.column.columnDef.meta?.isEnrichment
-                    const isActiveEnrichment = activeEnrichments.includes(
-                      row.original.id,
-                    )
 
                     return (
                       <td
@@ -384,10 +377,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                                 }
                               />
                             </div>
-                            <EnrichmentCell
-                              userPlaceId={row.original.id}
-                              isActive={isActiveEnrichment}
-                            >
+                            <EnrichmentCell userPlaceId={row.original.id}>
                               {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext(),

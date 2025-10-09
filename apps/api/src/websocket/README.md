@@ -2,7 +2,11 @@
 
 This directory contains the WebSocket implementation for real-time enrichment status updates.
 
-## Architecture Overview
+## ⚠️ Current Architecture: Single-Server Mode
+
+**IMPORTANT**: Currently running in **single-server mode** without Redis pub/sub. This works perfectly for our current single-server deployment but will need migration when scaling horizontally.
+
+### Current Architecture
 
 ```
 ┌─────────────┐         WebSocket          ┌──────────────┐
@@ -10,35 +14,38 @@ This directory contains the WebSocket implementation for real-time enrichment st
 │   Client    │      (enrichment:updates)  │   Server     │
 └─────────────┘                            └──────┬───────┘
                                                   │
-                                                  │ Redis Pub/Sub
+                                          In-Memory Direct Access
                                                   │
-                ┌─────────────────────────────────┴────────────┐
-                │                                              │
-         ┌──────▼───────┐                             ┌───────▼──────┐
-         │  Server 1    │                             │  Server 2    │
-         │  (Worker)    │                             │  (Worker)    │
-         └──────────────┘                             └──────────────┘
+                                         ┌────────▼────────┐
+                                         │  Single Server  │
+                                         │  + BullMQ Worker│
+                                         └─────────────────┘
 ```
+
+**Why this works now:**
+- BullMQ workers and WebSocket server run in the same Node.js process
+- Direct memory access to `enrichmentNamespace` global variable
+- No cross-server communication needed
+
+**Limitations:**
+- Cannot horizontally scale (limited to 1 server)
+- Single point of failure
+- ~10K concurrent WebSocket connection limit
 
 ## Files
 
 ### `server.ts`
 - Creates Socket.IO server with HTTP server
-- Configures Redis adapter for horizontal scaling
 - Implements Clerk JWT authentication middleware
 - Handles connection/disconnection events
+- **Note**: Redis adapter currently disabled (single-server mode)
 
 ### `enrichment-namespace.ts`
 - Sets up `/enrichment` namespace for enrichment-specific events
 - Manages room subscriptions (`enrichment:${userPlaceId}`)
 - Handles `subscribe`/`unsubscribe` events
 - Sends initial status on subscription
-- Periodic cleanup of empty rooms (every 5 minutes)
-
-### `redis-subscriber.ts`
-- Subscribes to Redis pub/sub channels (`enrichment:updates:*`)
-- Relays updates from Redis to WebSocket clients
-- Enables multi-server deployments (horizontal scaling)
+- Includes room cleanup logic (can be removed - Socket.IO handles this automatically)
 
 ## Events
 
@@ -110,14 +117,76 @@ Each enrichment has its own room: `enrichment:${userPlaceId}`
 - All updates for that enrichment broadcast to room
 - Automatic cleanup of empty rooms every 5 minutes
 
-## Multi-Server Support
+## 🚀 Future: Multi-Server Support (Not Yet Implemented)
 
-Uses Redis pub/sub for cross-server communication:
+**When to migrate**: When you need to scale beyond 1 server (multiple instances, zero-downtime deploys, >10K connections)
 
-1. Worker publishes update to Redis: `enrichment:updates:${userPlaceId}`
-2. All server instances subscribe to pattern: `enrichment:updates:*`
-3. Each server relays update to its connected WebSocket clients
-4. Socket.IO Redis adapter handles room synchronization
+**Migration plan** for Redis pub/sub:
+
+### Architecture (Future State)
+
+```
+                      ┌─────────────────┐
+                      │   Load Balancer │
+                      └────────┬────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              ↓                ↓                ↓
+      ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+      │  Server A    │  │  Server B    │  │  Server C    │
+      │   ↑      ↓   │  │   ↑      ↓   │  │   ↑      ↓   │
+      │   └──────┘   │  │   └──────┘   │  │   └──────┘   │
+      └───────┬──────┘  └───────┬──────┘  └───────┬──────┘
+              │                 │                 │
+              └─────────────────┼─────────────────┘
+                                ↓
+                      ┌─────────────────┐
+                      │  Redis Pub/Sub  │
+                      │  (Message Bus)  │
+                      └─────────────────┘
+                                ↑
+                                │
+                      ┌─────────▼─────────┐
+                      │  BullMQ Workers   │
+                      └───────────────────┘
+```
+
+### Implementation Steps
+
+**1. Fix Redis ACL Permissions**
+```bash
+# Connect to Redis
+redis-cli
+
+# Grant pub/sub permissions
+ACL SETUSER your-app-user +@pubsub
+```
+
+**2. Enable Socket.IO Redis Adapter**
+```typescript
+// apps/api/src/websocket/server.ts
+import { createAdapter } from '@socket.io/redis-adapter'
+
+export const createWebSocketServer = (httpServer: HTTPServer) => {
+  const io = new SocketIOServer(httpServer, { /* ... */ })
+
+  // Add Redis adapter for horizontal scaling
+  const pubClient = redisClient.duplicate()
+  const subClient = redisClient.duplicate()
+  io.adapter(createAdapter(pubClient, subClient))
+
+  // ... rest of code
+}
+```
+
+**3. No Code Changes Needed!**
+The existing `enrichmentNamespace.to(room).emit()` calls will automatically work across servers once the adapter is enabled.
+
+**Benefits:**
+- Horizontal scaling (N servers)
+- High availability (no single point of failure)
+- Zero-downtime deploys
+- Support 100K+ concurrent connections
 
 ## Performance Considerations
 
@@ -147,9 +216,9 @@ Uses Redis pub/sub for cross-server communication:
 
 ### Logs to Monitor
 - `websocket_auth_failed`: Authentication issues
-- `redis_pubsub_relay`: Cross-server updates
 - `enrichment_websocket_subscribe`: Client subscriptions
-- `enrichment_websocket_room_cleanup`: Empty room removal
+- `enrichment_batch_emit`: Batched status updates
+- `enrichment_terminal_status_emit`: Immediate completion/failure events
 
 ## Testing
 
@@ -190,10 +259,10 @@ artillery quick --count 100 --num 10 ws://localhost:3030/enrichment
 - Ensure token passed in `auth.token`
 
 ### "No status updates received"
-- Check Redis connection
-- Verify `setEnrichmentNamespace()` called
-- Ensure worker publishes to Redis pub/sub
+- Verify `setEnrichmentNamespace()` called in `index.ts`
+- Check that worker is in same process as WebSocket server
 - Check room subscription: `socket.rooms`
+- Verify enrichment status is being set via `setEnrichmentStatus()`
 
 ### "High memory usage"
 - Check for memory leaks: `process.memoryUsage()`
@@ -227,8 +296,16 @@ The system uses **graceful degradation**:
 
 ## Future Improvements
 
-1. **Compression**: Enable Socket.IO compression for large payloads
-2. **Batching**: Batch multiple status updates into single message
-3. **Metrics**: Expose Prometheus metrics endpoint
-4. **Rate Limiting**: Per-client rate limits for events
-5. **Clustering**: Use sticky sessions for better performance
+### High Priority (When Scaling)
+1. **Multi-Server Support**: Enable Redis pub/sub adapter (see section above)
+2. **Metrics**: Expose Prometheus metrics endpoint for monitoring
+3. **Rate Limiting**: Per-client rate limits for subscribe/unsubscribe events
+
+### Medium Priority
+4. **Compression**: Enable Socket.IO compression for large payloads
+5. **Sticky Sessions**: Use load balancer sticky sessions for better performance
+6. **Monitoring Dashboard**: Real-time WebSocket connection visualization
+
+### Low Priority
+7. **Binary Protocol**: Use MessagePack instead of JSON for smaller payloads
+8. **Connection Pooling**: Optimize Redis connection management

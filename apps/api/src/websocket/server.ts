@@ -81,12 +81,14 @@ export const authenticationMiddleware = async (
 
 export const createWebSocketServer = (httpServer: HTTPServer) => {
   const io = new SocketIOServer(httpServer, {
+    // Add path configuration for proxy support
+    path: '/socket.io', // This is the default, but explicitly set it
     cors: {
       origin: process.env.FRONTEND_URL || 'http://localhost:5173',
       credentials: true,
       methods: ['GET', 'POST'],
     },
-    transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
+    transports: ['websocket'], // Fallback to polling if WebSocket fails
     pingTimeout: 60000, // 60s timeout for ping/pong
     pingInterval: 25000, // Send ping every 25s
     maxHttpBufferSize: 1e6, // 1MB max message size

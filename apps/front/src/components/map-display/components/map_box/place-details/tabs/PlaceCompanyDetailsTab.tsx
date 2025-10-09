@@ -1,10 +1,13 @@
+import { useEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { usePlaceEnrichmentQuery } from '@/api/queries/places/enrichment/usePlaceEnrichment'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Table,
@@ -14,8 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useEnrichmentMutation } from '@/contexts/EnrichmentMutationContext'
 import type { Financial, Place } from '@ritchy/types'
-import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Loader2,
+  Sparkles,
+} from 'lucide-react'
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 
@@ -422,6 +432,66 @@ const JsonViewer = ({ data, level = 0 }: { data: unknown; level?: number }) => {
 
 export const PlaceCompanyDetailsTab = ({ place }: { place: Place }) => {
   const { data, isLoading, error } = usePlaceEnrichmentQuery(place.id)
+  const { data: enrichmentStatus } = useEnrichmentStatus(place.id)
+  const mutation = useEnrichmentMutation()
+
+  const handleEnrich = () => {
+    mutation.mutate({ userPlaceId: place.id })
+  }
+
+  // Show enrichment progress if actively processing
+  if (
+    enrichmentStatus?.status === 'queued' ||
+    enrichmentStatus?.status === 'processing'
+  ) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="max-w-md w-full space-y-6">
+          <div className="text-center space-y-2">
+            {enrichmentStatus.status === 'queued' ? (
+              <>
+                <Clock className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold">Enrichment Queued</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your enrichment request is in the queue and will start
+                  shortly...
+                </p>
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-12 w-12 text-blue-500 animate-spin mx-auto mb-4" />
+                <h3 className="text-lg font-semibold">
+                  Enriching Company Data
+                </h3>
+              </>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-medium">{enrichmentStatus.progress}%</span>
+            </div>
+            <Progress value={enrichmentStatus.progress} className="h-2" />
+          </div>
+
+          {enrichmentStatus.status === 'processing' &&
+            enrichmentStatus.step && (
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-xs text-muted-foreground mb-1">
+                  Current Step:
+                </p>
+                <p className="text-sm font-medium">{enrichmentStatus.step}</p>
+              </div>
+            )}
+
+          <div className="text-xs text-center text-muted-foreground">
+            This page will automatically update when enrichment completes
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -439,25 +509,53 @@ export const PlaceCompanyDetailsTab = ({ place }: { place: Place }) => {
     )
   }
 
-  if (!data || 'error' in data) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-sm space-y-4">
-          <h3 className="text-lg font-semibold text-muted-foreground">
-            Enrichment required for description and governmental data
-          </h3>
-        </div>
-      </div>
-    )
-  }
+  // Show enrichment trigger button when data isn't enriched
+  if (!data || 'error' in data || data?.id === null) {
+    const isPending = mutation.isPending
 
-  if (data?.id === null) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-sm space-y-4">
-          <h3 className="text-lg font-semibold text-muted-foreground">
-            Enrichment required for description and governmental data
-          </h3>
+        <div className="max-w-sm space-y-6">
+          <div className="space-y-2">
+            <Sparkles className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground">
+              No Enrichment Data Available
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Enrich this place to view company details, descriptions, and
+              governmental data
+            </p>
+          </div>
+
+          <Button
+            onClick={handleEnrich}
+            disabled={isPending}
+            size="lg"
+            className="gap-2"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Starting Enrichment...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Enrich This Place
+              </>
+            )}
+          </Button>
+
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Enrichment includes:</p>
+            <ul className="list-disc list-inside text-left inline-block">
+              <li>Company description</li>
+              <li>Contact information</li>
+              <li>Governmental data</li>
+              <li>Financial information</li>
+              <li>Social media profiles</li>
+            </ul>
+          </div>
         </div>
       </div>
     )

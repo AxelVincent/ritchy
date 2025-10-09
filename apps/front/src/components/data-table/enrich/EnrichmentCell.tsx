@@ -4,7 +4,6 @@ import { EnrichmentCellIndicator } from './EnrichmentCellIndicator'
 
 interface EnrichmentCellProps {
   userPlaceId: string
-  isActive: boolean
   children: ReactNode
 }
 
@@ -14,18 +13,17 @@ interface EnrichmentCellProps {
  *
  * Benefits:
  * - Each cell manages its own status query (shared cache)
- * - Automatic WebSocket subscription when active
+ * - Automatic WebSocket subscription with self-correcting polling fallback
  * - Only re-renders when this specific cell's status changes
- * - No need for DataTable-level batch queries
+ * - No need for DataTable-level batch queries or active tracking
  */
 export const EnrichmentCell = ({
   userPlaceId,
-  isActive,
   children,
 }: EnrichmentCellProps) => {
   // Query individual enrichment status (cached by TanStack Query)
-  // WebSocket updates are automatically received via singleton context
-  const { data: status } = useEnrichmentStatus(userPlaceId, isActive)
+  // WebSocket provides real-time updates, HTTP polling activates automatically if WebSocket fails
+  const { data: status } = useEnrichmentStatus(userPlaceId)
 
   return (
     <EnrichmentCellIndicator status={status}>

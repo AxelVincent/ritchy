@@ -1,13 +1,23 @@
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import type { WebSocketStatus } from '@/contexts/WebSocketContext'
 import { debugLog } from '@/lib/utils/debug-logging'
+import type {
+  EnrichmentWebSocketClientEvents,
+  EnrichmentWebSocketServerEvents,
+} from '@ritchy/types'
 import { useEffect } from 'react'
 import type { Socket } from 'socket.io-client'
 
 export type { WebSocketStatus }
 
+// Type-safe enrichment socket
+type EnrichmentSocket = Socket<
+  EnrichmentWebSocketServerEvents,
+  EnrichmentWebSocketClientEvents
+>
+
 interface UseEnrichmentWebSocketReturn {
-  socket: Socket | null
+  socket: EnrichmentSocket | null
   status: WebSocketStatus
   isConnected: boolean
 }

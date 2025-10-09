@@ -1,23 +1,27 @@
 import { logger } from '@ritchy/logger'
-import { and, eq } from 'drizzle-orm'
-import type { Server as SocketIOServer } from 'socket.io'
-import { z } from 'zod'
-import { db } from '../db/db'
-import { userPlace as userPlaceTable, user as userTable } from '../db/schema'
+import {
+  type EnrichmentWebSocketClientEvents,
+  type EnrichmentWebSocketServerEvents,
+  SubscribeEventSchema,
+  UnsubscribeEventSchema,
+} from '@ritchy/types'
+import type { Namespace, Server as SocketIOServer } from 'socket.io'
 import { getEnrichmentStatus } from '../services/enrichment/status_manager'
+import { verifyOwnership } from './ownership-cache'
 import { authenticationMiddleware } from './server'
-
-// Validation schemas for WebSocket events
-const SubscribeEventSchema = z.string().uuid()
-const UnsubscribeEventSchema = z.string().uuid()
 
 /**
  * Set up the enrichment namespace for real-time status updates
  * Handles subscription management and broadcasting enrichment progress
+ *
+ * Type-safe WebSocket events using @ritchy/types
  */
 export const setupEnrichmentNamespace = (io: SocketIOServer) => {
-  // Create /enrichment namespace for enrichment-specific events
-  const enrichmentNs = io.of('/enrichment')
+  // Create /enrichment namespace with type-safe events
+  const enrichmentNs: Namespace<
+    EnrichmentWebSocketClientEvents,
+    EnrichmentWebSocketServerEvents
+  > = io.of('/enrichment')
 
   // Apply authentication middleware to enrichment namespace
   // This ensures socket.data.userId is populated before subscription events
@@ -39,69 +43,23 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
         // Validate UUID format
         const validatedId = SubscribeEventSchema.parse(userPlaceId)
 
-        // Verify ownership: Check if the authenticated user owns this userPlace
-        const [result] = await db
-          .select({
-            userPlaceId: userPlaceTable.id,
-            userId: userPlaceTable.user_id,
-            clerkId: userTable.clerkId,
-          })
-          .from(userPlaceTable)
-          .innerJoin(userTable, eq(userPlaceTable.user_id, userTable.id))
-          .where(eq(userPlaceTable.id, validatedId))
-          .limit(1)
+        // Verify ownership using Redis-cached ownership check
+        const isOwner = await verifyOwnership(validatedId, socket.data.userId)
 
-        logger.debug({
-          msg: 'Authorization check for subscription',
-          event: 'enrichment_websocket_subscribe_auth_check',
-          metadata: {
-            socketId: socket.id,
-            authenticatedUserId: socket.data.userId,
-            userPlaceId: validatedId,
-            foundResult: !!result,
-            resultClerkId: result?.clerkId,
-            idsMatch: result?.clerkId === socket.data.userId,
-          },
-        })
-
-        if (!result) {
+        if (!isOwner) {
           logger.warn({
-            msg: 'Subscription attempt for non-existent userPlace',
-            event: 'enrichment_websocket_subscribe_not_found',
-            metadata: {
-              socketId: socket.id,
-              userId: socket.data.userId,
-              userPlaceId: validatedId,
-            },
-          })
-
-          socket.emit('error', {
-            message: 'User place not found',
-            code: 'NOT_FOUND',
-            userPlaceId: validatedId,
-          })
-          return
-        }
-
-        // Check if authenticated user owns this userPlace
-        if (result.clerkId !== socket.data.userId) {
-          logger.warn({
-            msg: 'Unauthorized subscription attempt',
+            msg: 'Unauthorized subscription attempt or userPlace not found',
             event: 'enrichment_websocket_subscribe_unauthorized',
             metadata: {
               socketId: socket.id,
               authenticatedUserId: socket.data.userId,
               userPlaceId: validatedId,
-              actualOwnerId: result.clerkId,
-              authenticatedUserIdType: typeof socket.data.userId,
-              actualOwnerIdType: typeof result.clerkId,
-              authenticatedUserIdLength: socket.data.userId?.length,
-              actualOwnerIdLength: result.clerkId?.length,
             },
           })
 
           socket.emit('error', {
-            message: 'Unauthorized: You do not own this enrichment',
+            message:
+              'Unauthorized: You do not own this enrichment or it does not exist',
             code: 'FORBIDDEN',
             userPlaceId: validatedId,
           })
@@ -156,23 +114,14 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
         // Validate UUID format
         const validatedId = UnsubscribeEventSchema.parse(userPlaceId)
 
-        // Verify ownership before unsubscribing (optional but good for audit trail)
-        const [result] = await db
-          .select({
-            userPlaceId: userPlaceTable.id,
-            clerkId: userTable.clerkId,
-          })
-          .from(userPlaceTable)
-          .innerJoin(userTable, eq(userPlaceTable.user_id, userTable.id))
-          .where(eq(userPlaceTable.id, validatedId))
-          .limit(1)
+        // Verify ownership (optional but good for audit trail)
+        // Note: We allow unsubscribe even if not owner (graceful cleanup)
+        const isOwner = await verifyOwnership(validatedId, socket.data.userId)
 
-        // If the userPlace doesn't exist or user doesn't own it, still allow unsubscribe
-        // (graceful handling - prevents clients from staying subscribed to unauthorized rooms)
-        if (result && result.clerkId !== socket.data.userId) {
-          logger.warn({
-            msg: 'Unsubscribe from unauthorized userPlace',
-            event: 'enrichment_websocket_unsubscribe_unauthorized',
+        if (!isOwner) {
+          logger.debug({
+            msg: 'Unsubscribe from unauthorized or non-existent userPlace (graceful cleanup)',
+            event: 'enrichment_websocket_unsubscribe_not_owner',
             metadata: {
               socketId: socket.id,
               userId: socket.data.userId,

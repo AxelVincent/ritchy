@@ -33,6 +33,10 @@ const STATUS_KEY_PREFIX = 'enrichment:status'
 // while being short enough that users perceive updates as "instant" (<150ms threshold)
 const BATCH_EMIT_DELAY = 100 // milliseconds
 
+// Circuit breaker: Maximum batch size before forcing a flush
+// Prevents unbounded memory growth if flush is delayed or fails
+const MAX_BATCH_SIZE = 1000
+
 // Global reference to enrichment namespace (set by server initialization)
 let enrichmentNamespace: Namespace | null = null
 
@@ -106,11 +110,31 @@ const flushBatchUpdatesAsync = async (): Promise<void> => {
 /**
  * Queue a status update for batched emission
  * Updates are flushed after BATCH_EMIT_DELAY ms
+ * Includes circuit breaker to prevent unbounded memory growth
  */
 const queueBatchUpdate = (
   userPlaceId: string,
   statusData: EnrichmentStatusData,
 ) => {
+  // Circuit breaker: Force flush if batch queue is full
+  if (pendingBatchUpdates.length >= MAX_BATCH_SIZE) {
+    logger.warn({
+      msg: 'Batch update queue full, forcing immediate flush',
+      event: 'enrichment_batch_overflow',
+      metadata: {
+        queueSize: pendingBatchUpdates.length,
+        maxSize: MAX_BATCH_SIZE,
+      },
+    })
+
+    // Clear pending timer and flush immediately
+    if (batchTimer) {
+      clearTimeout(batchTimer)
+      batchTimer = null
+    }
+    flushBatchUpdates()
+  }
+
   // Add to pending updates (replace if already exists for same ID)
   const existingIndex = pendingBatchUpdates.findIndex(
     (u) => u.userPlaceId === userPlaceId,
