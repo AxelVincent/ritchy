@@ -4,16 +4,10 @@ import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 import type { Location } from '@/components/search/search-map'
 import { debounce } from '@/lib/debounce'
+import { debugLog } from '@/lib/utils/debug-logging'
 import type { Place } from '@ritchy/types'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
-const DEBUG = false
-
-const debugLog = (...args: unknown[]) => {
-  if (DEBUG) {
-    console.log('[MapBox]', ...args)
-  }
-}
 
 // Improve props interface with more specific types
 interface MapBoxProps {

@@ -4,6 +4,7 @@ import { ClerkProvider, useUser } from '@clerk/clerk-react'
 import { RouterProvider } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { cleanupMapboxResources } from './components/map-display/utils/mapboxUtils'
+import { WebSocketProvider } from './contexts/WebSocketContext'
 import { QueryProvider } from './providers/query-provider'
 import { ThemeProvider } from './providers/theme-provider'
 import { createRouter } from './router'
@@ -36,8 +37,10 @@ const App = () => {
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
       <QueryProvider>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-          <InnerApp />
-          <Toaster />
+          <WebSocketProvider>
+            <InnerApp />
+            <Toaster />
+          </WebSocketProvider>
         </ThemeProvider>
       </QueryProvider>
     </ClerkProvider>

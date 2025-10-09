@@ -13,6 +13,6 @@ export const phoneColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => <HeaderWrapper column={column} title="Phone" />,
   cell: ({ row }) => {
     const phone = row.getValue('phone') as string
-    return <CopyCell content={phone} />
+    return <CopyCell content={phone} href={`tel:${phone}`} />
   },
 }

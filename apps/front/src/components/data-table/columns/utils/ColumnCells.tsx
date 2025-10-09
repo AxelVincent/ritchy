@@ -39,7 +39,7 @@ const CustomBadge = ({
 }
 
 // Reusable copy button component for all cells
-const CopyButton = React.memo(function CopyButton({
+export const CopyButton = React.memo(function CopyButton({
   valueToCopy,
   ariaLabel = 'Copy',
 }: {

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { debugLog } from '@/lib/utils/debug-logging'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useForm } from 'react-hook-form'
@@ -80,7 +81,7 @@ const BasicForm = () => {
   })
 
   const onSubmit = (values: z.infer<typeof basicFormSchema>) => {
-    console.log('Form submitted:', values)
+    debugLog('Form submitted:', values)
     alert(
       `Form submitted!\nUsername: ${values.username}\nEmail: ${values.email}`,
     )
@@ -146,7 +147,7 @@ const ComplexForm = () => {
   })
 
   const onSubmit = (values: z.infer<typeof complexFormSchema>) => {
-    console.log('Form submitted:', values)
+    debugLog('Form submitted:', values)
     alert(`Form submitted!\n${JSON.stringify(values, null, 2)}`)
   }
 
@@ -322,7 +323,7 @@ const FormWithErrors = () => {
   })
 
   const onSubmit = (values: z.infer<typeof basicFormSchema>) => {
-    console.log('Form submitted:', values)
+    debugLog('Form submitted:', values)
   }
 
   return (
@@ -379,7 +380,7 @@ const CustomStyledForm = () => {
   })
 
   const onSubmit = (values: z.infer<typeof basicFormSchema>) => {
-    console.log('Form submitted:', values)
+    debugLog('Form submitted:', values)
   }
 
   return (

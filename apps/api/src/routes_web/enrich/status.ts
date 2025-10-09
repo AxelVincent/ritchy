@@ -18,7 +18,7 @@ const BatchStatusQuerySchema = z.object({
   userPlaceIds: z
     .union([z.string().uuid(), z.array(z.string().uuid())])
     .transform((val) => (Array.isArray(val) ? val : [val]))
-    .pipe(z.array(z.string().uuid()).min(1).max(100)),
+    .pipe(z.array(z.string().uuid()).min(1).max(500)), // Increased to 500 to support larger tables
 })
 
 export const getEnrichmentStatusHandler = async (

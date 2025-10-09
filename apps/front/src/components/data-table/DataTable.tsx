@@ -1,5 +1,4 @@
 import { useActiveEnrichments } from '@/api/queries/enrichment/useActiveEnrichments'
-import { useBatchEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { DataExport } from '@/components/data-export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
@@ -28,7 +27,7 @@ import { ListManagementButtons } from '../lists/ListManagementButtons'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
 import { EnrichmentButtons } from './enrich/EnrichmentButtons'
-import { EnrichmentCellIndicator } from './enrich/EnrichmentCellIndicator'
+import { EnrichmentCell } from './enrich/EnrichmentCell'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -75,16 +74,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
     },
   )
 
-  // Use query-based active enrichments (single source of truth)
-  const { activeEnrichments, removeEnrichments } = useActiveEnrichments()
-
-  // Track IDs that are scheduled for cleanup to prevent duplicate timeouts
-  const cleanupScheduledRef = useRef<Set<string>>(new Set())
-
-  const { data: batchStatus } = useBatchEnrichmentStatus(
-    activeEnrichments,
-    activeEnrichments.length > 0,
-  )
+  // Get active enrichments for tracking which cells need WebSocket
+  const { activeEnrichments } = useActiveEnrichments()
 
   const table = useReactTable({
     data,
@@ -101,9 +92,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getRowId: (row) => row.id,
-    meta: {
-      batchStatus,
-    },
     defaultColumn: {
       minSize: 60,
       maxSize: 800,
@@ -204,45 +192,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onFilteredDataChange(filteredIds)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
 
-  // Clean up completed/failed enrichments from active list after a delay
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  useEffect(() => {
-    if (!batchStatus) return
-
-    // Find completed/failed enrichments that haven't been scheduled for cleanup yet
-    const completedOrFailed = Object.entries(batchStatus)
-      .filter(
-        ([_, statusData]) =>
-          statusData.status === 'completed' || statusData.status === 'failed',
-      )
-      .map(([userPlaceId]) => userPlaceId)
-      .filter((id) => !cleanupScheduledRef.current.has(id))
-
-    if (completedOrFailed.length === 0) return
-
-    // Mark these IDs as scheduled for cleanup
-    for (const id of completedOrFailed) {
-      cleanupScheduledRef.current.add(id)
-    }
-
-    // Delay removal to allow UI to show completed state and give time for data refetch
-    const timeoutId = setTimeout(() => {
-      // Remove from active enrichments via query cache
-      removeEnrichments(completedOrFailed)
-      // Remove from scheduled set after cleanup completes
-      for (const id of completedOrFailed) {
-        cleanupScheduledRef.current.delete(id)
-      }
-    }, 5000) // 5 seconds delay
-
-    return () => {
-      clearTimeout(timeoutId)
-      // If effect cleanup happens before timeout, remove from scheduled set
-      for (const id of completedOrFailed) {
-        cleanupScheduledRef.current.delete(id)
-      }
-    }
-  }, [batchStatus])
+  // Note: Cleanup of completed enrichments is now handled automatically
+  // by useActiveEnrichments hook with event-driven timeouts (see useActiveEnrichments.ts:67-113)
 
   // If there are no visible columns, show a message
   if (visibleColumns.length === 0) {
@@ -378,7 +329,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
                   {visibleCells.map((cell) => {
                     const isEnrichmentCell =
                       cell.column.columnDef.meta?.isEnrichment
-                    const cellStatus = batchStatus?.[row.original.id]
+                    const isActiveEnrichment = activeEnrichments.includes(
+                      row.original.id,
+                    )
 
                     return (
                       <td
@@ -407,42 +360,42 @@ export const DataTable = <TData extends SearchResult, TValue>({
                           alignItems: 'center',
                         }}
                       >
-                        {isEnrichmentCell && cellStatus ? (
-                          <EnrichmentCellIndicator status={cellStatus}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </EnrichmentCellIndicator>
+                        {isEnrichmentCell ? (
+                          <>
+                            <div className="absolute top-1 right-1">
+                              <Sparkles
+                                className={cn('h-2.5 w-2.5', {
+                                  'text-purple-600':
+                                    row.original.enrichedStatus ===
+                                    'RECENTLY_ENRICHED',
+                                  'text-blue-600':
+                                    row.original.enrichedStatus === 'ENRICHED',
+                                  'text-red-600':
+                                    row.original.enrichedStatus ===
+                                    'ENRICHMENT_ERROR',
+                                })}
+                                aria-label={
+                                  row.original.enrichedStatus ===
+                                  'RECENTLY_ENRICHED'
+                                    ? 'Recently enriched'
+                                    : row.original.enrichedStatus === 'ENRICHED'
+                                      ? 'Previously enriched'
+                                      : 'Enrichment error'
+                                }
+                              />
+                            </div>
+                            <EnrichmentCell
+                              userPlaceId={row.original.id}
+                              isActive={isActiveEnrichment}
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </EnrichmentCell>
+                          </>
                         ) : (
                           <>
-                            {cell.column.columnDef.meta?.isEnrichment &&
-                              row.original.enrichedStatus && (
-                                <div className="absolute top-1 right-1 z-10">
-                                  <Sparkles
-                                    className={cn('h-2.5 w-2.5', {
-                                      'text-purple-600':
-                                        row.original.enrichedStatus ===
-                                        'RECENTLY_ENRICHED',
-                                      'text-blue-600':
-                                        row.original.enrichedStatus ===
-                                        'ENRICHED',
-                                      'text-red-600':
-                                        row.original.enrichedStatus ===
-                                        'ENRICHMENT_ERROR',
-                                    })}
-                                    aria-label={
-                                      row.original.enrichedStatus ===
-                                      'RECENTLY_ENRICHED'
-                                        ? 'Recently enriched'
-                                        : row.original.enrichedStatus ===
-                                            'ENRICHED'
-                                          ? 'Previously enriched'
-                                          : 'Enrichment error'
-                                    }
-                                  />
-                                </div>
-                              )}
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),

@@ -1,3 +1,4 @@
+import { useEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { EnrichmentActionButton } from '@/components/data-table/enrich/EnrichmentActionButton'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
@@ -9,104 +10,90 @@ import {
 } from '@/components/ui/tooltip'
 import { TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import type { EnrichmentStatusResponse, SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Maximize } from 'lucide-react'
 import posthog from 'posthog-js'
-import { memo } from 'react'
 
-// Memoized cell content to prevent re-renders when batchStatus object reference changes
-const ActionCellContent = memo(
-  ({
-    rowIndex,
-    rowId,
-    enrichedStatus,
-    liveStatus,
-    isSelected,
-    onToggleSelected,
-    onFocus,
-  }: {
-    rowIndex: number
-    rowId: string
-    enrichedStatus?: 'ENRICHED' | 'RECENTLY_ENRICHED' | 'ENRICHMENT_ERROR'
-    liveStatus?: EnrichmentStatusResponse
-    isSelected: boolean
-    onToggleSelected: (value: boolean) => void
-    onFocus: () => void
-  }) => {
-    return (
-      <div className="w-full flex items-center justify-between gap-1 px-1">
-        {/* Use CSS to toggle visibility */}
-        <div className="w-6 flex items-center justify-center relative">
-          {/* Checkbox - visible on group/row hover or when selected */}
-          <div
-            className={cn(
-              'absolute inset-0 flex items-center justify-center transition-opacity duration-75',
-              isSelected
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 group-hover/row:opacity-100 pointer-events-none group-hover/row:pointer-events-auto',
-            )}
-          >
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={(value) => onToggleSelected(!!value)}
-              aria-label="Select row"
-            />
-          </div>
-          {/* Row number - hidden on group/row hover when not selected */}
-          <div
-            className={cn(
-              'absolute inset-0 flex items-center justify-center text-xs text-muted-foreground transition-opacity duration-75',
-              isSelected
-                ? 'opacity-0 pointer-events-none'
-                : 'opacity-100 group-hover/row:opacity-0 pointer-events-auto group-hover/row:pointer-events-none',
-            )}
-          >
-            {rowIndex + 1}
-          </div>
+// Cell content - not memoized because it uses hooks that subscribe to external state
+const ActionCellContent = ({
+  rowIndex,
+  rowId,
+  enrichedStatus,
+  isSelected,
+  onToggleSelected,
+  onFocus,
+}: {
+  rowIndex: number
+  rowId: string
+  enrichedStatus?: 'ENRICHED' | 'RECENTLY_ENRICHED' | 'ENRICHMENT_ERROR'
+  isSelected: boolean
+  onToggleSelected: (value: boolean) => void
+  onFocus: () => void
+}) => {
+  // Fetch individual enrichment status with WebSocket support
+  const { data: liveStatus } = useEnrichmentStatus(rowId)
+
+  return (
+    <div className="w-full flex items-center justify-between gap-1 px-1">
+      {/* Use CSS to toggle visibility */}
+      <div className="w-6 flex items-center justify-center relative">
+        {/* Checkbox - visible on group/row hover or when selected */}
+        <div
+          className={cn(
+            'absolute inset-0 flex items-center justify-center transition-opacity duration-75',
+            isSelected
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 group-hover/row:opacity-100 pointer-events-none group-hover/row:pointer-events-auto',
+          )}
+        >
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(value) => onToggleSelected(!!value)}
+            aria-label="Select row"
+          />
         </div>
-
-        {/* Rest stays the same */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn('h-7 w-7 p-0', 'hover:bg-accent')}
-                onClick={onFocus}
-                disabled={false}
-              >
-                <Maximize style={{ width: '14px', height: '14px' }} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Expand</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <EnrichmentActionButton
-          userPlaceId={rowId}
-          enrichedStatus={enrichedStatus}
-          liveStatus={liveStatus}
-        />
+        {/* Row number - hidden on group/row hover when not selected */}
+        <div
+          className={cn(
+            'absolute inset-0 flex items-center justify-center text-xs text-muted-foreground transition-opacity duration-75',
+            isSelected
+              ? 'opacity-0 pointer-events-none'
+              : 'opacity-100 group-hover/row:opacity-0 pointer-events-auto group-hover/row:pointer-events-none',
+          )}
+        >
+          {rowIndex + 1}
+        </div>
       </div>
-    )
-  },
-  (prev, next) => {
-    return (
-      prev.rowIndex === next.rowIndex &&
-      prev.rowId === next.rowId &&
-      prev.enrichedStatus === next.enrichedStatus &&
-      prev.isSelected === next.isSelected &&
-      prev.liveStatus?.status === next.liveStatus?.status &&
-      prev.liveStatus?.progress === next.liveStatus?.progress &&
-      prev.liveStatus?.step === next.liveStatus?.step &&
-      prev.liveStatus?.error === next.liveStatus?.error
-    )
-  },
-)
+
+      {/* Rest stays the same */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('h-7 w-7 p-0', 'hover:bg-accent')}
+              onClick={onFocus}
+              disabled={false}
+            >
+              <Maximize style={{ width: '14px', height: '14px' }} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">Expand</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      <EnrichmentActionButton
+        userPlaceId={rowId}
+        enrichedStatus={enrichedStatus}
+        liveStatus={liveStatus}
+      />
+    </div>
+  )
+}
 
 ActionCellContent.displayName = 'ActionCellContent'
 
@@ -130,9 +117,7 @@ export const actionColumn: ColumnDef<SearchResult> = {
       </div>
     </div>
   ),
-  cell: ({ row, table }) => {
-    const batchStatus = table.options.meta?.batchStatus
-    const liveStatus = batchStatus?.[row.original.id]
+  cell: ({ row }) => {
     const { setSelectedPlaceId } = useMapStore()
 
     const handleFocus = () => {
@@ -145,7 +130,6 @@ export const actionColumn: ColumnDef<SearchResult> = {
         rowIndex={row.index}
         rowId={row.original.id}
         enrichedStatus={row.original.enrichedStatus ?? undefined}
-        liveStatus={liveStatus}
         isSelected={row.getIsSelected()}
         onToggleSelected={(value) => row.toggleSelected(value)}
         onFocus={handleFocus}

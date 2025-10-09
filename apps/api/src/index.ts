@@ -29,8 +29,28 @@ import { enrichmentUnitQueue } from './internal/bullmq/jobs/enrichment/unit/queu
 import { scraperQueue } from './internal/bullmq/jobs/scraper/queue'
 import { whoisQueue } from './internal/bullmq/jobs/whois/queue'
 
+import {
+  flushPendingUpdates,
+  setEnrichmentNamespace,
+} from './services/enrichment/status_manager'
+import { setupEnrichmentNamespace } from './websocket/enrichment-namespace'
+// Import WebSocket server setup
+import { createWebSocketServer } from './websocket/server'
+
 const app = express()
 const server = createServer(app)
+
+// Initialize WebSocket server
+const io = createWebSocketServer(server)
+const enrichmentNs = setupEnrichmentNamespace(io)
+
+// Make enrichment namespace accessible to status manager
+setEnrichmentNamespace(enrichmentNs)
+
+logger.info({
+  msg: 'WebSocket server initialized in single-server mode (Redis pub/sub disabled)',
+  event: 'websocket_initialized',
+})
 
 // Body parser middleware
 app.use(
@@ -305,6 +325,9 @@ process.on('SIGTERM', async () => {
     event: 'graceful_shutdown_start',
   })
 
+  // Flush pending WebSocket batch updates
+  flushPendingUpdates()
+
   // Shutdown Redis health monitor
   redisHealthMonitor.stop()
 
@@ -316,6 +339,9 @@ process.on('SIGINT', async () => {
     msg: 'Shutting down services',
     event: 'graceful_shutdown_start',
   })
+
+  // Flush pending WebSocket batch updates
+  flushPendingUpdates()
 
   // Shutdown Redis health monitor
   redisHealthMonitor.stop()

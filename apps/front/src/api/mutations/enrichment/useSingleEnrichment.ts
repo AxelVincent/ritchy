@@ -3,8 +3,8 @@ import { enrichmentStatusKeys } from '@/api/queries/enrichment/useEnrichmentStat
 import { useApiMutation } from '@/hooks/useApi'
 import { isValidUUID } from '@/lib/validation'
 import type {
-  BatchEnrichmentStatusResponse,
   BulkEnrichmentApiResponse,
+  EnrichmentStatusResponse,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -38,54 +38,9 @@ export const useSingleEnrichment = () => {
             return Array.from(new Set([...old, variables.userPlaceId]))
           },
         )
-
-        // Get current active enrichments to determine the batch query key
-        const activeEnrichments =
-          queryClient.getQueryData<string[]>(activeEnrichmentsKeys.all) ?? []
-
-        // Optimistic status data with proper typing
-        const optimisticStatus = {
-          status: 'queued' as const,
-          step: 'Queued for enrichment',
-          progress: 0,
-          updatedAt: Date.now(),
-        }
-
-        // Store previous batch status for rollback (properly typed)
-        const previousBatchStatus =
-          queryClient.getQueryData<BatchEnrichmentStatusResponse>(
-            enrichmentStatusKeys.batch(activeEnrichments),
-          )
-
-        // Optimistically update the batch query with proper typing
-        queryClient.setQueryData<BatchEnrichmentStatusResponse>(
-          enrichmentStatusKeys.batch(activeEnrichments),
-          (old = {}) => ({
-            ...old,
-            [variables.userPlaceId]: optimisticStatus,
-          }),
-        )
-
-        return { previousBatchStatus, activeEnrichments }
       },
-      onError: (_error, variables, context) => {
-        const typedContext = context as {
-          activeEnrichments?: string[]
-          previousBatchStatus?: BatchEnrichmentStatusResponse
-        }
-
-        // Rollback optimistic updates on error
-        if (
-          typedContext?.activeEnrichments &&
-          typedContext?.previousBatchStatus
-        ) {
-          queryClient.setQueryData(
-            enrichmentStatusKeys.batch(typedContext.activeEnrichments),
-            typedContext.previousBatchStatus,
-          )
-        }
-
-        // Remove from active enrichments
+      onError: (_error, variables) => {
+        // Remove from active enrichments on error
         queryClient.setQueryData<string[]>(
           activeEnrichmentsKeys.all,
           (old = []) => {
@@ -93,11 +48,20 @@ export const useSingleEnrichment = () => {
           },
         )
       },
-      onSuccess: () => {
-        // Invalidate batch status query to refetch latest
-        queryClient.invalidateQueries({
-          queryKey: enrichmentStatusKeys.all,
-        })
+      onSuccess: (_data, variables) => {
+        // Set the single status to queued immediately (don't wait for backend)
+        queryClient.setQueryData<EnrichmentStatusResponse>(
+          enrichmentStatusKeys.single(variables.userPlaceId),
+          {
+            status: 'queued',
+            step: 'Queued for enrichment',
+            progress: 0,
+            updatedAt: Date.now(),
+          },
+        )
+
+        // No invalidation needed - WebSocket will push all updates in real-time
+        // including queued → processing → completed transitions
       },
     },
   )

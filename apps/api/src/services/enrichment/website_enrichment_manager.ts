@@ -104,7 +104,7 @@ export const websiteEnrichmentManager = async ({
       .where(eq(enrichmentTable.placeId, place.place.id))
       .limit(1)
 
-    if (existingEnrichment) {
+    if (existingEnrichment?.success) {
       if (!existingEnrichment.isStale) {
         await setEnrichmentStatus(
           userPlaceId,
@@ -155,7 +155,7 @@ export const websiteEnrichmentManager = async ({
         .update(enrichmentTable)
         .set({
           isStale: false,
-          success: false,
+          success: true,
           error: null,
           updatedAt: new Date(),
         })
@@ -184,6 +184,7 @@ export const websiteEnrichmentManager = async ({
           set: {
             placeId: place.place.id,
             domain: null,
+            success: true,
             domainRegisteredAt: null,
           },
         })
@@ -483,7 +484,7 @@ export const websiteEnrichmentManager = async ({
           keywords: metadata.keywords,
           favicon: metadata.favicon,
           robots: metadata.robots,
-          success: true, // Main page scraped successfully
+          success: true,
           domainRegisteredAt: whoisData?.registrationDate
             ? new Date(whoisData.registrationDate)
             : null,

@@ -1,5 +1,4 @@
 import '@tanstack/react-table'
-import type { BatchEnrichmentStatusResponse } from '@ritchy/types'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta {
@@ -16,7 +15,6 @@ declare module '@tanstack/react-table' {
     setData?: React.Dispatch<React.SetStateAction<TData[]>>
     hoveredRowId?: string | null
     setHoveredRowId?: (rowId: string | null) => void
-    batchStatus?: BatchEnrichmentStatusResponse
   }
 
   interface FilterFns {

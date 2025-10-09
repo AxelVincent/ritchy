@@ -1,13 +1,54 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { createTextColumn } from './utils/createTextColumn'
+import React from 'react'
+import { CopyButton } from './utils/ColumnCells'
+import { HeaderWrapper } from './utils/HeaderWrapper'
 
-export const shortDescriptionColumn: ColumnDef<SearchResult> = createTextColumn(
-  {
-    id: 'shortDescription',
-    accessorKey: 'shortDescription',
-    title: 'Short Description',
+const ShortDescriptionCell = React.memo(function ShortDescriptionCell({
+  content,
+}: {
+  content: string
+}) {
+  return (
+    <div className="group/cell relative w-full h-full flex items-center">
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="block truncate px-2 py-1 cursor-default">
+              {content}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-md">
+            <p className="text-xs whitespace-pre-wrap">{content}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <CopyButton valueToCopy={content} ariaLabel="Copy" />
+    </div>
+  )
+})
+
+export const shortDescriptionColumn: ColumnDef<SearchResult> = {
+  id: 'shortDescription',
+  accessorKey: 'shortDescription',
+  size: 200,
+  enableSorting: true,
+  meta: {
     filterVariant: 'text',
     isEnrichment: true,
   },
-)
+  header: ({ column }) => (
+    <HeaderWrapper column={column} title="Short Description" />
+  ),
+  cell: ({ getValue }) => {
+    const content = getValue() as string | null
+    if (!content) return null
+    return <ShortDescriptionCell content={content} />
+  },
+}
