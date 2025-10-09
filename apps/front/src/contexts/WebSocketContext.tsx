@@ -15,9 +15,7 @@ import {
 } from 'react'
 import { type Socket, io } from 'socket.io-client'
 
-// Derive WebSocket URL from API base URL (remove /web suffix)
-const API_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'http://localhost:3030'
-const WS_BASE_URL = API_BASE_URL.replace(/\/web$/, '')
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'http://localhost:3030'
 
 export type WebSocketStatus =
   | 'connecting'
