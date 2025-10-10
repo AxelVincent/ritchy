@@ -9,22 +9,24 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { toTitleCase } from '@/lib/toTitleCase'
 import type { Column, Table } from '@tanstack/react-table'
 import { ChevronDown, GripVertical, Search, Settings2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 
 interface ColumnsSelectionProps<TData> {
   table: Table<TData>
+  storageKey?: string
 }
 
 const columnVisibilitySchema = z.record(z.boolean())
 const columnOrderSchema = z.array(z.string())
 
-const VISIBILITY_STORAGE_KEY = 'table-column-visibility'
-const ORDER_STORAGE_KEY = 'table-column-order'
-
 export const ColumnsSelection = <TData,>({
   table,
+  storageKey = 'default',
 }: ColumnsSelectionProps<TData>) => {
+  // Namespaced storage keys to prevent conflicts between different tables
+  const VISIBILITY_STORAGE_KEY = `${storageKey}-column-visibility`
+  const ORDER_STORAGE_KEY = `${storageKey}-column-order`
   const [searchQuery, setSearchQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [draggedColumn, setDraggedColumn] = useState<Column<
@@ -43,30 +45,40 @@ export const ColumnsSelection = <TData,>({
   useEffect(() => {
     try {
       const stored = localStorage.getItem(VISIBILITY_STORAGE_KEY)
+      const allColumns = table.getAllLeafColumns()
+
       if (stored) {
         const parsed = JSON.parse(stored)
         const validated = columnVisibilitySchema.parse(parsed)
 
-        // Get all current column IDs
-        const allColumnIds = table.getAllLeafColumns().map((col) => col.id)
-
         // Create a complete visibility state that includes new columns
         const completeVisibility = { ...validated }
 
-        // Add any new columns with default visibility (true)
-        for (const columnId of allColumnIds) {
-          if (completeVisibility[columnId] === undefined) {
-            completeVisibility[columnId] = true
+        // Add any new columns with default visibility from column meta or fallback to true
+        for (const column of allColumns) {
+          if (completeVisibility[column.id] === undefined) {
+            const defaultVisible = column.columnDef.meta?.defaultVisible
+            completeVisibility[column.id] =
+              defaultVisible !== undefined ? defaultVisible : true
           }
         }
 
         table.setColumnVisibility(completeVisibility)
+      } else {
+        // No saved state - use default visibility from column meta
+        const initialVisibility: Record<string, boolean> = {}
+        for (const column of allColumns) {
+          const defaultVisible = column.columnDef.meta?.defaultVisible
+          initialVisibility[column.id] =
+            defaultVisible !== undefined ? defaultVisible : true
+        }
+        table.setColumnVisibility(initialVisibility)
       }
     } catch (error) {
       console.error('Failed to load column visibility state:', error)
       localStorage.removeItem(VISIBILITY_STORAGE_KEY)
     }
-  }, [table])
+  }, [table, VISIBILITY_STORAGE_KEY])
 
   // Load initial column order
   useEffect(() => {
@@ -95,25 +107,28 @@ export const ColumnsSelection = <TData,>({
         // Only set if we have all columns
         if (completeColumnOrder.length === allColumnIds.length) {
           table.setColumnOrder(completeColumnOrder)
+        } else {
+          console.warn('Column order mismatch, resetting to default')
+          localStorage.removeItem(ORDER_STORAGE_KEY)
         }
       }
     } catch (error) {
       console.error('Failed to load column order state:', error)
       localStorage.removeItem(ORDER_STORAGE_KEY)
     }
-  }, [table])
+  }, [table, ORDER_STORAGE_KEY])
 
   // Add a useEffect to maintain focus when the dropdown is open
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (open && searchInputRef.current) {
       // Short timeout to ensure the dropdown is fully rendered
+      const FOCUS_DELAY_MS = 10
       const timeoutId = setTimeout(() => {
         searchInputRef.current?.focus()
-      }, 10)
+      }, FOCUS_DELAY_MS)
       return () => clearTimeout(timeoutId)
     }
-  }, [open, searchQuery])
+  }, [open])
 
   // Save visibility state on changes
   const handleVisibilityChange = (columnId: string, value: boolean) => {
@@ -248,8 +263,8 @@ export const ColumnsSelection = <TData,>({
     table.resetColumnOrder()
   }
 
-  // Get columns in current order for display
-  const orderedColumns = () => {
+  // Get columns in current order for display (memoized for performance)
+  const orderedColumns = useMemo(() => {
     const allColumns = table
       .getAllColumns()
       .filter((column) => column.getCanHide())
@@ -270,7 +285,18 @@ export const ColumnsSelection = <TData,>({
     }
 
     return allColumns
-  }
+  }, [table.getAllColumns, table.getState])
+
+  // Memoized filtered columns for search performance
+  const filteredColumns = useMemo(
+    () =>
+      orderedColumns.filter(
+        (column) =>
+          column.id !== 'select' &&
+          column.id.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [orderedColumns, searchQuery],
+  )
 
   // Add functions to select/deselect all columns
   const showAllColumns = () => {
@@ -360,53 +386,45 @@ export const ColumnsSelection = <TData,>({
           </Button>
         </div>
         <ScrollArea className="h-[300px]">
-          {orderedColumns()
-            .filter(
-              (column) =>
-                column.id !== 'select' && // Filter out the selection column
-                column.id.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
-            .map((column) => (
-              <div
-                key={column.id}
-                draggable
-                onDragStart={() => handleDragStart(column)}
-                onDragOver={(e) => handleDragOver(e, column.id)}
-                onDragEnd={handleDragEnd}
-                onDragLeave={() => {
-                  if (dropTargetId === column.id) {
-                    setDropTargetId(null)
-                    setDragOverDirection(null)
-                  }
-                }}
-                onDrop={() => handleDrop(column)}
-                className={`flex items-center px-2 py-1 hover:bg-accent relative ${
-                  draggedColumn?.id === column.id
-                    ? 'opacity-50 bg-accent/50'
-                    : ''
-                }`}
+          {filteredColumns.map((column) => (
+            <div
+              key={column.id}
+              draggable
+              onDragStart={() => handleDragStart(column)}
+              onDragOver={(e) => handleDragOver(e, column.id)}
+              onDragEnd={handleDragEnd}
+              onDragLeave={() => {
+                if (dropTargetId === column.id) {
+                  setDropTargetId(null)
+                  setDragOverDirection(null)
+                }
+              }}
+              onDrop={() => handleDrop(column)}
+              className={`flex items-center px-2 py-1 hover:bg-accent relative ${
+                draggedColumn?.id === column.id ? 'opacity-50 bg-accent/50' : ''
+              }`}
+            >
+              {/* Drop indicator line */}
+              {dropTargetId === column.id && (
+                <div
+                  className={`absolute left-0 right-0 h-0.5 bg-primary z-10 ${
+                    dragOverDirection === 'before' ? 'top-0' : 'bottom-0'
+                  }`}
+                />
+              )}
+              <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
+              <DropdownMenuCheckboxItem
+                className="capitalize cursor-pointer flex-1"
+                checked={column.getIsVisible()}
+                onSelect={(e) => e.preventDefault()}
+                onCheckedChange={(value) =>
+                  handleVisibilityChange(column.id, !!value)
+                }
               >
-                {/* Drop indicator line */}
-                {dropTargetId === column.id && (
-                  <div
-                    className={`absolute left-0 right-0 h-0.5 bg-primary z-10 ${
-                      dragOverDirection === 'before' ? 'top-0' : 'bottom-0'
-                    }`}
-                  />
-                )}
-                <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab mr-1" />
-                <DropdownMenuCheckboxItem
-                  className="capitalize cursor-pointer flex-1"
-                  checked={column.getIsVisible()}
-                  onSelect={(e) => e.preventDefault()}
-                  onCheckedChange={(value) =>
-                    handleVisibilityChange(column.id, !!value)
-                  }
-                >
-                  {toTitleCase(column.id)}
-                </DropdownMenuCheckboxItem>
-              </div>
-            ))}
+                {toTitleCase(column.id)}
+              </DropdownMenuCheckboxItem>
+            </div>
+          ))}
         </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>

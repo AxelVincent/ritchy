@@ -1,30 +1,27 @@
-import { useEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
+import type { EnrichmentStatusData } from '@ritchy/types'
 import type { ReactNode } from 'react'
 import { EnrichmentCellIndicator } from './EnrichmentCellIndicator'
 
 interface EnrichmentCellProps {
   userPlaceId: string
+  status: EnrichmentStatusData | undefined
   children: ReactNode
 }
 
 /**
- * Wrapper component for enrichment cells that automatically queries and displays
- * real-time enrichment status via WebSocket.
+ * Wrapper component for enrichment cells that displays enrichment status.
  *
- * Benefits:
- * - Each cell manages its own status query (shared cache)
- * - Automatic WebSocket subscription with self-correcting polling fallback
- * - Only re-renders when this specific cell's status changes
- * - No need for DataTable-level batch queries or active tracking
+ * Performance optimized:
+ * - No individual queries per cell (uses batch status from parent)
+ * - No WebSocket subscriptions per cell (managed at DataTable level)
+ * - Only re-renders when status prop changes
+ * - Supports virtualized lists with thousands of rows
  */
 export const EnrichmentCell = ({
-  userPlaceId,
+  userPlaceId: _userPlaceId,
+  status,
   children,
 }: EnrichmentCellProps) => {
-  // Query individual enrichment status (cached by TanStack Query)
-  // WebSocket provides real-time updates, HTTP polling activates automatically if WebSocket fails
-  const { data: status } = useEnrichmentStatus(userPlaceId)
-
   return (
     <EnrichmentCellIndicator status={status}>
       {children}

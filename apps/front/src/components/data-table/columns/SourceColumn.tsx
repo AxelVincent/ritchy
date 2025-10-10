@@ -8,4 +8,5 @@ export const sourceColumn: ColumnDef<SearchResult> = createTextColumn({
   title: 'Source',
   size: 120,
   filterVariant: 'multi-select',
+  defaultVisible: false,
 })

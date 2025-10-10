@@ -99,7 +99,10 @@ export const websiteEnrichmentManager = async ({
       jobId,
     )
     jobTracker.updateProgress(jobId, 'Validating enrichment credits')
-    await consumeCredits(userId, ENRICHMENT_CREDITS)
+    await Promise.all([
+      consumeCredits(userId, ENRICHMENT_CREDITS),
+      setUserPlaceAsEnriched(userPlaceId),
+    ])
 
     // Step 4: Check existing enrichment (8-10%)
     await setEnrichmentStatus(
@@ -161,13 +164,10 @@ export const websiteEnrichmentManager = async ({
         )
         jobTracker.updateProgress(jobId, 'Generating contact details')
 
-        await Promise.all([
-          populateContactFromEnrichment({
-            enrichmentId: existingEnrichment.id,
-            userPlaceId,
-          }),
-          setUserPlaceAsEnriched(userPlaceId),
-        ])
+        await populateContactFromEnrichment({
+          enrichmentId: existingEnrichment.id,
+          userPlaceId,
+        })
 
         await setEnrichmentStatus(
           userPlaceId,
@@ -761,7 +761,6 @@ export const websiteEnrichmentManager = async ({
         enrichmentId: insertedEnrichment.id,
         userPlaceId,
       }),
-      setUserPlaceAsEnriched(userPlaceId),
     ])
 
     await setEnrichmentStatus(
@@ -841,7 +840,6 @@ export const websiteEnrichmentManager = async ({
     // Only update enrichment record if we have an insertedEnrichment
     const updatePromises = [
       refundCredits(userId, ENRICHMENT_CREDITS),
-      setUserPlaceAsEnriched(userPlaceId),
       db
         .update(enrichmentTable)
         .set({

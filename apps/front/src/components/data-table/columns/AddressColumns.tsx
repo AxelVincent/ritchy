@@ -35,6 +35,7 @@ export const sublocalityColumn: ColumnDef<SearchResult> = createTextColumn({
   title: 'Sublocality',
   size: 200,
   filterVariant: 'multi-select',
+  defaultVisible: false,
 })
 
 export const postalCodeColumn: ColumnDef<SearchResult> = createTextColumn({
@@ -52,6 +53,7 @@ export const postalCodeSuffixColumn: ColumnDef<SearchResult> = createTextColumn(
     title: 'Postal Code Suffix',
     size: 200,
     filterVariant: 'multi-select',
+    defaultVisible: false,
   },
 )
 
@@ -61,6 +63,7 @@ export const plusCodeColumn: ColumnDef<SearchResult> = createTextColumn({
   title: 'Plus Code',
   size: 200,
   filterVariant: 'multi-select',
+  defaultVisible: false,
 })
 
 export const streetColumn: ColumnDef<SearchResult> = createTextColumn({
@@ -69,6 +72,7 @@ export const streetColumn: ColumnDef<SearchResult> = createTextColumn({
   title: 'Street',
   size: 200,
   filterVariant: 'text',
+  defaultVisible: false,
 })
 
 export const neighborhoodColumn: ColumnDef<SearchResult> = createTextColumn({
@@ -77,6 +81,7 @@ export const neighborhoodColumn: ColumnDef<SearchResult> = createTextColumn({
   title: 'Neighborhood',
   size: 200,
   filterVariant: 'multi-select',
+  defaultVisible: false,
 })
 
 export const administrativeAreaLevel1Column: ColumnDef<SearchResult> =
@@ -86,6 +91,7 @@ export const administrativeAreaLevel1Column: ColumnDef<SearchResult> =
     title: 'Administ. Area Level 1',
     size: 200,
     filterVariant: 'multi-select',
+    defaultVisible: false,
   })
 
 export const administrativeAreaLevel2Column: ColumnDef<SearchResult> =
@@ -95,6 +101,7 @@ export const administrativeAreaLevel2Column: ColumnDef<SearchResult> =
     title: 'Administ. Area Level 2',
     size: 200,
     filterVariant: 'multi-select',
+    defaultVisible: false,
   })
 
 export const administrativeAreaLevel3Column: ColumnDef<SearchResult> =
@@ -104,4 +111,5 @@ export const administrativeAreaLevel3Column: ColumnDef<SearchResult> =
     title: 'Administ. Area Level 3',
     size: 200,
     filterVariant: 'multi-select',
+    defaultVisible: false,
   })

@@ -55,8 +55,8 @@ const EnrichmentActionButtonComponent = ({
 
   // Memoize button state to avoid recreating objects on every render
   const buttonState = useMemo(() => {
-    // Live status takes highest priority (includes optimistic updates)
-    // This prevents glitches when switching between enriching different rows
+    // Live status takes priority ONLY for queued and processing states
+    // For completed/failed, fall back to enrichedStatus from database
     if (liveStatus) {
       switch (liveStatus.status) {
         case 'queued':
@@ -83,39 +83,7 @@ const EnrichmentActionButtonComponent = ({
             variant: 'ghost' as const,
             disabled: true,
           }
-        case 'completed': {
-          // Check if enrichment completed within last 30 minutes
-          const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000
-          const isRecentlyCompleted = liveStatus.updatedAt > thirtyMinutesAgo
-
-          return {
-            icon: (
-              <Sparkles
-                style={{ width: '14px', height: '14px' }}
-                className={
-                  isRecentlyCompleted ? 'text-purple-600' : 'text-blue-600'
-                }
-              />
-            ),
-            tooltip: isRecentlyCompleted
-              ? 'Recently enriched - click to re-enrich'
-              : 'Previously enriched - click to re-enrich',
-            variant: 'ghost' as const,
-            disabled: false,
-          }
-        }
-        case 'failed':
-          return {
-            icon: (
-              <XCircle
-                style={{ width: '14px', height: '14px' }}
-                className="text-red-500"
-              />
-            ),
-            tooltip: liveStatus.error || 'Enrichment failed - click to retry',
-            variant: 'ghost' as const,
-            disabled: false,
-          }
+        // Remove 'completed' and 'failed' cases - let them fall through to enrichedStatus
       }
     }
 

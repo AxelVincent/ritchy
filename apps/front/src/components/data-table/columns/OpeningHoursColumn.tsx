@@ -22,6 +22,9 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
   accessorKey: 'openingHours',
   size: 200,
   enableColumnFilter: false,
+  meta: {
+    defaultVisible: false,
+  },
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Opening Hours" />
   ),
