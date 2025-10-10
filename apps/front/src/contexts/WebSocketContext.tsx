@@ -208,6 +208,13 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
               data.status === 'failed' ||
               data.progress === 100
             ) {
+              const now = Date.now()
+              const completionAge = now - data.updatedAt
+              const isRecentCompletion = completionAge < 1000 // 1 seconds
+              if (!isRecentCompletion) {
+                debugLog('[WS Context] Skipping refetch for old completion')
+                return
+              }
               debugLog(
                 '[WS Context] Enrichment finished, updating place optimistically:',
                 {
