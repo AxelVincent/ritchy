@@ -50,12 +50,14 @@ export const PhonesList = ({
           className="flex items-center gap-2 truncate"
         >
           <CopyCell content={phoneObj.phone} />
-          <Badge
-            variant={getPhoneTypeVariant(phoneObj.type)}
-            className="ml-2 text-[10px]"
-          >
-            {formatPhoneType(phoneObj.type)}
-          </Badge>
+          {phoneObj.type && (
+            <Badge
+              variant={getPhoneTypeVariant(phoneObj.type)}
+              className="ml-2 text-[10px]"
+            >
+              {formatPhoneType(phoneObj.type)}
+            </Badge>
+          )}
           {phoneObj.isPrimary && (
             <Star
               className="h-4 w-4 flex-shrink-0 text-yellow-400"

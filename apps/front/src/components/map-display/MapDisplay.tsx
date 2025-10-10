@@ -14,7 +14,7 @@ import type { RowSelectionState } from '@tanstack/react-table'
 import { ListIcon, MapIcon, Maximize2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
-import { SelectedPlaceCard } from './components/map_box/place-details/SelectedPlaceCard'
+import { SelectedPlaceCard } from '../place-details/SelectedPlaceCard'
 import { useMapStore } from './store/useMapStore'
 
 interface MapDisplayProps {

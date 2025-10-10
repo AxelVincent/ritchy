@@ -1,8 +1,8 @@
 import { usePostContactEmail } from '@/api/mutations/contacts/usePostContactEmail'
 import { EmailDisplay } from '@/components/contact/EmailDisplay'
 import { PhonesList } from '@/components/data-table/columns/utils/PhonesList'
+import { SocialMediaList } from '@/components/data-table/columns/utils/SocialMediaList'
 import type { Place } from '@ritchy/types'
-import { SocialMediaList } from '../../../../../data-table/columns/utils/SocialMediaList'
 import { EMPTY_MESSAGE } from '../SelectedPlaceCard'
 
 export const PlaceContactTab = ({ place }: { place: Place }) => {

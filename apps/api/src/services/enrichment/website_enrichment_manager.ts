@@ -91,26 +91,15 @@ export const websiteEnrichmentManager = async ({
 
   try {
     // Step 3: Credit validation (5-8%)
-    if (place.user_place.enriched_at !== null) {
-      await setEnrichmentStatus(
-        userPlaceId,
-        'processing',
-        'Validating enrichment credits',
-        5,
-        jobId,
-      )
-      jobTracker.updateProgress(jobId, 'Validating enrichment credits')
-
-      await setEnrichmentStatus(
-        userPlaceId,
-        'processing',
-        'Processing enrichment request',
-        7,
-        jobId,
-      )
-      jobTracker.updateProgress(jobId, 'Processing enrichment request')
-      await consumeCredits(userId, ENRICHMENT_CREDITS)
-    }
+    await setEnrichmentStatus(
+      userPlaceId,
+      'processing',
+      'Processing enrichment request',
+      7,
+      jobId,
+    )
+    jobTracker.updateProgress(jobId, 'Validating enrichment credits')
+    await consumeCredits(userId, ENRICHMENT_CREDITS)
 
     // Step 4: Check existing enrichment (8-10%)
     await setEnrichmentStatus(

@@ -119,7 +119,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
             </TabsTrigger>
             <TabsTrigger
               value="company_details"
-              aria-label="Description"
+              aria-label="company_details"
               className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
             >
               Company Details

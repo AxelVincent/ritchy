@@ -166,6 +166,10 @@ describe('DataExport', () => {
         shortDescription: 'Test Short Description',
         isDeleted: false,
         enrichedStatus: 'RECENTLY_ENRICHED',
+        companyWorkforceRange: null,
+        companyDateOfCreation: null,
+        companyActivities: [],
+        companyOfficers: [],
       },
     ]
 
@@ -283,6 +287,10 @@ describe('DataExport', () => {
         shortDescription: 'Test Short Description',
         isDeleted: false,
         enrichedStatus: 'RECENTLY_ENRICHED',
+        companyWorkforceRange: null,
+        companyDateOfCreation: null,
+        companyActivities: [],
+        companyOfficers: [],
       },
     ]
 

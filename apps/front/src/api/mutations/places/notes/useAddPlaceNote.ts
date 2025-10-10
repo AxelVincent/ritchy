@@ -1,17 +1,21 @@
 import { listContentKeys } from '@/api/queries/lists/useListContent'
+import { placeKeys } from '@/api/queries/places/usePlace'
 import { searchContentKeys } from '@/api/queries/search/useSearchContent'
-import { useApiMutation } from '@/hooks/useApi'
+import { useApiMutation, webApiClient } from '@/hooks/useApi'
+import { useAuth } from '@clerk/clerk-react'
 import type {
   AddNoteApiResponse,
   AddNoteRequest,
-  GetListContentResponse,
-  GetSearchContentResponse,
+  GetListContentApiResponse,
+  GetPlaceApiResponse,
+  GetSearchContentApiResponse,
   Note,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useAddPlaceNote = () => {
   const queryClient = useQueryClient()
+  const { getToken } = useAuth()
 
   return useApiMutation<
     AddNoteApiResponse,
@@ -19,29 +23,19 @@ export const useAddPlaceNote = () => {
   >('/places/:userPlaceId/notes', {
     getEndpoint: ({ userPlaceId }) => `/places/${userPlaceId}/notes`,
     getBody: ({ note }) => ({ note }),
-    onMutate: async ({ userPlaceId, note, listId }) => {
-      // Cancel any outgoing refetches
+    onMutate: async ({ userPlaceId, note }) => {
+      // Cancel any outgoing refetches for notes
       await queryClient.cancelQueries({
         queryKey: ['notes', 'place', userPlaceId],
         exact: true,
       })
-      if (listId) {
-        await queryClient.cancelQueries({
-          queryKey: listContentKeys.list(listId),
-        })
-      }
 
-      // Snapshot previous values
+      // Snapshot previous notes
       const previousNotes = queryClient.getQueryData<Note[]>([
         'notes',
         'place',
         userPlaceId,
       ])
-      const previousList = listId
-        ? queryClient.getQueryData<GetListContentResponse>(
-            listContentKeys.list(listId),
-          )
-        : undefined
 
       // Create optimistic note
       const optimisticNote: Note = {
@@ -53,70 +47,104 @@ export const useAddPlaceNote = () => {
         updatedAt: new Date(),
       }
 
-      // Update notes query
+      // Update notes query optimistically
       queryClient.setQueryData<Note[]>(
         ['notes', 'place', userPlaceId],
         (old = []) => [optimisticNote, ...old],
       )
 
-      // Update list content if applicable
-      if (previousList && listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(listId),
-          (oldData: GetListContentResponse) => {
-            return {
-              ...oldData,
-              items: oldData.items.map((place) => {
-                if (place.id === userPlaceId) {
-                  return {
-                    ...place,
-                    notes: [optimisticNote, ...(place.notes || [])],
-                  }
-                }
-                return place
-              }),
-            }
-          },
-        )
-      }
-
-      return { previousNotes, previousList, listId }
+      return { previousNotes }
     },
     onError: (_, variables, context: unknown) => {
       const typedContext = context as {
         previousNotes?: Note[]
-        previousSearch?: GetSearchContentResponse
-        previousList?: GetListContentResponse
-        searchId?: string
-        listId?: string
       }
 
-      // Rollback all optimistic updates on error
+      // Rollback notes on error
       if (typedContext.previousNotes) {
         queryClient.setQueryData(
           ['notes', 'place', variables.userPlaceId],
           typedContext.previousNotes,
         )
       }
-      if (typedContext.searchId) {
-        queryClient.setQueryData(
-          searchContentKeys.search(typedContext.searchId),
-          typedContext.previousSearch,
-        )
-      }
-      if (typedContext.listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(typedContext.listId),
-          typedContext.previousList,
-        )
-      }
     },
-    onSuccess: (_, { userPlaceId }) => {
-      // Invalidate the notes query to get the real server data
-      queryClient.invalidateQueries({
-        queryKey: ['notes', 'place', userPlaceId],
-        exact: true,
-      })
+    onSuccess: async (_, { userPlaceId }) => {
+      try {
+        // Fetch fresh place data with updated notes
+        const token = await getToken()
+        const placeData = await queryClient.fetchQuery<GetPlaceApiResponse>({
+          queryKey: placeKeys.place(userPlaceId),
+          queryFn: async () => {
+            return webApiClient.fetchWithAuth<GetPlaceApiResponse>(
+              `/places/${userPlaceId}`,
+              { method: 'GET' },
+              token,
+            )
+          },
+          staleTime: 0,
+        })
+
+        if ('error' in placeData) {
+          throw new Error('Failed to fetch updated place')
+        }
+
+        const updatedPlace = placeData.place
+
+        // Update all list content queries
+        queryClient.setQueriesData<GetListContentApiResponse>(
+          { queryKey: listContentKeys.all },
+          (oldData) => {
+            if (!oldData || 'error' in oldData) return oldData
+
+            const placeIndex = oldData.items.findIndex(
+              (p) => p.id === userPlaceId,
+            )
+            if (placeIndex === -1) return oldData
+
+            const newItems = [...oldData.items]
+            newItems[placeIndex] = updatedPlace
+
+            return {
+              ...oldData,
+              items: newItems,
+            }
+          },
+        )
+
+        // Update all search content queries
+        queryClient.setQueriesData<GetSearchContentApiResponse>(
+          { queryKey: searchContentKeys.all },
+          (oldData) => {
+            if (!oldData || 'error' in oldData) return oldData
+
+            const placeIndex = oldData.findIndex((p) => p.id === userPlaceId)
+            if (placeIndex === -1) return oldData
+
+            const newPlaces = [...oldData]
+            newPlaces[placeIndex] = updatedPlace
+
+            return newPlaces
+          },
+        )
+
+        // Invalidate notes query to get fresh data
+        queryClient.invalidateQueries({
+          queryKey: ['notes', 'place', userPlaceId],
+          exact: true,
+        })
+      } catch (error) {
+        console.error(
+          '[useAddPlaceNote] Failed to update optimistically:',
+          error,
+        )
+        // Fallback: invalidate queries
+        queryClient.invalidateQueries({ queryKey: listContentKeys.all })
+        queryClient.invalidateQueries({ queryKey: searchContentKeys.all })
+        queryClient.invalidateQueries({
+          queryKey: ['notes', 'place', userPlaceId],
+          exact: true,
+        })
+      }
     },
   })
 }

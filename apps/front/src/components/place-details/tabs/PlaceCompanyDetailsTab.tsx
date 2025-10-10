@@ -1,5 +1,6 @@
 import { useEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { usePlaceEnrichmentQuery } from '@/api/queries/places/enrichment/usePlaceEnrichment'
+import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useEnrichmentMutation } from '@/contexts/EnrichmentMutationContext'
+import { cn } from '@/lib/utils'
 import type { Financial, Place } from '@ritchy/types'
 import {
   ChevronDown,
@@ -26,7 +28,7 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 const FinancialsTable = ({ financials }: { financials: Financial }) => {
@@ -189,8 +191,48 @@ const FinancialsTable = ({ financials }: { financials: Financial }) => {
   )
 }
 
-const JsonViewer = ({ data, level = 0 }: { data: unknown; level?: number }) => {
-  const [isOpen, setIsOpen] = useState(level < 2)
+const JsonViewer = ({
+  data,
+  level = 0,
+  focusPath = null,
+  currentPath = '',
+}: {
+  data: unknown
+  level?: number
+  focusPath?: string | null
+  currentPath?: string
+}) => {
+  // Check if this path matches the focus path or is a parent/child of it
+  const shouldAutoExpand =
+    focusPath &&
+    // Exact match
+    (focusPath === currentPath ||
+      // This is a parent of the focus path
+      (currentPath === ''
+        ? focusPath.includes('.')
+        : focusPath.startsWith(`${currentPath}.`)) ||
+      // This is a direct child of the focus path (e.g., focusPath is 'company.officers', currentPath is 'company.officers[0]')
+      currentPath.startsWith(`${focusPath}[`))
+
+  const [isOpen, setIsOpen] = useState(level < 2 || !!shouldAutoExpand)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Auto-expand if this is in the focus path
+  useEffect(() => {
+    if (shouldAutoExpand) {
+      setIsOpen(true)
+
+      // If this is the exact field, scroll to it
+      if (focusPath === currentPath && containerRef.current) {
+        setTimeout(() => {
+          containerRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          })
+        }, 500) // Increased timeout to allow all nested collapsibles to open
+      }
+    }
+  }, [focusPath, currentPath, shouldAutoExpand])
 
   // Helper function to check if a value is empty
   const isEmpty = (value: unknown): boolean => {
@@ -272,7 +314,12 @@ const JsonViewer = ({ data, level = 0 }: { data: unknown; level?: number }) => {
       )
     }
 
-    return <span className="text-green-600 dark:text-green-400">"{data}"</span>
+    // Regular string - make it wrap properly
+    return (
+      <span className="text-green-600 dark:text-green-400 break-all">
+        "{data}"
+      </span>
+    )
   }
 
   if (typeof data === 'number') {
@@ -292,37 +339,54 @@ const JsonViewer = ({ data, level = 0 }: { data: unknown; level?: number }) => {
     const nonEmptyItems = data.filter((item) => !isEmpty(item))
     if (nonEmptyItems.length === 0) return null
 
-    return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1 hover:bg-muted/50 rounded px-1">
-          {isOpen ? (
-            <ChevronDown className="h-3 w-3" />
-          ) : (
-            <ChevronRight className="h-3 w-3" />
-          )}
-          <span className="text-muted-foreground">
-            [{nonEmptyItems.length} items]
-          </span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="ml-4 border-l border-muted pl-2 mt-1">
-          {nonEmptyItems
-            .map((item, index) => {
-              const renderedItem = <JsonViewer data={item} level={level + 1} />
-              // Only render if the item produces content
-              if (renderedItem === null) return null
+    const isExactMatch = focusPath === currentPath
 
-              return (
-                <div key={`${index + level}`} className="py-1">
-                  <span className="text-muted-foreground text-xs mr-2">
-                    {index}:
-                  </span>
-                  {renderedItem}
-                </div>
-              )
-            })
-            .filter(Boolean)}
-        </CollapsibleContent>
-      </Collapsible>
+    return (
+      <div
+        ref={isExactMatch ? containerRef : null}
+        className={cn(
+          'max-w-full overflow-x-auto',
+          isExactMatch && 'bg-blue-500/10 ring-2 ring-blue-500 rounded-md p-2',
+        )}
+      >
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger className="flex items-center gap-1 hover:bg-muted/50 rounded px-1">
+            {isOpen ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+            <span className="text-muted-foreground">
+              [{nonEmptyItems.length} items]
+            </span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="ml-4 border-l border-muted pl-2 mt-1">
+            {nonEmptyItems
+              .map((item, index) => {
+                const itemPath = `${currentPath}[${index}]`
+                const renderedItem = (
+                  <JsonViewer
+                    data={item}
+                    level={level + 1}
+                    focusPath={focusPath}
+                    currentPath={itemPath}
+                  />
+                )
+                if (renderedItem === null) return null
+
+                return (
+                  <div key={`${index + level}`} className="py-1">
+                    <span className="text-muted-foreground text-xs mr-2">
+                      {index}:
+                    </span>
+                    {renderedItem}
+                  </div>
+                )
+              })
+              .filter(Boolean)}
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
     )
   }
 
@@ -341,7 +405,83 @@ const JsonViewer = ({ data, level = 0 }: { data: unknown; level?: number }) => {
         (key) => !isEmpty(otherData[key]),
       )
 
+      const isExactMatch = focusPath === currentPath
+
       return (
+        <div
+          ref={isExactMatch ? containerRef : null}
+          className={cn(
+            'max-w-full overflow-x-auto',
+            isExactMatch &&
+              'bg-blue-500/10 ring-2 ring-blue-500 rounded-md p-2',
+          )}
+        >
+          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <CollapsibleTrigger className="flex items-center gap-1 hover:bg-muted/50 rounded px-1">
+              {isOpen ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+              <span className="text-muted-foreground">{`{${nonEmptyKeys.length + 1} keys}`}</span>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="ml-4 border-l border-muted pl-2 mt-1">
+              {/* Render all other data first */}
+              {nonEmptyKeys
+                .map((key) => {
+                  const fieldPath = currentPath ? `${currentPath}.${key}` : key
+                  const renderedValue = (
+                    <JsonViewer
+                      data={otherData[key]}
+                      level={level + 1}
+                      focusPath={focusPath}
+                      currentPath={fieldPath}
+                    />
+                  )
+                  if (renderedValue === null) return null
+
+                  return (
+                    <div key={key} className="py-1">
+                      <span className="text-orange-600 dark:text-orange-400 font-medium mr-2">
+                        "{key}":
+                      </span>
+                      {renderedValue}
+                    </div>
+                  )
+                })
+                .filter(Boolean)}
+
+              {/* Render financials last with special formatting */}
+              <div className="py-1">
+                <span className="text-orange-600 dark:text-orange-400 font-medium mr-2">
+                  "financials":
+                </span>
+                <div className="mt-2">
+                  <FinancialsTable financials={financials as Financial} />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )
+    }
+
+    // Regular object handling for objects without financials
+    const nonEmptyKeys = Object.keys(data).filter(
+      (key) => !isEmpty(data[key as keyof typeof data]),
+    )
+    if (nonEmptyKeys.length === 0) return null
+
+    const isExactMatch = focusPath === currentPath
+
+    return (
+      <div
+        ref={isExactMatch ? containerRef : null}
+        className={cn(
+          'max-w-full overflow-x-auto',
+          isExactMatch && 'bg-blue-500/10 ring-2 ring-blue-500 rounded-md p-2',
+        )}
+      >
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <CollapsibleTrigger className="flex items-center gap-1 hover:bg-muted/50 rounded px-1">
             {isOpen ? (
@@ -349,14 +489,19 @@ const JsonViewer = ({ data, level = 0 }: { data: unknown; level?: number }) => {
             ) : (
               <ChevronRight className="h-3 w-3" />
             )}
-            <span className="text-muted-foreground">{`{${nonEmptyKeys.length + 1} keys}`}</span>
+            <span className="text-muted-foreground">{`{${nonEmptyKeys.length} keys}`}</span>
           </CollapsibleTrigger>
           <CollapsibleContent className="ml-4 border-l border-muted pl-2 mt-1">
-            {/* Render all other data first */}
             {nonEmptyKeys
               .map((key) => {
+                const fieldPath = currentPath ? `${currentPath}.${key}` : key
                 const renderedValue = (
-                  <JsonViewer data={otherData[key]} level={level + 1} />
+                  <JsonViewer
+                    data={data[key as keyof typeof data]}
+                    level={level + 1}
+                    focusPath={focusPath}
+                    currentPath={fieldPath}
+                  />
                 )
                 if (renderedValue === null) return null
 
@@ -370,60 +515,9 @@ const JsonViewer = ({ data, level = 0 }: { data: unknown; level?: number }) => {
                 )
               })
               .filter(Boolean)}
-
-            {/* Render financials last with special formatting */}
-            <div className="py-1">
-              <span className="text-orange-600 dark:text-orange-400 font-medium mr-2">
-                "financials":
-              </span>
-              <div className="mt-2">
-                <FinancialsTable financials={financials as Financial} />
-              </div>
-            </div>
           </CollapsibleContent>
         </Collapsible>
-      )
-    }
-
-    // Regular object handling for objects without financials
-    const nonEmptyKeys = Object.keys(data).filter(
-      (key) => !isEmpty(data[key as keyof typeof data]),
-    )
-    if (nonEmptyKeys.length === 0) return null
-
-    return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1 hover:bg-muted/50 rounded px-1">
-          {isOpen ? (
-            <ChevronDown className="h-3 w-3" />
-          ) : (
-            <ChevronRight className="h-3 w-3" />
-          )}
-          <span className="text-muted-foreground">{`{${nonEmptyKeys.length} keys}`}</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="ml-4 border-l border-muted pl-2 mt-1">
-          {nonEmptyKeys
-            .map((key) => {
-              const renderedValue = (
-                <JsonViewer
-                  data={data[key as keyof typeof data]}
-                  level={level + 1}
-                />
-              )
-              if (renderedValue === null) return null
-
-              return (
-                <div key={key} className="py-1">
-                  <span className="text-orange-600 dark:text-orange-400 font-medium mr-2">
-                    "{key}":
-                  </span>
-                  {renderedValue}
-                </div>
-              )
-            })
-            .filter(Boolean)}
-        </CollapsibleContent>
-      </Collapsible>
+      </div>
     )
   }
 
@@ -434,6 +528,7 @@ export const PlaceCompanyDetailsTab = ({ place }: { place: Place }) => {
   const { data, isLoading, error } = usePlaceEnrichmentQuery(place.id)
   const { data: enrichmentStatus } = useEnrichmentStatus(place.id)
   const mutation = useEnrichmentMutation()
+  const { focusField } = useMapStore()
 
   const handleEnrich = () => {
     mutation.mutate({ userPlaceId: place.id })
@@ -564,7 +659,10 @@ export const PlaceCompanyDetailsTab = ({ place }: { place: Place }) => {
   return (
     <div className="h-full flex flex-col">
       <ScrollArea className="flex-1">
-        <JsonViewer data={data} />
+        <div className="pr-4 max-w-full overflow-x-auto">
+          <JsonViewer data={data} focusPath={focusField} />{' '}
+          {/* Pass focusField */}
+        </div>
       </ScrollArea>
     </div>
   )

@@ -1,13 +1,19 @@
 import { enrichmentStatusKeys } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { listContentKeys } from '@/api/queries/lists/useListContent'
 import { placeEnrichmentKeys } from '@/api/queries/places/enrichment/usePlaceEnrichment'
+import { placeKeys } from '@/api/queries/places/usePlace'
+import { searchContentKeys } from '@/api/queries/search/useSearchContent'
 import { userKeys } from '@/api/queries/users/useUserMe'
+import { webApiClient } from '@/hooks/useApi'
 import { debugLog } from '@/lib/utils/debug-logging'
 import { useAuth } from '@clerk/clerk-react'
 import type {
   EnrichmentStatusResponse,
   EnrichmentWebSocketClientEvents,
   EnrichmentWebSocketServerEvents,
+  GetListContentApiResponse,
+  GetPlaceApiResponse,
+  GetSearchContentApiResponse,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -170,7 +176,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       // Handle status updates from server
       socket.on(
         'status-update',
-        (data: { userPlaceId: string } & EnrichmentStatusResponse) => {
+        async (data: { userPlaceId: string } & EnrichmentStatusResponse) => {
           try {
             debugLog('[WS Context] Received status update:', {
               userPlaceId: data.userPlaceId,
@@ -191,30 +197,107 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                 jobId: data.jobId,
               },
             )
+            if (data.progress >= 20) {
+              // Always invalidate user data to update credits/usage
+              queryClient.invalidateQueries({ queryKey: userKeys.me() })
+            }
 
-            // Invalidate queries when enrichment completes OR when progress reaches 100
-            // Centralized here to prevent duplicate invalidations across multiple components
+            // Optimistically update place data when enrichment completes
             if (
               data.status === 'completed' ||
               data.status === 'failed' ||
               data.progress === 100
             ) {
               debugLog(
-                '[WS Context] Enrichment finished, invalidating queries:',
+                '[WS Context] Enrichment finished, updating place optimistically:',
                 {
                   status: data.status,
                   progress: data.progress,
                   userPlaceId: data.userPlaceId,
                 },
               )
-
-              // Invalidate list content to fetch new enriched data
-              queryClient.invalidateQueries({ queryKey: listContentKeys.all })
-
-              // Invalidate user data to update credits/usage
+              // Always invalidate user data to update credits/usage
               queryClient.invalidateQueries({ queryKey: userKeys.me() })
+              try {
+                // Fetch fresh place data using queryClient.fetchQuery
+                const token = await getTokenRef.current()
+                const placeData =
+                  await queryClient.fetchQuery<GetPlaceApiResponse>({
+                    queryKey: placeKeys.place(data.userPlaceId),
+                    queryFn: async () => {
+                      return webApiClient.fetchWithAuth<GetPlaceApiResponse>(
+                        `/places/${data.userPlaceId}`,
+                        { method: 'GET' },
+                        token,
+                      )
+                    },
+                    staleTime: 0, // Always fetch fresh data
+                  })
 
-              // Invalidate place enrichment data to refresh company details
+                if ('error' in placeData) {
+                  throw new Error('Failed to fetch place')
+                }
+
+                const updatedPlace = placeData.place
+
+                // Update all list content queries that contain this place
+                queryClient.setQueriesData<GetListContentApiResponse>(
+                  { queryKey: listContentKeys.all },
+                  (oldData) => {
+                    if (!oldData || 'error' in oldData) return oldData
+
+                    const placeIndex = oldData.items.findIndex(
+                      (p) => p.id === data.userPlaceId,
+                    )
+
+                    if (placeIndex === -1) return oldData
+
+                    const newItems = [...oldData.items]
+                    newItems[placeIndex] = updatedPlace
+
+                    return {
+                      ...oldData,
+                      items: newItems,
+                    }
+                  },
+                )
+
+                // Update all search content queries that contain this place
+                // GetSearchContentApiResponse is an array of places
+                queryClient.setQueriesData<GetSearchContentApiResponse>(
+                  { queryKey: searchContentKeys.all },
+                  (oldData) => {
+                    if (!oldData || 'error' in oldData) return oldData
+
+                    const placeIndex = oldData.findIndex(
+                      (p) => p.id === data.userPlaceId,
+                    )
+
+                    if (placeIndex === -1) return oldData
+
+                    const newPlaces = [...oldData]
+                    newPlaces[placeIndex] = updatedPlace
+
+                    return newPlaces
+                  },
+                )
+
+                debugLog(
+                  '[WS Context] Optimistic update completed successfully',
+                )
+              } catch (error) {
+                console.error(
+                  '[WS Context] Failed to fetch updated place, falling back to invalidation:',
+                  error,
+                )
+                // Fallback: invalidate queries if optimistic update fails
+                queryClient.invalidateQueries({ queryKey: listContentKeys.all })
+                queryClient.invalidateQueries({
+                  queryKey: searchContentKeys.all,
+                })
+              }
+
+              // Always invalidate place enrichment data to refresh company details
               queryClient.invalidateQueries({
                 queryKey: placeEnrichmentKeys.place(data.userPlaceId),
               })

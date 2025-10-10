@@ -106,6 +106,24 @@ const paginatedSearch = async (
             perPage: resultsThreshold,
           })
 
+    // Check if the result is an error response
+    if (
+      !pageResults ||
+      !pageResults.results ||
+      !Array.isArray(pageResults.results)
+    ) {
+      logger.warn({
+        msg: '[pappers] Invalid or error response from paginated search',
+        event: 'paginated_search_invalid_response',
+        metadata: {
+          page: currentPage,
+          query: searchParams.q,
+          pageResults,
+        },
+      })
+      break // Exit pagination loop on error
+    }
+
     if (pageResults.results.length === 0) {
       break
     }
