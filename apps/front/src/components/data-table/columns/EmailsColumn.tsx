@@ -1,7 +1,7 @@
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ContactEmailCell } from './utils/ColumnCells'
+import { type BadgeConfig, SimpleArrayCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const emailsColumn: ColumnDef<SearchResult> = {
@@ -19,18 +19,36 @@ export const emailsColumn: ColumnDef<SearchResult> = {
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Emails" />,
   cell: ({ row }) => {
-    const emails = row.original.contactEmails || []
+    const emails = row.original.contactEmails?.map((e) => e.email) || []
     const { selectPlaceAndTab } = useMapStore()
 
-    const handleClick = () => {
-      selectPlaceAndTab(row.original.id, 'contact')
+    const getBadge = (email: string): BadgeConfig => {
+      const emailObj = row.original.contactEmails?.find(
+        (e) => e.email === email,
+      )
+      const quality = emailObj?.quality
+
+      if (!quality || quality === 'unknown') return null
+
+      const colorMap = {
+        good: 'green' as const,
+        risky: 'yellow' as const,
+        bad: 'red' as const,
+      }
+
+      return {
+        text: quality,
+        color: colorMap[quality],
+      }
     }
 
     return (
-      <ContactEmailCell
-        id={row.original.id}
-        emails={emails}
-        onClick={handleClick}
+      <SimpleArrayCell
+        items={emails}
+        itemLabel="more"
+        href={(email) => `mailto:${email}`}
+        onClick={() => selectPlaceAndTab(row.original.id, 'contact')}
+        getBadge={getBadge}
       />
     )
   },

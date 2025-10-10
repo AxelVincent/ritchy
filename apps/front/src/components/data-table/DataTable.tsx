@@ -1,7 +1,6 @@
 import { DataExport } from '@/components/data-export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
-import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -26,7 +25,8 @@ import { HubspotSyncManagementButtons } from '../integrations/hubspot/HubspotSyn
 import { ListManagementButtons } from '../lists/ListManagementButtons'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
-import { EnrichmentButtons } from './EnrichmentButtons'
+import { EnrichmentButtons } from './enrich/EnrichmentButtons'
+import { EnrichmentCell } from './enrich/EnrichmentCell'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -39,6 +39,7 @@ interface DataTableProps<TData, TValue> {
   searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
   storageKey?: string
+  isMobile?: boolean
 }
 
 // Add a fixed height for table rows
@@ -53,10 +54,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
   searchId,
   onFilteredDataChange,
   storageKey,
+  isMobile,
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId from the store
   const { selectedPlaceId } = useMapStore()
-  const isMobile = useIsMobile()
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -187,6 +188,9 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onFilteredDataChange(filteredIds)
   }, [table.getFilteredRowModel().rows, onFilteredDataChange])
 
+  // Note: Cleanup of completed enrichments is now handled automatically
+  // by useActiveEnrichments hook with event-driven timeouts (see useActiveEnrichments.ts:67-113)
+
   // If there are no visible columns, show a message
   if (visibleColumns.length === 0) {
     return (
@@ -202,8 +206,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
   return (
     <div className="flex flex-1 flex-col overflow-auto">
       <div className="flex flex-col space-y-2">
-        <div className="flex flex-row justify-between items-center p-4 gap-2 overflow-x-auto md:pl-2 pl-16 md:mt-0 mt-2">
-          <div className="flex gap-2">
+        <div className="flex flex-row justify-between items-center md:p-4 p-2 md:gap-2 gap-1 overflow-x-auto md:pl-2 pl-2">
+          <div className="flex md:gap-2 gap-1">
             <EnrichmentButtons
               table={table}
               listId={listId}
@@ -212,7 +216,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
             <ListManagementButtons table={table} listId={listId} />
             <HubspotSyncManagementButtons table={table} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex md:gap-2 gap-1">
             {!isMobile && (
               <DataExport
                 selectedRows={
@@ -316,78 +320,97 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     width: '100%',
                     height: ROW_HEIGHT,
                   }}
-                  className="border-b border-border"
+                  className="border-b border-border group/row hover:bg-accent/50"
                 >
-                  {visibleCells.map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={cn('border-r border-border relative', {
-                        'bg-background':
-                          cell.column.id === visibleCells[0].column.id,
-                        'bg-primary-foreground':
-                          selectedPlaceId === row.original.id,
-                      })}
-                      style={{
-                        display: 'flex',
-                        width: cell.column.getSize(),
-                        position:
-                          cell.column.id === visibleCells[0].column.id
-                            ? 'sticky'
-                            : 'relative',
-                        left:
-                          cell.column.id === visibleCells[0].column.id
-                            ? 0
-                            : undefined,
-                        zIndex:
-                          cell.column.id === visibleCells[0].column.id ? 1 : 0,
-                        alignItems: 'center',
-                      }}
-                    >
-                      {cell.column.columnDef.meta?.isEnrichment &&
-                        row.original.enrichedStatus && (
-                          <div className="absolute top-1 right-1">
-                            <Sparkles
-                              className={cn('h-2.5 w-2.5', {
-                                'text-purple-600':
+                  {visibleCells.map((cell) => {
+                    const isEnrichmentCell =
+                      cell.column.columnDef.meta?.isEnrichment
+
+                    return (
+                      <td
+                        key={cell.id}
+                        className={cn('border-r border-border relative', {
+                          'bg-background':
+                            cell.column.id === visibleCells[0].column.id,
+                          'bg-primary-foreground':
+                            selectedPlaceId === row.original.id,
+                        })}
+                        style={{
+                          display: 'flex',
+                          width: cell.column.getSize(),
+                          position:
+                            cell.column.id === visibleCells[0].column.id
+                              ? 'sticky'
+                              : 'relative',
+                          left:
+                            cell.column.id === visibleCells[0].column.id
+                              ? 0
+                              : undefined,
+                          zIndex:
+                            cell.column.id === visibleCells[0].column.id
+                              ? 1
+                              : 0,
+                          alignItems: 'center',
+                        }}
+                      >
+                        {isEnrichmentCell ? (
+                          <>
+                            <div className="absolute top-1 right-1">
+                              <Sparkles
+                                className={cn('h-2.5 w-2.5', {
+                                  'text-purple-600':
+                                    row.original.enrichedStatus ===
+                                    'RECENTLY_ENRICHED',
+                                  'text-blue-600':
+                                    row.original.enrichedStatus === 'ENRICHED',
+                                  'text-red-600':
+                                    row.original.enrichedStatus ===
+                                    'ENRICHMENT_ERROR',
+                                })}
+                                aria-label={
                                   row.original.enrichedStatus ===
-                                  'RECENTLY_ENRICHED',
-                                'text-blue-600':
-                                  row.original.enrichedStatus === 'ENRICHED',
-                                'text-red-600':
-                                  row.original.enrichedStatus ===
-                                  'ENRICHMENT_ERROR',
-                              })}
-                              aria-label={
-                                row.original.enrichedStatus ===
-                                'RECENTLY_ENRICHED'
-                                  ? 'Recently enriched'
-                                  : row.original.enrichedStatus === 'ENRICHED'
-                                    ? 'Previously enriched'
-                                    : 'Enrichment error'
-                              }
-                            />
-                          </div>
+                                  'RECENTLY_ENRICHED'
+                                    ? 'Recently enriched'
+                                    : row.original.enrichedStatus === 'ENRICHED'
+                                      ? 'Previously enriched'
+                                      : 'Enrichment error'
+                                }
+                              />
+                            </div>
+                            <EnrichmentCell userPlaceId={row.original.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </EnrichmentCell>
+                          </>
+                        ) : (
+                          <>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </>
                         )}
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
+                      </td>
+                    )
+                  })}
                 </tr>
               )
             })}
           </tbody>
         </table>
       </div>
-      <div className="flex justify-between items-center p-4 gap-4">
-        <Label className="flex-shrink-0">
-          {table.getRowModel().rows.length} Results
-        </Label>
-        <div className="flex-1 min-w-0">
-          <ActiveFilters table={table} />
+      {!isMobile && (
+        <div className="flex justify-between items-center p-4 gap-4">
+          <Label className="flex-shrink-0">
+            {table.getRowModel().rows.length} Results
+          </Label>
+          <div className="flex-1 min-w-0">
+            <ActiveFilters table={table} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -1,21 +1,11 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCopyCell } from './utils/ColumnCells'
-import { HeaderWrapper } from './utils/HeaderWrapper'
+import { createTextColumn } from './utils/createTextColumn'
 
-export const sourceIdColumn: ColumnDef<SearchResult> = {
+export const sourceIdColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'sourceId',
   accessorKey: 'sourceId',
+  title: 'Source ID',
   size: 150,
-  meta: {
-    filterVariant: 'text',
-  },
-  header: ({ column }) => {
-    return <HeaderWrapper column={column} title="Source ID" />
-  },
-  cell: ({ row }) => {
-    return (
-      <ColumnPinCopyCell id={row.original.id} content={row.original.sourceId} />
-    )
-  },
-}
+  filterVariant: 'text',
+})

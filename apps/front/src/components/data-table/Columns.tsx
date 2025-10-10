@@ -25,13 +25,15 @@ import { primaryTypeColumn } from './columns/PrimaryTypeColumn'
 import { ratingColumn } from './columns/RatingColumn'
 import { ratingCountColumn } from './columns/RatingCountColumn'
 
-import { selectColumn } from './columns/SelectColumn'
-
+import { actionColumn } from './columns/ActionColumn'
+import { activitiesColumn } from './columns/ActivitiesColumn'
+import { dateOfCreationColumn } from './columns/DateOfCreationColumn'
 import { domainRegistrationDateColumn } from './columns/DomainRegistrationDateColumn'
 import { emailsColumn } from './columns/EmailsColumn'
 import { facebookSocialsColumn } from './columns/FacebookSocialsColumn'
 import { instagramSocialsColumn } from './columns/InstagramSocialsColumn'
 import { linkedinSocialsColumn } from './columns/LinkedinSocialsColumn'
+import { officersColumn } from './columns/OfficersColumn'
 import { shortDescriptionColumn } from './columns/ShortDescriptionColumn'
 import { sourceColumn } from './columns/SourceColumn'
 import { sourceIdColumn } from './columns/SourceIdColumn'
@@ -39,16 +41,21 @@ import { sourceUrlColumn } from './columns/SourceUrlColumn'
 import { statusColumn } from './columns/StatusColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
+import { workforceRangeColumn } from './columns/WorkforceRangeColumn'
 
 // Compose the columns array
 export const columns: ColumnDef<SearchResult>[] = [
-  selectColumn,
+  actionColumn,
   nameColumn,
   statusColumn,
   notesColumn,
   websiteColumn,
   phoneColumn,
   shortDescriptionColumn,
+  workforceRangeColumn,
+  dateOfCreationColumn,
+  activitiesColumn,
+  officersColumn,
   emailsColumn,
   instagramSocialsColumn,
   linkedinSocialsColumn,

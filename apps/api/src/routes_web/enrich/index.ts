@@ -1,28 +1,28 @@
 import {
-  BatchEnrichmentRequestBodySchema,
-  BatchEnrichmentResponseApiResponseSchema,
-  EnrichmentJobStatusApiResponseSchema,
+  BulkEnrichmentApiResponseSchema,
+  BulkEnrichmentRequestBodySchema,
 } from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../middleware/zodValidation'
-import { batchEnrichWebsites, getEnrichmentJobStatus } from './enrich'
+import { bulkEnrich } from './bulk'
+import {
+  getBatchEnrichmentStatusHandler,
+  getEnrichmentStatusHandler,
+} from './status'
 
 const enrichRouter: Router = express.Router()
 
+// Status endpoints (must be before /bulk for route specificity)
+enrichRouter.get('/status/:userPlaceId', getEnrichmentStatusHandler)
+enrichRouter.get('/status', getBatchEnrichmentStatusHandler)
+
 enrichRouter.post(
-  '/batch',
+  '/bulk',
   validateRequest({
-    bodySchema: BatchEnrichmentRequestBodySchema,
-    responseSchema: BatchEnrichmentResponseApiResponseSchema,
+    bodySchema: BulkEnrichmentRequestBodySchema,
+    responseSchema: BulkEnrichmentApiResponseSchema,
   }),
-  batchEnrichWebsites,
-)
-enrichRouter.get(
-  '/job/:jobId/status',
-  validateRequest({
-    responseSchema: EnrichmentJobStatusApiResponseSchema,
-  }),
-  getEnrichmentJobStatus,
+  bulkEnrich,
 )
 
 export default enrichRouter

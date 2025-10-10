@@ -222,29 +222,66 @@ export const EmailSchema = z.object({
 export type Email = z.infer<typeof EmailSchema>
 
 const PhoneSchema = z.object({
+  id: z.string().optional(),
   phone: z.string(),
-  type: PhoneTypeEnum,
-  isPrimary: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  type: PhoneTypeEnum.optional(),
+  contactId: z.string().optional(),
+  contactName: z.string().optional(),
+  isPrimary: z.boolean().optional(),
+  createdAt: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
+    .optional(),
+  updatedAt: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
+    .optional(),
 })
 export type Phone = z.infer<typeof PhoneSchema>
 const SocialMediaSchema = z.object({
+  id: z.string().optional(),
   url: z.string().url(),
-  socialMediaPlatform: SocialMediaPlatformEnum,
-  isPrimary: z.boolean(),
-  contactId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  socialMediaPlatform: SocialMediaPlatformEnum.optional(),
+  isPrimary: z.boolean().optional(),
+  contactId: z.string().optional(),
+  contactName: z.string().optional(),
+  createdAt: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
+    .optional(),
+  updatedAt: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
+    .optional(),
 })
 export type SocialMedia = z.infer<typeof SocialMediaSchema>
+
+const CompanyActivitySchema = z.object({
+  id: z.string(),
+  code: z.string().nullable(),
+  name: z.string().nullable(),
+  type: z.string(),
+})
+export type CompanyActivity = z.infer<typeof CompanyActivitySchema>
+
+const CompanyOfficerSchema = z.object({
+  id: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  role: z.string().nullable(),
+  type: z.string().nullable(),
+})
+export type CompanyOfficer = z.infer<typeof CompanyOfficerSchema>
 
 export const PlaceSchema = PlaceSchemaBase.extend({
   listId: z.string().uuid().nullable(),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional().nullable(),
   status: StatusEnum.nullable(),
-  domainRegisteredAt: z.date().nullable(),
+  domainRegisteredAt: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
+    .nullable(),
   shortDescription: z.string().nullable(),
   contactEmails: z.array(EmailSchema).optional(),
   contactPhones: z.array(PhoneSchema).optional(),
@@ -253,6 +290,13 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   contactInstagrams: z.array(SocialMediaSchema).optional(),
   hubspotSynced: z.boolean(),
   enrichedStatus: EnrichedStatusEnum.nullable(),
+  companyWorkforceRange: z.string().nullable(),
+  companyDateOfCreation: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
+    .nullable(),
+  companyActivities: z.array(CompanyActivitySchema),
+  companyOfficers: z.array(CompanyOfficerSchema),
 })
 
 // Type inference from schemas

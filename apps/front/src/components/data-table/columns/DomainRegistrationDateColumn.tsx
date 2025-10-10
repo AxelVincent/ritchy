@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { HelpCircle } from 'lucide-react'
 import React from 'react'
-import { ColumnPinCell } from './utils/ColumnCells'
+import { SimpleCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const formatRegistrationDate = (registrationDate: string): string | null => {
@@ -22,35 +22,26 @@ const formatRegistrationDate = (registrationDate: string): string | null => {
 
 // Cell component for domain registration date
 const DomainRegistrationDateCell = React.memo(
-  function DomainRegistrationDateCell({
-    id,
-    place,
-  }: { id: string; place: SearchResult }) {
+  function DomainRegistrationDateCell({ place }: { place: SearchResult }) {
     const domainRegistration = place.domainRegisteredAt
 
     // No website
     if (!place.website) {
       return (
-        <ColumnPinCell
-          id={id}
-          content={
-            <span className="text-xs text-muted-foreground">No website</span>
-          }
-        />
+        <SimpleCell>
+          <span className="text-xs text-muted-foreground">No website</span>
+        </SimpleCell>
       )
     }
 
     // No domain registration data
     if (!domainRegistration) {
       return (
-        <ColumnPinCell
-          id={id}
-          content={
-            <span className="text-xs text-muted-foreground">
-              No registration data
-            </span>
-          }
-        />
+        <SimpleCell>
+          <span className="text-xs text-muted-foreground">
+            No registration data
+          </span>
+        </SimpleCell>
       )
     }
 
@@ -61,31 +52,25 @@ const DomainRegistrationDateCell = React.memo(
     // Handle invalid date format
     if (!formattedDate) {
       return (
-        <ColumnPinCell
-          id={id}
-          content={
-            <span className="text-xs text-muted-foreground">
-              Invalid date format
-            </span>
-          }
-        />
+        <SimpleCell>
+          <span className="text-xs text-muted-foreground">
+            Invalid date format
+          </span>
+        </SimpleCell>
       )
     }
 
     return (
-      <ColumnPinCell
-        id={id}
-        content={
-          <div className="flex items-center gap-1.5 text-sm w-full">
-            <span className="truncate">{formattedDate}</span>
-            <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
-              {formatDistanceToNow(new Date(domainRegistration), {
-                addSuffix: true,
-              })}
-            </span>
-          </div>
-        }
-      />
+      <SimpleCell>
+        <div className="flex items-center gap-1.5 text-sm w-full">
+          <span className="truncate">{formattedDate}</span>
+          <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
+            {formatDistanceToNow(new Date(domainRegistration), {
+              addSuffix: true,
+            })}
+          </span>
+        </div>
+      </SimpleCell>
     )
   },
 )
@@ -174,7 +159,5 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
       }
     />
   ),
-  cell: ({ row }) => (
-    <DomainRegistrationDateCell id={row.original.id} place={row.original} />
-  ),
+  cell: ({ row }) => <DomainRegistrationDateCell place={row.original} />,
 }

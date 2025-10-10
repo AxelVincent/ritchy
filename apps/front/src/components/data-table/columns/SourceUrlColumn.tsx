@@ -1,6 +1,7 @@
+import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCopyCell } from './utils/ColumnCells'
+import { CopyCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const sourceUrlColumn: ColumnDef<SearchResult> = {
@@ -10,16 +11,12 @@ export const sourceUrlColumn: ColumnDef<SearchResult> = {
   meta: {
     filterVariant: 'text',
   },
-  header: ({ column }) => {
-    return <HeaderWrapper column={column} title="Source URL" />
-  },
-  cell: ({ row }) => {
+  header: ({ column }) => <HeaderWrapper column={column} title="Source URL" />,
+  cell: ({ getValue }) => {
+    const url = getValue() as string | null
+    if (!url) return null
     return (
-      <ColumnPinCopyCell
-        id={row.original.id}
-        content={row.original.sourceUrl || ''}
-        href={row.original.sourceUrl || undefined}
-      />
+      <CopyCell content={url} href={url} formatDisplay={getCleanUrlDisplay} />
     )
   },
 }

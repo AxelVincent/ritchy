@@ -51,19 +51,49 @@ export interface AggregatedUserPlace extends Place {
   domain_registered_at: Enrichment['domainRegisteredAt']
   enriched_at: UserPlace['enriched_at']
   success: Enrichment['success']
+
+  // Company enrichment fields
+  workforce_range: string | null
+  date_of_creation: Date | null
+  company_activities: Array<{
+    id: string
+    code: string | null
+    name: string | null
+    type: string
+  }>
+  company_officers: Array<{
+    id: string
+    firstName: string | null
+    lastName: string | null
+    role: string | null
+    type: string | null
+  }>
 }
 
 export const getAggregatedUserPlaces = async (
   userId: string,
   searchId?: string,
   listId?: string,
+  userPlaceId?: string,
 ): Promise<PlaceApi[]> => {
-  const searchCondition = searchId
-    ? sql`AND s.id = ${searchId}`
-    : sql`AND s.id IS NULL`
-  const listCondition = listId
-    ? sql`AND l.id = ${listId}`
-    : sql`AND l.id IS NULL`
+  // When fetching by userPlaceId only, we don't filter by search/list
+  const searchCondition =
+    userPlaceId && !searchId && !listId
+      ? sql``
+      : searchId
+        ? sql`AND s.id = ${searchId}`
+        : sql`AND s.id IS NULL`
+
+  const listCondition =
+    userPlaceId && !searchId && !listId
+      ? sql``
+      : listId
+        ? sql`AND l.id = ${listId}`
+        : sql`AND l.id IS NULL`
+
+  const userPlaceCondition = userPlaceId
+    ? sql`AND up.id = ${userPlaceId}`
+    : sql``
 
   const query = sql`
    /*+ 
@@ -88,7 +118,7 @@ export const getAggregatedUserPlaces = async (
       USE_NL(up, sts)
       USE_NL(up, e)
     */
-    SELECT DISTINCT ON (up.id)
+    SELECT
      -- Essential place fields only (explicit selection)
      p.id,
       p.source_id,
@@ -126,6 +156,9 @@ export const getAggregatedUserPlaces = async (
       -- User place fields
       up.id as user_place_id,
       up.enriched_at,
+      -- Debug: include timestamps for sorting
+      lp.created_at as list_place_created_at,
+      sp.created_at as search_place_created_at,
       -- Status
       CASE
         WHEN sts.status IS NULL THEN 'NEW'
@@ -142,7 +175,12 @@ export const getAggregatedUserPlaces = async (
       -- Enrichment fields
       e.short_description,
       e.domain_registered_at,
-      e.success
+      e.success,
+      -- Company enrichment fields
+      ec.workforce_range,
+      ec.date_of_creation,
+      COALESCE(activities_data.activities, '[]'::jsonb) as company_activities,
+      COALESCE(officers_data.officers, '[]'::jsonb) as company_officers
     FROM "user" u
     LEFT JOIN "search" s ON s.user_id = u.id ${searchCondition}
     LEFT JOIN "search_place" sp ON sp.search_id = s.id
@@ -152,6 +190,7 @@ export const getAggregatedUserPlaces = async (
     LEFT JOIN "place" p ON p.id = up.place_id
     LEFT JOIN "status" sts ON sts.user_place_id = up.id
     LEFT JOIN "enrichment" e ON e.place_id = p.id AND up.enriched_at IS NOT NULL
+    LEFT JOIN "enrichment_company" ec ON ec.enrichment_id = e.id
     LEFT JOIN LATERAL (
       SELECT 
         JSONB_AGG(
@@ -250,8 +289,39 @@ export const getAggregatedUserPlaces = async (
       LEFT JOIN contact_social_media csm ON csm.contact_id = c.id
       WHERE c.user_place_id = up.id
     ) contacts_data ON true
+    LEFT JOIN LATERAL (
+      SELECT
+        JSONB_AGG(
+          JSONB_BUILD_OBJECT(
+            'id', eca.id,
+            'code', eca.code,
+            'name', eca.name,
+            'type', eca.type
+          )
+        ) FILTER (WHERE eca.id IS NOT NULL) as activities
+      FROM enrichment_company_activity eca
+      WHERE eca.company_id = ec.id
+    ) activities_data ON true
+    LEFT JOIN LATERAL (
+      SELECT
+        JSONB_AGG(
+          JSONB_BUILD_OBJECT(
+            'id', eco.id,
+            'firstName', eco.first_name,
+            'lastName', eco.last_name,
+            'role', eco.role,
+            'type', eco.type
+          )
+        ) FILTER (WHERE eco.id IS NOT NULL) as officers
+      FROM enrichment_company_officer eco
+      WHERE eco.company_id = ec.id
+    ) officers_data ON true
     WHERE u.id = ${userId}
-    AND (s.id IS NOT NULL OR l.id IS NOT NULL)
+    AND (
+      ${userPlaceId && !searchId && !listId ? sql`up.id IS NOT NULL` : sql`(s.id IS NOT NULL OR l.id IS NOT NULL)`}
+    )
+    ${userPlaceCondition}
+    ORDER BY lp.created_at ASC NULLS LAST, sp.created_at ASC NULLS LAST
   `
 
   const result = (await db.execute(query)) as unknown as AggregatedUserPlace[]
@@ -334,6 +404,10 @@ export const getAggregatedUserPlaces = async (
       contactFacebooks: result.contact_facebooks,
       hubspotSynced: false,
       enrichedStatus,
+      companyWorkforceRange: result.workforce_range ?? null,
+      companyDateOfCreation: result.date_of_creation ?? null,
+      companyActivities: result.company_activities ?? [],
+      companyOfficers: result.company_officers ?? [],
     }
   })
 }

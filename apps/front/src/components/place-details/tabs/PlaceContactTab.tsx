@@ -1,8 +1,8 @@
 import { usePostContactEmail } from '@/api/mutations/contacts/usePostContactEmail'
 import { EmailDisplay } from '@/components/contact/EmailDisplay'
 import { PhonesList } from '@/components/data-table/columns/utils/PhonesList'
+import { SocialMediaList } from '@/components/data-table/columns/utils/SocialMediaList'
 import type { Place } from '@ritchy/types'
-import { SocialMediaList } from '../../../../../data-table/columns/utils/SocialMediaList'
 import { EMPTY_MESSAGE } from '../SelectedPlaceCard'
 
 export const PlaceContactTab = ({ place }: { place: Place }) => {
@@ -63,7 +63,6 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <SocialMediaList
             socials={place.contactFacebooks || []}
-            id={`place-${place.id}-facebook-socials`}
             platform="FACEBOOK"
           />
         </div>
@@ -73,7 +72,6 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <SocialMediaList
             socials={place.contactInstagrams || []}
-            id={`place-${place.id}-instagram-socials`}
             platform="INSTAGRAM"
           />
         </div>
@@ -83,7 +81,6 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
         <div className="min-w-[200px] flex-1 max-w-[400px]">
           <SocialMediaList
             socials={place.contactLinkedins || []}
-            id={`place-${place.id}-linkedin-socials`}
             platform="LINKEDIN"
           />
         </div>

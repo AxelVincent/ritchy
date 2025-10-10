@@ -1,9 +1,12 @@
 import { listContentKeys } from '@/api/queries/lists/useListContent'
+import { placeKeys } from '@/api/queries/places/usePlace'
 import { searchContentKeys } from '@/api/queries/search/useSearchContent'
-import { useApiMutation } from '@/hooks/useApi'
+import { useApiMutation, webApiClient } from '@/hooks/useApi'
+import { useAuth } from '@clerk/clerk-react'
 import type {
-  GetListContentResponse,
-  GetSearchContentResponse,
+  GetListContentApiResponse,
+  GetPlaceApiResponse,
+  GetSearchContentApiResponse,
   UpdateStatusApiResponse,
   UpdateStatusRequest,
 } from '@ritchy/types'
@@ -11,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 export const useUpdatePlaceStatus = () => {
   const queryClient = useQueryClient()
+  const { getToken } = useAuth()
 
   return useApiMutation<
     UpdateStatusApiResponse,
@@ -19,37 +23,72 @@ export const useUpdatePlaceStatus = () => {
     method: 'PUT',
     getEndpoint: ({ userPlaceId }) => `/places/${userPlaceId}/status`,
     getBody: ({ status, listId }) => ({ status, listId }),
-    onMutate: async ({ listId }) => {
-      queryClient.invalidateQueries({
-        queryKey: listContentKeys.all,
-      })
+    onSuccess: async (_, { userPlaceId }) => {
+      try {
+        // Fetch fresh place data with updated status
+        const token = await getToken()
+        const placeData = await queryClient.fetchQuery<GetPlaceApiResponse>({
+          queryKey: placeKeys.place(userPlaceId),
+          queryFn: async () => {
+            return webApiClient.fetchWithAuth<GetPlaceApiResponse>(
+              `/places/${userPlaceId}`,
+              { method: 'GET' },
+              token,
+            )
+          },
+          staleTime: 0,
+        })
 
-      queryClient.invalidateQueries({
-        queryKey: searchContentKeys.all,
-      })
+        if ('error' in placeData) {
+          throw new Error('Failed to fetch updated place')
+        }
 
-      // Return a context object with the snapshotted values
-      return { listId }
-    },
-    onError: (_, _variables, context: unknown) => {
-      const typedContext = context as {
-        previousSearch?: GetSearchContentResponse
-        previousList?: GetListContentResponse
-        searchId?: string
-        listId?: string
-      }
-      // If the mutation fails, roll back to the previous values
-      if (typedContext?.searchId) {
-        queryClient.setQueryData(
-          searchContentKeys.search(typedContext.searchId),
-          typedContext.previousSearch,
+        const updatedPlace = placeData.place
+
+        // Update all list content queries
+        queryClient.setQueriesData<GetListContentApiResponse>(
+          { queryKey: listContentKeys.all },
+          (oldData) => {
+            if (!oldData || 'error' in oldData) return oldData
+
+            const placeIndex = oldData.items.findIndex(
+              (p) => p.id === userPlaceId,
+            )
+            if (placeIndex === -1) return oldData
+
+            const newItems = [...oldData.items]
+            newItems[placeIndex] = updatedPlace
+
+            return {
+              ...oldData,
+              items: newItems,
+            }
+          },
         )
-      }
-      if (typedContext?.listId) {
-        queryClient.setQueryData(
-          listContentKeys.list(typedContext.listId),
-          typedContext.previousList,
+
+        // Update all search content queries
+        queryClient.setQueriesData<GetSearchContentApiResponse>(
+          { queryKey: searchContentKeys.all },
+          (oldData) => {
+            if (!oldData || 'error' in oldData) return oldData
+
+            const placeIndex = oldData.findIndex((p) => p.id === userPlaceId)
+            if (placeIndex === -1) return oldData
+
+            const newPlaces = [...oldData]
+            newPlaces[placeIndex] = updatedPlace
+
+            return newPlaces
+          },
         )
+      } catch (error) {
+        console.error(
+          '[useUpdatePlaceStatus] Failed to update optimistically:',
+          error,
+        )
+        // Fallback: invalidate queries
+        queryClient.invalidateQueries({ queryKey: listContentKeys.all })
+        queryClient.invalidateQueries({ queryKey: searchContentKeys.all })
       }
     },
   })

@@ -1,207 +1,107 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCopyCell } from './utils/ColumnCells'
-import { HeaderWrapper } from './utils/HeaderWrapper'
+import { createTextColumn } from './utils/createTextColumn'
 
-export const formattedAddressColumn: ColumnDef<SearchResult> = {
-  id: 'formattedAddress',
-  accessorKey: 'address.formattedAddress',
-  size: 200,
-  meta: {
+export const formattedAddressColumn: ColumnDef<SearchResult> = createTextColumn(
+  {
+    id: 'formattedAddress',
+    accessorKey: 'address.formattedAddress',
+    title: 'Address',
+    size: 200,
     filterVariant: 'text',
+    enableSorting: false,
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Address" />,
-  enableSorting: false,
-  cell: ({ row }) => {
-    const address = row.original.address.formattedAddress
-    if (!address) return null
+)
 
-    return <ColumnPinCopyCell id={row.original.id} content={address} />
-  },
-}
-
-export const countryColumn: ColumnDef<SearchResult> = {
+export const countryColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'country',
   accessorKey: 'address.country',
+  title: 'Country',
   size: 200,
-  meta: {
-    filterVariant: 'multi-select',
-  },
-  header: ({ column }) => <HeaderWrapper column={column} title="Country" />,
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.country ?? null}
-    />
-  ),
-}
+  filterVariant: 'multi-select',
+})
 
-export const localityColumn: ColumnDef<SearchResult> = {
+export const localityColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'City',
   accessorKey: 'address.locality',
+  title: 'City',
   size: 200,
-  meta: {
-    filterVariant: 'multi-select',
-  },
-  header: ({ column }) => <HeaderWrapper column={column} title="City" />,
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.locality ?? null}
-    />
-  ),
-}
+  filterVariant: 'multi-select',
+})
 
-export const sublocalityColumn: ColumnDef<SearchResult> = {
+export const sublocalityColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'sublocality',
   accessorKey: 'address.sublocality',
+  title: 'Sublocality',
   size: 200,
-  meta: {
-    filterVariant: 'multi-select',
-  },
-  header: ({ column }) => <HeaderWrapper column={column} title="Sublocality" />,
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.sublocality ?? null}
-    />
-  ),
-}
+  filterVariant: 'multi-select',
+})
 
-export const postalCodeColumn: ColumnDef<SearchResult> = {
+export const postalCodeColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'postalCode',
   accessorKey: 'address.postalCode',
+  title: 'Postal Code',
   size: 200,
-  meta: {
+  filterVariant: 'multi-select',
+})
+
+export const postalCodeSuffixColumn: ColumnDef<SearchResult> = createTextColumn(
+  {
+    id: 'postalCodeSuffix',
+    accessorKey: 'address.postalCodeSuffix',
+    title: 'Postal Code Suffix',
+    size: 200,
     filterVariant: 'multi-select',
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Postal Code" />,
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.postalCode ?? null}
-    />
-  ),
-}
+)
 
-export const postalCodeSuffixColumn: ColumnDef<SearchResult> = {
-  id: 'postalCodeSuffix',
-  accessorKey: 'address.postalCodeSuffix',
-  size: 200,
-  meta: {
-    filterVariant: 'multi-select',
-  },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Postal Code Suffix" />
-  ),
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.postalCodeSuffix ?? null}
-    />
-  ),
-}
-
-export const plusCodeColumn: ColumnDef<SearchResult> = {
+export const plusCodeColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'plusCode',
   accessorKey: 'address.plusCode',
+  title: 'Plus Code',
   size: 200,
-  meta: {
-    filterVariant: 'multi-select',
-  },
-  header: ({ column }) => <HeaderWrapper column={column} title="Plus Code" />,
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.plusCode ?? null}
-    />
-  ),
-}
+  filterVariant: 'multi-select',
+})
 
-export const streetColumn: ColumnDef<SearchResult> = {
+export const streetColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'street',
   accessorKey: 'address.street',
+  title: 'Street',
   size: 200,
-  meta: {
-    filterVariant: 'text',
-  },
-  header: ({ column }) => <HeaderWrapper column={column} title="Street" />,
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.street ?? null}
-    />
-  ),
-}
+  filterVariant: 'text',
+})
 
-export const neighborhoodColumn: ColumnDef<SearchResult> = {
+export const neighborhoodColumn: ColumnDef<SearchResult> = createTextColumn({
   id: 'neighborhood',
   accessorKey: 'address.neighborhood',
+  title: 'Neighborhood',
   size: 200,
-  meta: {
-    filterVariant: 'multi-select',
-  },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Neighborhood" />
-  ),
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.neighborhood ?? null}
-    />
-  ),
-}
+  filterVariant: 'multi-select',
+})
 
-export const administrativeAreaLevel1Column: ColumnDef<SearchResult> = {
-  id: 'administrativeAreaLevel1',
-  accessorKey: 'address.administrativeAreaLevel1',
-  size: 200,
-  meta: {
+export const administrativeAreaLevel1Column: ColumnDef<SearchResult> =
+  createTextColumn({
+    id: 'administrativeAreaLevel1',
+    accessorKey: 'address.administrativeAreaLevel1',
+    title: 'Administ. Area Level 1',
+    size: 200,
     filterVariant: 'multi-select',
-  },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Administ. Area Level 1" />
-  ),
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.administrativeAreaLevel1 ?? null}
-    />
-  ),
-}
+  })
 
-export const administrativeAreaLevel2Column: ColumnDef<SearchResult> = {
-  id: 'administrativeAreaLevel2',
-  accessorKey: 'address.administrativeAreaLevel2',
-  size: 200,
-  meta: {
+export const administrativeAreaLevel2Column: ColumnDef<SearchResult> =
+  createTextColumn({
+    id: 'administrativeAreaLevel2',
+    accessorKey: 'address.administrativeAreaLevel2',
+    title: 'Administ. Area Level 2',
+    size: 200,
     filterVariant: 'multi-select',
-  },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Administ. Area Level 2" />
-  ),
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.administrativeAreaLevel2 ?? null}
-    />
-  ),
-}
+  })
 
-export const administrativeAreaLevel3Column: ColumnDef<SearchResult> = {
-  id: 'administrativeAreaLevel3',
-  accessorKey: 'address.administrativeAreaLevel3',
-  size: 200,
-  meta: {
+export const administrativeAreaLevel3Column: ColumnDef<SearchResult> =
+  createTextColumn({
+    id: 'administrativeAreaLevel3',
+    accessorKey: 'address.administrativeAreaLevel3',
+    title: 'Administ. Area Level 3',
+    size: 200,
     filterVariant: 'multi-select',
-  },
-  header: ({ column }) => (
-    <HeaderWrapper column={column} title="Administ. Area Level 3" />
-  ),
-  cell: ({ row }) => (
-    <ColumnPinCopyCell
-      id={row.original.id}
-      content={row.original.address.administrativeAreaLevel3 ?? null}
-    />
-  ),
-}
+  })

@@ -22,7 +22,7 @@ export const getWebsiteVectors = async (domain: string) => {
       },
     )
 
-    return qdrantResponse.points
+    return qdrantResponse.points || []
   } catch (error) {
     logger.error({
       msg: 'Error getting website vectors',

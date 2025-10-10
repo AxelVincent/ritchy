@@ -4,16 +4,10 @@ import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { MAP_SETTINGS } from '@/components/map-display/types'
 import type { Location } from '@/components/search/search-map'
 import { debounce } from '@/lib/debounce'
+import { debugLog } from '@/lib/utils/debug-logging'
 import type { Place } from '@ritchy/types'
 import { type FC, useEffect, useMemo, useRef } from 'react'
 import { useMarkerManager } from './hooks/useMarkerManager'
-const DEBUG = false
-
-const debugLog = (...args: unknown[]) => {
-  if (DEBUG) {
-    console.log('[MapBox]', ...args)
-  }
-}
 
 // Improve props interface with more specific types
 interface MapBoxProps {
@@ -77,7 +71,6 @@ export const MapBox: FC<MapBoxProps> = ({
     }
   }, [mapRef])
 
-  // Replace the useMarkerManager call to remove popup-related functionality
   const { markersRef } = useMarkerManager({
     map: mapRef.current,
     places: searchResults,
@@ -120,23 +113,9 @@ export const MapBox: FC<MapBoxProps> = ({
     // Fixed zoom level
     const zoomLevel = 15
 
-    // Get the place card height
-    const placeCardHeight = Number.parseInt(
-      localStorage.getItem('placeCardHeight') || '200',
-      10,
-    )
-
-    // Simple fixed offset based on zoom level 15
-    // At zoom level 15, approximately 0.001 degrees of latitude is a good small offset
-    // Adjust slightly based on card height (larger cards need slightly more offset)
-    const baseOffset = -0.0025
-    const cardSizeFactor = Math.min(1.5, Math.max(0.2, placeCardHeight / 200))
-    const latOffset = baseOffset * cardSizeFactor
-
-    // Adjust center point slightly upward
-    const adjustedCenter = {
+    const center = {
       lng: markerLocation.lng,
-      lat: markerLocation.lat + latOffset,
+      lat: markerLocation.lat,
     }
 
     // Optimized animation options
@@ -148,12 +127,12 @@ export const MapBox: FC<MapBoxProps> = ({
     // Center on the marker with the simplified adjustment
     if (distanceInDegrees > 0.2) {
       mapRef.current.jumpTo({
-        center: adjustedCenter,
+        center,
         zoom: zoomLevel,
       })
     } else {
       mapRef.current.flyTo({
-        center: adjustedCenter,
+        center,
         speed: 1,
         zoom: zoomLevel,
         ...animationOptions,

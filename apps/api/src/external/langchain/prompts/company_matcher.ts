@@ -76,9 +76,15 @@ Final confidence thresholds:
 - 45-59: Possible match but significant uncertainty
 - Below 45: Poor match, likely not the same company
 
-IMPORTANT: You MUST always return the best match from the search results, regardless of confidence score.
-Even if all matches have low confidence scores, select the highest-scoring result as bestMatch.
-The bestMatch field should never be null - always provide the company with the highest calculated score.`,
+IMPORTANT OUTPUT RULES:
+1. You MUST always return the best match from the search results, regardless of confidence score.
+2. Even if all matches have low confidence scores, select the highest-scoring result as bestMatch.
+3. The bestMatch field should never be null - always provide the company with the highest calculated score.
+4. For the alternatives array:
+   - If there are 2 or more good alternatives (excluding the best match), include them in the array
+   - If there are NO good alternatives, return an EMPTY array []
+   - NEVER include entries with null values
+   - Each alternative MUST have a valid company_number, confidence score, and reasoning`,
   ],
   [
     'human',
@@ -102,6 +108,6 @@ Search Results:
 {searchResults}
 
 MANDATORY: Use the enhanced scoring system above. Show detailed calculations for each significant match. Prioritize active companies with geographic and business type alignment.
-CRITICAL: Always return the highest-scoring match as bestMatch, even if the confidence is low.`,
+CRITICAL: Always return the highest-scoring match as bestMatch, even if the confidence is low. Return an empty array for alternatives if there are no good alternatives.`,
   ],
 ])

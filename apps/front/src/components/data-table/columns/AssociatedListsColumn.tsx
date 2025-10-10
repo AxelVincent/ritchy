@@ -1,7 +1,7 @@
 import { DynamicBadgeList } from '@/components/common/DynamicBadgeList'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ColumnPinCell } from './utils/ColumnCells'
+import { SimpleCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const formatList = (list: NonNullable<SearchResult['lists']>[number]) =>
@@ -45,21 +45,18 @@ export const associatedListsColumn: ColumnDef<SearchResult> = {
     const lists = row.original.lists
 
     return (
-      <ColumnPinCell
-        id={row.original.id}
-        content={
-          lists?.length ? (
-            <DynamicBadgeList
-              items={lists.map(formatList)}
-              badgeVariant="secondary"
-              containerClassName="w-[200px]"
-              containerPadding={60}
-            />
-          ) : (
-            ''
-          )
-        }
-      />
+      <SimpleCell>
+        {lists?.length ? (
+          <DynamicBadgeList
+            items={lists.map(formatList)}
+            badgeVariant="secondary"
+            containerClassName="w-[200px]"
+            containerPadding={60}
+          />
+        ) : (
+          ''
+        )}
+      </SimpleCell>
     )
   },
 }

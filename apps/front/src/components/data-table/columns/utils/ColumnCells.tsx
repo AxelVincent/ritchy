@@ -1,504 +1,264 @@
-import { type Action, TextWrapper } from '@/components/common/TextWrapper'
-import { formatPhoneNumberWithCountry } from '@/lib/utils/phone-utils'
-import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
-import type {
-  Email,
-  Note,
-  SearchResult,
-  SocialMediaPlatform,
-} from '@ritchy/types'
-import React from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
-  createColumnPinActions,
-  createColumnPinCopyActions,
-  createColumnPinMailtoActions,
-  createColumnPinNoteActions,
-} from './createColumnActions'
-
-import { QualityBadge } from '@/components/contact/QualityBadge'
+  Tooltip,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { TooltipContent } from '@/components/ui/tooltip'
+import { toast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
-import posthog from 'posthog-js'
+import { Copy } from 'lucide-react'
+import * as React from 'react'
 
-interface BaseColumnCellProps {
-  id: string
-  content: React.ReactNode
+// Add this type definition near the top of the file, after imports
+export type BadgeConfig = {
+  text: string
+  color: 'green' | 'yellow' | 'red' | 'blue' | 'gray'
+} | null
+
+// Helper component for rendering badges
+const CustomBadge = ({
+  text,
+  color,
+}: { text: string; color: NonNullable<BadgeConfig>['color'] }) => {
+  const styles = {
+    green: 'border-green-600 text-green-600',
+    yellow: 'border-orange-400 text-orange-400',
+    red: 'border-red-600 text-red-600',
+    blue: 'border-blue-600 text-blue-600',
+    gray: 'border-gray-500 text-gray-600',
+  }[color]
+
+  return (
+    <Badge variant="outline" className={` ${styles}`}>
+      {text}
+    </Badge>
+  )
 }
 
-interface ColumnPinCopyCellProps extends BaseColumnCellProps {
-  content: string | null
-  href?: string
-}
-
-export interface NotesColumnCellProps {
-  id: string
-  place: SearchResult
-  content: Note | null
-  onClick?: () => void
-}
-
-interface CopyCellProps {
-  id: string
-  content: string
-  href?: string
-}
-
-// For columns that need both pin and copy actions
-export const ColumnPinCopyCell = React.memo(function ColumnPinCopyCell({
-  id,
-  content,
-  href,
-}: ColumnPinCopyCellProps) {
-  const actions = React.useMemo(
-    () => createColumnPinCopyActions(id, content),
-    [id, content],
+// Reusable copy button component for all cells
+export const CopyButton = React.memo(function CopyButton({
+  valueToCopy,
+  ariaLabel = 'Copy',
+}: {
+  valueToCopy: string
+  ariaLabel?: string
+}) {
+  const handleCopy = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      navigator.clipboard.writeText(valueToCopy)
+      toast({
+        title: 'Copied to clipboard',
+        description: valueToCopy,
+        duration: 2000,
+      })
+    },
+    [valueToCopy],
   )
 
-  const displayContent = href ? (
+  return (
+    <div className="opacity-0 group-hover/cell:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2 bg-background rounded-md p-0.5 border border-border">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn('h-7 w-7 p-0', 'hover:bg-accent')}
+              onClick={handleCopy}
+              disabled={false}
+            >
+              <Copy style={{ width: '14px', height: '14px' }} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{ariaLabel}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  )
+})
+
+// Lightweight wrapper for custom content (no actions, just container)
+export const SimpleCell = React.memo(function SimpleCell({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <div className="w-full h-full flex items-center px-2">{children}</div>
+})
+
+export const SimpleArrayCell = React.memo(function SimpleArrayCell({
+  items,
+  itemLabel,
+  href,
+  formatDisplay,
+  onClick,
+  getBadge,
+}: {
+  items: string[]
+  itemLabel?: string
+  href?: (item: string) => string
+  formatDisplay?: (item: string) => string
+  onClick?: () => void
+  getBadge?: (item: string) => BadgeConfig
+}) {
+  const firstItem = items[0]
+  const displayText = formatDisplay ? formatDisplay(firstItem) : firstItem
+  const badge = getBadge?.(firstItem)
+
+  const handleCellClick = React.useCallback(() => {
+    onClick?.()
+  }, [onClick])
+
+  if (!items.length) {
+    return (
+      <div
+        className="w-full h-full flex items-center px-2 cursor-pointer"
+        onClick={handleCellClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleCellClick()
+          }
+        }}
+      >
+        {null}
+      </div>
+    )
+  }
+
+  const content = href ? (
     <a
-      href={href}
+      href={href(firstItem)}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 hover:text-blue-800 hover:underline block w-full overflow-hidden text-ellipsis whitespace-nowrap px-2 py-1 rounded transition-colors"
+      className="text-blue-600 hover:text-blue-800 hover:underline block w-full truncate"
       onClick={(e) => e.stopPropagation()}
-      title={content || undefined}
+      title={firstItem}
     >
-      {getCleanUrlDisplay(content || '')}
+      {displayText}
     </a>
   ) : (
-    content
+    <span className="block w-full truncate" title={firstItem}>
+      {displayText}
+    </span>
   )
 
   return (
-    <TextWrapper id={id} actions={actions}>
-      {displayContent}
-    </TextWrapper>
-  )
-})
-
-// For columns that only need pin action
-export const ColumnPinCell = React.memo(function ColumnPinCell({
-  id,
-  content,
-}: BaseColumnCellProps) {
-  const actions = React.useMemo(() => createColumnPinActions(id), [id])
-
-  return (
-    <TextWrapper id={id} actions={actions}>
-      {content}
-    </TextWrapper>
-  )
-})
-
-// Specialized cell component for notes
-export const ColumnPinNoteCell = React.memo(function NotesColumnCell({
-  id,
-  place,
-  onClick,
-}: NotesColumnCellProps) {
-  const actions = createColumnPinNoteActions(id, () => {
-    onClick?.()
-  })
-
-  const handleClick = () => {
-    onClick?.()
-  }
-
-  // Get the most recent note
-  const latestNote = place.notes?.[0]
-
-  return (
-    <TextWrapper id={id} actions={actions}>
-      <div
-        className="group flex items-center w-full cursor-pointer min-h-[24px]"
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleClick()
-          }
-        }}
-        aria-label="Open notes"
-      >
-        <span className="flex items-center gap-1.5 text-sm w-full">
-          <span className="truncate flex-1">{latestNote?.note}</span>
-          {place.notes && place.notes.length > 0 && (
-            <>
-              <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                {place.notes.length}{' '}
-                {place.notes.length === 1 ? 'note' : 'notes'}
-              </span>
-              <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
-                {latestNote?.createdAt
-                  ? formatDistanceToNow(new Date(latestNote.createdAt), {
-                      addSuffix: true,
-                    })
-                  : ''}
-              </span>
-            </>
-          )}
-        </span>
-        <div className="flex-1" />
-      </div>
-    </TextWrapper>
-  )
-})
-
-export const PhoneCell = ({
-  id,
-  content,
-}: {
-  id: string
-  content: string
-}) => {
-  const actions = React.useMemo(
-    () => createColumnPinCopyActions(id, content),
-    [id, content],
-  )
-
-  const handleCall = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    window.open(`tel:${content}`, '_blank')
-  }
-
-  const formattedPhoneWithCountry = formatPhoneNumberWithCountry(content)
-
-  return (
-    <TextWrapper
-      id={id}
-      actions={[
-        ...actions,
-        {
-          icon: 'Phone',
-          onClick: () => {
-            posthog.capture('click_phone_button', { property: 'value' })
-            window.open(`tel:${content}`, '_blank')
-          },
-          label: 'Call',
-        },
-        {
-          icon: 'faWhatsapp',
-          onClick: () => {
-            const formattedPhone = content.replace(/\D/g, '')
-            posthog.capture('click_whatsapp_button', { property: 'value' })
-            window.open(`https://wa.me/${formattedPhone}`, '_blank')
-          },
-          label: 'WhatsApp',
-        },
-      ]}
-      customTooltipContent={formattedPhoneWithCountry}
+    <div
+      className="group/cell relative w-full h-full flex items-center px-2 gap-2 cursor-pointer"
+      onClick={handleCellClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleCellClick()
+        }
+      }}
     >
-      <span
-        className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline"
-        onClick={handleCall}
+      <div className="flex-1 min-w-0 overflow-hidden">{content}</div>
+      {badge && <CustomBadge text={badge.text} color={badge.color} />}
+      {items.length > 1 && (
+        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+          +{items.length - 1} {itemLabel || 'more'}
+        </span>
+      )}
+      <CopyButton valueToCopy={firstItem} ariaLabel="Copy first item" />
+    </div>
+  )
+})
+
+export const SimpleNotesCell = React.memo(function SimpleNotesCell({
+  notes,
+  onClick,
+}: {
+  notes: Array<{ note: string; createdAt: Date }> | null | undefined
+  onClick?: () => void
+}) {
+  const latestNote = notes?.[0]
+
+  const handleCellClick = React.useCallback(() => {
+    onClick?.()
+  }, [onClick])
+
+  if (!notes?.length) {
+    return (
+      <div
+        className="w-full h-full flex items-center px-2 cursor-pointer"
+        onClick={handleCellClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            handleCall(e as unknown as React.MouseEvent)
+            handleCellClick()
           }
         }}
       >
-        {content}
-      </span>
-    </TextWrapper>
-  )
-}
-
-export const ContactEmailCell = ({
-  id,
-  emails,
-  onClick,
-}: {
-  id: string
-  emails: Email[]
-  onClick: () => void
-}) => {
-  // Add null check to prevent the error
-  const safeEmails = emails || []
-
-  const actions = React.useMemo(() => {
-    const baseActions =
-      safeEmails.length > 0
-        ? createColumnPinMailtoActions(id, safeEmails[0].email)
-        : createColumnPinActions(id)
-    return [
-      ...baseActions,
-      {
-        icon: 'Plus' as const,
-        onClick: () => onClick?.(),
-        label: 'Add email',
-      },
-    ]
-  }, [id, safeEmails, onClick])
-
-  // Empty state - no emails
-  if (safeEmails.length === 0) {
-    return (
-      <TextWrapper id={id} actions={actions}>
-        <div
-          className="text-muted-foreground hover:text-muted-foreground/80 cursor-pointer w-full h-full min-h-[24px] flex items-center"
-          onClick={() => onClick?.()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              onClick?.()
-            }
-          }}
-        />
-      </TextWrapper>
+        {null}
+      </div>
     )
   }
 
-  // Single email
-  if (safeEmails.length === 1) {
-    const email = safeEmails[0]
-    return (
-      <TextWrapper id={id} actions={actions}>
-        <div
-          className="flex items-center gap-2 w-full cursor-pointer"
-          onClick={onClick}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              onClick?.()
-            }
-          }}
-        >
-          <span
-            className="text-blue-600 hover:text-blue-800 hover:underline truncate"
-            onClick={(e) => {
-              e.stopPropagation()
-              posthog.capture('click_mailto_button', { property: 'value' })
-              window.open(`mailto:${email.email}`, '_blank')
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.stopPropagation()
-                posthog.capture('click_mailto_button', { property: 'value' })
-                window.open(`mailto:${email.email}`, '_blank')
-              }
-            }}
-          >
-            {email.email}
-          </span>
-          {QualityBadge(email)}
-        </div>
-      </TextWrapper>
-    )
-  }
-
-  // Multiple emails
   return (
-    <TextWrapper id={id} actions={actions}>
-      <div
-        className="flex items-center gap-2 w-full cursor-pointer"
-        onClick={onClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            onClick?.()
-          }
-        }}
-      >
-        <div className="min-w-0 flex-1 flex items-center gap-2">
-          <span
-            className="text-blue-600 hover:text-blue-800 hover:underline truncate"
-            onClick={(e) => {
-              e.stopPropagation()
-              posthog.capture('click_mailto_button', { property: 'value' })
-              window.open(`mailto:${safeEmails[0].email}`, '_blank')
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.stopPropagation()
-                posthog.capture('click_mailto_button', { property: 'value' })
-                window.open(`mailto:${safeEmails[0].email}`, '_blank')
-              }
-            }}
-          >
-            {safeEmails[0].email}
-          </span>
-          {QualityBadge(safeEmails[0])}
-        </div>
-        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap ml-1.5 flex-shrink-0">
-          +{safeEmails.length - 1} more
-        </span>
-      </div>
-    </TextWrapper>
-  )
-}
-
-export const ContactSocialCell = ({
-  id,
-  content,
-  socialType,
-  isPin = true,
-}: {
-  id: string
-  content: string
-  socialType: SocialMediaPlatform
-  isPin?: boolean
-}) => {
-  const actions = React.useMemo(() => {
-    const baseActions: Action[] = [
-      {
-        icon: 'Copy',
-        onClick: () => {
-          navigator.clipboard.writeText(content)
-        },
-        label: 'Copy',
-      },
-    ]
-
-    if (isPin) {
-      return createColumnPinCopyActions(id, content)
-    }
-
-    return baseActions
-  }, [id, content, isPin])
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    posthog.capture(`click_${socialType}_link`, { property: 'value' })
-    window.open(content, '_blank')
-  }
-
-  const displayUrl = getCleanUrlDisplay(content)
-
-  return (
-    <TextWrapper id={id} actions={actions}>
-      <span
-        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleClick(e as unknown as React.MouseEvent)
-          }
-        }}
-        title={content}
-      >
-        {displayUrl}
-      </span>
-    </TextWrapper>
-  )
-}
-
-export const ContactPhoneCell = ({
-  id,
-  content,
-  isPin = true,
-}: {
-  id: string
-  content: string
-  isPin?: boolean
-}) => {
-  const actions = React.useMemo(() => {
-    if (isPin) {
-      return createColumnPinCopyActions(id, content)
-    }
-    return [
-      {
-        icon: 'Copy' as const,
-        onClick: () => {
-          navigator.clipboard.writeText(content)
-        },
-        label: 'Copy',
-      },
-      {
-        icon: 'Phone' as const,
-        onClick: () => {
-          posthog.capture('click_phone_button', { property: 'value' })
-          window.open(`tel:${content}`, '_blank')
-        },
-        label: 'Call',
-      },
-      {
-        icon: 'faWhatsapp' as const,
-        onClick: () => {
-          const formattedPhone = content.replace(/\D/g, '')
-          posthog.capture('click_whatsapp_button', { property: 'value' })
-          window.open(`https://wa.me/${formattedPhone}`, '_blank')
-        },
-        label: 'WhatsApp',
-      },
-    ]
-  }, [id, content, isPin])
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    posthog.capture('click_phone_button', { property: 'value' })
-    window.open(`tel:${content}`, '_blank')
-  }
-
-  const formattedPhoneWithCountry = formatPhoneNumberWithCountry(content)
-
-  return (
-    <TextWrapper
-      id={id}
-      actions={actions}
-      customTooltipContent={formattedPhoneWithCountry}
+    <div
+      className="group/cell relative w-full h-full flex items-center px-2 gap-2 cursor-pointer"
+      onClick={handleCellClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleCellClick()
+        }
+      }}
     >
-      <span
-        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleClick(e as unknown as React.MouseEvent)
-          }
-        }}
-      >
-        {content}
-      </span>
-    </TextWrapper>
+      <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
+        <span className="truncate flex-1" title={latestNote?.note}>
+          {latestNote?.note}
+        </span>
+        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+          {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+        </span>
+        {latestNote?.createdAt && (
+          <span className="text-[11px] text-muted-foreground/75 whitespace-nowrap flex-shrink-0">
+            {formatDistanceToNow(new Date(latestNote.createdAt), {
+              addSuffix: true,
+            })}
+          </span>
+        )}
+      </div>
+      <CopyButton valueToCopy={latestNote?.note || ''} ariaLabel="Copy note" />
+    </div>
   )
-}
+})
+
 export const CopyCell = React.memo(function CopyCell({
-  id,
   content,
   href,
-}: CopyCellProps) {
-  const actions = React.useMemo(
-    () => [
-      {
-        icon: 'Copy' as const,
-        onClick: () => {
-          navigator.clipboard.writeText(content)
-        },
-        label: 'Copy',
-      },
-    ],
-    [content],
-  )
+  formatDisplay,
+}: {
+  content: string
+  href?: string
+  formatDisplay?: (content: string) => string
+}) {
+  const displayText = formatDisplay ? formatDisplay(content) : content
 
   const displayContent = href ? (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 hover:text-blue-800 hover:underline block w-full overflow-hidden text-ellipsis whitespace-nowrap px-2 py-1 rounded transition-colors"
+      className="text-blue-600 hover:text-blue-800 hover:underline block truncate px-2 py-1 rounded transition-colors"
       onClick={(e) => e.stopPropagation()}
       title={content}
     >
-      {content}
+      {displayText}
     </a>
   ) : (
-    content
+    <span className="block truncate px-2 py-1">{displayText}</span>
   )
 
   return (
-    <TextWrapper id={id} actions={actions}>
-      {/* TODO: This is a hack to get the copy cell to work with emails, it should be refactored to allow other types of content */}
-      <span
-        className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation()
-          posthog.capture('click_mailto_button', { property: 'value' })
-          window.open(`mailto:${content}`, '_blank')
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.stopPropagation()
-            posthog.capture('click_mailto_button', { property: 'value' })
-            window.open(`mailto:${content}`, '_blank')
-          }
-        }}
-      >
-        {displayContent}
-      </span>
-    </TextWrapper>
+    <div className="group/cell relative w-full h-full flex items-center">
+      {displayContent}
+      <CopyButton valueToCopy={content} ariaLabel="Copy" />
+    </div>
   )
 })

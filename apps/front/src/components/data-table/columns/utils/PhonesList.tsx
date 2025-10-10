@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import type { Phone } from '@ritchy/types'
 import { Phone as PhoneIcon, Star } from 'lucide-react'
-import { ContactPhoneCell } from './ColumnCells'
+import { CopyCell } from './ColumnCells'
 
 export const PhonesList = ({
   phones,
@@ -49,17 +49,15 @@ export const PhonesList = ({
           id={id}
           className="flex items-center gap-2 truncate"
         >
-          <ContactPhoneCell
-            id={`${id}-${phoneObj.phone}`}
-            content={phoneObj.phone}
-            isPin={false}
-          />
-          <Badge
-            variant={getPhoneTypeVariant(phoneObj.type)}
-            className="ml-2 text-[10px]"
-          >
-            {formatPhoneType(phoneObj.type)}
-          </Badge>
+          <CopyCell content={phoneObj.phone} />
+          {phoneObj.type && (
+            <Badge
+              variant={getPhoneTypeVariant(phoneObj.type)}
+              className="ml-2 text-[10px]"
+            >
+              {formatPhoneType(phoneObj.type)}
+            </Badge>
+          )}
           {phoneObj.isPrimary && (
             <Star
               className="h-4 w-4 flex-shrink-0 text-yellow-400"
