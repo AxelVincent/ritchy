@@ -11,6 +11,7 @@ export const typesColumn: ColumnDef<SearchResult> = {
   enableColumnFilter: true,
   meta: {
     filterVariant: 'multi-select',
+    defaultVisible: false,
   },
   filterFn: (row, id, filterValue: string[]) => {
     if (!filterValue?.length) return true

@@ -9,7 +9,7 @@ export const workforceRangeColumn: ColumnDef<SearchResult> = {
   size: 150,
   enableSorting: true,
   meta: {
-    filterVariant: 'text',
+    filterVariant: 'multi-select',
     isEnrichment: true,
   },
   header: ({ column }) => (

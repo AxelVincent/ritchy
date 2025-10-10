@@ -10,6 +10,7 @@ export const sourceUrlColumn: ColumnDef<SearchResult> = {
   size: 200,
   meta: {
     filterVariant: 'text',
+    defaultVisible: false,
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Source URL" />,
   cell: ({ getValue }) => {

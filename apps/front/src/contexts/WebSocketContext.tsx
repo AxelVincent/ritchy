@@ -1,3 +1,4 @@
+import { batchEnrichmentStatusKeys } from '@/api/queries/enrichment/useBatchEnrichmentStatus'
 import { enrichmentStatusKeys } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { listContentKeys } from '@/api/queries/lists/useListContent'
 import { placeEnrichmentKeys } from '@/api/queries/places/enrichment/usePlaceEnrichment'
@@ -8,6 +9,7 @@ import { webApiClient } from '@/hooks/useApi'
 import { debugLog } from '@/lib/utils/debug-logging'
 import { useAuth } from '@clerk/clerk-react'
 import type {
+  BatchEnrichmentStatusResponse,
   EnrichmentStatusResponse,
   EnrichmentWebSocketClientEvents,
   EnrichmentWebSocketServerEvents,
@@ -101,6 +103,12 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   // Prevents race condition where subscribe() is called before socket connects
   const pendingSubscriptionsRef = useRef<Set<string>>(new Set())
 
+  // Track processed completions to prevent duplicate processing
+  // Map<userPlaceId, { timestamp, status }> - cleared after successful processing
+  const processedCompletionsRef = useRef<
+    Map<string, { timestamp: number; status: string }>
+  >(new Map())
+
   const setupWebSocket = useCallback(async () => {
     // Prevent duplicate setup calls
     if (setupInProgressRef.current || socketRef.current?.connected) {
@@ -186,6 +194,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
             })
 
             // Update TanStack Query cache with new status
+            // 1. Update single enrichment status cache (legacy support)
             queryClient.setQueryData<EnrichmentStatusResponse>(
               enrichmentStatusKeys.single(data.userPlaceId),
               {
@@ -197,10 +206,39 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                 jobId: data.jobId,
               },
             )
-            if (data.progress >= 20) {
-              // Always invalidate user data to update credits/usage
-              queryClient.invalidateQueries({ queryKey: userKeys.me() })
-            }
+
+            // 2. Update all batch enrichment status caches that contain this userPlaceId
+            queryClient.setQueriesData<BatchEnrichmentStatusResponse>(
+              { queryKey: batchEnrichmentStatusKeys.all },
+              (oldData) => {
+                // Only update if this batch contains the userPlaceId
+                if (!oldData || !(data.userPlaceId in oldData)) {
+                  return oldData
+                }
+
+                debugLog(
+                  '[WS Context] Updating batch cache for userPlaceId:',
+                  data.userPlaceId,
+                  {
+                    status: data.status,
+                    progress: data.progress,
+                  },
+                )
+
+                // Update the specific status within the batch
+                return {
+                  ...oldData,
+                  [data.userPlaceId]: {
+                    status: data.status,
+                    step: data.step,
+                    progress: data.progress,
+                    updatedAt: data.updatedAt,
+                    error: data.error,
+                    jobId: data.jobId,
+                  },
+                }
+              },
+            )
 
             // Optimistically update place data when enrichment completes
             if (
@@ -208,13 +246,35 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
               data.status === 'failed' ||
               data.progress === 100
             ) {
+              // Check if we've already processed this completion
+              const lastProcessed = processedCompletionsRef.current.get(
+                data.userPlaceId,
+              )
+              if (
+                lastProcessed &&
+                lastProcessed.status === data.status &&
+                lastProcessed.timestamp === data.updatedAt
+              ) {
+                debugLog(
+                  '[WS Context] Skipping duplicate completion event',
+                  data.userPlaceId,
+                )
+                return
+              }
+
               const now = Date.now()
               const completionAge = now - data.updatedAt
               const isRecentCompletion = completionAge < 1000 // 1 seconds
               if (!isRecentCompletion) {
-                debugLog('[WS Context] Skipping refetch for old completion')
+                debugLog('[WS Context] Skipping refetch for old completion', {
+                  userPlaceId: data.userPlaceId,
+                  completionAge,
+                  updatedAt: data.updatedAt,
+                  now,
+                })
                 return
               }
+
               debugLog(
                 '[WS Context] Enrichment finished, updating place optimistically:',
                 {
@@ -223,6 +283,13 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                   userPlaceId: data.userPlaceId,
                 },
               )
+
+              // Mark this completion as processed
+              processedCompletionsRef.current.set(data.userPlaceId, {
+                timestamp: data.updatedAt,
+                status: data.status,
+              })
+
               // Always invalidate user data to update credits/usage
               queryClient.invalidateQueries({ queryKey: userKeys.me() })
               try {
@@ -292,16 +359,118 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
                 debugLog(
                   '[WS Context] Optimistic update completed successfully',
                 )
+
+                // Clear processed completion after successful update
+                // Allow re-processing if a new completion event arrives
+                setTimeout(() => {
+                  processedCompletionsRef.current.delete(data.userPlaceId)
+                }, 5000) // Clear after 5 seconds
               } catch (error) {
                 console.error(
-                  '[WS Context] Failed to fetch updated place, falling back to invalidation:',
+                  '[WS Context] Failed to fetch updated place, retrying with fallback:',
                   error,
                 )
-                // Fallback: invalidate queries if optimistic update fails
-                queryClient.invalidateQueries({ queryKey: listContentKeys.all })
-                queryClient.invalidateQueries({
-                  queryKey: searchContentKeys.all,
-                })
+
+                // Remove from processed completions to allow retry
+                processedCompletionsRef.current.delete(data.userPlaceId)
+
+                // Retry with exponential backoff (max 3 attempts)
+                const retryWithBackoff = async (
+                  attempt = 1,
+                  maxAttempts = 3,
+                ) => {
+                  if (attempt > maxAttempts) {
+                    console.error(
+                      '[WS Context] Max retry attempts reached, falling back to invalidation',
+                    )
+                    // Final fallback: invalidate queries
+                    queryClient.invalidateQueries({
+                      queryKey: listContentKeys.all,
+                    })
+                    queryClient.invalidateQueries({
+                      queryKey: searchContentKeys.all,
+                    })
+                    return
+                  }
+
+                  const backoffDelay = Math.min(1000 * 2 ** (attempt - 1), 5000) // 1s, 2s, 4s (max 5s)
+                  debugLog(
+                    `[WS Context] Retrying fetch in ${backoffDelay}ms (attempt ${attempt}/${maxAttempts})`,
+                  )
+
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, backoffDelay),
+                  )
+
+                  try {
+                    const token = await getTokenRef.current()
+                    const placeData =
+                      await queryClient.fetchQuery<GetPlaceApiResponse>({
+                        queryKey: placeKeys.place(data.userPlaceId),
+                        queryFn: async () => {
+                          return webApiClient.fetchWithAuth<GetPlaceApiResponse>(
+                            `/places/${data.userPlaceId}`,
+                            { method: 'GET' },
+                            token,
+                          )
+                        },
+                        staleTime: 0,
+                      })
+
+                    if ('error' in placeData) {
+                      throw new Error('Failed to fetch place')
+                    }
+
+                    const updatedPlace = placeData.place
+
+                    // Update list content queries
+                    queryClient.setQueriesData<GetListContentApiResponse>(
+                      { queryKey: listContentKeys.all },
+                      (oldData) => {
+                        if (!oldData || 'error' in oldData) return oldData
+
+                        const placeIndex = oldData.items.findIndex(
+                          (p) => p.id === data.userPlaceId,
+                        )
+                        if (placeIndex === -1) return oldData
+
+                        const newItems = [...oldData.items]
+                        newItems[placeIndex] = updatedPlace
+                        return { ...oldData, items: newItems }
+                      },
+                    )
+
+                    // Update search content queries
+                    queryClient.setQueriesData<GetSearchContentApiResponse>(
+                      { queryKey: searchContentKeys.all },
+                      (oldData) => {
+                        if (!oldData || 'error' in oldData) return oldData
+
+                        const placeIndex = oldData.findIndex(
+                          (p) => p.id === data.userPlaceId,
+                        )
+                        if (placeIndex === -1) return oldData
+
+                        const newPlaces = [...oldData]
+                        newPlaces[placeIndex] = updatedPlace
+                        return newPlaces
+                      },
+                    )
+
+                    debugLog(
+                      `[WS Context] Retry successful on attempt ${attempt}`,
+                    )
+                  } catch (retryError) {
+                    console.error(
+                      `[WS Context] Retry attempt ${attempt} failed:`,
+                      retryError,
+                    )
+                    await retryWithBackoff(attempt + 1, maxAttempts)
+                  }
+                }
+
+                // Start retry process
+                await retryWithBackoff()
               }
 
               // Always invalidate place enrichment data to refresh company details
@@ -432,6 +601,7 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       }
       subscriptionRefsRef.current.clear()
       pendingSubscriptionsRef.current.clear()
+      processedCompletionsRef.current.clear()
       setupInProgressRef.current = false
       setStatus('disconnected')
     }

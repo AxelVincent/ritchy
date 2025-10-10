@@ -8,4 +8,5 @@ export const sourceIdColumn: ColumnDef<SearchResult> = createTextColumn({
   title: 'Source ID',
   size: 150,
   filterVariant: 'text',
+  defaultVisible: false,
 })

@@ -11,6 +11,7 @@ interface TextColumnConfig {
   filterVariant?: 'text' | 'multi-select' | 'select'
   enableSorting?: boolean
   isEnrichment?: boolean
+  defaultVisible?: boolean
   href?: (row: SearchResult) => string | undefined
 }
 
@@ -22,6 +23,7 @@ export const createTextColumn = ({
   filterVariant = 'text',
   enableSorting = true,
   isEnrichment = false,
+  defaultVisible,
   href,
 }: TextColumnConfig): ColumnDef<SearchResult> => ({
   id,
@@ -31,6 +33,7 @@ export const createTextColumn = ({
   meta: {
     filterVariant,
     isEnrichment,
+    defaultVisible,
   },
   header: ({ column }) => <HeaderWrapper column={column} title={title} />,
   cell: ({ getValue, row }) => {

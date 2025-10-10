@@ -8,6 +8,7 @@ declare module '@tanstack/react-table' {
     filterVariant?: 'text' | 'range' | 'select' | 'multi-select' | 'date-range'
     getFacetedUniqueValues?: (rows: RowData[]) => string[]
     isEnrichment?: boolean
+    defaultVisible?: boolean // Controls if column is visible by default (true if not specified)
   }
 
   interface TableMeta {

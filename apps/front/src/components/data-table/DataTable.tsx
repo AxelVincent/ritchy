@@ -1,6 +1,8 @@
+import { useBatchEnrichmentStatus } from '@/api/queries/enrichment/useBatchEnrichmentStatus'
 import { DataExport } from '@/components/data-export/DataExport'
 import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Label } from '@/components/ui/label'
+import { useBatchEnrichmentWebSocket } from '@/hooks/useBatchEnrichmentWebSocket'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import {
@@ -20,7 +22,7 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Sparkles } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HubspotSyncManagementButtons } from '../integrations/hubspot/HubspotSyncManagementButtons'
 import { ListManagementButtons } from '../lists/ListManagementButtons'
 import { ActiveFilters } from './ActiveFilters'
@@ -58,7 +60,14 @@ export const DataTable = <TData extends SearchResult, TValue>({
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId from the store
   const { selectedPlaceId } = useMapStore()
-
+  // console.log('data', data)
+  const dataRef = useRef(data)
+  useEffect(() => {
+    if (dataRef.current !== data) {
+      console.log('⚠️ data prop changed (new reference)')
+      dataRef.current = data
+    }
+  }, [data])
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -163,30 +172,74 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
   const virtualRows = rowVirtualizer.getVirtualItems()
 
+  // Batch enrichment status fetching for visible rows
+  // Memoize visible place IDs to prevent unnecessary refetches
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const visiblePlaceIds = useMemo(
+    () => virtualRows.map((vRow) => rows[vRow.index].original.id),
+    [virtualRows.map((vr) => vr.index).join(','), rows.length],
+  )
+
+  // Fetch batch enrichment status for all visible rows
+  const { data: batchStatus } = useBatchEnrichmentStatus(visiblePlaceIds)
+
+  // Subscribe to WebSocket updates for visible rows
+  useBatchEnrichmentWebSocket(visiblePlaceIds)
+
+  // Track if we've already scrolled to the selected place
+  const hasScrolledToSelection = useRef<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (selectedPlaceId && rows.length > 0) {
+      // Only auto-scroll if:
+      // 1. This is a new selection (selectedPlaceId changed)
+      // 2. We haven't already scrolled to this selection
+      if (hasScrolledToSelection.current === selectedPlaceId) {
+        return // Already scrolled to this selection, don't interrupt user
+      }
+
       const selectedRowIndex = rows.findIndex(
         (row) => row.original.id === selectedPlaceId,
       )
 
       if (selectedRowIndex !== -1) {
-        // Scroll to the selected row with smooth behavior
+        // Scroll to the selected row
         rowVirtualizer.scrollToIndex(selectedRowIndex, {
           align: 'start',
           behavior: 'auto',
         })
+        // Mark that we've scrolled to this selection
+        hasScrolledToSelection.current = selectedPlaceId
       }
     }
-  }, [selectedPlaceId, rows, rowVirtualizer])
 
-  // Add effect to track filtered results
-  // biome-ignore lint/correctness/useExhaustiveDependencies: biome doesn't support exhaustive deps
-  useEffect(() => {
-    const filteredIds = new Set(
+    // Reset tracking when selection is cleared
+    if (!selectedPlaceId) {
+      hasScrolledToSelection.current = null
+    }
+  }, [selectedPlaceId, rows.length, rowVirtualizer])
+
+  // Memoize filtered IDs calculation
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const filteredIds = useMemo(() => {
+    return new Set(
       table.getFilteredRowModel().rows.map((row) => row.original.id),
     )
-    onFilteredDataChange(filteredIds)
-  }, [table.getFilteredRowModel().rows, onFilteredDataChange])
+  }, [table.getFilteredRowModel().rows.length])
+
+  // Memoize callback to prevent unnecessary effect triggers
+  const onFilteredDataChangeMemoized = useCallback(
+    (ids: Set<string>) => {
+      onFilteredDataChange(ids)
+    },
+    [onFilteredDataChange],
+  )
+
+  // Add effect to track filtered results
+  useEffect(() => {
+    onFilteredDataChangeMemoized(filteredIds)
+  }, [filteredIds, onFilteredDataChangeMemoized])
 
   // Note: Cleanup of completed enrichments is now handled automatically
   // by useActiveEnrichments hook with event-driven timeouts (see useActiveEnrichments.ts:67-113)
@@ -197,8 +250,8 @@ export const DataTable = <TData extends SearchResult, TValue>({
       <div className="flex flex-1 flex-col items-center justify-center p-8">
         <p className="text-muted-foreground mb-4">
           No columns are currently visible
-          <ColumnsSelection table={table} />
         </p>
+        <ColumnsSelection table={table} storageKey={storageKey} />
       </div>
     )
   }
@@ -230,7 +283,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                 }
               />
             )}
-            <ColumnsSelection table={table} />
+            <ColumnsSelection table={table} storageKey={storageKey} />
           </div>
         </div>
       </div>
@@ -377,7 +430,10 @@ export const DataTable = <TData extends SearchResult, TValue>({
                                 }
                               />
                             </div>
-                            <EnrichmentCell userPlaceId={row.original.id}>
+                            <EnrichmentCell
+                              userPlaceId={row.original.id}
+                              status={batchStatus?.[row.original.id]}
+                            >
                               {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext(),

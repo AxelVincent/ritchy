@@ -1,3 +1,4 @@
+import { logger } from '@ritchy/logger'
 import type {
   EnrichedStatus,
   Place as PlaceApi,
@@ -334,10 +335,24 @@ export const getAggregatedUserPlaces = async (
       if (result.success === false) {
         enrichedStatus = 'ENRICHMENT_ERROR'
       } else if (result.success === true) {
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
-        const enrichedAt = new Date(result.enriched_at)
-        enrichedStatus =
-          enrichedAt > thirtyMinutesAgo ? 'RECENTLY_ENRICHED' : 'ENRICHED'
+        const nowUtc = Date.now()
+        const thirtyMinutesInMs = 30 * 60 * 1000
+
+        // Convert enriched_at to UTC timestamp
+        // PostgreSQL timestamp is already UTC, so append 'Z' to indicate this
+        let enrichedAtUtc: number
+        if (result.enriched_at instanceof Date) {
+          enrichedAtUtc = result.enriched_at.getTime()
+        } else {
+          // Add 'Z' to indicate UTC timezone, or replace space with 'T' and add 'Z'
+          const utcString = `${String(result.enriched_at).replace(' ', 'T')}Z`
+          enrichedAtUtc = new Date(utcString).getTime()
+        }
+
+        // Compare timestamps directly (both in UTC milliseconds)
+        const isRecentlyEnriched = nowUtc - enrichedAtUtc < thirtyMinutesInMs
+
+        enrichedStatus = isRecentlyEnriched ? 'RECENTLY_ENRICHED' : 'ENRICHED'
       }
     }
 
