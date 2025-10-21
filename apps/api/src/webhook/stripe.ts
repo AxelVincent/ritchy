@@ -2,12 +2,11 @@ import { logger } from '@ritchy/logger'
 import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import Stripe from 'stripe'
-import { STRIPE_CONFIG, getPlanFromProductId } from '../config/stripe'
+import { STRIPE_CONFIG } from '../config/stripe'
 import { db } from '../db/db'
 import { subscription, user as userTable } from '../db/schema'
-import { credits as creditsTable } from '../db/schema/credits'
 import { sendSlackNotification } from '../external/slack/slack'
-import { CREDIT_CONFIG } from '../services/payment/config'
+import { createOrUpdateSubscription } from '../services/payment/create_or_update_subscription'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
 const stripe = new Stripe(STRIPE_CONFIG.API_KEYS.SECRET_KEY, {
@@ -189,6 +188,78 @@ export const stripeWebhook = async (
 
         // Remove the try-catch block entirely
         switch (eventType) {
+          case 'customer.subscription.created': {
+            logger.info({
+              msg: 'Processing subscription creation',
+              event: 'subscription_creation_started',
+              metadata: {
+                subscriptionId: stripeEvent.id,
+                status: stripeEvent.status,
+              },
+            })
+
+            // Only activate subscription if it's already active (100% coupon case)
+            // For regular subscriptions with payment required, we'll wait for subscription.updated after payment
+            if (stripeEvent.status !== 'active') {
+              logger.info({
+                msg: 'Subscription not active yet, skipping immediate activation',
+                event: 'subscription_creation_pending_payment',
+                metadata: {
+                  subscriptionId: stripeEvent.id,
+                  status: stripeEvent.status,
+                },
+              })
+              break
+            }
+
+            // Create subscription record with active status (100% coupon or trial)
+            try {
+              const { planType, isNew } = await createOrUpdateSubscription(
+                stripeEvent,
+                userId,
+              )
+
+              sendSlackNotification({
+                text: `🎉 New subscription activated immediately!\nUser: ${user.email}\nPlan: ${planType}\nStatus: active (100% discount or free trial)`,
+                channel: 'subscriptions',
+              })
+
+              logger.info({
+                msg: 'Subscription created and activated immediately',
+                event: 'subscription_created_active',
+                metadata: {
+                  subscriptionId: stripeEvent.id,
+                  plan: planType,
+                  status: 'active',
+                  isNew,
+                },
+              })
+            } catch (err) {
+              logger.error({
+                msg: 'Error creating subscription',
+                event: 'subscription_creation_error',
+                metadata: {
+                  subscriptionId: stripeEvent.id,
+                  error:
+                    err instanceof Error
+                      ? {
+                          message: err.message,
+                          name: err.name,
+                          stack: err.stack,
+                        }
+                      : err,
+                },
+              })
+              res.status(400).json({
+                error: 'Invalid subscription data',
+                message:
+                  err instanceof Error ? err.message : 'Unknown error occurred',
+              })
+              return
+            }
+            break
+          }
+
           case 'customer.subscription.trial_will_end': {
             logger.info({
               msg: 'Trial ending for subscription',
@@ -234,134 +305,97 @@ export const stripeWebhook = async (
           }
 
           case 'customer.subscription.updated': {
-            // First log what we received
             logger.info({
               msg: 'Processing subscription update',
               event: 'subscription_update_started',
               metadata: {
                 subscriptionId: stripeEvent.id,
-                eventData: stripeEvent,
+                status: stripeEvent.status,
+                cancelAtPeriodEnd: stripeEvent.cancel_at_period_end,
               },
             })
 
-            // Safely extract the required data
-            const stripeCustomerId = stripeEvent.customer as string
-            const stripeSubscriptionId = stripeEvent.id
-            const items = stripeEvent.items?.data
+            // Handle cancellation scheduling
+            if (stripeEvent.cancel_at_period_end && stripeEvent.cancel_at) {
+              const cancelDate = new Date(stripeEvent.cancel_at * 1000)
 
-            if (
-              !items ||
-              items.length === 0 ||
-              !items[0]?.price?.id ||
-              !items[0]?.plan?.product
-            ) {
-              logger.warn({
-                msg: 'Missing required subscription data',
-                event: 'subscription_update_invalid_data',
+              // Update subscription status to reflect cancellation schedule
+              await db
+                .update(subscription)
+                .set({
+                  status: stripeEvent.status,
+                  updatedAt: new Date(),
+                })
+                .where(eq(subscription.stripeSubscriptionId, stripeEvent.id))
+
+              sendSlackNotification({
+                text: `❌ Subscription Cancellation Scheduled\nUser: ${user.email}\nSubscription: ${stripeEvent.id}\nWill cancel on: ${cancelDate.toLocaleDateString()}\nReason: ${stripeEvent.cancellation_details?.reason || 'Not specified'}`,
+                channel: 'subscriptions',
+              })
+
+              logger.info({
+                msg: 'Subscription scheduled for cancellation',
+                event: 'subscription_cancellation_scheduled',
                 metadata: {
-                  subscriptionId: stripeSubscriptionId,
-                  items: stripeEvent.items,
+                  subscriptionId: stripeEvent.id,
+                  cancelAt: cancelDate,
+                  cancellationReason: stripeEvent.cancellation_details?.reason,
+                },
+              })
+              break
+            }
+
+            // Handle subscription updates (plan changes, status changes after payment, etc.)
+            try {
+              const { planType, isNew } = await createOrUpdateSubscription(
+                stripeEvent,
+                userId,
+              )
+
+              const notificationText = isNew
+                ? `🎉 New subscription!\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${stripeEvent.status}`
+                : `📝 Subscription updated\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${stripeEvent.status}`
+
+              sendSlackNotification({
+                text: notificationText,
+                channel: 'subscriptions',
+              })
+
+              logger.info({
+                msg: isNew
+                  ? 'New subscription created'
+                  : 'Subscription updated',
+                event: isNew ? 'subscription_created' : 'subscription_updated',
+                metadata: {
+                  subscriptionId: stripeEvent.id,
+                  plan: planType,
+                  status: stripeEvent.status,
+                  isNew,
+                },
+              })
+            } catch (err) {
+              logger.error({
+                msg: 'Error updating subscription',
+                event: 'subscription_update_error',
+                metadata: {
+                  subscriptionId: stripeEvent.id,
+                  error:
+                    err instanceof Error
+                      ? {
+                          message: err.message,
+                          name: err.name,
+                          stack: err.stack,
+                        }
+                      : err,
                 },
               })
               res.status(400).json({
                 error: 'Invalid subscription data',
-                message: 'Missing required subscription fields',
+                message:
+                  err instanceof Error ? err.message : 'Unknown error occurred',
               })
               return
             }
-
-            const stripePriceId = items[0].price.id
-            const productId = items[0].plan.product as string
-            const planType = getPlanFromProductId(productId)
-            // TODO: Remove search model
-            const searchModel =
-              planType === 'ESSENTIALS' || planType === 'PRO'
-                ? 'ENHANCED'
-                : 'BASIC'
-            const status = stripeEvent.status
-
-            // Now perform the database operation with validated data
-            const result = await db
-              .insert(subscription)
-              .values({
-                userId,
-                stripeSubscriptionId,
-                stripePriceId,
-                stripeCustomerId,
-                status,
-                plan: planType,
-                searchModel,
-              })
-              .onConflictDoUpdate({
-                target: subscription.userId,
-                set: {
-                  stripeSubscriptionId,
-                  stripePriceId,
-                  stripeCustomerId,
-                  status,
-                  plan: planType,
-                  updatedAt: new Date(),
-                },
-              })
-              .returning()
-
-            const creditConfig = CREDIT_CONFIG.find(
-              (config) => config.plan === planType,
-            )
-
-            const credits = creditConfig?.credits ?? 0
-
-            await db
-              .insert(creditsTable)
-              .values({
-                userId,
-                credits,
-              })
-              .onConflictDoUpdate({
-                target: creditsTable.userId,
-                set: {
-                  credits,
-                },
-              })
-
-            const isNewSubscription =
-              result[0].createdAt.getTime() === result[0].updatedAt.getTime()
-
-            let notificationText = ''
-            if (stripeEvent.cancel_at_period_end && stripeEvent.cancel_at) {
-              const cancelDate = new Date(stripeEvent.cancel_at * 1000)
-              notificationText = `❌ Subscription Cancellation Scheduled\nUser: ${user.email}\nPlan: ${planType}\nWill cancel on: ${cancelDate.toLocaleDateString()}\nReason: ${stripeEvent.cancellation_details?.reason || 'Not specified'}`
-            } else {
-              notificationText = isNewSubscription
-                ? `🎉 New subscription!\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
-                : `📝 Subscription updated\nUser: ${user.email}\nPlan: ${planType}\nStatus: ${status}`
-            }
-
-            sendSlackNotification({
-              text: notificationText,
-              channel: 'subscriptions',
-            })
-            logger.info({
-              msg: stripeEvent.cancel_at_period_end
-                ? 'Subscription scheduled for cancellation'
-                : isNewSubscription
-                  ? 'New subscription created'
-                  : 'Subscription updated',
-              event: stripeEvent.cancel_at_period_end
-                ? 'subscription_cancellation_scheduled'
-                : isNewSubscription
-                  ? 'subscription_created'
-                  : 'subscription_updated',
-              metadata: {
-                subscriptionId: stripeSubscriptionId,
-                plan: planType,
-                status,
-                cancelAt: stripeEvent.cancel_at
-                  ? new Date(stripeEvent.cancel_at * 1000)
-                  : undefined,
-                cancellationReason: stripeEvent.cancellation_details?.reason,
-              },
-            })
             break
           }
 
