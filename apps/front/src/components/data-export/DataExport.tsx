@@ -229,7 +229,35 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
           field: 'shortDescription',
           accessor: (row: SearchResult): string => row.shortDescription || '',
         },
-
+        {
+          header: 'Workforce Range',
+          field: 'companyWorkforceRange',
+          accessor: (row: SearchResult): string =>
+            row.companyWorkforceRange || '',
+        },
+        {
+          header: 'Date of Creation',
+          field: 'companyDateOfCreation',
+          accessor: (row: SearchResult): string =>
+            row.companyDateOfCreation?.toISOString() || '',
+        },
+        {
+          header: 'Activities',
+          field: 'companyActivities',
+          accessor: (row: SearchResult): string =>
+            row.companyActivities.map((activity) => activity.name).join(', '),
+        },
+        {
+          header: 'Officers',
+          field: 'companyOfficers',
+          accessor: (row: SearchResult): string =>
+            row.companyOfficers
+              .map(
+                (officer) =>
+                  `${officer.firstName} ${officer.lastName} - ${officer.role}`,
+              )
+              .join(', '),
+        },
         {
           header: 'Primary Category',
           field: 'primaryType',
