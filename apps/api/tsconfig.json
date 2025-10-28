@@ -16,7 +16,7 @@
     "declarationMap": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@ritchy/*": ["../../packages/*"]
+      "@ritchy/logger": ["../../packages/logger/src"]
     },
     "composite": true
   },

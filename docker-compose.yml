@@ -37,18 +37,23 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data/redis
-    command: >
-      redis-server
-      --requirepass ${REDISPASSWORD}
-      --user default off
-      --user ${REDISUSER} on '>${REDISPASSWORD}' allcommands allkeys
-      --appendonly yes
-      --appendfsync everysec
-      --save 900 1
-      --save 300 10
-      --save 60 10000
-      --dir /data/redis
-      --loadmodule /opt/redis-stack/lib/rejson.so
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDISPASSWORD}
+      - --user
+      - default
+      - off
+      - --user
+      - ${REDISUSER}
+      - on
+      - ">${REDISPASSWORD}"
+      - allcommands
+      - allkeys
+      - --appendonly
+      - yes
+      - --loadmodule
+      - /opt/redis-stack/lib/rejson.so
     environment:
       - REDIS_USER=${REDISUSER}
       - REDIS_PASSWORD=${REDISPASSWORD}
