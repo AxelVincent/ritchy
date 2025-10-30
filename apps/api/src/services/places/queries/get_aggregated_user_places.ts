@@ -193,15 +193,15 @@ export const getAggregatedUserPlaces = async (
     LEFT JOIN "enrichment" e ON e.place_id = p.id AND up.enriched_at IS NOT NULL
     LEFT JOIN "enrichment_company" ec ON ec.enrichment_id = e.id
     LEFT JOIN LATERAL (
-      SELECT 
+      SELECT
         JSONB_AGG(
           JSONB_BUILD_OBJECT(
             'id', n.id,
             'note', n.note,
-            'user_id', n.user_id,
-            'user_place_id', n.user_place_id,
-            'created_at', n.created_at,
-            'updated_at', n.updated_at
+            'userId', n.user_id,
+            'userPlaceId', n.user_place_id,
+            'createdAt', n.created_at,
+            'updatedAt', n.updated_at
           ) ORDER BY n.created_at DESC
         ) FILTER (WHERE n.id IS NOT NULL) as notes
       FROM note n
@@ -395,7 +395,20 @@ export const getAggregatedUserPlaces = async (
       openingHours: result.opening_hours ?? undefined,
       listId: listId ?? null,
       lists: result.lists,
-      notes: result.notes,
+      notes: result.notes.map((note) => ({
+        id: note.id,
+        userPlaceId: note.userPlaceId,
+        note: note.note,
+        userId: note.userId,
+        createdAt:
+          note.createdAt instanceof Date
+            ? note.createdAt
+            : new Date(note.createdAt),
+        updatedAt:
+          note.updatedAt instanceof Date
+            ? note.updatedAt
+            : new Date(note.updatedAt),
+      })),
       status: result.status,
       domainRegisteredAt: result.domain_registered_at,
       shortDescription: result.short_description,

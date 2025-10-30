@@ -39,7 +39,7 @@ export const officersColumn: ColumnDef<SearchResult> = {
     const { selectPlaceAndTab } = useMapStore()
 
     const handleCellClick = () => {
-      selectPlaceAndTab(row.original.id, 'company_details', 'company.officers')
+      selectPlaceAndTab(row.original.id, 'contacts')
     }
 
     if (!officers.length) {

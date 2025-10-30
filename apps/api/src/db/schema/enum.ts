@@ -1,6 +1,7 @@
 import {
   CompanyFieldEnum,
   ContactFieldEnum,
+  ContactTypeEnum,
   EmailQualityEnum,
   EmailResultEnum,
   PhoneTypeEnum,
@@ -71,4 +72,8 @@ export const emailQualityEnum = pgEnum('email_quality', [
 
 export const emailResultEnum = pgEnum('email_result', [
   ...EmailResultEnum.options,
+])
+
+export const contactTypeEnum = pgEnum('contact_type', [
+  ...ContactTypeEnum.options,
 ])

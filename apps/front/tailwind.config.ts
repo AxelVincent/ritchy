@@ -116,6 +116,7 @@ const config = {
     require('tailwindcss-animate'),
     addVariablesForColors,
     require('@tailwindcss/typography'),
+    require('@tailwindcss/container-queries'),
   ],
 } satisfies Config
 

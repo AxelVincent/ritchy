@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { EmailSchema } from './places'
+import { EmailSchema } from '../places'
 export const ContactSocialSchema = z.object({
   id: z.string(),
   contactId: z.string(),

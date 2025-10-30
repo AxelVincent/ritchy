@@ -535,9 +535,23 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
       })
 
       // Handle reconnection attempts
-      socket.io.on('reconnect_attempt', (attempt) => {
+      socket.io.on('reconnect_attempt', async (attempt) => {
         debugLog(`[WS Context] Reconnection attempt ${attempt}`)
         setStatus('connecting')
+
+        // Refresh token before reconnection to avoid expired JWT errors
+        try {
+          const freshToken = await getTokenRef.current()
+          if (freshToken && socket.auth && typeof socket.auth === 'object') {
+            ;(socket.auth as { token: string }).token = freshToken
+            debugLog('[WS Context] Token refreshed for reconnection')
+          }
+        } catch (error) {
+          console.error(
+            '[WS Context] Failed to refresh token for reconnection:',
+            error,
+          )
+        }
       })
 
       // Handle successful reconnection
@@ -577,9 +591,32 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
         setupInProgressRef.current = false
       })
 
-      // Add debug logging
-      socket.on('connect_error', (error) => {
+      // Handle connection errors (including expired JWT)
+      socket.on('connect_error', async (error) => {
         console.error('[WS Context] Connection error:', error.message, error)
+
+        // If authentication failed, try refreshing the token
+        if (
+          error.message.includes('Authentication') ||
+          error.message.includes('token')
+        ) {
+          debugLog(
+            '[WS Context] Authentication error detected, refreshing token...',
+          )
+
+          try {
+            const freshToken = await getTokenRef.current()
+            if (freshToken && socket.auth && typeof socket.auth === 'object') {
+              ;(socket.auth as { token: string }).token = freshToken
+              debugLog('[WS Context] Token refreshed after auth error')
+            }
+          } catch (tokenError) {
+            console.error(
+              '[WS Context] Failed to refresh token after auth error:',
+              tokenError,
+            )
+          }
+        }
       })
     } catch (error) {
       console.error('[WS Context] Failed to set up WebSocket:', error)
@@ -592,8 +629,37 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setupWebSocket()
 
+    // Proactive token refresh every 45 minutes to prevent expiration
+    // Clerk JWTs typically expire after 1 hour, so refresh at 45min keeps us safe
+    const tokenRefreshInterval = setInterval(
+      async () => {
+        if (socketRef.current?.connected) {
+          try {
+            debugLog('[WS Context] Proactively refreshing token...')
+            const freshToken = await getTokenRef.current()
+            if (
+              freshToken &&
+              socketRef.current.auth &&
+              typeof socketRef.current.auth === 'object'
+            ) {
+              ;(socketRef.current.auth as { token: string }).token = freshToken
+              debugLog('[WS Context] Token proactively refreshed')
+            }
+          } catch (error) {
+            console.error(
+              '[WS Context] Failed to proactively refresh token:',
+              error,
+            )
+          }
+        }
+      },
+      45 * 60 * 1000,
+    ) // 45 minutes
+
     // Cleanup function
     return () => {
+      clearInterval(tokenRefreshInterval)
+
       if (socketRef.current) {
         debugLog('[WS Context] Cleaning up WebSocket connection')
         socketRef.current.disconnect()

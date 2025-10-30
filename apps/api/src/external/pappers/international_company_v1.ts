@@ -1,4 +1,5 @@
 import { logger } from '@ritchy/logger'
+import { ContactTypeEnum } from '@ritchy/types'
 import z from 'zod'
 import { PAPPERS_CONFIG } from '../../config/pappers'
 
@@ -39,7 +40,7 @@ const CompanyReferenceSchema = z.object({
 })
 
 const OfficerSchema = z.object({
-  type: z.enum(['physical', 'legal']).nullable(),
+  type: ContactTypeEnum.nullable(),
   role: z.string().nullable(),
   mention: z.string().nullable().optional(),
   date_of_appointment: z.string().nullable(),
@@ -200,7 +201,7 @@ export const InternationalCompanyResponseSchema = z.object({
   legal_form_code: z.string().nullable(),
   local_legal_form_code: z.string().nullable(),
   local_legal_form_name: z.string().nullable(),
-  type: z.enum(['physical', 'legal']).nullable(),
+  type: ContactTypeEnum.nullable(),
   activities: z.array(ActivitySchema).nullable(),
   fields_of_activity: z.array(z.string()).nullable(),
   local_activities: z.array(LocalActivitySchema).nullable(),

@@ -1,5 +1,6 @@
 import { logger } from '@ritchy/logger'
 
+import { ContactTypeEnum } from '@ritchy/types'
 import z from 'zod'
 import { PAPPERS_CONFIG } from '../../config/pappers'
 import { PAPPERS_COUNTRY_CODES } from './international_company_v1'
@@ -17,7 +18,7 @@ const InternationalSearchResponseSchema = z.object({
     z.object({
       company_number: z.string(),
       country_code: z.string(),
-      type: z.enum(['physical', 'legal']).nullable(),
+      type: ContactTypeEnum.nullable(),
       name: z.string(),
       legal_form_code: z.string().nullable(),
       local_legal_form_code: z.string().nullable(),

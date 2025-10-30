@@ -278,7 +278,9 @@ export const setEnrichmentStatus = async (
 }
 
 /**
- * Get enrichment status from Redis, fallback to PostgreSQL
+ * Get enrichment status from Redis
+ * Note: Returns 'idle' if not found in Redis. Completed enrichments are tracked
+ * via userPlace.enriched_at in the database, which is returned by getAggregatedUserPlaces.
  */
 export const getEnrichmentStatus = async (
   userPlaceId: string,
@@ -286,29 +288,13 @@ export const getEnrichmentStatus = async (
   const key = `${STATUS_KEY_PREFIX}:${userPlaceId}`
 
   try {
-    // Try Redis first
     const data = await redisClient.redis.get(key)
 
     if (data) {
       return JSON.parse(data) as EnrichmentStatusData
     }
 
-    // Fallback to PostgreSQL for completed enrichments
-    const userPlace = await db.query.userPlace.findFirst({
-      where: eq(userPlaceTable.id, userPlaceId),
-      columns: { enriched_at: true },
-    })
-
-    if (userPlace?.enriched_at) {
-      return {
-        status: 'completed',
-        step: 'Enrichment completed',
-        progress: 100,
-        updatedAt: userPlace.enriched_at.getTime(),
-      }
-    }
-
-    // Default: idle
+    // Default: idle (no Redis data means not actively enriching)
     return {
       status: 'idle',
       step: '',
@@ -336,7 +322,9 @@ export const getEnrichmentStatus = async (
 
 /**
  * Get status for multiple enrichments in a single call (optimized)
- * Uses Redis pipeline for active statuses and batched PostgreSQL query for completed enrichments
+ * Uses Redis MGET for efficient batch retrieval of active enrichment statuses
+ * Note: Returns 'idle' for enrichments not found in Redis. Completed enrichments are tracked
+ * via userPlace.enriched_at in the database, which is returned by getAggregatedUserPlaces.
  */
 export const getBatchEnrichmentStatus = async (
   userPlaceIds: string[],
@@ -344,75 +332,26 @@ export const getBatchEnrichmentStatus = async (
   const result: Record<string, EnrichmentStatusData> = {}
 
   try {
-    // Use Redis pipeline for efficiency
-    const pipeline = redisClient.redis.pipeline()
+    // Use Redis MGET for better performance than pipeline
+    const keys = userPlaceIds.map((id) => `${STATUS_KEY_PREFIX}:${id}`)
+    const values = await redisClient.redis.mget(...keys)
 
-    for (const userPlaceId of userPlaceIds) {
-      pipeline.get(`${STATUS_KEY_PREFIX}:${userPlaceId}`)
-    }
-
-    const results = await pipeline.exec()
-    const missingIds: string[] = []
-
-    // Process Redis results
+    // Process results
     for (let i = 0; i < userPlaceIds.length; i++) {
       const userPlaceId = userPlaceIds[i]
-      const [error, data] = results?.[i] ?? [null, null]
+      const value = values[i]
 
-      if (!error && data && typeof data === 'string') {
-        result[userPlaceId] = JSON.parse(data) as EnrichmentStatusData
+      if (value) {
+        result[userPlaceId] = JSON.parse(value) as EnrichmentStatusData
       } else {
-        // Track IDs not found in Redis for PostgreSQL fallback
-        missingIds.push(userPlaceId)
+        // No Redis data = idle (not actively enriching)
+        result[userPlaceId] = {
+          status: 'idle',
+          step: '',
+          progress: 0,
+          updatedAt: Date.now(),
+        }
       }
-    }
-
-    // Batch PostgreSQL fallback for missing IDs (completed enrichments)
-    if (missingIds.length > 0) {
-      const userPlaces = await db.query.userPlace.findMany({
-        where: (userPlace, { inArray }) => inArray(userPlace.id, missingIds),
-        columns: {
-          id: true,
-          enriched_at: true,
-        },
-      })
-
-      // Create lookup map for O(1) access
-      const enrichedMap = new Map(
-        userPlaces
-          .filter((up) => up.enriched_at)
-          .map((up) => [
-            up.id,
-            {
-              status: 'completed' as const,
-              step: 'Enrichment completed',
-              progress: 100,
-              updatedAt: up.enriched_at?.getTime() ?? Date.now(),
-            },
-          ]),
-      )
-
-      // Fill in results from database or default to idle
-      for (const userPlaceId of missingIds) {
-        result[userPlaceId] =
-          enrichedMap.get(userPlaceId) ||
-          ({
-            status: 'idle',
-            step: '',
-            progress: 0,
-            updatedAt: Date.now(),
-          } as EnrichmentStatusData)
-      }
-
-      logger.debug({
-        msg: 'Batch enrichment status fallback to PostgreSQL',
-        event: 'batch_enrichment_status_pg_fallback',
-        metadata: {
-          totalIds: userPlaceIds.length,
-          missingIds: missingIds.length,
-          foundInDb: enrichedMap.size,
-        },
-      })
     }
 
     return result

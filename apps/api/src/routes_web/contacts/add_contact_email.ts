@@ -19,17 +19,15 @@ export const postContactEmail = async (
   res: Response<PostContactEmailApiResponse>,
 ) => {
   try {
-    const { email, userPlaceId } = req.body
+    const { email, contactId } = req.body
     logger.info({
       msg: '[POST /contacts/email] Adding contact email',
       event: 'adding_contact_email',
-      metadata: { email, userPlaceId },
+      metadata: { email, contactId },
     })
 
-    const contactResult = await getOrCreatePrimaryContact(userPlaceId)
-
     const contactEmailResult = await verifyAndInsertContactEmail(
-      contactResult.id,
+      contactId,
       '',
       email,
     )

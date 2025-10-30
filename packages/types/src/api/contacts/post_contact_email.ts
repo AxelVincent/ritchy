@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ApiErrorResponseSchema } from '../../common'
 
 export const PostContactEmailRequestSchema = z.object({
-  userPlaceId: z.string().uuid(),
+  contactId: z.string().uuid(),
   email: z.string().email(),
 })
 

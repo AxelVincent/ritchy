@@ -60,9 +60,9 @@ export const SocialMediaList = React.memo(function SocialMediaList({
         <Badge variant="secondary">{socials.length}</Badge>
       </div>
       {socials.map((social) => (
-        <div key={social.url} className="flex items-center justify-between p-2">
-          <div className="flex items-center gap-2">
-            <CopyCell content={social.url} />
+        <div key={social.url} className="flex items-center gap-2 p-2 min-w-0">
+          <div className="flex-1 min-w-0">
+            <CopyCell content={social.url} href={social.url} />
           </div>
           {social.isPrimary && (
             <Star

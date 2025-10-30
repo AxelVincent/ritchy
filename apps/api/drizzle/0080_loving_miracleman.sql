@@ -1,0 +1,1 @@
+ALTER TABLE "contact" ADD COLUMN "type" "contact_type";

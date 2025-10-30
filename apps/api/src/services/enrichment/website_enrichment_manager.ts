@@ -710,7 +710,11 @@ export const websiteEnrichmentManager = async ({
       logger.info({
         msg: '[pappers] Governmental data found (scraping successful scenario)',
         event: 'governmental_data_found_scraping_successful',
-        metadata: { governmentalDataResult },
+        metadata: {
+          companyName: governmentalDataResult.companyData.name,
+          companyNumber: governmentalDataResult.companyData.company_number,
+          userPlaceId,
+        },
       })
     }
 
