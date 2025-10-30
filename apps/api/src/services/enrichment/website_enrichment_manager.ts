@@ -33,6 +33,14 @@ import { isSocialMediaUrl } from './utils/is_social_media_url'
 
 const ENRICHMENT_CREDITS = 5
 
+const simulateProcessingTime = async () => {
+  const min = 1000
+  const max = 3000
+  await new Promise((resolve) =>
+    setTimeout(resolve, Math.floor(min + Math.random() * (max - min))),
+  )
+}
+
 export const websiteEnrichmentManager = async ({
   userPlaceId,
   jobId,
@@ -123,59 +131,113 @@ export const websiteEnrichmentManager = async ({
     if (existingEnrichment?.success) {
       if (!existingEnrichment.isStale) {
         // Simulate processing steps even though using cached data
-        await setEnrichmentStatus(
-          userPlaceId,
-          'processing',
-          'Extracting website information',
-          20,
-          jobId,
-        )
+        const domain = existingEnrichment.domain || 'website'
 
         await setEnrichmentStatus(
           userPlaceId,
           'processing',
-          'Analyzing website content',
-          45,
+          'Preparing website scanner',
+          14,
           jobId,
         )
+        await simulateProcessingTime()
 
         await setEnrichmentStatus(
           userPlaceId,
           'processing',
-          'Searching external databases',
-          70,
+          `Scanning homepage: ${domain}`,
+          16,
           jobId,
         )
+        jobTracker.updateProgress(jobId, `Scanning homepage: ${domain}`)
+        await simulateProcessingTime()
 
         await setEnrichmentStatus(
           userPlaceId,
           'processing',
-          'Processing company information',
+          'Analyzing homepage content',
+          25,
+          jobId,
+        )
+        jobTracker.updateProgress(jobId, 'Analyzing homepage content')
+        await simulateProcessingTime()
+
+        await setEnrichmentStatus(
+          userPlaceId,
+          'processing',
+          'Identifying key pages to scan',
+          26,
+          jobId,
+        )
+        jobTracker.updateProgress(jobId, 'Identifying key pages to scan')
+        await simulateProcessingTime()
+
+        // Simulate some pages being scanned
+        const simulatedPageCount = Math.floor(Math.random() * 5) + 3 // 3-7 pages
+        await setEnrichmentStatus(
+          userPlaceId,
+          'processing',
+          `Starting scan of ${simulatedPageCount} additional pages`,
+          28,
+          jobId,
+        )
+        jobTracker.updateProgress(
+          jobId,
+          `Starting scan of ${simulatedPageCount} additional pages`,
+        )
+        await simulateProcessingTime()
+
+        // Simulate scanning completion
+        await setEnrichmentStatus(
+          userPlaceId,
+          'processing',
+          `Completed ${simulatedPageCount}/${simulatedPageCount} pages successfully`,
+          75,
+          jobId,
+        )
+        await simulateProcessingTime()
+
+        await setEnrichmentStatus(
+          userPlaceId,
+          'processing',
+          'Searching governmental databases',
           85,
           jobId,
         )
+        jobTracker.updateProgress(jobId, 'Searching governmental databases')
+        await simulateProcessingTime()
 
         await setEnrichmentStatus(
           userPlaceId,
           'processing',
-          'Generating contact details',
-          93,
+          'Compiling business data',
+          95,
           jobId,
         )
-        jobTracker.updateProgress(jobId, 'Generating contact details')
+        jobTracker.updateProgress(jobId, 'Compiling business data')
+        await simulateProcessingTime()
+
+        await setEnrichmentStatus(
+          userPlaceId,
+          'processing',
+          'Saving enrichment results',
+          98,
+          jobId,
+        )
+        await simulateProcessingTime()
+
+        await setEnrichmentStatus(
+          userPlaceId,
+          'processing',
+          'Generating contact information',
+          99,
+          jobId,
+        )
 
         await populateContactFromEnrichment({
           enrichmentId: existingEnrichment.id,
           userPlaceId,
         })
-
-        await setEnrichmentStatus(
-          userPlaceId,
-          'processing',
-          'Finalizing enrichment',
-          97,
-          jobId,
-        )
 
         await setEnrichmentStatus(
           userPlaceId,
