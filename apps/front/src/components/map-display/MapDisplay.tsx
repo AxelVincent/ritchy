@@ -28,7 +28,7 @@ type MobileLayoutState = 'table' | 'balanced' | 'map'
 
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const isMobile = useIsMobile()
-  const { selectedPlaceId } = useMapStore()
+  const { selectedPlaceId, setSelectedPlaceId } = useMapStore()
 
   // Mobile layout state: 'table' (more list), 'balanced' (50/50), 'map' (more map)
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutState>(() => {
@@ -95,6 +95,16 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
       setTableData(places)
     }
   }, [places])
+
+  // Clear selectedPlaceId if the selected place is not in the current places array
+  useEffect(() => {
+    if (selectedPlaceId && places && places.length > 0) {
+      const placeExists = places.some((place) => place.id === selectedPlaceId)
+      if (!placeExists) {
+        setSelectedPlaceId(null)
+      }
+    }
+  }, [places, selectedPlaceId, setSelectedPlaceId])
 
   // Save mobile layout state
   useEffect(() => {
