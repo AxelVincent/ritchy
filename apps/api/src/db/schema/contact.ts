@@ -1,7 +1,6 @@
 import { type InferSelectModel, sql } from 'drizzle-orm'
 import {
   boolean,
-  check,
   index,
   pgEnum,
   pgTable,
@@ -12,7 +11,13 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 
-import { emailQualityEnum, emailResultEnum, socialPlatformEnum } from './enum'
+import { enrichmentCompanyOfficer } from './enrichment'
+import {
+  contactTypeEnum,
+  emailQualityEnum,
+  emailResultEnum,
+  socialPlatformEnum,
+} from './enum'
 import { userPlace } from './place'
 
 export const contact = pgTable(
@@ -22,6 +27,11 @@ export const contact = pgTable(
     userPlaceId: uuid('user_place_id')
       .notNull()
       .references(() => userPlace.id, { onDelete: 'cascade' }),
+    officerId: uuid('officer_id').references(
+      () => enrichmentCompanyOfficer.id,
+      { onDelete: 'cascade' },
+    ),
+    type: contactTypeEnum('type'),
     firstName: text('first_name'),
     lastName: text('last_name'),
     isPrimary: boolean('is_primary').notNull().default(false),

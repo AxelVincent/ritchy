@@ -1,90 +1,197 @@
-import { usePostContactEmail } from '@/api/mutations/contacts/usePostContactEmail'
-import { EmailDisplay } from '@/components/contact/EmailDisplay'
-import { PhonesList } from '@/components/data-table/columns/utils/PhonesList'
-import { SocialMediaList } from '@/components/data-table/columns/utils/SocialMediaList'
-import type { Place } from '@ritchy/types'
-import { EMPTY_MESSAGE } from '../SelectedPlaceCard'
+import { usePlaceContactsQuery } from '@/api/queries/places/contacts/usePlaceContacts'
+import { ContactListSkeleton } from '@/components/contact/ContactListSkeleton'
+import { CreateContactForm } from '@/components/contact/CreateContactForm'
+import { UnifiedContactCard } from '@/components/contact/UnifiedContactCard'
+import { EnrichmentAwareEmptyState } from '@/components/enrichment'
+import { Button } from '@/components/ui/button'
+import { useContactMutations } from '@/hooks/useContactMutations'
+import type { Email, Phone, Place, SocialMedia } from '@ritchy/types'
+import { UserPlus } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 export const PlaceContactTab = ({ place }: { place: Place }) => {
-  const hasPhones = place.contactPhones?.length !== 0
-  const hasLinkedinSocials = place.contactLinkedins?.length !== 0
-  const hasFacebookSocials = place.contactFacebooks?.length !== 0
-  const hasInstagramSocials = place.contactInstagrams?.length !== 0
+  const { data: contactsData, isLoading } = usePlaceContactsQuery(place.id)
+  const mutations = useContactMutations(place.id)
+  const [expandedContacts, setExpandedContacts] = useState<Set<string>>(
+    new Set(),
+  )
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
-  const postContactEmailMutation = usePostContactEmail()
-
-  const handleAddEmail = async (email: string) => {
-    await postContactEmailMutation.mutateAsync({
-      userPlaceId: place.id,
-      email,
+  const toggleContact = (contactId: string) => {
+    setExpandedContacts((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(contactId)) {
+        newSet.delete(contactId)
+      } else {
+        newSet.add(contactId)
+      }
+      return newSet
     })
   }
 
-  const hasOtherContact =
-    hasPhones || hasLinkedinSocials || hasFacebookSocials || hasInstagramSocials
+  // Transform contacts data to match the Email type structure
+  const transformedContacts = useMemo(() => {
+    if (!contactsData || 'error' in contactsData) return []
+
+    return contactsData.contacts.map((contact) => ({
+      ...contact,
+      emails: contact.emails.map((email) => ({
+        ...email,
+        createdAt: new Date(email.createdAt),
+        updatedAt: new Date(email.updatedAt),
+        quality: email.quality as Email['quality'],
+        result: email.result as Email['result'],
+      })) as Email[],
+      phones: contact.phones.map((phone) => ({
+        ...phone,
+        type: phone.type as Phone['type'],
+        createdAt: new Date(phone.createdAt),
+        updatedAt: new Date(phone.updatedAt),
+      })) as Phone[],
+      socials: contact.socials.map((social) => ({
+        ...social,
+        socialMediaPlatform:
+          social.platform as SocialMedia['socialMediaPlatform'],
+        createdAt: new Date(social.createdAt),
+        updatedAt: new Date(social.updatedAt),
+      })) as SocialMedia[],
+    }))
+  }, [contactsData])
+
+  // Find primary contact
+  const primaryContact = useMemo(() => {
+    return (
+      transformedContacts.find((c) => c.isPrimary) || transformedContacts[0]
+    )
+  }, [transformedContacts])
+
+  // Get secondary contacts (non-primary, excluding the one shown as primary)
+  const secondaryContacts = useMemo(() => {
+    if (!primaryContact) return []
+    return transformedContacts.filter((c) => c.id !== primaryContact.id)
+  }, [transformedContacts, primaryContact])
+
+  // Loading state with skeleton
+  if (isLoading) {
+    return <ContactListSkeleton count={3} />
+  }
 
   return (
-    <div className="flex flex-col gap-6 p-4">
-      {/* Emails section - always show to allow adding emails */}
-      <div className="min-w-[350px] flex-1 max-w-[400px]w-full">
-        <EmailDisplay
-          emails={place.contactEmails || []}
-          onAddEmail={handleAddEmail}
-          onDeleteEmail={async () => {}}
-          onSetPrimary={async () => {}}
-        />
-      </div>
+    <>
+      <EnrichmentAwareEmptyState
+        placeId={place.id}
+        hasData={transformedContacts.length > 0}
+      />
 
-      {/* Show enrichment message for other contact types when missing */}
-      {!hasOtherContact && place.website && (
-        <div className="flex flex-col items-center justify-center p-6 text-center">
-          <div className="max-w-sm space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-muted-foreground">
-                Enrichment required for contact information
-              </h3>
-              <p className="text-sm text-muted-foreground">{EMPTY_MESSAGE}</p>
-            </div>
+      {transformedContacts.length > 0 && (
+        <div className="space-y-6 p-4">
+          {/* Header with Add Contact Button */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Contacts</h2>
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              size="sm"
+              className="gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Contact
+            </Button>
           </div>
-        </div>
-      )}
 
-      {hasPhones && (
-        <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <PhonesList
-            phones={place.contactPhones || []}
-            id={`place-${place.id}-phones`}
+          {/* Create Contact Form Dialog */}
+          <CreateContactForm
+            open={showCreateForm}
+            onOpenChange={setShowCreateForm}
+            onCreateContact={mutations.contact.create}
           />
-        </div>
-      )}
 
-      {/* Social media sections - will wrap based on available space */}
-      {hasFacebookSocials && (
-        <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <SocialMediaList
-            socials={place.contactFacebooks || []}
-            platform="FACEBOOK"
-          />
-        </div>
-      )}
+          {/* Primary Contact Section */}
+          {primaryContact && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold">Primary Contact</h3>
+              </div>
 
-      {hasInstagramSocials && (
-        <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <SocialMediaList
-            socials={place.contactInstagrams || []}
-            platform="INSTAGRAM"
-          />
-        </div>
-      )}
+              <UnifiedContactCard
+                contact={primaryContact}
+                isPrimary
+                isExpanded={expandedContacts.has(primaryContact.id)}
+                onToggle={() => toggleContact(primaryContact.id)}
+                onAddEmail={(email) =>
+                  mutations.email.add(primaryContact.id, email)
+                }
+                onDeleteEmail={(emailId) =>
+                  mutations.email.delete(primaryContact.id, emailId)
+                }
+                onSetPrimaryEmail={(emailId, isPrimary) =>
+                  mutations.email.setPrimary(
+                    primaryContact.id,
+                    emailId,
+                    isPrimary,
+                  )
+                }
+                onAddPhone={(phone, type) =>
+                  mutations.phone.add(primaryContact.id, phone, type)
+                }
+                onDeletePhone={(phoneId) =>
+                  mutations.phone.delete(primaryContact.id, phoneId)
+                }
+                onSetPrimaryPhone={(phoneId, isPrimary) =>
+                  mutations.phone.setPrimary(
+                    primaryContact.id,
+                    phoneId,
+                    isPrimary,
+                  )
+                }
+              />
+            </section>
+          )}
 
-      {hasLinkedinSocials && (
-        <div className="min-w-[200px] flex-1 max-w-[400px]">
-          <SocialMediaList
-            socials={place.contactLinkedins || []}
-            platform="LINKEDIN"
-          />
+          {/* Other Contacts Section */}
+          {secondaryContacts.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold">
+                  Other Contacts ({secondaryContacts.length})
+                </h3>
+              </div>
+
+              <div className="space-y-3">
+                {secondaryContacts.map((contact) => (
+                  <UnifiedContactCard
+                    key={contact.id}
+                    contact={contact}
+                    isExpanded={expandedContacts.has(contact.id)}
+                    onToggle={() => toggleContact(contact.id)}
+                    onAddEmail={(email) =>
+                      mutations.email.add(contact.id, email)
+                    }
+                    onDeleteEmail={(emailId) =>
+                      mutations.email.delete(contact.id, emailId)
+                    }
+                    onSetPrimaryEmail={(emailId, isPrimary) =>
+                      mutations.email.setPrimary(contact.id, emailId, isPrimary)
+                    }
+                    onAddPhone={(phone, type) =>
+                      mutations.phone.add(contact.id, phone, type)
+                    }
+                    onDeletePhone={(phoneId) =>
+                      mutations.phone.delete(contact.id, phoneId)
+                    }
+                    onSetPrimaryPhone={(phoneId, isPrimary) =>
+                      mutations.phone.setPrimary(contact.id, phoneId, isPrimary)
+                    }
+                    onSetPrimaryContact={() =>
+                      mutations.contact.setPrimary(contact.id)
+                    }
+                    onDeleteContact={() => mutations.contact.delete(contact.id)}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
-    </div>
+    </>
   )
 }

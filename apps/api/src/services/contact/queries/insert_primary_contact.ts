@@ -42,6 +42,7 @@ export const getOrCreatePrimaryContact = async (
       firstName: '',
       lastName: place.name,
       isPrimary: true,
+      type: 'legal',
     })
     .returning()
 

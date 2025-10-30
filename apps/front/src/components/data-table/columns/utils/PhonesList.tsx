@@ -47,23 +47,21 @@ export const PhonesList = ({
         <div
           key={phoneObj.phone}
           id={id}
-          className="flex items-center gap-2 truncate"
+          className="flex items-center gap-2 min-w-0"
         >
-          <CopyCell content={phoneObj.phone} />
+          <div className="flex-1 min-w-0">
+            <CopyCell content={phoneObj.phone} href={`tel:${phoneObj.phone}`} />
+          </div>
           {phoneObj.type && (
             <Badge
               variant={getPhoneTypeVariant(phoneObj.type)}
-              className="ml-2 text-[10px]"
+              className="flex-shrink-0 text-[10px]"
             >
               {formatPhoneType(phoneObj.type)}
             </Badge>
           )}
           {phoneObj.isPrimary && (
-            <Star
-              className="h-4 w-4 flex-shrink-0 text-yellow-400"
-              fill="currentColor"
-              aria-label="Primary phone"
-            />
+            <Star className="h-4 w-4 fill-current" aria-label="Primary phone" />
           )}
         </div>
       ))}

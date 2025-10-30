@@ -257,13 +257,11 @@ export const PlacesKeywordSearch = ({
       </Button>
 
       {/* Upgrade CTA - Compact */}
-      {!isModelAvailable(userPlan, 'ENHANCED') && (
-        <div className="text-center">
-          <CalButton variant="outline" size="sm" className="text-xs">
-            Need more power? Contact us
-          </CalButton>
-        </div>
-      )}
+      <div className="text-center">
+        <CalButton variant="outline" size="sm" className="text-xs">
+          Need more power? Contact us
+        </CalButton>
+      </div>
     </div>
   )
 }

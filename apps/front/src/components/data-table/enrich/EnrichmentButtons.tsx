@@ -88,16 +88,5 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     )
   }
 
-  // Show "Enrich All" only when no rows are selected
-  return (
-    <div className="flex flex-col gap-2">
-      <Button
-        onClick={handleEnrichClick}
-        disabled={isProcessing}
-        className={isProcessing ? 'h-auto' : ''}
-      >
-        {renderButtonContent(rowsToEnrich.length, 'Enrich All')}
-      </Button>
-    </div>
-  )
+  return null
 }

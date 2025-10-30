@@ -8,7 +8,8 @@ import {
 } from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../middleware/zodValidation'
-import enrichmentRouter from './enrichment'
+import contactsRouter from './contacts'
+import enrichmentRouter from './enrichments'
 import { getGeocode } from './get_geocode'
 import { getPlace } from './get_place'
 import notesRouter from './notes'
@@ -46,6 +47,8 @@ placesRouter.use('/:userPlaceId/notes', notesRouter)
 placesRouter.use('/:userPlaceId/reviews', reviewsRouter)
 
 placesRouter.use('/:userPlaceId/enrichment', enrichmentRouter)
+
+placesRouter.use('/:userPlaceId/contacts', contactsRouter)
 
 // Catch-all route last
 placesRouter.get(

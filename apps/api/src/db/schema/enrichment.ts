@@ -13,7 +13,12 @@ import type {
   FinancialRatios,
   RelatedDocument,
 } from '../../external/pappers/international_company_v1'
-import { emailQualityEnum, emailResultEnum, phoneTypeEnum } from './enum'
+import {
+  contactTypeEnum,
+  emailQualityEnum,
+  emailResultEnum,
+  phoneTypeEnum,
+} from './enum'
 import { place } from './place'
 
 export const enrichment = pgTable(
@@ -205,7 +210,7 @@ export const enrichmentCompanyOfficer = pgTable('enrichment_company_officer', {
   company_id: uuid('company_id')
     .notNull()
     .references(() => enrichmentCompany.id, { onDelete: 'cascade' }),
-  type: text('type'), // 'physical' or 'legal'
+  type: contactTypeEnum('type'),
   role: text('role'),
   mention: text('mention'),
   date_of_appointment: timestamp('date_of_appointment'),

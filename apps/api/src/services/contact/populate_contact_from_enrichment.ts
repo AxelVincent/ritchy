@@ -4,6 +4,7 @@ import { db } from '../../db/db'
 import { populateContactEmailsFromEnrichment } from './populate_contact_emails_from_enrichment'
 import { populateContactPhonesFromEnrichment } from './populate_contact_phones_from_enrichment'
 import { populateContactSocialMediasFromEnrichment } from './populate_contact_social_medias_from_enrichment'
+import { populateOfficerContactsFromEnrichment } from './populate_officer_contacts_from_enrichment'
 import { getOrCreatePrimaryContact } from './queries/insert_primary_contact'
 
 export const populateContactFromEnrichment = async ({
@@ -26,7 +27,13 @@ export const populateContactFromEnrichment = async ({
       await Promise.all([
         populateContactSocialMediasFromEnrichment(enrichmentId, contact.id, tx),
         populateContactEmailsFromEnrichment(enrichmentId, contact.id, tx),
-        populateContactPhonesFromEnrichment(enrichmentId, contact.id, tx),
+        populateContactPhonesFromEnrichment(
+          enrichmentId,
+          userPlaceId,
+          contact.id,
+          tx,
+        ),
+        populateOfficerContactsFromEnrichment(enrichmentId, userPlaceId, tx),
       ])
 
       return contact
