@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { FileUp, Search } from 'lucide-react'
 
 import {
   SidebarMenu,
@@ -7,8 +7,13 @@ import {
 } from '@/components/ui/sidebar'
 import { Link, useMatch } from '@tanstack/react-router'
 export function NavMain() {
-  const match = useMatch({
+  const searchMatch = useMatch({
     from: '/_auth/search/',
+    shouldThrow: false,
+  })
+
+  const importMatch = useMatch({
+    from: '/_auth/import',
     shouldThrow: false,
   })
 
@@ -18,7 +23,7 @@ export function NavMain() {
         <SidebarMenuButton
           asChild
           tooltip="Explore places"
-          isActive={match?.pathname === '/search/'}
+          isActive={searchMatch?.pathname === '/search/'}
         >
           <Link
             to="/search"
@@ -28,6 +33,18 @@ export function NavMain() {
           >
             <Search className="text-muted-foreground text-sm" />
             <p className="pl-2 font-medium">Explore places</p>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          tooltip="Import from CSV"
+          isActive={importMatch?.pathname === '/import'}
+        >
+          <Link to="/import">
+            <FileUp className="text-muted-foreground text-sm" />
+            <p className="pl-2 font-medium">Import CSV</p>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
