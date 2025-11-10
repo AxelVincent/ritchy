@@ -568,6 +568,34 @@
       "when": 1761577536299,
       "tag": "0080_loving_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1762261947186,
+      "tag": "0081_dizzy_black_tom",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1762261970944,
+      "tag": "0082_chilly_falcon",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1762431972465,
+      "tag": "0083_polite_shatterstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1762527793055,
+      "tag": "0084_orange_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

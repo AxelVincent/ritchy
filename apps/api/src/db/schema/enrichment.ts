@@ -239,6 +239,72 @@ export const enrichmentCompanyOfficer = pgTable('enrichment_company_officer', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+export const enrichmentCompanyOfficerEmail = pgTable(
+  'enrichment_company_officer_email',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    officer_id: uuid('officer_id')
+      .notNull()
+      .references(() => enrichmentCompanyOfficer.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    is_verified: boolean('is_verified').notNull().default(false),
+    source: text('source'),
+    quality: emailQualityEnum('quality'),
+    result: emailResultEnum('result'),
+    role: boolean('role').notNull().default(false),
+    free: boolean('free').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.officer_id, table.email)],
+)
+
+export const enrichmentCompanyOfficerLinkedin = pgTable(
+  'enrichment_company_officer_linkedin',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    officer_id: uuid('officer_id')
+      .notNull()
+      .references(() => enrichmentCompanyOfficer.id, { onDelete: 'cascade' }),
+    profile_url: text('profile_url').notNull(),
+    confidence: integer('confidence').notNull(),
+    reasoning: text('reasoning'),
+    source: text('source').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.officer_id, table.profile_url)],
+)
+
+export const enrichmentCompanyOfficerPhone = pgTable(
+  'enrichment_company_officer_phone',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    officer_id: uuid('officer_id')
+      .notNull()
+      .references(() => enrichmentCompanyOfficer.id, { onDelete: 'cascade' }),
+    phone: text('phone').notNull(),
+    source: text('source').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.officer_id, table.phone)],
+)
+
+export const foragerPhoneCache = pgTable(
+  'forager_phone_cache',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    linkedin_public_identifier: text('linkedin_public_identifier')
+      .notNull()
+      .unique(),
+    phone_numbers: jsonb('phone_numbers').$type<readonly string[]>().notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index().on(table.linkedin_public_identifier)],
+)
+
 export const enrichmentCompanyUbo = pgTable('enrichment_company_ubo', {
   id: uuid('id').defaultRandom().primaryKey(),
   company_id: uuid('company_id')
@@ -334,6 +400,9 @@ export type EnrichmentCompanyActivity =
   typeof enrichmentCompanyActivity.$inferSelect
 export type EnrichmentCompanyOfficer =
   typeof enrichmentCompanyOfficer.$inferSelect
+export type EnrichmentCompanyOfficerPhone =
+  typeof enrichmentCompanyOfficerPhone.$inferSelect
+export type ForagerPhoneCache = typeof foragerPhoneCache.$inferSelect
 export type EnrichmentCompanyUbo = typeof enrichmentCompanyUbo.$inferSelect
 export type EnrichmentCompanyContact =
   typeof enrichmentCompanyContact.$inferSelect

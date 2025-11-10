@@ -6,8 +6,8 @@ import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { enrichment, enrichment as enrichmentTable } from '../../db/schema'
 import { getCrawlStrategy } from '../../external/langchain/get_crawl_strategy'
+import { getPlaceByUserPlaceId } from '../places/queries/get_place_by_user_place_id'
 import { getBusinessName } from './queries/get_business_name'
-import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
 import { UnrecoverableError } from 'bullmq'
 import { getWebsiteDescription } from '../../external/langchain/get_website_description'
@@ -24,7 +24,7 @@ import {
 } from '../payment/queries/consume_credits'
 import { refundCredits } from '../payment/queries/refund_credits'
 import { getUserIdByUserPlaceId } from '../places/queries/get_user_id_by_user_place_id'
-import { governmentalData } from './governmental_data'
+import { enrichGovernmentalData } from './governmental_data/enrich_governmental_data'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
@@ -125,7 +125,7 @@ export const websiteEnrichmentManager = async ({
     const [existingEnrichment] = await db
       .select()
       .from(enrichmentTable)
-      .where(eq(enrichmentTable.placeId, place.place.id))
+      .where(eq(enrichmentTable.placeId, place.id))
       .limit(1)
 
     if (existingEnrichment?.success) {
@@ -314,14 +314,14 @@ export const websiteEnrichmentManager = async ({
       const [insertedEnrichment] = await db
         .insert(enrichmentTable)
         .values({
-          placeId: place.place.id,
+          placeId: place.id,
           domain: null,
           domainRegisteredAt: null,
         })
         .onConflictDoUpdate({
           target: [enrichmentTable.placeId],
           set: {
-            placeId: place.place.id,
+            placeId: place.id,
             domain: null,
             success: true,
             domainRegisteredAt: null,
@@ -341,8 +341,8 @@ export const websiteEnrichmentManager = async ({
         'Searching governmental databases (no website)',
       )
 
-      const governmentalDataResult = await governmentalData({
-        place: place.place,
+      const governmentalDataResult = await enrichGovernmentalData({
+        place: place,
         enrichmentId: insertedEnrichment.id,
       })
 
@@ -385,13 +385,13 @@ export const websiteEnrichmentManager = async ({
     const [insertedEnrichment] = await db
       .insert(enrichmentTable)
       .values({
-        placeId: place.place.id,
+        placeId: place.id,
         domain,
       })
       .onConflictDoUpdate({
         target: [enrichmentTable.placeId],
         set: {
-          placeId: place.place.id,
+          placeId: place.id,
           domain,
         },
       })
@@ -551,8 +551,8 @@ export const websiteEnrichmentManager = async ({
       )
 
       const [governmentalDataResult, whoisData] = await Promise.all([
-        governmentalData({
-          place: place.place,
+        enrichGovernmentalData({
+          place: place,
           enrichmentId: insertedEnrichment.id,
         }),
         performWhoisLookup(domain),
@@ -752,8 +752,8 @@ export const websiteEnrichmentManager = async ({
       { description, shortDescription },
       whoisData,
     ] = await Promise.all([
-      governmentalData({
-        place: place.place,
+      enrichGovernmentalData({
+        place: place,
         enrichmentId: insertedEnrichment.id,
       }),
       getWebsiteDescription(domain),
@@ -818,6 +818,7 @@ export const websiteEnrichmentManager = async ({
           favicon: metadata.favicon,
           robots: metadata.robots,
           success: true,
+          isStale: false,
           domainRegisteredAt: whoisData?.registrationDate
             ? new Date(whoisData.registrationDate)
             : null,

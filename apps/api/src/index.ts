@@ -13,8 +13,6 @@ import pinoHttp from 'pino-http'
 import { db } from './db/db'
 import { user as userTable } from './db/schema'
 import { initQdrantCollection } from './external/qdrant'
-import { firecrawlQueue } from './internal/bullmq/jobs/firecrawl/queue'
-import { millionVerifierQueue } from './internal/bullmq/jobs/million_verifier/queue'
 import { redisHealthMonitor } from './internal/redis/health-monitor'
 import { basicAuth } from './middleware/basic_auth'
 import { addRequestMetadata } from './middleware/request_metadata'
@@ -24,10 +22,6 @@ import webhookRoutes from './webhook'
 // Import the bullmq workers
 import './internal/bullmq'
 import { bullmqQueues } from './internal/bullmq'
-import { brightdataQueue } from './internal/bullmq/jobs/brightdata/queue'
-import { enrichmentUnitQueue } from './internal/bullmq/jobs/enrichment/unit/queue'
-import { scraperQueue } from './internal/bullmq/jobs/scraper/queue'
-import { whoisQueue } from './internal/bullmq/jobs/whois/queue'
 
 import {
   flushPendingUpdates,

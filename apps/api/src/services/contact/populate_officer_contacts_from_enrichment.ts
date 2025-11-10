@@ -2,8 +2,12 @@ import { logger } from '@ritchy/logger'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
 import { getEnrichmentCompany } from '../enrichment/queries/get_enrichment_company'
+import { getEnrichmentCompanyOfficerEmails } from '../enrichment/queries/get_enrichment_company_officer_emails'
+import { getEnrichmentCompanyOfficerPhones } from '../enrichment/queries/get_enrichment_company_officer_phones'
 import { getEnrichmentCompanyOfficers } from '../enrichment/queries/get_enrichment_company_officers'
 import { insertContact } from './queries/insert_contact'
+import { insertContactEmails } from './queries/insert_contact_emails'
+import { insertContactPhones } from './queries/insert_contact_phones'
 
 export const populateOfficerContactsFromEnrichment = async (
   enrichmentId: string,
@@ -70,6 +74,69 @@ export const populateOfficerContactsFromEnrichment = async (
             lastName: officer.last_name,
           },
         })
+
+        // Get and insert officer emails
+        const officerEmails = await getEnrichmentCompanyOfficerEmails(
+          officer.id,
+          tx,
+        )
+
+        if (officerEmails.length > 0) {
+          await insertContactEmails(
+            officerEmails.map((email) => ({
+              id: undefined as unknown as string, // Will be auto-generated
+              contact_id: contact.id,
+              email: email.email,
+              is_primary: false,
+              is_verified: email.is_verified,
+              source: email.source,
+              quality: email.quality,
+              result: email.result,
+              role: email.role,
+              free: email.free,
+              created_at: new Date(),
+              updated_at: new Date(),
+            })),
+            tx,
+          )
+
+          logger.debug({
+            msg: 'Officer contact emails added',
+            event: 'officer_contact_emails_added',
+            metadata: {
+              contactId: contact.id,
+              officerId: officer.id,
+              emailCount: officerEmails.length,
+            },
+          })
+        }
+
+        // Get and insert officer phones
+        const officerPhones = await getEnrichmentCompanyOfficerPhones(
+          officer.id,
+          tx,
+        )
+
+        if (officerPhones.length > 0) {
+          await insertContactPhones(
+            contact.id,
+            officerPhones.map((phone) => ({
+              phone: phone.phone,
+              type: 'FIXED_LINE_OR_MOBILE' as const,
+            })),
+            tx,
+          )
+
+          logger.debug({
+            msg: 'Officer contact phones added',
+            event: 'officer_contact_phones_added',
+            metadata: {
+              contactId: contact.id,
+              officerId: officer.id,
+              phoneCount: officerPhones.length,
+            },
+          })
+        }
 
         return contact
       }),

@@ -21,6 +21,27 @@ export const workerConfig = {
     stalledInterval: 30000,
     maxStalledCount: 2,
   },
+  icypeas_email_search: {
+    concurrency: 10, // Match the rate limit of 10 calls/sec
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
+  icypeas_profile_url_search: {
+    concurrency: 20, // Match the rate limit of 20 calls/sec
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
+  icypeas_find_people: {
+    concurrency: 10, // Conservative concurrency matching rate limit
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
   scraper: {
     concurrency: Number.parseInt(env.SCRAPER_CONCURRENCY),
     lockDuration: 360000,
@@ -54,6 +75,20 @@ export const workerConfig = {
     lockDuration: 300000,
     renewalInterval: 120000,
     stalledInterval: 90000,
+    maxStalledCount: 2,
+  },
+  contactout_people_search: {
+    concurrency: 10, // Conservative concurrency matching rate limit of 60/min
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
+  forager_phone_lookup: {
+    concurrency: 10, // Conservative concurrency matching rate limit of 60/min
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
     maxStalledCount: 2,
   },
 }
