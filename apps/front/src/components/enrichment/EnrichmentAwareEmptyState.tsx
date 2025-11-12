@@ -1,6 +1,7 @@
 import { useEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { placeContactsKeys } from '@/api/queries/places/contacts/usePlaceContacts'
 import { placeEnrichmentKeys } from '@/api/queries/places/enrichment/usePlaceEnrichment'
+import { ENRICHMENT_FEATURES } from '@/components/data-table/enrich/constants'
 import { Button } from '@/components/ui/button'
 import { useEnrichmentMutation } from '@/contexts/EnrichmentMutationContext'
 import { useQueryClient } from '@tanstack/react-query'
@@ -8,14 +9,6 @@ import { Loader2, Sparkles } from 'lucide-react'
 import { useEffect } from 'react'
 import { EnrichmentProgressView } from './EnrichmentProgressView'
 import type { EnrichmentAwareEmptyStateProps } from './types'
-
-const FEATURES = [
-  'Company description',
-  'Contact information',
-  'Governmental data',
-  'Financial information',
-  'Social media profiles',
-]
 
 export const EnrichmentAwareEmptyState = ({
   placeId,
@@ -94,7 +87,7 @@ export const EnrichmentAwareEmptyState = ({
         <div className="text-xs text-muted-foreground space-y-1">
           <p>Enrichment includes:</p>
           <ul className="list-disc list-inside text-left inline-block">
-            {FEATURES.map((feature) => (
+            {ENRICHMENT_FEATURES.map((feature) => (
               <li key={feature}>{feature}</li>
             ))}
           </ul>
