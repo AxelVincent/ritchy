@@ -4,6 +4,7 @@ import type {
   ProfileUrlSearchResponse,
 } from '../../../../../external/icypeas/profile_url_search'
 import { bullmqRedisOptions } from '../../../config'
+import { checkIcypeasCredits } from '../check_credits'
 
 export const queueName = 'icypeas-profile-url-search'
 export const icypeasProfileUrlSearchQueue = new Queue(queueName, {
@@ -32,6 +33,9 @@ const icypeasProfileUrlSearchQueueEvents = new QueueEvents(queueName, {
 export const enqueueIcypeasProfileUrlSearchJob = async (
   data: ProfileUrlSearchParams,
 ): Promise<ProfileUrlSearchResponse> => {
+  // Check credits before enqueueing
+  await checkIcypeasCredits()
+
   const job = await icypeasProfileUrlSearchQueue.add('profileUrlSearch', data)
   return await job.waitUntilFinished(icypeasProfileUrlSearchQueueEvents)
 }

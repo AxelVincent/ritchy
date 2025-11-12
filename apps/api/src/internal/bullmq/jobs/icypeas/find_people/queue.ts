@@ -4,6 +4,7 @@ import type {
   FindPeopleResponse,
 } from '../../../../../external/icypeas/find_people'
 import { bullmqRedisOptions } from '../../../config'
+import { checkIcypeasCredits } from '../check_credits'
 
 export const queueName = 'icypeas-find-people'
 export const icypeasFindPeopleQueue = new Queue(queueName, {
@@ -32,6 +33,9 @@ const icypeasFindPeopleQueueEvents = new QueueEvents(queueName, {
 export const enqueueIcypeasFindPeopleJob = async (
   data: FindPeopleParams,
 ): Promise<FindPeopleResponse> => {
+  // Check credits before enqueueing
+  await checkIcypeasCredits()
+
   const job = await icypeasFindPeopleQueue.add('findPeople', data)
   return await job.waitUntilFinished(icypeasFindPeopleQueueEvents)
 }

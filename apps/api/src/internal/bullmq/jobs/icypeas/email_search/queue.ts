@@ -4,6 +4,7 @@ import type {
   EmailSearchResponse,
 } from '../../../../../external/icypeas/email_search'
 import { bullmqRedisOptions } from '../../../config'
+import { checkIcypeasCredits } from '../check_credits'
 
 export const queueName = 'icypeas-email-search'
 export const icypeasEmailSearchQueue = new Queue(queueName, {
@@ -32,6 +33,9 @@ const icypeasEmailSearchQueueEvents = new QueueEvents(queueName, {
 export const enqueueIcypeasEmailSearchJob = async (
   data: EmailSearchParams,
 ): Promise<EmailSearchResponse> => {
+  // Check credits before enqueueing
+  await checkIcypeasCredits()
+
   const job = await icypeasEmailSearchQueue.add('emailSearch', data)
   return await job.waitUntilFinished(icypeasEmailSearchQueueEvents)
 }
