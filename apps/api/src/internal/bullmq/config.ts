@@ -42,6 +42,13 @@ export const workerConfig = {
     stalledInterval: 30000,
     maxStalledCount: 2,
   },
+  icypeas_subscription_information: {
+    concurrency: 10, // Conservative concurrency matching rate limit
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
   scraper: {
     concurrency: Number.parseInt(env.SCRAPER_CONCURRENCY),
     lockDuration: 360000,
@@ -86,6 +93,13 @@ export const workerConfig = {
   },
   forager_phone_lookup: {
     concurrency: 10, // Conservative concurrency matching rate limit of 60/min
+    lockDuration: 60000,
+    renewalInterval: 30000,
+    stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
+  forager_user_information: {
+    concurrency: 10, // Conservative concurrency matching rate limit
     lockDuration: 60000,
     renewalInterval: 30000,
     stalledInterval: 30000,

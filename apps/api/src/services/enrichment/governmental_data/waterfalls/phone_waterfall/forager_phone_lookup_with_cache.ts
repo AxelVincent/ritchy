@@ -2,8 +2,8 @@ import { logger } from '@ritchy/logger'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../../../../db/schema'
 import { enqueueForagerPhoneLookupJob } from '../../../../../internal/bullmq/jobs/forager/phone_lookup/queue'
-import { getForagerPhoneCache } from '../../../queries/get_forager_phone_cache'
-import { upsertForagerPhoneCache } from '../../../queries/upsert_forager_phone_cache'
+import { getForagerPhoneCache } from '../../../../../services/enrichment/queries/get_forager_phone_cache'
+import { upsertForagerPhoneCache } from '../../../../../services/enrichment/queries/upsert_forager_phone_cache'
 
 export interface ForagerPhoneLookupParams {
   readonly linkedinPublicIdentifier: string

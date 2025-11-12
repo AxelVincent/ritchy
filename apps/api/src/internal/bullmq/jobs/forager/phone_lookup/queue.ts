@@ -4,6 +4,7 @@ import type {
   PhoneLookupResponse,
 } from '../../../../../external/forager/phone_lookup'
 import { bullmqRedisOptions } from '../../../config'
+import { checkForagerCredits } from '../check_credits'
 
 export const queueName = 'forager-phone-lookup'
 export const foragerPhoneLookupQueue = new Queue(queueName, {
@@ -32,6 +33,9 @@ const foragerPhoneLookupQueueEvents = new QueueEvents(queueName, {
 export const enqueueForagerPhoneLookupJob = async (
   data: PhoneLookupParams,
 ): Promise<PhoneLookupResponse> => {
+  // Check credits before enqueueing
+  await checkForagerCredits()
+
   const job = await foragerPhoneLookupQueue.add('phoneLookup', data)
   return await job.waitUntilFinished(foragerPhoneLookupQueueEvents)
 }

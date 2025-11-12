@@ -4,7 +4,7 @@ import type * as schema from '../../../../../../db/schema'
 import { getEnrichmentCompanyOfficerLinkedin } from '../../../../queries/get_enrichment_company_officer_linkedin'
 import type { InsertOfficerPhoneData } from '../../../../queries/insert_enrichment_company_officer_phones'
 import { extractLinkedInIdentifier } from '../../../../utils/extract_linkedin_identifier'
-import { foragerPhoneLookupWithCache } from '../../phone_provider/forager_phone_lookup_with_cache'
+import { foragerPhoneLookupWithCache } from '../forager_phone_lookup_with_cache'
 
 export const enrichWithForagerPhone = async (
   officerId: string,
