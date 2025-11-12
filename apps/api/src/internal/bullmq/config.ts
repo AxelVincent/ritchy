@@ -77,13 +77,6 @@ export const workerConfig = {
     stalledInterval: 180000,
     maxStalledCount: 2,
   },
-  enrichment_batch: {
-    concurrency: 10,
-    lockDuration: 300000,
-    renewalInterval: 120000,
-    stalledInterval: 90000,
-    maxStalledCount: 2,
-  },
   contactout_people_search: {
     concurrency: 10, // Conservative concurrency matching rate limit of 60/min
     lockDuration: 60000,
