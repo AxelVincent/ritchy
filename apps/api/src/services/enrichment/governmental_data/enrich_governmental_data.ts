@@ -6,6 +6,7 @@ import { enhancedPappersSearch } from '../../../external/pappers/enhanced_search
 import { PAPPERS_COUNTRY_CODES } from '../../../external/pappers/international_company_v1'
 import { extractCompanyIdentifiers } from '../../../external/qdrant/queries/extract_company_identifiers'
 import { enqueuePappersCompanyJob } from '../../../internal/bullmq/jobs/pappers/queue'
+import type { EnrichmentContext } from '../status_builder'
 import { insertEnrichmentCompany } from './insert_enrichment_company'
 
 // Helper function to map ISO alpha-2 codes to Pappers country codes
@@ -117,7 +118,12 @@ const isValidCompanyNumber = (
 export const enrichGovernmentalData = async ({
   place,
   enrichmentId,
-}: { place: Place; enrichmentId: string }) => {
+  context,
+}: {
+  place: Place
+  enrichmentId: string
+  context?: EnrichmentContext
+}) => {
   const isoCountryCode = countryToAlpha2(place.country ?? '')
   const countryCode = mapToPappersCountryCode(isoCountryCode)
   const parsedCountryCode = PAPPERS_COUNTRY_CODES.safeParse(countryCode)
@@ -388,7 +394,12 @@ export const enrichGovernmentalData = async ({
 
       // Insert company data into database
       try {
-        await insertEnrichmentCompany(enrichmentId, companyData, bestMatch)
+        await insertEnrichmentCompany(
+          enrichmentId,
+          companyData,
+          bestMatch,
+          context,
+        )
 
         logger.info({
           msg: '[pappers] Company data inserted into database',

@@ -12,6 +12,7 @@ import { insertEnrichmentCompanyEstablishments } from '../queries/insert_enrichm
 import { insertEnrichmentCompanyFinancials } from '../queries/insert_enrichment_company_financials'
 import { insertEnrichmentCompanyOfficers } from '../queries/insert_enrichment_company_officers'
 import { insertEnrichmentCompanyUbos } from '../queries/insert_enrichment_company_ubos'
+import type { EnrichmentContext } from '../status_builder'
 import { enrichCompanyOfficers } from './enrich_company_officers'
 
 /**
@@ -27,13 +28,14 @@ import { enrichCompanyOfficers } from './enrich_company_officers'
  * @param enrichmentId - The enrichment ID to associate the company with
  * @param companyData - Company data from Pappers API
  * @param bestMatch - Match confidence and reasoning from search
- * @param placeId - Optional place ID for officer email enrichment (if not provided, officers won't be enriched with emails)
+ * @param context - Optional enrichment context for status tracking
  * @param tx - Optional database transaction
  */
 export const insertEnrichmentCompany = async (
   enrichmentId: string,
   companyData: InternationalCompanyResponse,
   bestMatch: CompanyMatchResult,
+  context?: EnrichmentContext,
   tx?: PostgresJsDatabase<typeof schema>,
 ): Promise<void> => {
   try {
@@ -91,7 +93,7 @@ export const insertEnrichmentCompany = async (
     // This ensures external API calls don't hold database locks
     const place = await getPlaceByEnrichmentId(enrichmentId)
     if (companyData.officers?.length && place && place.website) {
-      await enrichCompanyOfficers(companyId, tx)
+      await enrichCompanyOfficers(companyId, context, tx)
     }
 
     logger.info({

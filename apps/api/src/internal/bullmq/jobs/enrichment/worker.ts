@@ -20,11 +20,10 @@ const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
       'processing',
       'Starting enrichment',
       0,
-      jobId,
     )
 
     jobTracker.updateProgress(jobId, 'Starting enrichment')
-    await websiteEnrichmentManager({ userPlaceId, jobId })
+    await websiteEnrichmentManager({ userPlaceId })
 
     jobTracker.updateProgress(jobId, 'Enrichment completed')
     jobTracker.cleanup(jobId)

@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../../db/schema'
 import { getOfficersEnrichmentContext } from '../queries/get_officers_enrichment_context'
+import { type EnrichmentContext, createStatusManager } from '../status_builder'
 import {
   runEmailWaterfallWithData,
   runLinkedInWaterfallWithData,
@@ -22,10 +23,12 @@ import {
  * - External API calls are made via BullMQ queues for proper rate limiting
  *
  * @param companyId - The company ID to get officers from
+ * @param context - Optional enrichment context for status tracking
  * @param tx - Optional database transaction
  */
 export const enrichCompanyOfficers = async (
   companyId: string,
+  context?: EnrichmentContext,
   tx?: PostgresJsDatabase<typeof schema>,
 ): Promise<void> => {
   // Fetch ALL officer contexts in 2 queries (batch optimization)
@@ -34,6 +37,9 @@ export const enrichCompanyOfficers = async (
   if (!officersContext?.officers.length) {
     return
   }
+
+  // Create status manager if context provided
+  const statusManager = context ? createStatusManager(context) : null
 
   logger.info({
     msg: '[enrich_company_officers] Starting officer enrichment',
@@ -45,8 +51,19 @@ export const enrichCompanyOfficers = async (
   })
 
   // Process officers sequentially to avoid rate limiting
-  for (const officer of officersContext.officers) {
+  for (let i = 0; i < officersContext.officers.length; i++) {
+    const officer = officersContext.officers[i]
+
     try {
+      // Update status for LinkedIn enrichment
+      if (statusManager) {
+        await statusManager.updateOfficerProgress(
+          i,
+          officersContext.officers.length,
+          'professional_profile',
+        )
+      }
+
       // Run LinkedIn Waterfall (Priority 1) with pre-fetched data
       await runLinkedInWaterfallWithData(
         {
@@ -57,9 +74,23 @@ export const enrichCompanyOfficers = async (
             activities: officersContext.activities,
           },
           place: officersContext.place,
+          ...(context && {
+            userPlaceId: context.userPlaceId,
+            trackStatus: context.trackStatus,
+            tx: context.tx,
+          }),
         },
         tx,
       )
+
+      // Update status for email enrichment
+      if (statusManager) {
+        await statusManager.updateOfficerProgress(
+          i,
+          officersContext.officers.length,
+          'email',
+        )
+      }
 
       // Run Email Waterfall (Priority 2) with pre-fetched data
       await runEmailWaterfallWithData(
@@ -67,15 +98,33 @@ export const enrichCompanyOfficers = async (
           officerId: officer.id,
           officer: officer,
           website: officersContext.place.website,
+          ...(context && {
+            userPlaceId: context.userPlaceId,
+            trackStatus: context.trackStatus,
+            tx: context.tx,
+          }),
         },
         tx,
       )
 
-      // // Run Phone Waterfall (Priority 3)
-      // // Note: Phone waterfall doesn't have WithData variant yet (can be added if needed)
+      // Update status for phone enrichment
+      if (statusManager) {
+        await statusManager.updateOfficerProgress(
+          i,
+          officersContext.officers.length,
+          'phone',
+        )
+      }
+
+      // Run Phone Waterfall (Priority 3)
       await runPhoneWaterfall(
         {
           officerId: officer.id,
+          ...(context && {
+            userPlaceId: context.userPlaceId,
+            trackStatus: context.trackStatus,
+            tx: context.tx,
+          }),
         },
         tx,
       )
@@ -102,6 +151,15 @@ export const enrichCompanyOfficers = async (
         },
       })
     }
+  }
+
+  // Final status update - all officers processed
+  if (statusManager) {
+    await statusManager.updateActivity(
+      'officer_enrichment',
+      'Verifying contact information',
+      100,
+    )
   }
 
   logger.info({

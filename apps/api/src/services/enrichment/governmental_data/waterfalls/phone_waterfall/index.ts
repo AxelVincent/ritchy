@@ -1,6 +1,7 @@
+import type { EnrichmentContext } from '../../../status_builder'
 import { runPhoneWaterfall } from './run_phone_waterfall'
 
-export interface PhoneWaterfallContext {
+export interface PhoneWaterfallContext extends Partial<EnrichmentContext> {
   readonly officerId: string
 }
 
