@@ -48,8 +48,9 @@ export const populateOfficerContactsFromEnrichment = async (
     officers
       .filter(
         (officer) =>
-          officer.type === 'physical' &&
-          (officer.first_name || officer.last_name),
+          (officer.first_name && officer.last_name) ||
+          (officer.type === 'physical' &&
+            (officer.first_name || officer.last_name)),
       )
       .map(async (officer) => {
         const contact = await insertContact(
