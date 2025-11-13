@@ -37,8 +37,9 @@ export const getSearchContent = async (
     // Check if search was recently queried but returned no results
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000 * 24 * 7) // 7 days
     const wasRecentlyQueried = result.updatedAt && result.updatedAt > oneHourAgo
+    const hasNoCachedResults = !searchPlaces || searchPlaces.length === 0
 
-    if ((!searchPlaces || searchPlaces.length === 0) && !wasRecentlyQueried) {
+    if (hasNoCachedResults && !wasRecentlyQueried) {
       logger.info({
         msg: 'No cached search results, fetching from Google Maps and caching',
         event: 'no_cached_search_results',
@@ -134,6 +135,20 @@ export const getSearchContent = async (
           userPlaceId: userPlace.id,
         })),
       )
+    }
+
+    // If search was recently queried but has no results, return empty array
+    if (wasRecentlyQueried && hasNoCachedResults) {
+      logger.info({
+        msg: 'Search was recently queried with no results',
+        event: 'search_recently_queried_no_results',
+        metadata: {
+          searchId,
+          userId,
+        },
+      })
+      res.json([])
+      return
     }
 
     const cachedResults = await db
