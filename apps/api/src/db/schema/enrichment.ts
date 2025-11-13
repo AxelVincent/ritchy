@@ -41,10 +41,11 @@ export const enrichment = pgTable(
     success: boolean('success').notNull().default(false),
     error: text('error'),
     isStale: boolean('is_stale').notNull().default(false),
+    score: integer('score'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (table) => [index().on(table.isStale)],
+  (table) => [index().on(table.isStale), index().on(table.score)],
 )
 
 export const enrichmentFacebook = pgTable(

@@ -8,6 +8,7 @@ import { place, search, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
 import { getAggregatedUserPlaces } from '../../services/places/queries/get_aggregated_user_places'
 import { refreshPlaces } from '../../services/places/refresh_places'
+import { reorderByEnrichmentScore } from '../../services/places/utils/reorder_by_enrichment_score'
 
 export const getSearchContent = async (
   req: Request<{ id: string }>,
@@ -113,10 +114,19 @@ export const getSearchContent = async (
           userPlaces: userPlaces.length,
         },
       })
+
+      // Reorder user places by enrichment score (highest first)
+      const userPlaceIds = userPlaces.map((up) => up.id)
+      const reorderedUserPlaceIds = await reorderByEnrichmentScore(userPlaceIds)
+
+      // Insert with incremental timestamps to preserve order
+      const baseTime = new Date()
       await db.insert(searchPlace).values(
-        userPlaces.map((userPlace) => ({
+        reorderedUserPlaceIds.map((userPlaceId, index) => ({
           searchId,
-          userPlaceId: userPlace.id,
+          userPlaceId,
+          createdAt: new Date(baseTime.getTime() + index), // Add 1ms per record to preserve order
+          updatedAt: baseTime,
         })),
       )
     }
@@ -143,8 +153,11 @@ export const getSearchContent = async (
       return
     }
 
-    let placesResults = []
-    placesResults = await getAggregatedUserPlaces(userId, searchId, undefined)
+    let placesResults = await getAggregatedUserPlaces(
+      userId,
+      searchId,
+      undefined,
+    )
 
     const cacheMisses = placesResults.filter(
       (place) => place.sourceUrl === null || place.sourceUrl === '',

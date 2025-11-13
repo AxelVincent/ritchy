@@ -28,6 +28,7 @@ import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
 import { EnrichmentStatusBuilder } from './status_builder'
+import { calculateEnrichmentScore } from './utils/calculate_enrichment_score'
 import { isSocialMediaUrl } from './utils/is_social_media_url'
 
 const ENRICHMENT_CREDITS = 5
@@ -258,6 +259,7 @@ export const websiteEnrichmentManager = async ({
           placeId: place.id,
           domain: null,
           domainRegisteredAt: null,
+          success: true,
         })
         .onConflictDoUpdate({
           target: [enrichmentTable.placeId],
@@ -314,12 +316,14 @@ export const websiteEnrichmentManager = async ({
       .values({
         placeId: place.id,
         domain,
+        success: true,
       })
       .onConflictDoUpdate({
         target: [enrichmentTable.placeId],
         set: {
           placeId: place.id,
           domain,
+          success: true,
         },
       })
       .returning()
@@ -664,29 +668,35 @@ export const websiteEnrichmentManager = async ({
       'Generating contact information',
     )
 
-    await Promise.all([
-      db
-        .update(enrichmentTable)
-        .set({
-          title: metadata.title,
-          description,
-          shortDescription,
-          language: metadata.language,
-          keywords: metadata.keywords,
-          favicon: metadata.favicon,
-          robots: metadata.robots,
-          success: true,
-          isStale: false,
-          domainRegisteredAt: whoisData?.registrationDate
-            ? new Date(whoisData.registrationDate)
-            : null,
-        })
-        .where(eq(enrichmentTable.id, insertedEnrichment.id)),
-      populateContactFromEnrichment({
-        enrichmentId: insertedEnrichment.id,
-        userPlaceId,
-      }),
-    ])
+    // Populate contacts first (needed for accurate score calculation)
+    await populateContactFromEnrichment({
+      enrichmentId: insertedEnrichment.id,
+      userPlaceId,
+    })
+
+    // Calculate enrichment quality score
+    const enrichmentScore = await calculateEnrichmentScore(
+      insertedEnrichment.id,
+    )
+
+    // Save enrichment data and score
+    await db
+      .update(enrichmentTable)
+      .set({
+        title: metadata.title,
+        description,
+        shortDescription,
+        language: metadata.language,
+        keywords: metadata.keywords,
+        favicon: metadata.favicon,
+        robots: metadata.robots,
+        isStale: false,
+        score: enrichmentScore,
+        domainRegisteredAt: whoisData?.registrationDate
+          ? new Date(whoisData.registrationDate)
+          : null,
+      })
+      .where(eq(enrichmentTable.id, insertedEnrichment.id))
 
     await statusManager.complete('Enrichment completed successfully')
 
