@@ -193,6 +193,20 @@ export async function postTextSearchV1(
       parsedResults.push(PreferredPlaceSchema.parse(sanitizeApiData(place)))
     }
 
+    // Return early if no results to avoid empty insert
+    if (parsedResults.length === 0) {
+      logger.info({
+        msg: 'No places found after parsing',
+        event: 'no_places_after_parsing',
+        metadata: {
+          query: requestBody.textQuery,
+          model: requestBody.model,
+          uniqueResultsCount: uniqueResults.length,
+        },
+      })
+      return []
+    }
+
     const places = await db
       .insert(place)
       .values(
