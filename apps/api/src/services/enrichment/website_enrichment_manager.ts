@@ -258,6 +258,7 @@ export const websiteEnrichmentManager = async ({
           placeId: place.id,
           domain: null,
           domainRegisteredAt: null,
+          success: true,
         })
         .onConflictDoUpdate({
           target: [enrichmentTable.placeId],
@@ -314,12 +315,14 @@ export const websiteEnrichmentManager = async ({
       .values({
         placeId: place.id,
         domain,
+        success: true,
       })
       .onConflictDoUpdate({
         target: [enrichmentTable.placeId],
         set: {
           placeId: place.id,
           domain,
+          success: true,
         },
       })
       .returning()
@@ -675,7 +678,6 @@ export const websiteEnrichmentManager = async ({
           keywords: metadata.keywords,
           favicon: metadata.favicon,
           robots: metadata.robots,
-          success: true,
           isStale: false,
           domainRegisteredAt: whoisData?.registrationDate
             ? new Date(whoisData.registrationDate)
