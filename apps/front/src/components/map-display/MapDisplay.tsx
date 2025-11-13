@@ -4,14 +4,16 @@ import { EmptyListState } from '@/components/lists/empty-list-state'
 import { MapBox } from '@/components/map-display/components/map_box/MapBox'
 import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 import type { Location } from '@/components/search/search-map'
+import { Button } from '@/components/ui/button'
 import { ResizablePanelGroup } from '@/components/ui/resizable'
 import { ResizableHandle } from '@/components/ui/resizable'
 import { ResizablePanel } from '@/components/ui/resizable'
 import { EnrichmentMutationProvider } from '@/contexts/EnrichmentMutationContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import type { Place } from '@ritchy/types'
+import { useNavigate } from '@tanstack/react-router'
 import type { RowSelectionState } from '@tanstack/react-table'
-import { ListIcon, MapIcon, Maximize2 } from 'lucide-react'
+import { ListIcon, MapIcon, Maximize2, SearchIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'
 import { SelectedPlaceCard } from '../place-details/SelectedPlaceCard'
@@ -29,6 +31,7 @@ type MobileLayoutState = 'table' | 'balanced' | 'map'
 export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
   const isMobile = useIsMobile()
   const { selectedPlaceId, setSelectedPlaceId } = useMapStore()
+  const navigate = useNavigate()
 
   // Mobile layout state: 'table' (more list), 'balanced' (50/50), 'map' (more map)
   const [mobileLayout, setMobileLayout] = useState<MobileLayoutState>(() => {
@@ -115,6 +118,30 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
 
   if (listId && places && places.length === 0) {
     return <EmptyListState listId={listId} />
+  }
+
+  if (searchId && places && places.length === 0) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center py-12 text-center px-4">
+        <div className="max-w-md space-y-4">
+          <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+            <SearchIcon className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold">No results found</h3>
+          <p className="text-sm text-muted-foreground">
+            Try adjusting your search criteria or explore a different area
+          </p>
+          <Button
+            onClick={() =>
+              navigate({ to: '/search', search: { mode: 'keyword' } })
+            }
+            className="mt-4"
+          >
+            Try another search
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // Calculate panel sizes based on mobile layout state
