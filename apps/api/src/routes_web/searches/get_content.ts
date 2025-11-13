@@ -34,7 +34,11 @@ export const getSearchContent = async (
       .from(searchPlace)
       .where(and(eq(searchPlace.searchId, searchId)))
 
-    if (!searchPlaces || searchPlaces.length === 0) {
+    // Check if search was recently queried but returned no results
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000 * 24 * 7) // 7 days
+    const wasRecentlyQueried = result.updatedAt && result.updatedAt > oneHourAgo
+
+    if ((!searchPlaces || searchPlaces.length === 0) && !wasRecentlyQueried) {
       logger.info({
         msg: 'No cached search results, fetching from Google Maps and caching',
         event: 'no_cached_search_results',
@@ -51,6 +55,29 @@ export const getSearchContent = async (
         textQuery: result.keyword,
         rectangle: result.rectangle,
       })
+
+      // Update search timestamp even if no results (to cache the "no results" state)
+      await db
+        .update(search)
+        .set({ updatedAt: new Date() })
+        .where(eq(search.id, searchId))
+
+      // Handle empty results
+      if (!freshResults || freshResults.length === 0) {
+        logger.info({
+          msg: 'No places found from Google Maps search',
+          event: 'no_places_found_from_search',
+          metadata: {
+            searchId,
+            userId,
+            model: result.model,
+            keyword: result.keyword,
+            rectangle: result.rectangle,
+          },
+        })
+        res.json([])
+        return
+      }
 
       const places = await db
         .insert(place)
