@@ -7,7 +7,7 @@ import type { Request, Response } from 'express'
 import {
   enrichmentUnitQueue,
   queueName,
-} from '../../internal/bullmq/jobs/enrichment/unit/queue'
+} from '../../internal/bullmq/jobs/enrichment/queue'
 import { setEnrichmentStatus } from '../../services/enrichment/status_manager'
 
 /**

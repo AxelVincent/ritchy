@@ -6,8 +6,8 @@ import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { enrichment, enrichment as enrichmentTable } from '../../db/schema'
 import { getCrawlStrategy } from '../../external/langchain/get_crawl_strategy'
+import { getPlaceByUserPlaceId } from '../places/queries/get_place_by_user_place_id'
 import { getBusinessName } from './queries/get_business_name'
-import { getPlaceByUserPlaceId } from './queries/get_place_by_user_place_id'
 
 import { UnrecoverableError } from 'bullmq'
 import { getWebsiteDescription } from '../../external/langchain/get_website_description'
@@ -15,7 +15,6 @@ import { deleteWebsiteVectors } from '../../external/qdrant/queries/delete_websi
 import { getWebsiteVectors } from '../../external/qdrant/queries/get_website_vectors'
 import { performWhoisLookup } from '../../external/whois/who_is_lookup'
 import { enqueueScraperJob } from '../../internal/bullmq/jobs/scraper/queue'
-import { jobTracker } from '../../internal/bullmq/utils/job_progress_tracker'
 import { populateContactFromEnrichment } from '../contact/populate_contact_from_enrichment'
 import {
   INSUFFICIENT_CREDITS_ERROR,
@@ -24,11 +23,11 @@ import {
 } from '../payment/queries/consume_credits'
 import { refundCredits } from '../payment/queries/refund_credits'
 import { getUserIdByUserPlaceId } from '../places/queries/get_user_id_by_user_place_id'
-import { governmentalData } from './governmental_data'
+import { enrichGovernmentalData } from './governmental_data/enrich_governmental_data'
 import { processSocialMediaDomain } from './process_social_media_domain'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { setUserPlaceAsEnriched } from './queries/set_user_place_as_enriched'
-import { setEnrichmentStatus } from './status_manager'
+import { EnrichmentStatusBuilder } from './status_builder'
 import { isSocialMediaUrl } from './utils/is_social_media_url'
 
 const ENRICHMENT_CREDITS = 5
@@ -43,10 +42,8 @@ const simulateProcessingTime = async () => {
 
 export const websiteEnrichmentManager = async ({
   userPlaceId,
-  jobId,
 }: {
   userPlaceId: string
-  jobId: string
 }) => {
   const startTime = Date.now()
   const memoryUsage = process.memoryUsage()
@@ -63,25 +60,17 @@ export const websiteEnrichmentManager = async ({
     },
   })
 
+  const statusManager = new EnrichmentStatusBuilder(userPlaceId)
+
   // Step 1: Initialize (0-2%)
-  await setEnrichmentStatus(
-    userPlaceId,
-    'processing',
-    'Initializing enrichment process',
-    1,
-    jobId,
-  )
-  jobTracker.updateProgress(jobId, 'Initializing enrichment process')
+  await statusManager.startPhase('initialization')
 
   // Step 2: Fetch data (2-5%)
-  await setEnrichmentStatus(
-    userPlaceId,
-    'processing',
+  await statusManager.updatePhaseProgress(
+    'initialization',
+    50,
     'Fetching business information',
-    3,
-    jobId,
   )
-  jobTracker.updateProgress(jobId, 'Fetching business information')
 
   const [userId, place] = await Promise.all([
     getUserIdByUserPlaceId(userPlaceId),
@@ -99,33 +88,28 @@ export const websiteEnrichmentManager = async ({
 
   try {
     // Step 3: Credit validation (5-8%)
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
+    await statusManager.updatePhaseProgress(
+      'initialization',
+      100,
       'Processing enrichment request',
-      7,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, 'Validating enrichment credits')
     await Promise.all([
       consumeCredits(userId, ENRICHMENT_CREDITS),
       setUserPlaceAsEnriched(userPlaceId),
     ])
 
     // Step 4: Check existing enrichment (8-10%)
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
+    await statusManager.startPhase('website_scan')
+    await statusManager.updatePhaseProgress(
+      'website_scan',
+      2,
       'Verifying business details',
-      8,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, 'Verifying business details')
 
     const [existingEnrichment] = await db
       .select()
       .from(enrichmentTable)
-      .where(eq(enrichmentTable.placeId, place.place.id))
+      .where(eq(enrichmentTable.placeId, place.id))
       .limit(1)
 
     if (existingEnrichment?.success) {
@@ -133,105 +117,76 @@ export const websiteEnrichmentManager = async ({
         // Simulate processing steps even though using cached data
         const domain = existingEnrichment.domain || 'website'
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           'Preparing website scanner',
           14,
-          jobId,
         )
         await simulateProcessingTime()
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           `Scanning homepage: ${domain}`,
           16,
-          jobId,
         )
-        jobTracker.updateProgress(jobId, `Scanning homepage: ${domain}`)
         await simulateProcessingTime()
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           'Analyzing homepage content',
           25,
-          jobId,
         )
-        jobTracker.updateProgress(jobId, 'Analyzing homepage content')
         await simulateProcessingTime()
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           'Identifying key pages to scan',
           26,
-          jobId,
         )
-        jobTracker.updateProgress(jobId, 'Identifying key pages to scan')
         await simulateProcessingTime()
 
         // Simulate some pages being scanned
         const simulatedPageCount = Math.floor(Math.random() * 5) + 3 // 3-7 pages
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           `Starting scan of ${simulatedPageCount} additional pages`,
           28,
-          jobId,
-        )
-        jobTracker.updateProgress(
-          jobId,
-          `Starting scan of ${simulatedPageCount} additional pages`,
         )
         await simulateProcessingTime()
 
         // Simulate scanning completion
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           `Completed ${simulatedPageCount}/${simulatedPageCount} pages successfully`,
           75,
-          jobId,
         )
         await simulateProcessingTime()
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           'Searching governmental databases',
           85,
-          jobId,
         )
-        jobTracker.updateProgress(jobId, 'Searching governmental databases')
         await simulateProcessingTime()
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           'Compiling business data',
           95,
-          jobId,
         )
-        jobTracker.updateProgress(jobId, 'Compiling business data')
         await simulateProcessingTime()
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           'Saving enrichment results',
           98,
-          jobId,
         )
         await simulateProcessingTime()
 
-        await setEnrichmentStatus(
-          userPlaceId,
+        await statusManager.setStatus(
           'processing',
           'Generating contact information',
           99,
-          jobId,
         )
 
         await populateContactFromEnrichment({
@@ -239,13 +194,7 @@ export const websiteEnrichmentManager = async ({
           userPlaceId,
         })
 
-        await setEnrichmentStatus(
-          userPlaceId,
-          'completed',
-          'Enrichment completed successfully',
-          100,
-          jobId,
-        )
+        await statusManager.complete('Enrichment completed successfully')
 
         logger.info({
           msg: 'Website already enriched, skipping enrichment',
@@ -260,14 +209,11 @@ export const websiteEnrichmentManager = async ({
       }
 
       // Stale data - show as updating
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'Updating business information',
         9,
-        jobId,
       )
-      jobTracker.updateProgress(jobId, 'Updating business information')
 
       logger.info({
         msg: 'Refreshing stale enrichment',
@@ -291,37 +237,32 @@ export const websiteEnrichmentManager = async ({
     }
 
     // Step 5: Extract website (10%)
-    await setEnrichmentStatus(
-      userPlaceId,
+    await statusManager.setStatus(
       'processing',
       'Extracting business website',
       10,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, 'Extracting business website')
 
     const website = await getBusinessWebsite(userPlaceId)
 
     if (!website) {
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'No website found, using alternative sources',
         15,
-        jobId,
       )
 
       const [insertedEnrichment] = await db
         .insert(enrichmentTable)
         .values({
-          placeId: place.place.id,
+          placeId: place.id,
           domain: null,
           domainRegisteredAt: null,
         })
         .onConflictDoUpdate({
           target: [enrichmentTable.placeId],
           set: {
-            placeId: place.place.id,
+            placeId: place.id,
             domain: null,
             success: true,
             domainRegisteredAt: null,
@@ -329,21 +270,16 @@ export const websiteEnrichmentManager = async ({
         })
         .returning()
 
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'Searching governmental databases',
         60,
-        jobId,
-      )
-      jobTracker.updateProgress(
-        jobId,
-        'Searching governmental databases (no website)',
       )
 
-      const governmentalDataResult = await governmentalData({
-        place: place.place,
+      const governmentalDataResult = await enrichGovernmentalData({
+        place: place,
         enrichmentId: insertedEnrichment.id,
+        context: { userPlaceId, trackStatus: true },
       })
 
       if (governmentalDataResult.companyData) {
@@ -363,35 +299,26 @@ export const websiteEnrichmentManager = async ({
     }
 
     // Step 6: Validate domain (11-12%)
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      'Validating website domain',
-      11,
-      jobId,
-    )
-    jobTracker.updateProgress(jobId, 'Validating website domain')
+    await statusManager.setStatus('processing', 'Validating website domain', 11)
 
     const domain = getMainDomain(website)
 
-    await setEnrichmentStatus(
-      userPlaceId,
+    await statusManager.setStatus(
       'processing',
       'Preparing website analysis',
       12,
-      jobId,
     )
 
     const [insertedEnrichment] = await db
       .insert(enrichmentTable)
       .values({
-        placeId: place.place.id,
+        placeId: place.id,
         domain,
       })
       .onConflictDoUpdate({
         target: [enrichmentTable.placeId],
         set: {
-          placeId: place.place.id,
+          placeId: place.id,
           domain,
         },
       })
@@ -399,12 +326,10 @@ export const websiteEnrichmentManager = async ({
 
     // Handle social media (quick path)
     if (isSocialMediaUrl(website)) {
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         `Analyzing social profile: ${website}`,
         20,
-        jobId,
       )
 
       await processSocialMediaDomain({
@@ -412,34 +337,20 @@ export const websiteEnrichmentManager = async ({
         website,
       })
 
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'Generating contact information',
         90,
-        jobId,
       )
 
-      await setEnrichmentStatus(
-        userPlaceId,
-        'processing',
-        'Finalizing enrichment',
-        95,
-        jobId,
-      )
+      await statusManager.setStatus('processing', 'Finalizing enrichment', 95)
 
       await populateContactFromEnrichment({
         enrichmentId: insertedEnrichment.id,
         userPlaceId,
       })
 
-      await setEnrichmentStatus(
-        userPlaceId,
-        'completed',
-        'Enrichment completed successfully',
-        100,
-        jobId,
-      )
+      await statusManager.complete('Enrichment completed successfully')
 
       logger.info({
         msg: 'Website enrichment manager completed [social media]',
@@ -451,12 +362,10 @@ export const websiteEnrichmentManager = async ({
 
     // Check if subpage
     if (isSubPage(website)) {
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'Optimizing scraping strategy',
         13,
-        jobId,
       )
       logger.debug({
         msg: 'Website is a subpage',
@@ -466,14 +375,7 @@ export const websiteEnrichmentManager = async ({
     }
 
     // Step 7: Prepare scraping (13-15%)
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      'Preparing website scanner',
-      14,
-      jobId,
-    )
-    jobTracker.updateProgress(jobId, 'Preparing website scanner')
+    await statusManager.setStatus('processing', 'Preparing website scanner', 14)
 
     logger.debug({
       msg: 'Getting website vectors',
@@ -484,13 +386,7 @@ export const websiteEnrichmentManager = async ({
     const websiteVectors = await getWebsiteVectors(domain)
 
     if (websiteVectors.length > 0) {
-      await setEnrichmentStatus(
-        userPlaceId,
-        'processing',
-        'Initializing fresh scan',
-        15,
-        jobId,
-      )
+      await statusManager.setStatus('processing', 'Initializing fresh scan', 15)
 
       logger.debug({
         msg: 'Website already exists in qdrant, deleting vectors before scraping',
@@ -501,14 +397,11 @@ export const websiteEnrichmentManager = async ({
     }
 
     // Step 8: SCRAPE HOMEPAGE (15-25%) - TIME INTENSIVE
-    await setEnrichmentStatus(
-      userPlaceId,
+    await statusManager.setStatus(
       'processing',
       `Scanning homepage: ${website}`,
       16,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, `Scanning homepage: ${website}`)
 
     logger.debug({
       msg: 'Scraping main page of the website',
@@ -530,30 +423,23 @@ export const websiteEnrichmentManager = async ({
         metadata: { website, userPlaceId },
       })
 
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'Using alternative data sources',
         30,
-        jobId,
       )
 
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'Searching governmental databases',
         60,
-        jobId,
-      )
-      jobTracker.updateProgress(
-        jobId,
-        'Searching governmental databases (scraping failed)',
       )
 
       const [governmentalDataResult, whoisData] = await Promise.all([
-        governmentalData({
-          place: place.place,
+        enrichGovernmentalData({
+          place: place,
           enrichmentId: insertedEnrichment.id,
+          context: { userPlaceId, trackStatus: true },
         }),
         performWhoisLookup(domain),
       ])
@@ -580,38 +466,30 @@ export const websiteEnrichmentManager = async ({
     }
 
     // Step 9: Analyze homepage (25%)
-    await setEnrichmentStatus(
-      userPlaceId,
+    await statusManager.setStatus(
       'processing',
       'Analyzing homepage content',
       25,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, 'Analyzing homepage content')
 
     const { metadata, links } = scrapeResult
 
     // Step 10: Determine crawl strategy (26-27%)
-    await setEnrichmentStatus(
-      userPlaceId,
+    await statusManager.setStatus(
       'processing',
       'Identifying key pages to scan',
       26,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, 'Identifying key pages to scan')
 
     let crawlStrategy = links.internal
 
     if (links.internal.length > 10) {
       const businessName = await getBusinessName(userPlaceId)
 
-      await setEnrichmentStatus(
-        userPlaceId,
+      await statusManager.setStatus(
         'processing',
         'Selecting most relevant pages',
         27,
-        jobId,
       )
 
       crawlStrategy = await getCrawlStrategy(
@@ -630,33 +508,17 @@ export const websiteEnrichmentManager = async ({
       })
     }
 
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      `Starting scan of ${crawlStrategy.length} additional pages`,
-      28,
-      jobId,
-    )
-    jobTracker.updateProgress(
-      jobId,
+    await statusManager.updatePhaseProgress(
+      'website_scan',
+      10,
       `Starting scan of ${crawlStrategy.length} additional pages`,
     )
 
     let completedPages = 0
     const totalPages = crawlStrategy.length
     const subpageResults = await Promise.allSettled(
-      crawlStrategy.map(async (url: string, index: number) => {
+      crawlStrategy.map(async (url: string) => {
         try {
-          const progressPercent = 28 + Math.floor((index / totalPages) * 47)
-
-          await setEnrichmentStatus(
-            userPlaceId,
-            'processing',
-            `Scanning: ${url}`,
-            progressPercent,
-            jobId,
-          )
-
           const result = await enqueueScraperJob(
             url,
             insertedEnrichment.id,
@@ -666,19 +528,20 @@ export const websiteEnrichmentManager = async ({
 
           completedPages++
 
-          // Update with progress count (show every 20% or at completion)
+          // Update progress based on COMPLETED pages (not started pages)
+          // This ensures progress only increases, never decreases
+          const phaseProgressPercent = (completedPages / totalPages) * 100
+
+          // Show progress update every 20% or at milestones
           if (
             completedPages % Math.max(1, Math.floor(totalPages / 5)) === 0 ||
-            completedPages === totalPages
+            completedPages === totalPages ||
+            completedPages === 1 // Show first completion
           ) {
-            const completionPercent =
-              28 + Math.floor((completedPages / totalPages) * 47)
-            await setEnrichmentStatus(
-              userPlaceId,
-              'processing',
+            await statusManager.updatePhaseProgress(
+              'website_scan',
+              phaseProgressPercent,
               `Scanned ${completedPages}/${totalPages} pages`,
-              completionPercent,
-              jobId,
             )
           }
 
@@ -709,12 +572,10 @@ export const websiteEnrichmentManager = async ({
     ).length
     const failedSubpages = subpageResults.length - successfulSubpages
 
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
+    await statusManager.updatePhaseProgress(
+      'website_scan',
+      100,
       `Completed ${successfulSubpages}/${totalPages} pages successfully`,
-      75,
-      jobId,
     )
 
     logger.info({
@@ -737,36 +598,33 @@ export const websiteEnrichmentManager = async ({
       },
     })
 
-    // Step 12: External data enrichment (76-85%)
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
+    // Step 12: External data enrichment (company_search phase)
+    await statusManager.startPhase('company_search')
+    await statusManager.updatePhaseProgress(
+      'company_search',
+      50,
       'Searching governmental databases',
-      85,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, 'Searching governmental databases')
 
     const [
       governmentalDataResult,
       { description, shortDescription },
       whoisData,
     ] = await Promise.all([
-      governmentalData({
-        place: place.place,
+      enrichGovernmentalData({
+        place: place,
         enrichmentId: insertedEnrichment.id,
+        context: { userPlaceId, trackStatus: true },
       }),
       getWebsiteDescription(domain),
       performWhoisLookup(domain),
     ])
 
     if (governmentalDataResult.companyData) {
-      await setEnrichmentStatus(
-        userPlaceId,
-        'processing',
+      await statusManager.updatePhaseProgress(
+        'company_search',
+        100,
         'Processing official company data',
-        90,
-        jobId,
       )
 
       logger.info({
@@ -778,32 +636,32 @@ export const websiteEnrichmentManager = async ({
           userPlaceId,
         },
       })
+    } else {
+      await statusManager.updatePhaseProgress(
+        'company_search',
+        100,
+        'Completed company search',
+      )
     }
 
-    // Step 13: Compile and save (86-100%)
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
+    // Step 13: Compile and save (finalization phase)
+    await statusManager.startPhase('finalization')
+    await statusManager.updatePhaseProgress(
+      'finalization',
+      25,
       'Compiling business data',
-      95,
-      jobId,
     )
-    jobTracker.updateProgress(jobId, 'Compiling business data')
 
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
+    await statusManager.updatePhaseProgress(
+      'finalization',
+      60,
       'Saving enrichment results',
-      98,
-      jobId,
     )
 
-    await setEnrichmentStatus(
-      userPlaceId,
-      'processing',
+    await statusManager.updatePhaseProgress(
+      'finalization',
+      90,
       'Generating contact information',
-      99,
-      jobId,
     )
 
     await Promise.all([
@@ -818,6 +676,7 @@ export const websiteEnrichmentManager = async ({
           favicon: metadata.favicon,
           robots: metadata.robots,
           success: true,
+          isStale: false,
           domainRegisteredAt: whoisData?.registrationDate
             ? new Date(whoisData.registrationDate)
             : null,
@@ -829,14 +688,7 @@ export const websiteEnrichmentManager = async ({
       }),
     ])
 
-    await setEnrichmentStatus(
-      userPlaceId,
-      'completed',
-      'Enrichment completed successfully',
-      100,
-      jobId,
-    )
-    jobTracker.updateProgress(jobId, 'Enrichment completed successfully')
+    await statusManager.complete('Enrichment completed successfully')
 
     const endTime = Date.now()
     const duration = endTime - startTime
@@ -860,14 +712,7 @@ export const websiteEnrichmentManager = async ({
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    await setEnrichmentStatus(
-      userPlaceId,
-      'failed',
-      errorMessage || 'Enrichment failed',
-      100,
-      jobId,
-      errorMessage,
-    )
+    await statusManager.fail(errorMessage || 'Enrichment failed')
 
     logger.error({
       msg: 'Error enriching website',

@@ -6,7 +6,8 @@ import { enhancedPappersSearch } from '../../../external/pappers/enhanced_search
 import { PAPPERS_COUNTRY_CODES } from '../../../external/pappers/international_company_v1'
 import { extractCompanyIdentifiers } from '../../../external/qdrant/queries/extract_company_identifiers'
 import { enqueuePappersCompanyJob } from '../../../internal/bullmq/jobs/pappers/queue'
-import { insertEnrichmentCompany } from '../queries/insert_enrichment_company'
+import type { EnrichmentContext } from '../status_builder'
+import { insertEnrichmentCompany } from './insert_enrichment_company'
 
 // Helper function to map ISO alpha-2 codes to Pappers country codes
 const mapToPappersCountryCode = (isoCountryCode: string | null): string => {
@@ -42,10 +43,87 @@ const isPlaceholderValue = (value: string | null | undefined): boolean => {
   )
 }
 
-export const governmentalData = async ({
+// Helper function to validate company number format based on country code
+const isValidCompanyNumber = (
+  companyNumber: string,
+  countryCode: string,
+): boolean => {
+  if (!companyNumber || typeof companyNumber !== 'string') {
+    return false
+  }
+
+  // Remove spaces and common separators for validation
+  const cleaned = companyNumber.replace(/[\s.-]/g, '')
+
+  // Country-specific validation rules
+  switch (countryCode) {
+    case 'FR': {
+      // French SIREN: 9 digits, SIRET: 14 digits
+      // Accept both formats
+      return /^\d{9}$/.test(cleaned) || /^\d{14}$/.test(cleaned)
+    }
+
+    case 'UK': {
+      // UK company number: typically 8 digits (may have leading zeros)
+      // Can also be 6-8 digits
+      return /^\d{6,8}$/.test(cleaned)
+    }
+
+    case 'DE': {
+      // German Handelsregisternummer: HRB followed by digits, or just digits
+      // Format: HRB XXXXX or just digits (typically 4-6 digits)
+      const hrbFormat = /^HRB\s*\d{4,6}$/i.test(companyNumber)
+      const digitsOnly = /^\d{4,8}$/.test(cleaned)
+      return hrbFormat || digitsOnly
+    }
+
+    case 'BE': {
+      // Belgian enterprise number: 10 digits
+      return /^\d{10}$/.test(cleaned)
+    }
+
+    case 'CH': {
+      // Swiss CHE number: CHE-XXX.XXX.XXX format or 9 digits
+      const cheFormat = /^CHE-\d{3}\.\d{3}\.\d{3}$/i.test(companyNumber)
+      const digitsOnly = /^\d{9}$/.test(cleaned)
+      return cheFormat || digitsOnly
+    }
+
+    case 'NL': {
+      // Dutch KVK number: 8 digits
+      return /^\d{8}$/.test(cleaned)
+    }
+
+    case 'LU': {
+      // Luxembourg RCS: various formats, typically 6-8 digits or B followed by digits
+      const rcsFormat = /^[BR]\d{5,7}$/i.test(companyNumber)
+      const digitsOnly = /^\d{6,8}$/.test(cleaned)
+      return rcsFormat || digitsOnly
+    }
+
+    case 'ES': {
+      // Spanish CIF/NIF: 9 characters (alphanumeric), starts with letter or number
+      // Format: X12345678 or 12345678X
+      return /^[A-Z0-9]\d{7}[A-Z0-9]$/i.test(cleaned)
+    }
+
+    default: {
+      // For unknown countries, basic validation: at least 3 characters
+      // This allows flexibility while catching obvious errors like "30"
+      return cleaned.length >= 3 && /^[A-Z0-9]+$/i.test(cleaned)
+    }
+  }
+}
+
+export const enrichGovernmentalData = async ({
   place,
   enrichmentId,
-}: { place: Place; enrichmentId: string }) => {
+  context,
+}: {
+  place: Place
+  enrichmentId: string
+  context?: EnrichmentContext
+}) => {
   const isoCountryCode = countryToAlpha2(place.country ?? '')
   const countryCode = mapToPappersCountryCode(isoCountryCode)
   const parsedCountryCode = PAPPERS_COUNTRY_CODES.safeParse(countryCode)
@@ -251,6 +329,34 @@ export const governmentalData = async ({
 
   // Single company data fetch if we have a good match
   if (bestMatch && bestMatch.confidence >= 70) {
+    // Validate company number format before making API call
+    if (
+      !isValidCompanyNumber(bestMatch.company_number, parsedCountryCode.data)
+    ) {
+      logger.error({
+        msg: '[pappers] Invalid company number format - rejecting match',
+        event: 'governmental_data_invalid_company_number',
+        metadata: {
+          companyNumber: bestMatch.company_number,
+          countryCode: parsedCountryCode.data,
+          placeName: place.name,
+          confidence: bestMatch.confidence,
+          searchMethod,
+        },
+      })
+
+      return {
+        companyData: null,
+        searchResult: bestMatch,
+        searchAttempts,
+        searchMethod,
+        extractedIdentifiers,
+        identifierUsed,
+        confidence: bestMatch.confidence,
+        error: 'Invalid company number format',
+      }
+    }
+
     logger.info({
       msg: '[pappers] Good match found, fetching company data',
       event: 'governmental_data_match_found',
@@ -288,7 +394,12 @@ export const governmentalData = async ({
 
       // Insert company data into database
       try {
-        await insertEnrichmentCompany(enrichmentId, companyData, bestMatch)
+        await insertEnrichmentCompany(
+          enrichmentId,
+          companyData,
+          bestMatch,
+          context,
+        )
 
         logger.info({
           msg: '[pappers] Company data inserted into database',

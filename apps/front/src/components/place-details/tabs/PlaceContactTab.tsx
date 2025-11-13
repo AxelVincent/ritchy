@@ -76,35 +76,38 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
     return <ContactListSkeleton count={3} />
   }
 
+  const hasContacts = transformedContacts.length > 0
+
   return (
     <>
-      <EnrichmentAwareEmptyState
-        placeId={place.id}
-        hasData={transformedContacts.length > 0}
+      {/* Header with Add Contact Button - Always visible */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <h2 className="text-lg font-semibold">Contacts</h2>
+        <Button
+          onClick={() => setShowCreateForm(true)}
+          size="sm"
+          className="gap-2"
+        >
+          <UserPlus className="h-4 w-4" />
+          Add Contact
+        </Button>
+      </div>
+
+      {/* Create Contact Form Dialog - Always available */}
+      <CreateContactForm
+        open={showCreateForm}
+        onOpenChange={setShowCreateForm}
+        onCreateContact={mutations.contact.create}
       />
 
-      {transformedContacts.length > 0 && (
+      {/* Show empty state when no contacts */}
+      {!hasContacts && (
+        <EnrichmentAwareEmptyState placeId={place.id} hasData={false} />
+      )}
+
+      {/* Show contacts when they exist */}
+      {hasContacts && (
         <div className="space-y-6 p-4">
-          {/* Header with Add Contact Button */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Contacts</h2>
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              size="sm"
-              className="gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              Add Contact
-            </Button>
-          </div>
-
-          {/* Create Contact Form Dialog */}
-          <CreateContactForm
-            open={showCreateForm}
-            onOpenChange={setShowCreateForm}
-            onCreateContact={mutations.contact.create}
-          />
-
           {/* Primary Contact Section */}
           {primaryContact && (
             <section>

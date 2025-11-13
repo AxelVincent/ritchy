@@ -18,7 +18,6 @@ export interface EnrichmentStatusData {
   progress: number
   updatedAt: number
   error?: string
-  jobId?: string
 }
 
 // Status TTL in Redis (30 minutes)
@@ -160,7 +159,6 @@ export const setEnrichmentStatus = async (
   status: EnrichmentProgressStatus,
   step: string,
   progress: number,
-  jobId?: string,
   error?: string,
 ): Promise<void> => {
   const key = `${STATUS_KEY_PREFIX}:${userPlaceId}`
@@ -172,7 +170,6 @@ export const setEnrichmentStatus = async (
       progress,
       updatedAt: Date.now(),
       ...(error && { error }),
-      ...(jobId && { jobId }),
     }
 
     // Extend TTL for processing jobs to prevent expiration during long-running operations

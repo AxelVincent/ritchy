@@ -1,5 +1,5 @@
 import { Queue, QueueEvents } from 'bullmq'
-import { bullmqRedisOptions } from '../../../config'
+import { bullmqRedisOptions } from '../../config'
 
 export const queueName = 'enrichment-unit'
 export const enrichmentUnitQueue = new Queue(queueName, {

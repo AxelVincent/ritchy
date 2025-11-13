@@ -204,7 +204,6 @@ describe('Status Manager Batching', () => {
         'failed',
         'Error occurred',
         0,
-        undefined,
         'Test error',
       )
 

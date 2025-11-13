@@ -39,10 +39,9 @@ const pappersWorker = new Worker(
         },
       })
 
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      }
+      // Re-throw the error so BullMQ marks the job as failed
+      // This prevents the error object from being treated as valid data
+      throw error
     }
   },
   {

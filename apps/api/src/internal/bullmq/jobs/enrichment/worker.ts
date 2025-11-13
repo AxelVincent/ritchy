@@ -1,9 +1,9 @@
 import { logger } from '@ritchy/logger'
 import { type Job, UnrecoverableError, Worker } from 'bullmq'
-import { setEnrichmentStatus } from '../../../../../services/enrichment/status_manager'
-import { websiteEnrichmentManager } from '../../../../../services/enrichment/website_enrichment_manager'
-import { bullmqRedisOptions, workerConfig } from '../../../config'
-import { jobTracker } from '../../../utils/job_progress_tracker'
+import { setEnrichmentStatus } from '../../../../services/enrichment/status_manager'
+import { websiteEnrichmentManager } from '../../../../services/enrichment/website_enrichment_manager'
+import { bullmqRedisOptions, workerConfig } from '../../config'
+import { jobTracker } from '../../utils/job_progress_tracker'
 import { queueName } from './queue'
 
 export interface EnrichmentUnitJobData {
@@ -20,11 +20,10 @@ const processEnrichmentUnitJob = async (job: Job<EnrichmentUnitJobData>) => {
       'processing',
       'Starting enrichment',
       0,
-      jobId,
     )
 
     jobTracker.updateProgress(jobId, 'Starting enrichment')
-    await websiteEnrichmentManager({ userPlaceId, jobId })
+    await websiteEnrichmentManager({ userPlaceId })
 
     jobTracker.updateProgress(jobId, 'Enrichment completed')
     jobTracker.cleanup(jobId)
