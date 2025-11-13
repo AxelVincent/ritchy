@@ -596,6 +596,13 @@
       "when": 1762527793055,
       "tag": "0084_orange_living_tribunal",
       "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1763071383380,
+      "tag": "0085_last_talon",
+      "breakpoints": true
     }
   ]
 }
