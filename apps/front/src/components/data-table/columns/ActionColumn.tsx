@@ -122,7 +122,7 @@ export const actionColumn: ColumnDef<SearchResult> = {
 
     const handleFocus = () => {
       posthog.capture('pin_cell_place', { property: 'action_column' })
-      setSelectedPlaceId(row.original.id)
+      setSelectedPlaceId(row.original.id, 'table')
     }
 
     return (
