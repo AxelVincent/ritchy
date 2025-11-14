@@ -59,7 +59,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
   isMobile,
 }: DataTableProps<TData, TValue>) => {
   // Get selectedPlaceId from the store
-  const { selectedPlaceId } = useMapStore()
+  const { selectedPlaceId, selectionSource } = useMapStore()
   // console.log('data', data)
   const dataRef = useRef(data)
   useEffect(() => {
@@ -192,6 +192,11 @@ export const DataTable = <TData extends SearchResult, TValue>({
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (selectedPlaceId && rows.length > 0) {
+      // Only auto-scroll if selection came from the map, not the table
+      if (selectionSource === 'table') {
+        return
+      }
+
       // Only auto-scroll if:
       // 1. This is a new selection (selectedPlaceId changed)
       // 2. We haven't already scrolled to this selection
@@ -218,7 +223,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
     if (!selectedPlaceId) {
       hasScrolledToSelection.current = null
     }
-  }, [selectedPlaceId, rows.length, rowVirtualizer])
+  }, [selectedPlaceId, selectionSource, rows.length, rowVirtualizer])
 
   // Memoize filtered IDs calculation
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
