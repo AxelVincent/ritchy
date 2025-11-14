@@ -48,7 +48,7 @@ export const getEnrichmentByUserPlaceId = async (userPlaceId: string) => {
   }
 
   // Get all related records for the company
-  const [activities, contacts, establishments, officers, ubos, financials] =
+  const [activities, contacts, establishments, ubos, financials] =
     await Promise.all([
       db
         .select()
@@ -76,13 +76,6 @@ export const getEnrichmentByUserPlaceId = async (userPlaceId: string) => {
 
       db
         .select()
-        .from(enrichmentCompanyOfficer)
-        .where(
-          eq(enrichmentCompanyOfficer.company_id, enrichmentData.company.id),
-        ),
-
-      db
-        .select()
         .from(enrichmentCompanyUbo)
         .where(eq(enrichmentCompanyUbo.company_id, enrichmentData.company.id)),
 
@@ -100,7 +93,6 @@ export const getEnrichmentByUserPlaceId = async (userPlaceId: string) => {
     activities,
     contacts,
     establishments,
-    officers,
     ubos,
     financials,
   }

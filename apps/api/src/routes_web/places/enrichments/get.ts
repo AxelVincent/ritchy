@@ -97,31 +97,6 @@ export const getPlacesEnrichment = async (
         fiscalYearEnd: enrichment.company?.fiscal_year_end ?? '',
         nextFiscalYearEnd: enrichment.company?.next_fiscal_year_end ?? '',
         fieldsOfActivity: enrichment.company?.fields_of_activity ?? '',
-        officers: enrichment?.officers
-          ? enrichment?.officers.map((officer) => ({
-              id: officer.id,
-              type: officer.type ?? '',
-              role: officer.role ?? '',
-              mention: officer.mention ?? '',
-              dateOfAppointment:
-                officer.date_of_appointment?.toISOString() ?? '',
-              lastName: officer.last_name ?? '',
-              firstName: officer.first_name ?? '',
-              gender: officer.gender ?? '',
-              dateOfBirth: officer.date_of_birth?.toISOString() ?? '',
-              dateOfBirthFormat: officer.date_of_birth_format ?? '',
-              nationality: officer.nationality ?? '',
-              nationalityCode: officer.nationality_code ?? '',
-              companyName: officer.company_name ?? '',
-              companyNumber: officer.company_number ?? '',
-              addressLine1: officer.address_line_1 ?? '',
-              addressLine2: officer.address_line_2 ?? '',
-              postalCode: officer.postal_code ?? '',
-              city: officer.city ?? '',
-              country: officer.country ?? '',
-              countryCode: officer.country_code ?? '',
-            }))
-          : [],
         ubos: enrichment?.ubos
           ? enrichment?.ubos.map((ubo) => ({
               id: ubo.id,
