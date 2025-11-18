@@ -4,7 +4,7 @@ import { isSubPage } from './utils/is_sub_page'
 
 import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { enrichment, enrichment as enrichmentTable } from '../../db/schema'
+import { enrichment as enrichmentTable } from '../../db/schema'
 import { getCrawlStrategy } from '../../external/langchain/get_crawl_strategy'
 import { getPlaceByUserPlaceId } from '../places/queries/get_place_by_user_place_id'
 import { getBusinessName } from './queries/get_business_name'
@@ -62,6 +62,14 @@ export const websiteEnrichmentManager = async ({
   })
 
   const statusManager = new EnrichmentStatusBuilder(userPlaceId)
+  let insertedEnrichment:
+    | {
+        id: string
+        placeId: string
+        domain: string | null
+        success: boolean
+      }
+    | undefined
 
   // Step 1: Initialize (0-2%)
   await statusManager.startPhase('initialization')
@@ -252,8 +260,7 @@ export const websiteEnrichmentManager = async ({
         'No website found, using alternative sources',
         15,
       )
-
-      const [insertedEnrichment] = await db
+      ;[insertedEnrichment] = await db
         .insert(enrichmentTable)
         .values({
           placeId: place.id,
@@ -310,8 +317,7 @@ export const websiteEnrichmentManager = async ({
       'Preparing website analysis',
       12,
     )
-
-    const [insertedEnrichment] = await db
+    ;[insertedEnrichment] = await db
       .insert(enrichmentTable)
       .values({
         placeId: place.id,
@@ -522,6 +528,10 @@ export const websiteEnrichmentManager = async ({
     const totalPages = crawlStrategy.length
     const subpageResults = await Promise.allSettled(
       crawlStrategy.map(async (url: string) => {
+        if (!insertedEnrichment) {
+          throw new Error('Enrichment record not initialized')
+        }
+
         try {
           const result = await enqueueScraperJob(
             url,
@@ -692,6 +702,7 @@ export const websiteEnrichmentManager = async ({
         robots: metadata.robots,
         isStale: false,
         score: enrichmentScore,
+        success: true,
         domainRegisteredAt: whoisData?.registrationDate
           ? new Date(whoisData.registrationDate)
           : null,
@@ -759,18 +770,17 @@ export const websiteEnrichmentManager = async ({
     }
 
     // Only update enrichment record if we have an insertedEnrichment
-    const updatePromises = [
-      refundCredits(userId, ENRICHMENT_CREDITS),
-      db
+    await refundCredits(userId, ENRICHMENT_CREDITS)
+
+    if (insertedEnrichment) {
+      await db
         .update(enrichmentTable)
         .set({
           error: errorMessage,
           success: false,
         })
-        .where(eq(enrichmentTable.id, enrichment.id)),
-    ]
-
-    await Promise.all(updatePromises)
+        .where(eq(enrichmentTable.id, insertedEnrichment.id))
+    }
 
     throw new UnrecoverableError(errorMessage)
   }
