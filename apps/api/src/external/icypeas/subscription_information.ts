@@ -17,7 +17,7 @@ const SubscriptionInformationResponseSchema = z.object({
   userId: z.string(),
   customerId: z.string(),
   currency: z.string(),
-  checkoutSession: z.string().url().optional(),
+  checkoutSession: z.union([z.string().url(), z.literal('')]).optional(),
   lastInvoiceUrl: z.string(),
   priceId: z.string(),
   plan: z.string(),
@@ -103,6 +103,7 @@ export const getSubscriptionInformation = async ({
       event: 'icypeas_subscription_information_response',
       metadata: {
         status: response.status,
+        data,
         hasData: !!data,
         hasUserId: !!data.userId,
       },
