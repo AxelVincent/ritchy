@@ -322,7 +322,7 @@ export const scrapeWebsiteManager = async (
             .values(
               technologies.map((tech) => ({
                 enrichmentId,
-                technology: tech.technology,
+                technology: tech.technology.toLowerCase(), // Normalize to lowercase
                 category: tech.category,
                 confidence: tech.confidence,
                 evidence: tech.evidence,

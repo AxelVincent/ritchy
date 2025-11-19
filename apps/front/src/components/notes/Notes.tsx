@@ -1,12 +1,12 @@
 import { useAddPlaceNote } from '@/api/mutations/places/notes/useAddPlaceNote'
 import { usePlaceNotesQuery } from '@/api/queries/places/notes/usePlaceNotes'
+import { NoteItem } from '@/components/notes/NoteItem'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import type { Note } from '@ritchy/types'
-import { formatDistanceToNow } from 'date-fns'
 import { ArrowUpCircle, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 const NoteEditor = ({
   onSubmit,
@@ -17,22 +17,38 @@ const NoteEditor = ({
 }) => {
   const [content, setContent] = useState('')
   const [isFocused, setIsFocused] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleSubmit = () => {
-    if (!content.trim()) return
-    onSubmit(content)
+    if (!content.trim() || isSubmitting) return
+    onSubmit(content.trim())
     setContent('')
+    // Reset height after submit
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '36px'
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value)
+
+    // Auto-resize textarea
+    e.target.style.height = 'auto'
+    const newHeight = Math.min(e.target.scrollHeight, 200)
+    e.target.style.height = `${newHeight}px`
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    // Enter alone = Submit (if not empty)
+    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      if (!content.trim()) {
+        e.preventDefault() // Don't add newline if empty
+        return
+      }
       e.preventDefault()
       handleSubmit()
     }
+    // Shift+Enter = New line (default behavior, no need to handle)
   }
 
   const showHelper = isFocused && !content.trim()
@@ -41,13 +57,14 @@ const NoteEditor = ({
     <div className="flex flex-col gap-1">
       <div className="flex items-center">
         <Textarea
+          ref={textareaRef}
           placeholder="Add a note..."
           value={content}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          className="min-h-[36px] max-h-[36px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-2"
+          className="min-h-[36px] max-h-[200px] resize-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none p-2"
           disabled={isSubmitting}
           style={{
             whiteSpace: 'pre-wrap',
@@ -63,11 +80,15 @@ const NoteEditor = ({
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
             disabled={!content.trim() || isSubmitting}
           >
-            <ArrowUpCircle
-              className={`h-4 w-4 ${
-                content.trim() && !isSubmitting ? 'text-blue-600' : ''
-              }`}
-            />
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowUpCircle
+                className={`h-4 w-4 ${
+                  content.trim() && !isSubmitting ? 'text-blue-600' : ''
+                }`}
+              />
+            )}
           </Button>
         </div>
       </div>
@@ -75,15 +96,15 @@ const NoteEditor = ({
       {showHelper && (
         <div className="px-2 pb-1">
           <span className="text-xs text-muted-foreground animate-in fade-in duration-200">
-            💡 Press{' '}
-            <kbd className="px-1 py-0.5 text-xs bg-muted rounded border">
-              Ctrl
-            </kbd>{' '}
-            +{' '}
+            💡{' '}
             <kbd className="px-1 py-0.5 text-xs bg-muted rounded border">
               Enter
             </kbd>{' '}
-            to submit
+            to submit •{' '}
+            <kbd className="px-1 py-0.5 text-xs bg-muted rounded border">
+              Shift+Enter
+            </kbd>{' '}
+            for new line
           </span>
         </div>
       )}
@@ -156,23 +177,7 @@ export const Notes = ({ userPlaceId, listId, onNoteAdded }: NotesProps) => {
             <div className="absolute left-1 top-2 bottom-5 w-[1px] bg-border" />
             <div className="space-y-3">
               {data.map((note) => (
-                <div key={note.id} className="relative flex gap-3 pl-4">
-                  {/* Dot with white center */}
-                  <div className="absolute -left-[3px] top-1">
-                    <div className="h-4 w-4 rounded-full border-[1px] border-border bg-background" />
-                  </div>
-                  {/* Note content */}
-                  <div className="flex-1 pt-1">
-                    <div className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(note.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </div>
-                    <div className="text-sm break-words whitespace-pre-wrap mt-0.5">
-                      {note.note}
-                    </div>
-                  </div>
-                </div>
+                <NoteItem key={note.id} note={note} userPlaceId={userPlaceId} />
               ))}
             </div>
           </div>

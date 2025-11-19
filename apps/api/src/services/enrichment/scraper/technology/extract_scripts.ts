@@ -59,10 +59,10 @@ export const extractScripts = (
   // 1b. Extract dynamically loaded script URLs from inline JavaScript
   // Pattern: element.src = "https://cdn.example.com/script.js"
   const dynamicScriptRegex =
-    /\.src\s*=\s*["']((https?:)?\/\/[^"']+\.js[^"']*)["']/gi
-  let match = dynamicScriptRegex.exec(html)
+    /\.src\s*=\s*["']((https?:)?\/\/[^"']+\.js[^"']*)["']/g
+  const dynamicMatches = html.matchAll(dynamicScriptRegex)
 
-  while (match !== null) {
+  for (const match of dynamicMatches) {
     const src = match[1]
     const absoluteUrl = normalizeScriptUrl(src, url)
 
@@ -73,8 +73,6 @@ export const extractScripts = (
         value: absoluteUrl,
       })
     }
-
-    match = dynamicScriptRegex.exec(html)
   }
 
   // 2. Extract inline scripts (limited to first N chars)
