@@ -68,6 +68,14 @@ export const GetPlacesEnrichmentResponseSchema = z.object({
       domain: z.string(),
       domainRegisteredAt: z.string(),
       success: z.boolean(),
+      technologies: z
+        .array(
+          z.object({
+            technology: z.string(),
+            category: z.string(),
+          }),
+        )
+        .optional(),
     })
     .optional(),
   company: z

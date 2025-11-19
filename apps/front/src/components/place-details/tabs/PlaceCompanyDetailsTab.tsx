@@ -22,6 +22,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
+  Code,
   Globe,
   Hash,
   Loader2,
@@ -458,6 +459,10 @@ const EnrichmentInfoCard = ({
     domain: string
     domainRegisteredAt: string
     success: boolean
+    technologies?: Array<{
+      technology: string
+      category: string
+    }>
   }
 }) => {
   return (
@@ -509,6 +514,13 @@ const EnrichmentInfoCard = ({
             </div>
           )}
         </div>
+
+        {/* Technologies Section */}
+        {enrichment.technologies && enrichment.technologies.length > 0 && (
+          <div className="pt-4 border-t">
+            <TechnologiesSection technologies={enrichment.technologies} />
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -1114,6 +1126,61 @@ const ActivitiesSection = ({
               <span className="text-xs">·</span>
               <span>{activity.name}</span>
             </Badge>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Technologies Section
+const TechnologiesSection = ({
+  technologies,
+}: {
+  technologies: Array<{
+    technology: string
+    category: string
+  }>
+}) => {
+  // Group technologies by category
+  const groupedByCategory = technologies.reduce(
+    (acc, tech) => {
+      if (!acc[tech.category]) {
+        acc[tech.category] = []
+      }
+      acc[tech.category].push(tech)
+      return acc
+    },
+    {} as Record<string, typeof technologies>,
+  )
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-1.5">
+          <Code className="h-3.5 w-3.5" />
+          Technologies ({technologies.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-1 @sm:grid-cols-2 @md:grid-cols-3 @lg:grid-cols-4 gap-4">
+          {Object.entries(groupedByCategory).map(([category, techs]) => (
+            <div key={category} className="space-y-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase">
+                {category}
+              </span>
+              <div className="flex flex-col gap-1.5">
+                {techs.map((tech, index) => (
+                  <Badge
+                    key={`${tech.technology}-${tech.category}-${index}`}
+                    variant="outline"
+                    className="text-xs py-1 px-2 w-fit"
+                  >
+                    {tech.technology}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </CardContent>

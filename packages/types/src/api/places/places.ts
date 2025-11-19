@@ -297,6 +297,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
     .nullable(),
   companyActivities: z.array(CompanyActivitySchema),
   companyOfficers: z.array(CompanyOfficerSchema),
+  companyTechnologies: z.array(z.string()),
 })
 
 // Type inference from schemas

@@ -6,9 +6,9 @@ import {
   enrichmentCompanyContact,
   enrichmentCompanyEstablishment,
   enrichmentCompanyFinancial,
-  enrichmentCompanyOfficer,
   enrichmentCompanyUbo,
   enrichment as enrichmentTable,
+  enrichmentTechnology,
   place,
   userPlace,
 } from '../../../db/schema'
@@ -34,6 +34,16 @@ export const getEnrichmentByUserPlaceId = async (userPlaceId: string) => {
     return null
   }
 
+  // Fetch technologies for the enrichment
+  const technologies = enrichmentData.enrichment
+    ? await db
+        .select()
+        .from(enrichmentTechnology)
+        .where(
+          eq(enrichmentTechnology.enrichmentId, enrichmentData.enrichment.id),
+        )
+    : []
+
   // If there's no company data, return early with just enrichment
   if (!enrichmentData.company) {
     return {
@@ -44,6 +54,7 @@ export const getEnrichmentByUserPlaceId = async (userPlaceId: string) => {
       establishments: [],
       officers: [],
       ubos: [],
+      technologies,
     }
   }
 
@@ -95,5 +106,6 @@ export const getEnrichmentByUserPlaceId = async (userPlaceId: string) => {
     establishments,
     ubos,
     financials,
+    technologies,
   }
 }

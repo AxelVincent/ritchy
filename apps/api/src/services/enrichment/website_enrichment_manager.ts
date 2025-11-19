@@ -536,7 +536,7 @@ export const websiteEnrichmentManager = async ({
           const result = await enqueueScraperJob(
             url,
             insertedEnrichment.id,
-            true,
+            false,
             userPlaceId,
           )
 

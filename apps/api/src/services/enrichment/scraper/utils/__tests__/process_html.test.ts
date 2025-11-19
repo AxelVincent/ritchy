@@ -356,8 +356,8 @@ describe('processHtml', () => {
   })
 
   it('should throw error when HTML size exceeds limit', () => {
-    // Create HTML larger than 1MB (1024 * 1024 bytes)
-    const largeContent = 'x'.repeat(1024 * 1024 + 1)
+    // Create HTML larger than 1.5MB (1.5 * 1024 * 1024 bytes)
+    const largeContent = 'x'.repeat(1.5 * 1024 * 1024 + 1)
     const html = `<html><body><p>${largeContent}</p></body></html>`
     const url = 'https://example.com/large-page'
 
@@ -367,8 +367,8 @@ describe('processHtml', () => {
   })
 
   it('should handle HTML at the size limit', () => {
-    // Create HTML exactly at 1MB limit
-    const maxContent = 'x'.repeat(1024 * 1024 - 100) // Leave room for HTML tags
+    // Create HTML exactly at 1.5MB limit
+    const maxContent = 'x'.repeat(1.5 * 1024 * 1024 - 100) // Leave room for HTML tags
     const html = `<html><body><p>${maxContent}</p></body></html>`
 
     expect(() => {

@@ -29,6 +29,8 @@ HIGH PRIORITY (3-4 links):
 MEDIUM PRIORITY (1-2 links):
 - Team / Leadership pages (for business context)
 - Press / News (for recent company information)
+- Booking / Scheduling pages (for business offerings and services)
+- Pricing / Tarifs pages (for business offerings and services)
 
 Focus on pages that provide both legal company identifiers (SIREN/SIRET, VAT numbers, registration numbers) AND clear understanding of what the business does. Prioritize official/legal pages first, then business description pages.`,
   ],

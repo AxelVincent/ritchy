@@ -69,6 +69,7 @@ export interface AggregatedUserPlace extends Place {
     role: string | null
     type: string | null
   }>
+  company_technologies: string[]
 }
 
 export const getAggregatedUserPlaces = async (
@@ -181,7 +182,8 @@ export const getAggregatedUserPlaces = async (
       ec.workforce_range,
       ec.date_of_creation,
       COALESCE(activities_data.activities, '[]'::jsonb) as company_activities,
-      COALESCE(officers_data.officers, '[]'::jsonb) as company_officers
+      COALESCE(officers_data.officers, '[]'::jsonb) as company_officers,
+      COALESCE(technologies_data.technologies, '[]'::jsonb) as company_technologies
     FROM "user" u
     LEFT JOIN "search" s ON s.user_id = u.id ${searchCondition}
     LEFT JOIN "search_place" sp ON sp.search_id = s.id
@@ -317,6 +319,12 @@ export const getAggregatedUserPlaces = async (
       FROM enrichment_company_officer eco
       WHERE eco.company_id = ec.id
     ) officers_data ON true
+    LEFT JOIN LATERAL (
+      SELECT
+        JSONB_AGG(DISTINCT et.technology) FILTER (WHERE et.technology IS NOT NULL) as technologies
+      FROM enrichment_technology et
+      WHERE et.enrichment_id = e.id
+    ) technologies_data ON true
     WHERE u.id = ${userId}
     AND (
       ${userPlaceId && !searchId && !listId ? sql`up.id IS NOT NULL` : sql`(s.id IS NOT NULL OR l.id IS NOT NULL)`}
@@ -436,6 +444,7 @@ export const getAggregatedUserPlaces = async (
       companyDateOfCreation: result.date_of_creation ?? null,
       companyActivities: result.company_activities ?? [],
       companyOfficers: result.company_officers ?? [],
+      companyTechnologies: (result.company_technologies ?? []) as string[],
     }
   })
 }

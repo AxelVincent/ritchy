@@ -395,7 +395,62 @@ export const enrichmentCompanyFinancial = pgTable(
   },
 )
 
+export const technologyPattern = pgTable(
+  'technology_pattern',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    // Pattern definition
+    technology: text('technology').notNull(),
+    category: text('category').notNull(),
+    pattern: text('pattern').notNull(),
+    patternType: text('pattern_type').notNull(),
+
+    // Learning metrics
+    matchCount: integer('match_count').notNull().default(0),
+    confirmedCount: integer('confirmed_count').notNull().default(0),
+
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index().on(table.confirmedCount),
+    unique().on(table.technology, table.pattern),
+  ],
+)
+
+export const enrichmentTechnology = pgTable(
+  'enrichment_technology',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    enrichmentId: uuid('enrichment_id')
+      .notNull()
+      .references(() => enrichment.id, { onDelete: 'cascade' }),
+
+    // Technology information
+    technology: text('technology').notNull(),
+    category: text('category').notNull(),
+    confidence: integer('confidence').notNull(),
+
+    // Evidence and detection metadata
+    evidence: text('evidence'),
+    patternId: uuid('pattern_id').references(() => technologyPattern.id, {
+      onDelete: 'set null',
+    }),
+    detectionMethod: text('detection_method').notNull(),
+
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index().on(table.enrichmentId),
+    index().on(table.enrichmentId, table.category),
+    unique().on(table.enrichmentId, table.technology),
+  ],
+)
+
 // Type exports
+export type EnrichmentTechnology = typeof enrichmentTechnology.$inferSelect
+export type TechnologyPattern = typeof technologyPattern.$inferSelect
 export type EnrichmentCompany = typeof enrichmentCompany.$inferSelect
 export type EnrichmentCompanyActivity =
   typeof enrichmentCompanyActivity.$inferSelect
