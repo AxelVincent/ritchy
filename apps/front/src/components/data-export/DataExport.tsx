@@ -259,6 +259,12 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
               .join(', '),
         },
         {
+          header: 'Technologies',
+          field: 'companyTechnologies',
+          accessor: (row: SearchResult): string =>
+            row.companyTechnologies?.join(', ') || '',
+        },
+        {
           header: 'Primary Category',
           field: 'primaryType',
           accessor: (row: SearchResult): string => row.primaryType || '',

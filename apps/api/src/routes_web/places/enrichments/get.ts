@@ -47,6 +47,12 @@ export const getPlacesEnrichment = async (
         domainRegisteredAt:
           enrichment.enrichment.domainRegisteredAt?.toISOString() ?? '',
         success: enrichment.enrichment.success,
+        technologies: enrichment?.technologies
+          ? enrichment?.technologies.map((tech) => ({
+              technology: tech.technology,
+              category: tech.category,
+            }))
+          : [],
       },
       company: {
         id: enrichment.company?.id ?? '',

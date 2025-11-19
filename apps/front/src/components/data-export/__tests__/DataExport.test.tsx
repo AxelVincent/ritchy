@@ -115,6 +115,8 @@ describe('DataExport', () => {
         utcOffsetMinutes: 0,
         status: null,
         listId: null,
+        lists: [],
+        notes: [],
         domainRegisteredAt: new Date(),
         contactEmails: [
           {
@@ -132,6 +134,7 @@ describe('DataExport', () => {
             updatedAt: new Date(),
           },
         ],
+        contactPhones: [],
         contactLinkedins: [
           {
             url: 'https://test.com',
@@ -170,6 +173,7 @@ describe('DataExport', () => {
         companyDateOfCreation: null,
         companyActivities: [],
         companyOfficers: [],
+        companyTechnologies: [],
       },
     ]
 
@@ -221,9 +225,11 @@ describe('DataExport', () => {
           postalCodeSuffix: '',
           plusCode: '',
           street: 'Test St',
+          streetNumber: '',
           neighborhood: '',
           administrativeAreaLevel1: 'Test State',
           administrativeAreaLevel2: '',
+          administrativeAreaLevel3: '',
         },
         phone: '',
         rating: undefined,
@@ -236,6 +242,8 @@ describe('DataExport', () => {
         utcOffsetMinutes: 0,
         status: null,
         listId: null,
+        lists: [],
+        notes: [],
         domainRegisteredAt: new Date(),
         contactEmails: [
           {
@@ -253,6 +261,7 @@ describe('DataExport', () => {
             updatedAt: new Date(),
           },
         ],
+        contactPhones: [],
         contactLinkedins: [
           {
             url: 'https://test.com',
@@ -291,6 +300,7 @@ describe('DataExport', () => {
         companyDateOfCreation: null,
         companyActivities: [],
         companyOfficers: [],
+        companyTechnologies: [],
       },
     ]
 

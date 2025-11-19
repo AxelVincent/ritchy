@@ -39,6 +39,7 @@ import { sourceColumn } from './columns/SourceColumn'
 import { sourceIdColumn } from './columns/SourceIdColumn'
 import { sourceUrlColumn } from './columns/SourceUrlColumn'
 import { statusColumn } from './columns/StatusColumn'
+import { technologiesColumn } from './columns/TechnologiesColumn'
 import { typesColumn } from './columns/TypesColumn'
 import { websiteColumn } from './columns/WebsiteColumn'
 import { workforceRangeColumn } from './columns/WorkforceRangeColumn'
@@ -56,6 +57,7 @@ export const columns: ColumnDef<SearchResult>[] = [
   dateOfCreationColumn,
   activitiesColumn,
   officersColumn,
+  technologiesColumn,
   emailsColumn,
   instagramSocialsColumn,
   linkedinSocialsColumn,

@@ -3,14 +3,15 @@ import * as cheerio from 'cheerio'
 
 import type { FirecrawlDocumentMetadata } from '@mendable/firecrawl-js'
 import { db } from '../../../db/db'
+import { enrichmentTechnology } from '../../../db/schema/enrichment'
 import { websiteRagIndexingPipeline } from '../../../external/langchain/website_rag_indexing_pipeline'
-import { getBusinessCountryCodeByEnrichmentId } from '../../enrichment/queries/get_business_country_code'
 import { insertEnrichmentFacebookBatch } from '../queries/insert_enrichment_facebook_batch'
 import { insertEnrichmentInstagramBatch } from '../queries/insert_enrichment_instagram_batch'
 import { insertEnrichmentLinkedinBatch } from '../queries/insert_enrichment_linkedin_batch'
 import { insertEnrichmentPhone } from '../queries/insert_enrichment_phone'
 import { isSocialMediaUrl } from '../utils/is_social_media_url'
 import { scrapeWithFallbacks } from './scrape_with_fallbacks'
+import { detectTechnologies } from './technology/detect_technologies'
 import { cleanUrl } from './utils/clean_url'
 import { createHtmlChunks } from './utils/create_html_chunks'
 import { extractContactsFromText } from './utils/extract_contacts_from_text'
@@ -174,9 +175,9 @@ export const scrapeWebsiteManager = async (
       metadata: { url, userPlaceId },
     })
 
-    const { html, markdown, metadata, success, error } =
+    const { html, rawHtml, markdown, metadata, success, error } =
       await scrapeWithFallbacks(url, userPlaceId, {
-        formats: ['markdown', 'html'],
+        formats: ['markdown', 'html', 'rawHtml'],
         excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
         country: 'US',
         proxy: 'auto',
@@ -298,6 +299,70 @@ export const scrapeWebsiteManager = async (
 
     const mainDomain = getMainDomain(url)
     await websiteRagIndexingPipeline(mainDomain, url, markdown)
+
+    // Detect technologies (use rawHtml which contains scripts/meta tags)
+    logger.debug({
+      msg: `[Scrape Website Manager] Detecting technologies for ${url}`,
+      event: 'detecting_technologies',
+      metadata: {
+        url,
+        userPlaceId,
+        enrichmentId,
+        rawHtmlLength: rawHtml?.length ?? 0,
+      },
+    })
+    if (rawHtml && rawHtml.length > 0) {
+      const technologies = await detectTechnologies(rawHtml, url, enrichmentId)
+
+      // Store technologies in database
+      if (technologies.length > 0) {
+        try {
+          await db
+            .insert(enrichmentTechnology)
+            .values(
+              technologies.map((tech) => ({
+                enrichmentId,
+                technology: tech.technology,
+                category: tech.category,
+                confidence: tech.confidence,
+                evidence: tech.evidence,
+                patternId: tech.patternId || null,
+                detectionMethod: tech.detectionMethod,
+              })),
+            )
+            .onConflictDoNothing()
+
+          logger.info({
+            msg: `[Scrape Website Manager] Stored ${technologies.length} technologies`,
+            event: 'technologies_stored',
+            metadata: {
+              url,
+              userPlaceId,
+              enrichmentId,
+              count: technologies.length,
+              byCategory: technologies.reduce(
+                (acc, t) => {
+                  acc[t.category] = (acc[t.category] || 0) + 1
+                  return acc
+                },
+                {} as Record<string, number>,
+              ),
+            },
+          })
+        } catch (error) {
+          logger.error({
+            msg: '[Scrape Website Manager] Failed to store technologies',
+            event: 'technologies_store_error',
+            metadata: {
+              url,
+              userPlaceId,
+              enrichmentId,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          })
+        }
+      }
+    }
 
     const responseTimeInSeconds = (Date.now() - time) / 1000
     logger.debug({

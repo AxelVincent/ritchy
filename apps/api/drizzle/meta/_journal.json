@@ -603,6 +603,20 @@
       "when": 1763071383380,
       "tag": "0085_last_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1763384010458,
+      "tag": "0086_curly_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1763478682185,
+      "tag": "0087_faithful_the_professor",
+      "breakpoints": true
     }
   ]
 }

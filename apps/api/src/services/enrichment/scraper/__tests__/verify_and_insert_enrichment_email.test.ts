@@ -1,22 +1,24 @@
 import { logger } from '@ritchy/logger'
-import type { PgSelect } from 'drizzle-orm/pg-core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../../../db/db'
-import { verifyWithMillionVerifier } from '../../../../external/million_verifier'
+import { enrichmentEmail } from '../../../../db/schema/enrichment'
+import { verifyEmailForSaving } from '../../../../external/million_verifier/email_verification'
 import { insertEnrichmentEmail } from '../../queries/insert_enrichment_email'
 import { verifyAndInsertEnrichmentEmail } from '../verify_and_insert_enrichment_email'
 
 // Mock dependencies
 vi.mock('../../../../db/db', () => ({
   db: {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({ where: vi.fn(() => ({ limit: vi.fn() })) })),
-    })),
+    select: vi.fn(),
   },
 }))
 
-vi.mock('../../../../external/million_verifier', () => ({
-  verifyWithMillionVerifier: vi.fn(),
+vi.mock('../../../../db/schema/enrichment', () => ({
+  enrichmentEmail: {},
+}))
+
+vi.mock('../../../../external/million_verifier/email_verification', () => ({
+  verifyEmailForSaving: vi.fn(),
 }))
 
 vi.mock('../../queries/insert_enrichment_email', () => ({
@@ -48,28 +50,23 @@ describe('verifyAndInsertEnrichmentEmail', () => {
   })
 
   it('should normalize email to lowercase and trim', async () => {
-    vi.mocked(db.select).mockReturnValue({
+    const mockSelect = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockResolvedValue([]),
         }),
       }),
-    } as unknown as ReturnType<typeof db.select>)
-
-    vi.mocked(verifyWithMillionVerifier).mockResolvedValue({
-      email: normalizedEmail,
-      error: '',
-      quality: 'good',
-      result: 'ok',
-      role: false,
-      free: false,
-      resultcode: 1,
-      subresult: 'ok',
-      didyoumean: '',
-      livemode: true,
-      credits: 1,
-      executiontime: 1,
     })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
+
+    const verificationResult = {
+      email: normalizedEmail,
+      quality: 'good' as const,
+      result: 'ok' as const,
+      free: false,
+      role: false,
+    }
+    vi.mocked(verifyEmailForSaving).mockResolvedValue(verificationResult)
 
     await verifyAndInsertEnrichmentEmail(
       mockUserPlaceId,
@@ -78,17 +75,22 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       ' Test.Email@Example.com ',
     )
 
-    expect(verifyWithMillionVerifier).toHaveBeenCalledWith(normalizedEmail)
+    expect(verifyEmailForSaving).toHaveBeenCalledWith(
+      normalizedEmail,
+      'Verify and Insert Enrichment Email',
+      false,
+    )
   })
 
   it('should skip if email already exists', async () => {
-    vi.mocked(db.select).mockReturnValue({
+    const mockSelect = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockResolvedValue([{ id: 1, email: normalizedEmail }]),
         }),
       }),
-    } as unknown as ReturnType<typeof db.select>)
+    })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
 
     await verifyAndInsertEnrichmentEmail(
       mockUserPlaceId,
@@ -97,7 +99,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       mockEmail,
     )
 
-    expect(verifyWithMillionVerifier).not.toHaveBeenCalled()
+    expect(verifyEmailForSaving).not.toHaveBeenCalled()
     expect(insertEnrichmentEmail).not.toHaveBeenCalled()
     expect(logger.debug).toHaveBeenCalledWith({
       msg: `[Verify and Insert Enrichment Email] Email already exists and verified: ${normalizedEmail}`,
@@ -110,29 +112,18 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     })
   })
 
-  it('should not insert email if verification fails', async () => {
-    vi.mocked(db.select).mockReturnValue({
+  it('should not insert email if verification throws error', async () => {
+    const mockSelect = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockResolvedValue([]),
         }),
       }),
-    } as unknown as ReturnType<typeof db.select>)
-
-    vi.mocked(verifyWithMillionVerifier).mockResolvedValue({
-      email: normalizedEmail,
-      error: 'Invalid email',
-      quality: 'bad' as const,
-      result: 'invalid' as const,
-      role: false,
-      free: false,
-      resultcode: 1,
-      subresult: 'ok' as const,
-      didyoumean: '',
-      livemode: true,
-      credits: 1,
-      executiontime: 1,
     })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
+
+    const verificationError = new Error('Email not safe to save: invalid')
+    vi.mocked(verifyEmailForSaving).mockRejectedValue(verificationError)
 
     await verifyAndInsertEnrichmentEmail(
       mockUserPlaceId,
@@ -142,56 +133,37 @@ describe('verifyAndInsertEnrichmentEmail', () => {
     )
 
     expect(insertEnrichmentEmail).not.toHaveBeenCalled()
-    expect(logger.warn).toHaveBeenCalledWith({
-      msg: `[Verify and Insert Enrichment Email] Email not safe to save : ${normalizedEmail} - invalid`,
-      event: 'email_not_safe_to_save',
+    expect(logger.error).toHaveBeenCalledWith({
+      msg: 'Failed to verify and insert enrichment email',
+      event: 'failed_to_verify_and_insert_enrichment_email',
       metadata: {
         userPlaceId: mockUserPlaceId,
         enrichmentId: mockEnrichmentId,
-        email: normalizedEmail,
-        verificationResult: {
-          email: normalizedEmail,
-          error: 'Invalid email',
-          quality: 'bad',
-          result: 'invalid',
-          role: false,
-          free: false,
-          resultcode: 1,
-          subresult: 'ok',
-          didyoumean: '',
-          livemode: true,
-          credits: 1,
-          executiontime: 1,
-        },
+        email: mockEmail,
+        error: verificationError,
       },
     })
   })
 
   it('should insert email when verification succeeds', async () => {
-    vi.mocked(db.select).mockReturnValue({
+    const mockSelect = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockResolvedValue([]),
         }),
       }),
-    } as unknown as ReturnType<typeof db.select>)
+    })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
 
     const verificationResult = {
       email: normalizedEmail,
-      error: '',
       quality: 'good' as const,
       result: 'ok' as const,
-      role: false,
       free: false,
-      resultcode: 1,
-      subresult: 'ok' as const,
-      didyoumean: '',
-      livemode: true,
-      credits: 1,
-      executiontime: 1,
+      role: false,
     }
 
-    vi.mocked(verifyWithMillionVerifier).mockResolvedValue(verificationResult)
+    vi.mocked(verifyEmailForSaving).mockResolvedValue(verificationResult)
 
     await verifyAndInsertEnrichmentEmail(
       mockUserPlaceId,
@@ -200,6 +172,11 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       mockEmail,
     )
 
+    expect(verifyEmailForSaving).toHaveBeenCalledWith(
+      normalizedEmail,
+      'Verify and Insert Enrichment Email',
+      false,
+    )
     expect(insertEnrichmentEmail).toHaveBeenCalledWith(
       mockEnrichmentId,
       mockSource,
@@ -209,17 +186,27 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       verificationResult.free,
       verificationResult.role,
     )
+    expect(logger.debug).toHaveBeenCalledWith({
+      msg: `[Verify and Insert Enrichment Email] Email verified and inserted: ${verificationResult.email}`,
+      event: 'enrichment_email_verified_and_inserted',
+      metadata: {
+        userPlaceId: mockUserPlaceId,
+        enrichmentId: mockEnrichmentId,
+        email: verificationResult.email,
+      },
+    })
   })
 
   it('should handle database query errors', async () => {
     const dbError = new Error('Database error')
-    vi.mocked(db.select).mockReturnValue({
+    const mockSelect = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockRejectedValue(dbError),
         }),
       }),
-    } as unknown as ReturnType<typeof db.select>)
+    })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
 
     await verifyAndInsertEnrichmentEmail(
       mockUserPlaceId,
@@ -228,7 +215,7 @@ describe('verifyAndInsertEnrichmentEmail', () => {
       mockEmail,
     )
 
-    expect(verifyWithMillionVerifier).not.toHaveBeenCalled()
+    expect(verifyEmailForSaving).not.toHaveBeenCalled()
     expect(insertEnrichmentEmail).not.toHaveBeenCalled()
     expect(logger.error).toHaveBeenCalledWith({
       msg: 'Failed to verify and insert enrichment email',
@@ -243,16 +230,17 @@ describe('verifyAndInsertEnrichmentEmail', () => {
   })
 
   it('should handle verification service errors', async () => {
-    vi.mocked(db.select).mockReturnValue({
+    const mockSelect = vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
           limit: vi.fn().mockResolvedValue([]),
         }),
       }),
-    } as unknown as ReturnType<typeof db.select>)
+    })
+    vi.mocked(db.select).mockReturnValue(mockSelect() as never)
 
     const verificationError = new Error('Verification service error')
-    vi.mocked(verifyWithMillionVerifier).mockRejectedValue(verificationError)
+    vi.mocked(verifyEmailForSaving).mockRejectedValue(verificationError)
 
     await verifyAndInsertEnrichmentEmail(
       mockUserPlaceId,
