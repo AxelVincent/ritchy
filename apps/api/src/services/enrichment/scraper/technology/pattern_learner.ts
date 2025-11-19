@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { and, eq, sql } from 'drizzle-orm'
 import { db } from '../../../../db/db'
 import { technologyPattern } from '../../../../db/schema/enrichment'
+import { invalidatePatternCache } from './pattern_cache'
 import type { LLMIdentification } from './types'
 
 /**
@@ -20,7 +21,7 @@ export const learnPatternsFromResults = async (
       if (pattern.length < 5 || pattern.length > 100) return null
 
       return {
-        technology: identification.technology,
+        technology: identification.technology.toLowerCase(), // Normalize to lowercase
         category: identification.category,
         pattern,
         patternType: inferPatternType(identification.evidence),
@@ -74,6 +75,9 @@ export const learnPatternsFromResults = async (
         pattern: technologyPattern.pattern,
         confirmedCount: technologyPattern.confirmedCount,
       })
+
+    // Invalidate cache after learning new patterns
+    await invalidatePatternCache()
 
     // Count new vs reinforced patterns
     const learnedCount = {

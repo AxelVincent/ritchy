@@ -5,11 +5,12 @@ import {
   technologyDetectorPrompt,
 } from '../../../../external/langchain/prompts/technology_detector'
 import { retryWithBackoff } from '../../../../utils/retry_with_backoff'
+import { prepareScriptsForLLM } from './llm_detector_utils'
 import type { ExtractedScript, LLMIdentification } from './types'
 
 /**
  * Uses LangChain + Gemini 2.5 Flash to identify technologies from unmatched scripts
- * Batches up to 20 scripts per LLM call for efficiency
+ * Optimizes token usage with intelligent batching and truncation
  * Includes retry logic with exponential backoff for resilience
  */
 export const identifyScriptsBatch = async (
@@ -21,8 +22,17 @@ export const identifyScriptsBatch = async (
 
   const startTime = Date.now()
 
-  // Limit to 20 scripts per call (token optimization)
-  const scriptsToAnalyze = scripts.slice(0, 20)
+  // Prepare scripts with token optimization
+  const scriptsToAnalyze = prepareScriptsForLLM(scripts)
+
+  if (scriptsToAnalyze.length === 0) {
+    logger.warn({
+      msg: '[Technology Detection] No scripts fit within token budget',
+      event: 'llm_no_scripts_in_budget',
+      metadata: { originalCount: scripts.length },
+    })
+    return []
+  }
 
   // Format scripts for prompt
   const scriptsList = scriptsToAnalyze
@@ -74,6 +84,7 @@ export const identifyScriptsBatch = async (
       msg: `[Technology Detection] LLM identified ${identifications.length} technologies in ${llmTime}ms`,
       event: 'llm_detection_complete',
       metadata: {
+        scriptsProvided: scripts.length,
         scriptsAnalyzed: scriptsToAnalyze.length,
         identified: identifications.length,
         llmTimeMs: llmTime,

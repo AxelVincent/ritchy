@@ -1,9 +1,13 @@
 import { logger } from '@ritchy/logger'
+import { deduplicateTechnologies } from './detect_technologies_utils'
 import { extractScripts } from './extract_scripts'
 import { identifyScriptsBatch } from './llm_detector'
 import { learnPatternsFromResults } from './pattern_learner'
 import { matchAgainstPatterns } from './pattern_matcher'
 import type { DetectedTechnology } from './types'
+
+// Configuration constants
+const LLM_ACTIVATION_THRESHOLD = 5 // Minimum unmatched scripts to trigger LLM
 
 /**
  * Main entry point for technology detection
@@ -34,11 +38,11 @@ export const detectTechnologies = async (
     return []
   }
 
-  // STEP 2: Match against known patterns (batch DB query)
+  // STEP 2: Match against known patterns (Redis-cached)
   const { matched, unmatched } = await matchAgainstPatterns(scripts)
 
   // STEP 3: Decide if LLM is needed
-  const shouldUseLLM = unmatched.length >= 5
+  const shouldUseLLM = unmatched.length >= LLM_ACTIVATION_THRESHOLD
 
   if (!shouldUseLLM) {
     logger.debug({
@@ -81,38 +85,20 @@ export const detectTechnologies = async (
 
   const allDetections = [...matched, ...llmDetections]
 
-  // Deduplicate case-insensitively (LLM may return "BSport" and "Bsport")
-  // Keep the version with higher confidence, or first occurrence if equal
-  const unique = new Map<string, DetectedTechnology>()
-  const duplicatesFound: string[] = []
+  // STEP 7: Deduplicate case-insensitively
+  const { unique: finalResults, duplicates } =
+    deduplicateTechnologies(allDetections)
 
-  for (const detection of allDetections) {
-    const normalizedKey = detection.technology.toLowerCase()
-    const existing = unique.get(normalizedKey)
-
-    if (existing && existing.technology !== detection.technology) {
-      duplicatesFound.push(
-        `${existing.technology} vs ${detection.technology} (kept: ${detection.confidence > existing.confidence ? detection.technology : existing.technology})`,
-      )
-    }
-
-    if (!existing || detection.confidence > existing.confidence) {
-      unique.set(normalizedKey, detection)
-    }
-  }
-
-  if (duplicatesFound.length > 0) {
+  if (duplicates.length > 0) {
     logger.debug({
       msg: '[Technology Detection] Deduplicated case variations',
       event: 'case_deduplication',
       metadata: {
         url,
-        duplicates: duplicatesFound,
+        duplicates,
       },
     })
   }
-
-  const finalResults = Array.from(unique.values())
   const totalTime = Date.now() - startTime
 
   // Only log summary at info level
