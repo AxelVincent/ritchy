@@ -1,10 +1,15 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import type {
   AutocompletePrediction,
   AutocompleteRequestBody,
 } from '@ritchy/types'
 import { z } from 'zod'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 // Schema for Google's specific response format
 const GooglePlacesResponseSchema = z.object({
@@ -34,7 +39,8 @@ const GooglePlacesResponseSchema = z.object({
 export async function postAutocompleteV1(
   requestBody: AutocompleteRequestBody,
 ): Promise<AutocompletePrediction[]> {
-  const startTime = Date.now()
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   try {
     const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places:autocomplete`)
@@ -50,6 +56,8 @@ export async function postAutocompleteV1(
       body: JSON.stringify(requestBody),
     })
 
+    httpStatusCode = response.status.toString()
+
     if (!response.ok) {
       const errorData = await response.json()
       logger.error({
@@ -59,9 +67,17 @@ export async function postAutocompleteV1(
           errorData,
           input: requestBody.input,
           statusCode: response.status,
-          durationMs: Date.now() - startTime,
         },
       })
+
+      // Track error in metrics
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'autocomplete' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'autocomplete',
+        status_code: httpStatusCode,
+      })
+
       throw new Error(`Google API error: ${response.status}`)
     }
 
@@ -83,17 +99,34 @@ export async function postAutocompleteV1(
       metadata: {
         input: requestBody.input,
         resultCount: predictions.length,
-        durationMs: Date.now() - startTime,
       },
+    })
+
+    // Track successful request
+    metricsTimer.stop({ service: 'google_maps', endpoint: 'autocomplete' })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'autocomplete',
+      status_code: httpStatusCode,
     })
 
     return predictions
   } catch (error) {
+    // Track error if not already tracked above
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'autocomplete' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'autocomplete',
+        status_code: httpStatusCode,
+      })
+    }
+
     logger.error({
       msg: 'Places autocomplete failed',
       event: 'places_autocomplete_error',
       metadata: {
-        error,
+        error: error instanceof Error ? error.message : String(error),
         input: requestBody.input,
       },
     })

@@ -1,8 +1,13 @@
 import 'dotenv/config'
+
 import { createServer } from 'node:http'
 import { clerkMiddleware, getAuth } from '@clerk/express'
 import { createQueueDashExpressMiddleware } from '@queuedash/api'
 import { baseLogger, logger } from '@ritchy/logger'
+import {
+  createHttpMetricsMiddleware,
+  createMetricsHandler,
+} from '@ritchy/metrics'
 import timeout from 'connect-timeout'
 import cors from 'cors'
 import { eq } from 'drizzle-orm'
@@ -14,6 +19,7 @@ import { db } from './db/db'
 import { user as userTable } from './db/schema'
 import { initQdrantCollection } from './external/qdrant'
 import { redisHealthMonitor } from './internal/redis/health-monitor'
+import { metricsRegistry } from './metrics/registry'
 import { basicAuth } from './middleware/basic_auth'
 import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
@@ -68,6 +74,45 @@ app.use(clerkMiddleware())
 
 // Request metadata middleware
 app.use(addRequestMetadata)
+
+// Metrics middleware - track HTTP requests
+app.use(
+  createHttpMetricsMiddleware(metricsRegistry, {
+    prefix: 'ritchy_',
+    routeExtractor: (req) => {
+      // Express doesn't provide route patterns for nested routers in req.baseUrl
+      // req.baseUrl contains actual values like "/web/places/123abc/notes"
+      // We need to reconstruct the pattern by replacing param values with placeholders
+
+      if (!req.route) {
+        return req.path
+      }
+
+      // Get the full actual path (baseUrl + route.path)
+      const actualPath = req.baseUrl + req.route.path
+
+      // Replace all parameter values with their :paramName placeholders
+      let pattern = actualPath
+
+      for (const [paramName, paramValue] of Object.entries(req.params)) {
+        // Replace the actual value with :paramName placeholder
+        // Use a regex to only replace full path segments
+        const valueStr = String(paramValue)
+        pattern = pattern.replace(
+          new RegExp(`/${valueStr}(?=/|$)`, 'g'),
+          `/:${paramName}`,
+        )
+      }
+
+      return pattern
+    },
+    shouldTrack: (req) => req.method !== 'OPTIONS',
+    // Note: We don't include user_id in labels to avoid cardinality explosion
+    // (one metric series per user would be too many for Prometheus)
+    // User-specific metrics should be tracked separately if needed
+    extraLabels: () => ({}),
+  }),
+)
 
 // Authentication middleware
 const isAuthenticated = async (
@@ -200,6 +245,9 @@ app.use(helmet())
 app.get('/health', (_, res) => {
   res.status(200).json({ status: 'ok' })
 })
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', createMetricsHandler(metricsRegistry))
 
 // Web routes
 app.use('/web', isAuthenticated, webRoutes)

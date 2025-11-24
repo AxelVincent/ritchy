@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'ritchy-monitor'
+
+scrape_configs:
+  # Application metrics (prom-client)
+  - job_name: 'ritchy-api'
+    static_configs:
+      - targets: ['host.docker.internal:3030']
+    metrics_path: '/metrics'
+    scrape_interval: 10s

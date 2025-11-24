@@ -1,5 +1,10 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import { BRIGHTDATA_CONFIG } from '../../config/brightdata'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 import { UnrecoverableError } from 'bullmq'
 import { z } from 'zod'
@@ -40,6 +45,8 @@ export const webUnblocker = async (
 ): Promise<BrightdataWebUnlockerResponse> => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 45000)
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   try {
     const body = {
@@ -61,7 +68,20 @@ export const webUnblocker = async (
       body: JSON.stringify(body),
       signal: controller.signal,
     })
+
+    // Capture HTTP status code
+    httpStatusCode = response.status.toString()
+
     const data = await response.json()
+
+    // Track successful request
+    metricsTimer.stop({ service: 'brightdata', endpoint: 'web_unlocker' })
+    externalApiRequestsCounter.inc({
+      service: 'brightdata',
+      endpoint: 'web_unlocker',
+      status_code: httpStatusCode,
+    })
+
     logger.info({
       msg: '[Brightdata] Website unblocked',
       event: 'brightdata_success',
@@ -69,14 +89,33 @@ export const webUnblocker = async (
     })
     return data
   } catch (error) {
+    // Track failed request
     if (error instanceof Error && error.name === 'AbortError') {
+      httpStatusCode = '408' // Request Timeout
       logger.error({
         msg: '[Brightdata] Request timed out',
         event: 'brightdata_timeout',
         metadata: { url },
       })
+
+      metricsTimer.stop({ service: 'brightdata', endpoint: 'web_unlocker' })
+      externalApiRequestsCounter.inc({
+        service: 'brightdata',
+        endpoint: 'web_unlocker',
+        status_code: httpStatusCode,
+      })
+
       throw new UnrecoverableError('Timeout')
     }
+
+    // Track other errors
+    metricsTimer.stop({ service: 'brightdata', endpoint: 'web_unlocker' })
+    externalApiRequestsCounter.inc({
+      service: 'brightdata',
+      endpoint: 'web_unlocker',
+      status_code: httpStatusCode,
+    })
+
     logger.error({
       msg: '[Brightdata] Error unblocking website',
       event: 'brightdata_error',

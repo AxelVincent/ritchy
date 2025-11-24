@@ -1,7 +1,12 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import { ContactTypeEnum } from '@ritchy/types'
 import z from 'zod'
 import { PAPPERS_CONFIG } from '../../config/pappers'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 export const PAPPERS_COUNTRY_CODES = z.enum([
   'UK',
@@ -290,6 +295,8 @@ export const internationalCompanyV1 = async ({
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 45000)
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   try {
     const url = new URL(`${PAPPERS_CONFIG.BASE_URL}/v1/company`)
@@ -336,7 +343,28 @@ export const internationalCompanyV1 = async ({
       signal: controller.signal,
     })
 
+    httpStatusCode = response.status.toString()
+
     if (!response.ok) {
+      logger.error({
+        msg: 'International Company API error response',
+        event: 'international_company_api_error_response',
+        metadata: {
+          status: response.status,
+        },
+      })
+
+      // Track error in metrics
+      metricsTimer.stop({
+        service: 'pappers',
+        endpoint: 'international_company',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'pappers',
+        endpoint: 'international_company',
+        status_code: httpStatusCode,
+      })
+
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
@@ -363,15 +391,46 @@ export const internationalCompanyV1 = async ({
       },
     })
 
+    // Track successful request
+    metricsTimer.stop({ service: 'pappers', endpoint: 'international_company' })
+    externalApiRequestsCounter.inc({
+      service: 'pappers',
+      endpoint: 'international_company',
+      status_code: httpStatusCode,
+    })
+
     return parsedData
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
+      httpStatusCode = '408'
+      metricsTimer.stop({
+        service: 'pappers',
+        endpoint: 'international_company',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'pappers',
+        endpoint: 'international_company',
+        status_code: httpStatusCode,
+      })
+
       logger.error({
         msg: 'International Company API request timed out',
         event: 'international_company_api_timeout',
         metadata: { error: error.message },
       })
       throw new Error('International Company API request timed out')
+    }
+
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({
+        service: 'pappers',
+        endpoint: 'international_company',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'pappers',
+        endpoint: 'international_company',
+        status_code: httpStatusCode,
+      })
     }
 
     logger.error({

@@ -1,3 +1,4 @@
+import { trackExternalApiCall } from '../../metrics/external-api'
 import { anthropic_haiku } from './llms'
 import {
   CompanyNameCleanerSchema,
@@ -17,6 +18,10 @@ export const cleanCompanyName = async (
     address: address || 'No address provided',
   })
 
-  const result = await structuredOutput.invoke(prompt)
+  const result = await trackExternalApiCall(
+    'openai',
+    'company_name_cleaner',
+    () => structuredOutput.invoke(prompt),
+  )
   return result
 }

@@ -1,6 +1,11 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import z from 'zod'
 import { CONTACTOUT_CONFIG } from '../../config/contactout'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 // Request Schema
 const PeopleSearchRequestSchema = z.object({
@@ -223,6 +228,8 @@ export const peopleSearch = async (
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 45000)
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   try {
     const url = `${CONTACTOUT_CONFIG.BASE_URL}/people/search`
@@ -249,6 +256,7 @@ export const peopleSearch = async (
       signal: controller.signal,
     })
 
+    httpStatusCode = response.status.toString()
     const data = await response.json()
 
     // Handle error responses
@@ -261,6 +269,14 @@ export const peopleSearch = async (
           statusCode: data.status_code,
           data,
         },
+      })
+
+      // Track error in metrics
+      metricsTimer.stop({ service: 'contactout', endpoint: 'people_search' })
+      externalApiRequestsCounter.inc({
+        service: 'contactout',
+        endpoint: 'people_search',
+        status_code: httpStatusCode,
       })
 
       // Handle specific error types
@@ -291,6 +307,14 @@ export const peopleSearch = async (
 
     const parsedData = PeopleSearchResponseSchema.parse(data)
 
+    // Track successful request
+    metricsTimer.stop({ service: 'contactout', endpoint: 'people_search' })
+    externalApiRequestsCounter.inc({
+      service: 'contactout',
+      endpoint: 'people_search',
+      status_code: httpStatusCode,
+    })
+
     logger.info({
       msg: 'ContactOut People Search API response parsed successfully',
       event: 'contactout_people_search_response_parsed',
@@ -306,6 +330,14 @@ export const peopleSearch = async (
     return parsedData
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
+      httpStatusCode = '408'
+      metricsTimer.stop({ service: 'contactout', endpoint: 'people_search' })
+      externalApiRequestsCounter.inc({
+        service: 'contactout',
+        endpoint: 'people_search',
+        status_code: httpStatusCode,
+      })
+
       logger.error({
         msg: 'ContactOut People Search API request timed out',
         event: 'contactout_people_search_timeout',
@@ -315,6 +347,7 @@ export const peopleSearch = async (
     }
 
     if (error instanceof z.ZodError) {
+      // Don't re-track metrics for validation errors (already tracked above if response.ok)
       logger.error({
         msg: 'ContactOut People Search API response validation error',
         event: 'contactout_people_search_validation_error',
@@ -324,6 +357,16 @@ export const peopleSearch = async (
         },
       })
       throw new Error(`Invalid response from ContactOut API: ${error.message}`)
+    }
+
+    // Track other errors if not already tracked
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({ service: 'contactout', endpoint: 'people_search' })
+      externalApiRequestsCounter.inc({
+        service: 'contactout',
+        endpoint: 'people_search',
+        status_code: httpStatusCode,
+      })
     }
 
     logger.error({

@@ -1,5 +1,6 @@
 import { logger } from '@ritchy/logger'
 import { type Job, UnrecoverableError, Worker } from 'bullmq'
+import { setupQueueMetrics } from '../../../../metrics/queue'
 import { scrapeWebsiteManager } from '../../../../services/enrichment/scraper/scrape_website_manager'
 import { bullmqRedisOptions } from '../../config'
 import { workerConfig } from '../../config'
@@ -69,6 +70,8 @@ const scraperWorker = new Worker(
     maxStalledCount: workerConfig.scraper.maxStalledCount,
   },
 )
+
+setupQueueMetrics(scraperWorker, 'scraper', 'website_scrape')
 
 scraperWorker.on('completed', (job) => {
   logger.info({

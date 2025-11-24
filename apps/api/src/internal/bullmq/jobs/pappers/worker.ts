@@ -4,6 +4,7 @@ import type { InternationalCompanyV1Params } from '../../../../external/pappers/
 import { internationalCompanyV1 } from '../../../../external/pappers/international_company_v1'
 import type { InterantionalSearchV1 } from '../../../../external/pappers/international_search_v1'
 import { internationalSearchV1 } from '../../../../external/pappers/international_search_v1'
+import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 import { queueName } from './queue'
 
@@ -57,6 +58,8 @@ const pappersWorker = new Worker(
     },
   },
 )
+
+setupQueueMetrics(pappersWorker, 'pappers', 'company_search')
 
 pappersWorker.on('completed', (job) => {
   const jobType = (job.data as PappersJobData).type

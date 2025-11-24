@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import type { ProfileUrlSearchParams } from '../../../../../external/icypeas/profile_url_search'
 import { profileUrlSearch } from '../../../../../external/icypeas/profile_url_search'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -53,6 +54,12 @@ const icypeasProfileUrlSearchWorker = new Worker(
       duration: 1000,
     },
   },
+)
+
+setupQueueMetrics(
+  icypeasProfileUrlSearchWorker,
+  'icypeas_profile_url',
+  'profile_search',
 )
 
 icypeasProfileUrlSearchWorker.on('completed', (job) => {

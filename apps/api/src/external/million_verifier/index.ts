@@ -1,8 +1,13 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import { EmailQualityEnum } from '@ritchy/types'
 import { z } from 'zod'
 import { enqueueMillionVerifierJob } from '../../internal/bullmq/jobs/million_verifier/queue'
 import { redisClient } from '../../internal/redis/redis'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 import { sendSlackNotification } from '../slack/slack'
 
 export const MillionVerifierResponseSchema = z.object({
@@ -68,11 +73,24 @@ export type MillionVerifierResponse = z.infer<
 export const verifyWithMillionVerifier = async (
   email: string,
 ): Promise<MillionVerifierResponse> => {
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
+
   try {
     const cachedResult = await redisClient.get<MillionVerifierResponse>(
       `million_verifier:${email}`,
     )
     if (cachedResult) {
+      httpStatusCode = '200'
+      metricsTimer.stop({
+        service: 'million_verifier',
+        endpoint: 'email_verification',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'million_verifier',
+        endpoint: 'email_verification',
+        status_code: httpStatusCode,
+      })
       return cachedResult.data
     }
 
@@ -88,6 +106,16 @@ export const verifyWithMillionVerifier = async (
     })
 
     if (!result) {
+      httpStatusCode = '500'
+      metricsTimer.stop({
+        service: 'million_verifier',
+        endpoint: 'email_verification',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'million_verifier',
+        endpoint: 'email_verification',
+        status_code: httpStatusCode,
+      })
       throw new Error('Failed to verify email')
     }
 
@@ -109,8 +137,31 @@ export const verifyWithMillionVerifier = async (
       metadata: { email, result },
     })
 
+    httpStatusCode = '200'
+    metricsTimer.stop({
+      service: 'million_verifier',
+      endpoint: 'email_verification',
+    })
+    externalApiRequestsCounter.inc({
+      service: 'million_verifier',
+      endpoint: 'email_verification',
+      status_code: httpStatusCode,
+    })
+
     return result
   } catch (error) {
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({
+        service: 'million_verifier',
+        endpoint: 'email_verification',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'million_verifier',
+        endpoint: 'email_verification',
+        status_code: httpStatusCode,
+      })
+    }
+
     logger.error({
       msg: 'Failed to verify email',
       event: 'failed_to_verify_email',

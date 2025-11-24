@@ -1,5 +1,10 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import { SLACK_CONFIG } from '../../config/slack'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 export const SLACK_CHANNEL_IDS = {
   users: 'C08KJF8GATU',
@@ -16,6 +21,9 @@ export const sendSlackNotification = ({
 }): void => {
   // Fire and forget
   void (async () => {
+    const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+    let httpStatusCode = '500'
+
     try {
       const sendMessage = async () => {
         const response = await fetch('https://slack.com/api/chat.postMessage', {
@@ -52,8 +60,17 @@ export const sendSlackNotification = ({
       }
 
       if (!data.ok) {
+        httpStatusCode = '400'
         throw new Error(`Slack API error: ${data.error || 'Unknown error'}`)
       }
+
+      httpStatusCode = '200'
+      metricsTimer.stop({ service: 'slack', endpoint: 'notify' })
+      externalApiRequestsCounter.inc({
+        service: 'slack',
+        endpoint: 'notify',
+        status_code: httpStatusCode,
+      })
 
       logger.info({
         msg: 'Slack notification sent successfully',
@@ -61,6 +78,22 @@ export const sendSlackNotification = ({
         metadata: { channel },
       })
     } catch (error) {
+      if (httpStatusCode === '500') {
+        metricsTimer.stop({ service: 'slack', endpoint: 'notify' })
+        externalApiRequestsCounter.inc({
+          service: 'slack',
+          endpoint: 'notify',
+          status_code: httpStatusCode,
+        })
+      } else if (httpStatusCode === '400') {
+        metricsTimer.stop({ service: 'slack', endpoint: 'notify' })
+        externalApiRequestsCounter.inc({
+          service: 'slack',
+          endpoint: 'notify',
+          status_code: httpStatusCode,
+        })
+      }
+
       logger.error({
         msg: 'Failed to send Slack notification',
         event: 'slack_notification_failed',

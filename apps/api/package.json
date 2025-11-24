@@ -40,6 +40,7 @@
     "@qdrant/js-client-rest": "1.14.1",
     "@queuedash/api": "3.6.0",
     "@ritchy/logger": "workspace:*",
+    "@ritchy/metrics": "workspace:*",
     "@socket.io/redis-adapter": "8.3.0",
     "@turf/turf": "7.1.0",
     "@types/cors": "2.8.17",

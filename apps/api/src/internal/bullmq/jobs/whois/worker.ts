@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { WHOIS_CONFIG } from '../../../../config/whois'
 import { performWhoisLookup } from '../../../../external/whois/whois_api'
+import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions } from '../../config'
 import { queueName } from './queue'
 
@@ -21,6 +22,8 @@ const whoisWorker = new Worker(
     },
   },
 )
+
+setupQueueMetrics(whoisWorker, 'whois', 'domain_lookup')
 
 whoisWorker.on('completed', (job) => {
   logger.info({

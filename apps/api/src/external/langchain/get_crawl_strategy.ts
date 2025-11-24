@@ -1,5 +1,6 @@
 import 'dotenv/config'
 
+import { trackExternalApiCall } from '../../metrics/external-api'
 import { anthropic_haiku } from './llms'
 import {
   WebCrawlerAssistantSchema,
@@ -19,6 +20,10 @@ export const getCrawlStrategy = async (
     business_name: businessName,
   })
 
-  const result = await structuredOutput.invoke(prompt)
+  const result = await trackExternalApiCall(
+    'openai',
+    'get_crawl_strategy',
+    () => structuredOutput.invoke(prompt),
+  )
   return result.internal_urls
 }

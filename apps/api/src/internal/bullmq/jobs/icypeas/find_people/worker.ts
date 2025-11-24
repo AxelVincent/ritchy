@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import type { FindPeopleParams } from '../../../../../external/icypeas/find_people'
 import { findPeople } from '../../../../../external/icypeas/find_people'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -65,6 +66,8 @@ const icypeasFindPeopleWorker = new Worker(
     },
   },
 )
+
+setupQueueMetrics(icypeasFindPeopleWorker, 'icypeas_find_people', 'find_people')
 
 icypeasFindPeopleWorker.on('completed', (job) => {
   logger.info({

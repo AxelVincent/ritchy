@@ -1,8 +1,12 @@
 import { logger } from '@ritchy/logger'
-
+import { startDurationTimer } from '@ritchy/metrics'
 import { ContactTypeEnum } from '@ritchy/types'
 import z from 'zod'
 import { PAPPERS_CONFIG } from '../../config/pappers'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 import { PAPPERS_COUNTRY_CODES } from './international_company_v1'
 
 const InternationalSearchRequestParamsSchema = z.object({
@@ -82,6 +86,8 @@ export const internationalSearchV1 = async ({
 }: InterantionalSearchV1) => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 45000)
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   try {
     const url = new URL(`${PAPPERS_CONFIG.BASE_URL}/v1/search`)
@@ -109,6 +115,7 @@ export const internationalSearchV1 = async ({
       signal: controller.signal,
     })
 
+    httpStatusCode = response.status.toString()
     const data = await response.json()
     logger.info({
       msg: 'International Search API response',
@@ -129,6 +136,18 @@ export const internationalSearchV1 = async ({
           url: url.toString(),
         },
       })
+
+      // Track error in metrics
+      metricsTimer.stop({
+        service: 'pappers',
+        endpoint: 'international_search',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'pappers',
+        endpoint: 'international_search',
+        status_code: httpStatusCode,
+      })
+
       throw new Error(
         `Pappers API error (HTTP ${response.status}${data.statusCode ? `, API ${data.statusCode}` : ''}): ${data.message || data.description || JSON.stringify(data)}`,
       )
@@ -145,6 +164,18 @@ export const internationalSearchV1 = async ({
           receivedData: data,
         },
       })
+
+      // Track validation error in metrics
+      metricsTimer.stop({
+        service: 'pappers',
+        endpoint: 'international_search',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'pappers',
+        endpoint: 'international_search',
+        status_code: httpStatusCode,
+      })
+
       throw new Error(
         `Invalid Pappers API response structure: ${JSON.stringify(parsedData.error.issues)}`,
       )
@@ -160,9 +191,28 @@ export const internationalSearchV1 = async ({
       },
     })
 
+    // Track successful request
+    metricsTimer.stop({ service: 'pappers', endpoint: 'international_search' })
+    externalApiRequestsCounter.inc({
+      service: 'pappers',
+      endpoint: 'international_search',
+      status_code: httpStatusCode,
+    })
+
     return parsedData.data
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
+      httpStatusCode = '408'
+      metricsTimer.stop({
+        service: 'pappers',
+        endpoint: 'international_search',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'pappers',
+        endpoint: 'international_search',
+        status_code: httpStatusCode,
+      })
+
       logger.error({
         msg: 'International Search API request timed out',
         event: 'international_search_api_timeout',
@@ -170,6 +220,19 @@ export const internationalSearchV1 = async ({
       })
       throw new Error('International Search API request timed out')
     }
+
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({
+        service: 'pappers',
+        endpoint: 'international_search',
+      })
+      externalApiRequestsCounter.inc({
+        service: 'pappers',
+        endpoint: 'international_search',
+        status_code: httpStatusCode,
+      })
+    }
+
     logger.error({
       msg: 'International Search API error',
       event: 'international_search_api_error',

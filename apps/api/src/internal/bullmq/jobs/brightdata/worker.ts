@@ -1,6 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { UnrecoverableError, Worker } from 'bullmq'
 import { webUnblocker } from '../../../../external/brightdata/web_unlocker'
+import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 import { queueName } from './queue'
 
@@ -60,6 +61,8 @@ const brightdataWorker = new Worker(
     maxStalledCount: workerConfig.brightdata.maxStalledCount,
   },
 )
+
+setupQueueMetrics(brightdataWorker, 'brightdata', 'web_unblock')
 
 brightdataWorker.on('completed', (job) => {
   logger.info({

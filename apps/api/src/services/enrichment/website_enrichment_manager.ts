@@ -1,4 +1,5 @@
 import { logger } from '@ritchy/logger'
+import { startEnrichmentTracking } from '../../metrics/enrichment'
 import { getMainDomain } from './scraper/utils/get_main_domain'
 import { isSubPage } from './utils/is_sub_page'
 
@@ -71,6 +72,9 @@ export const websiteEnrichmentManager = async ({
       }
     | undefined
 
+  // Declare enrichmentTracker at function scope - will be initialized in try block or early return
+  let enrichmentTracker!: ReturnType<typeof startEnrichmentTracking>
+
   // Step 1: Initialize (0-2%)
   await statusManager.startPhase('initialization')
 
@@ -92,6 +96,8 @@ export const websiteEnrichmentManager = async ({
       event: 'user_or_place_not_found',
       metadata: { userPlaceId },
     })
+    enrichmentTracker = startEnrichmentTracking('website', false)
+    enrichmentTracker.markFailure(new Error('User or place not found'))
     return
   }
 
@@ -123,6 +129,9 @@ export const websiteEnrichmentManager = async ({
 
     if (existingEnrichment?.success) {
       if (!existingEnrichment.isStale) {
+        // Initialize tracker for cached enrichment
+        enrichmentTracker = startEnrichmentTracking('website', true)
+
         // Simulate processing steps even though using cached data
         const domain = existingEnrichment.domain || 'website'
 
@@ -198,10 +207,15 @@ export const websiteEnrichmentManager = async ({
           99,
         )
 
-        await populateContactFromEnrichment({
-          enrichmentId: existingEnrichment.id,
-          userPlaceId,
-        })
+        await enrichmentTracker.trackSubprocess(
+          'populate_contacts',
+          async () => {
+            return await populateContactFromEnrichment({
+              enrichmentId: existingEnrichment.id,
+              userPlaceId,
+            })
+          },
+        )
 
         await statusManager.complete('Enrichment completed successfully')
 
@@ -214,6 +228,7 @@ export const websiteEnrichmentManager = async ({
             timeToEnrich: Date.now() - startTime,
           },
         })
+        enrichmentTracker.markSuccess()
         return
       }
 
@@ -244,6 +259,9 @@ export const websiteEnrichmentManager = async ({
         })
         .where(eq(enrichmentTable.id, existingEnrichment.id))
     }
+
+    // Initialize tracker for non-cached enrichment
+    enrichmentTracker = startEnrichmentTracking('website', false)
 
     // Step 5: Extract website (10%)
     await statusManager.setStatus(
@@ -285,11 +303,19 @@ export const websiteEnrichmentManager = async ({
         60,
       )
 
-      const governmentalDataResult = await enrichGovernmentalData({
-        place: place,
-        enrichmentId: insertedEnrichment.id,
-        context: { userPlaceId, trackStatus: true },
-      })
+      const governmentalDataResult = await enrichmentTracker.trackSubprocess(
+        'governmental_data',
+        async () => {
+          if (!insertedEnrichment) {
+            throw new Error('Enrichment record not initialized')
+          }
+          return await enrichGovernmentalData({
+            place: place,
+            enrichmentId: insertedEnrichment.id,
+            context: { userPlaceId, trackStatus: true },
+          })
+        },
+      )
 
       if (governmentalDataResult.companyData) {
         logger.info({
@@ -304,6 +330,7 @@ export const websiteEnrichmentManager = async ({
         event: 'website_not_found',
         metadata: { userPlaceId, timeToEnrich: Date.now() - startTime },
       })
+      enrichmentTracker.markSuccess()
       return
     }
 
@@ -355,9 +382,14 @@ export const websiteEnrichmentManager = async ({
 
       await statusManager.setStatus('processing', 'Finalizing enrichment', 95)
 
-      await populateContactFromEnrichment({
-        enrichmentId: insertedEnrichment.id,
-        userPlaceId,
+      await enrichmentTracker.trackSubprocess('populate_contacts', async () => {
+        if (!insertedEnrichment) {
+          throw new Error('Enrichment record not initialized')
+        }
+        return await populateContactFromEnrichment({
+          enrichmentId: insertedEnrichment.id,
+          userPlaceId,
+        })
       })
 
       await statusManager.complete('Enrichment completed successfully')
@@ -367,6 +399,7 @@ export const websiteEnrichmentManager = async ({
         event: 'website_enrichment_manager_completed',
         metadata: { website, timeToEnrich: Date.now() - startTime },
       })
+      enrichmentTracker.markSuccess()
       return
     }
 
@@ -419,11 +452,19 @@ export const websiteEnrichmentManager = async ({
       metadata: { website, userPlaceId },
     })
 
-    const scrapeResult = await enqueueScraperJob(
-      website,
-      insertedEnrichment.id,
-      false,
-      userPlaceId,
+    const scrapeResult = await enrichmentTracker.trackSubprocess(
+      'scrape_homepage',
+      async () => {
+        if (!insertedEnrichment) {
+          throw new Error('Enrichment record not initialized')
+        }
+        return await enqueueScraperJob(
+          website,
+          insertedEnrichment.id,
+          false,
+          userPlaceId,
+        )
+      },
     )
 
     if (!scrapeResult || 'error' in scrapeResult) {
@@ -446,12 +487,19 @@ export const websiteEnrichmentManager = async ({
       )
 
       const [governmentalDataResult, whoisData] = await Promise.all([
-        enrichGovernmentalData({
-          place: place,
-          enrichmentId: insertedEnrichment.id,
-          context: { userPlaceId, trackStatus: true },
+        enrichmentTracker.trackSubprocess('governmental_data', async () => {
+          if (!insertedEnrichment) {
+            throw new Error('Enrichment record not initialized')
+          }
+          return await enrichGovernmentalData({
+            place: place,
+            enrichmentId: insertedEnrichment.id,
+            context: { userPlaceId, trackStatus: true },
+          })
         }),
-        performWhoisLookup(domain),
+        enrichmentTracker.trackSubprocess('whois_lookup', async () => {
+          return await performWhoisLookup(domain)
+        }),
       ])
 
       if (governmentalDataResult.companyData) {
@@ -460,6 +508,10 @@ export const websiteEnrichmentManager = async ({
           event: 'governmental_data_found_scraping_failed',
           metadata: { governmentalDataResult },
         })
+      }
+
+      if (!insertedEnrichment) {
+        throw new Error('Enrichment record not initialized')
       }
 
       await db
@@ -472,6 +524,9 @@ export const websiteEnrichmentManager = async ({
             : null,
         })
         .where(eq(enrichmentTable.id, insertedEnrichment.id))
+      enrichmentTracker.markFailure(
+        new Error(scrapeResult?.error?.message || 'Failed to scrape website'),
+      )
       return
     }
 
@@ -526,63 +581,70 @@ export const websiteEnrichmentManager = async ({
 
     let completedPages = 0
     const totalPages = crawlStrategy.length
-    const subpageResults = await Promise.allSettled(
-      crawlStrategy.map(async (url: string) => {
-        if (!insertedEnrichment) {
-          throw new Error('Enrichment record not initialized')
-        }
+    const subpageResults = await enrichmentTracker.trackSubprocess(
+      'scrape_subpages',
+      async () => {
+        return await Promise.allSettled(
+          crawlStrategy.map(async (url: string) => {
+            if (!insertedEnrichment) {
+              throw new Error('Enrichment record not initialized')
+            }
 
-        try {
-          const result = await enqueueScraperJob(
-            url,
-            insertedEnrichment.id,
-            false,
-            userPlaceId,
-          )
+            try {
+              const result = await enqueueScraperJob(
+                url,
+                insertedEnrichment.id,
+                false,
+                userPlaceId,
+              )
 
-          completedPages++
+              completedPages++
 
-          // Update progress based on COMPLETED pages (not started pages)
-          // This ensures progress only increases, never decreases
-          const phaseProgressPercent = (completedPages / totalPages) * 100
+              // Update progress based on COMPLETED pages (not started pages)
+              // This ensures progress only increases, never decreases
+              const phaseProgressPercent = (completedPages / totalPages) * 100
 
-          // Show progress update every 20% or at milestones
-          if (
-            completedPages % Math.max(1, Math.floor(totalPages / 5)) === 0 ||
-            completedPages === totalPages ||
-            completedPages === 1 // Show first completion
-          ) {
-            await statusManager.updatePhaseProgress(
-              'website_scan',
-              phaseProgressPercent,
-              `Scanned ${completedPages}/${totalPages} pages`,
-            )
-          }
+              // Show progress update every 20% or at milestones
+              if (
+                completedPages % Math.max(1, Math.floor(totalPages / 5)) ===
+                  0 ||
+                completedPages === totalPages ||
+                completedPages === 1 // Show first completion
+              ) {
+                await statusManager.updatePhaseProgress(
+                  'website_scan',
+                  phaseProgressPercent,
+                  `Scanned ${completedPages}/${totalPages} pages`,
+                )
+              }
 
-          return result
-        } catch (error) {
-          logger.warn({
-            msg: `Failed to scrape subpage: ${url}`,
-            event: 'subpage_scrape_failed',
-            metadata: {
-              url,
-              userPlaceId,
-              enrichmentId: insertedEnrichment.id,
-              error: error instanceof Error ? error.message : String(error),
-            },
-          })
+              return result
+            } catch (error) {
+              logger.warn({
+                msg: `Failed to scrape subpage: ${url}`,
+                event: 'subpage_scrape_failed',
+                metadata: {
+                  url,
+                  userPlaceId,
+                  enrichmentId: insertedEnrichment.id,
+                  error: error instanceof Error ? error.message : String(error),
+                },
+              })
 
-          completedPages++
+              completedPages++
 
-          return {
-            error: error instanceof Error ? error.message : String(error),
-          }
-        }
-      }),
+              return {
+                error: error instanceof Error ? error.message : String(error),
+              }
+            }
+          }),
+        )
+      },
     )
 
     const successfulSubpages = subpageResults.filter(
-      (result) => result.status === 'fulfilled' && !('error' in result.value),
+      (result): result is PromiseFulfilledResult<unknown> =>
+        result.status === 'fulfilled' && !('error' in result.value),
     ).length
     const failedSubpages = subpageResults.length - successfulSubpages
 
@@ -625,13 +687,22 @@ export const websiteEnrichmentManager = async ({
       { description, shortDescription },
       whoisData,
     ] = await Promise.all([
-      enrichGovernmentalData({
-        place: place,
-        enrichmentId: insertedEnrichment.id,
-        context: { userPlaceId, trackStatus: true },
+      enrichmentTracker.trackSubprocess('governmental_data', async () => {
+        if (!insertedEnrichment) {
+          throw new Error('Enrichment record not initialized')
+        }
+        return await enrichGovernmentalData({
+          place: place,
+          enrichmentId: insertedEnrichment.id,
+          context: { userPlaceId, trackStatus: true },
+        })
       }),
-      getWebsiteDescription(domain),
-      performWhoisLookup(domain),
+      enrichmentTracker.trackSubprocess('website_description', async () => {
+        return await getWebsiteDescription(domain)
+      }),
+      enrichmentTracker.trackSubprocess('whois_lookup', async () => {
+        return await performWhoisLookup(domain)
+      }),
     ])
 
     if (governmentalDataResult.companyData) {
@@ -678,15 +749,30 @@ export const websiteEnrichmentManager = async ({
       'Generating contact information',
     )
 
+    if (!insertedEnrichment) {
+      throw new Error('Enrichment record not initialized')
+    }
+
     // Populate contacts first (needed for accurate score calculation)
-    await populateContactFromEnrichment({
-      enrichmentId: insertedEnrichment.id,
-      userPlaceId,
+    await enrichmentTracker.trackSubprocess('populate_contacts', async () => {
+      if (!insertedEnrichment) {
+        throw new Error('Enrichment record not initialized')
+      }
+      return await populateContactFromEnrichment({
+        enrichmentId: insertedEnrichment.id,
+        userPlaceId,
+      })
     })
 
     // Calculate enrichment quality score
-    const enrichmentScore = await calculateEnrichmentScore(
-      insertedEnrichment.id,
+    const enrichmentScore = await enrichmentTracker.trackSubprocess(
+      'calculate_score',
+      async () => {
+        if (!insertedEnrichment) {
+          throw new Error('Enrichment record not initialized')
+        }
+        return await calculateEnrichmentScore(insertedEnrichment.id)
+      },
     )
 
     // Save enrichment data and score
@@ -711,6 +797,8 @@ export const websiteEnrichmentManager = async ({
 
     await statusManager.complete('Enrichment completed successfully')
 
+    enrichmentTracker.markSuccess()
+
     const endTime = Date.now()
     const duration = endTime - startTime
     logger.info({
@@ -734,6 +822,15 @@ export const websiteEnrichmentManager = async ({
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     await statusManager.fail(errorMessage || 'Enrichment failed')
+
+    // Initialize tracker if not already initialized (for early failures)
+    if (!enrichmentTracker) {
+      enrichmentTracker = startEnrichmentTracking('website', false)
+    }
+
+    enrichmentTracker.markFailure(
+      error instanceof Error ? error : new Error(String(error)),
+    )
 
     logger.error({
       msg: 'Error enriching website',

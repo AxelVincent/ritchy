@@ -1,6 +1,11 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import { z } from 'zod'
 import { FORAGER_CONFIG } from '../../config/forager'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 // Response Schema based on Forager API documentation
 // https://docs.forager.ai/openapi/users/subscriptions_balance_change_logs_list
@@ -55,6 +60,8 @@ export const getUserInformation =
   async (): Promise<UserInformationResponse> => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 45000)
+    const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+    let httpStatusCode = '500'
 
     try {
       const url = `${FORAGER_CONFIG.BASE_URL}/users/current/`
@@ -77,6 +84,7 @@ export const getUserInformation =
         signal: controller.signal,
       })
 
+      httpStatusCode = response.status.toString()
       const data = await response.json()
 
       // Handle error responses
@@ -88,6 +96,14 @@ export const getUserInformation =
             status: response.status,
             data,
           },
+        })
+
+        // Track error in metrics
+        metricsTimer.stop({ service: 'forager', endpoint: 'user_information' })
+        externalApiRequestsCounter.inc({
+          service: 'forager',
+          endpoint: 'user_information',
+          status_code: httpStatusCode,
         })
 
         // Handle specific error types
@@ -133,6 +149,14 @@ export const getUserInformation =
         })
       }
 
+      // Track successful request
+      metricsTimer.stop({ service: 'forager', endpoint: 'user_information' })
+      externalApiRequestsCounter.inc({
+        service: 'forager',
+        endpoint: 'user_information',
+        status_code: httpStatusCode,
+      })
+
       logger.info({
         msg: 'Forager User Information API response parsed successfully',
         event: 'forager_user_information_response_parsed',
@@ -149,6 +173,14 @@ export const getUserInformation =
       return parsedData
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
+        httpStatusCode = '408'
+        metricsTimer.stop({ service: 'forager', endpoint: 'user_information' })
+        externalApiRequestsCounter.inc({
+          service: 'forager',
+          endpoint: 'user_information',
+          status_code: httpStatusCode,
+        })
+
         logger.error({
           msg: 'Forager User Information API request timed out',
           event: 'forager_user_information_timeout',
@@ -158,6 +190,7 @@ export const getUserInformation =
       }
 
       if (error instanceof z.ZodError) {
+        // Don't re-track metrics for validation errors (already tracked above if response.ok)
         logger.error({
           msg: 'Forager User Information API response validation error',
           event: 'forager_user_information_validation_error',
@@ -167,6 +200,16 @@ export const getUserInformation =
           },
         })
         throw new Error(`Invalid response from Forager API: ${error.message}`)
+      }
+
+      // Track other errors if not already tracked
+      if (httpStatusCode === '500') {
+        metricsTimer.stop({ service: 'forager', endpoint: 'user_information' })
+        externalApiRequestsCounter.inc({
+          service: 'forager',
+          endpoint: 'user_information',
+          status_code: httpStatusCode,
+        })
       }
 
       logger.error({

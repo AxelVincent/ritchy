@@ -12,7 +12,7 @@
       "persistent": true
     },
     "typecheck": {
-      "dependsOn": ["@ritchy/types#build", "@ritchy/logger#build"],
+      "dependsOn": ["@ritchy/types#build", "@ritchy/logger#build", "@ritchy/metrics#build"],
       "outputs": []
     },
     "format": {

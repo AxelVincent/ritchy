@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import type { PeopleSearchParams } from '../../../../../external/contactout/people_search'
 import { peopleSearch } from '../../../../../external/contactout/people_search'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -67,6 +68,8 @@ const contactoutPeopleSearchWorker = new Worker(
     },
   },
 )
+
+setupQueueMetrics(contactoutPeopleSearchWorker, 'contactout', 'people_search')
 
 contactoutPeopleSearchWorker.on('completed', (job) => {
   logger.info({

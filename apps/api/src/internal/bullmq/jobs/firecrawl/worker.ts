@@ -1,6 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { getFirecrawlClient } from '../../../../external/firecrawl'
+import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 
 const TIMEOUT = 30000
@@ -28,6 +29,8 @@ const worker = new Worker(
     maxStalledCount: workerConfig.firecrawl.maxStalledCount,
   },
 )
+
+setupQueueMetrics(worker, 'firecrawl', 'web_scrape')
 
 worker.on('completed', (job) => {
   logger.info({

@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import type { PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 
@@ -9,6 +10,10 @@ import { db } from '../../db/db'
 import { place as placeTable } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { enqueuePlaceDetailsJob } from '../../internal/bullmq/jobs/google/places/queue'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 import { getPlaceBySourceId } from '../../services/places/queries/get_place_by_source_id'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 import type { PlaceWithEnrichedAt } from '../../services/places/queries/get_places_by_user_place_ids'
@@ -35,70 +40,110 @@ function getAge(updatedAt: string): number {
 export async function fetchPlaceDetails(
   googlePlaceId: string,
 ): Promise<PreferredPlace> {
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
+
   const url = new URL(
     `${GOOGLE_MAPS_CONFIG.PLACES_URL}/places/${googlePlaceId}`,
   )
 
-  const startTime = Date.now()
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
-      'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
-      Referer: GOOGLE_MAPS_CONFIG.REFERRER,
-    },
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-
-    // Check if it's a 404 (place not found) or similar error
-    if (response.status === 404) {
-      logger.info({
-        msg: 'Place not found in Google API',
-        event: 'google_place_not_found',
-        metadata: {
-          googlePlaceId,
-          errorData,
-          statusCode: response.status,
-          durationMs: Date.now() - startTime,
-        },
-      })
-      await db
-        .update(placeTable)
-        .set({ is_deleted: true })
-        .where(eq(placeTable.source_id, googlePlaceId))
-      throw new Error('PLACE_NOT_FOUND')
-    }
-
-    logger.error({
-      msg: 'Google API Error Details',
-      event: 'google_api_error',
-      metadata: {
-        errorData,
-        googlePlaceId,
-        statusCode: response.status,
-        durationMs: Date.now() - startTime,
+  try {
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'X-Goog-Api-Key': GOOGLE_MAPS_CONFIG.PLACES_API_KEY,
+        'X-Goog-FieldMask': PREFERRED_PLACE_KEYS,
+        Referer: GOOGLE_MAPS_CONFIG.REFERRER,
       },
     })
-    throw new Error(
-      `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
-    )
+
+    httpStatusCode = response.status.toString()
+
+    if (!response.ok) {
+      const errorData = await response.json()
+
+      // Check if it's a 404 (place not found) or similar error
+      if (response.status === 404) {
+        logger.info({
+          msg: 'Place not found in Google API',
+          event: 'google_place_not_found',
+          metadata: {
+            googlePlaceId,
+            errorData,
+            statusCode: response.status,
+          },
+        })
+        await db
+          .update(placeTable)
+          .set({ is_deleted: true })
+          .where(eq(placeTable.source_id, googlePlaceId))
+
+        // Track error in metrics
+        metricsTimer.stop({ service: 'google_maps', endpoint: 'place_details' })
+        externalApiRequestsCounter.inc({
+          service: 'google_maps',
+          endpoint: 'place_details',
+          status_code: httpStatusCode,
+        })
+
+        throw new Error('PLACE_NOT_FOUND')
+      }
+
+      logger.error({
+        msg: 'Google API Error Details',
+        event: 'google_api_error',
+        metadata: {
+          errorData,
+          googlePlaceId,
+          statusCode: response.status,
+        },
+      })
+
+      // Track error in metrics
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'place_details' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'place_details',
+        status_code: httpStatusCode,
+      })
+
+      throw new Error(
+        `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
+      )
+    }
+
+    logger.info({
+      msg: 'Google Place Details API call successful - BILLABLE REQUEST UNIT',
+      event: 'google_place_details_api_billable',
+      metadata: {
+        googlePlaceId,
+      },
+    })
+
+    // Track successful request
+    metricsTimer.stop({ service: 'google_maps', endpoint: 'place_details' })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'place_details',
+      status_code: httpStatusCode,
+    })
+
+    return response.json()
+  } catch (error) {
+    // Track error if not already tracked above
+    if (
+      httpStatusCode === '500' &&
+      !(error instanceof Error && error.message === 'PLACE_NOT_FOUND')
+    ) {
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'place_details' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'place_details',
+        status_code: httpStatusCode,
+      })
+    }
+    throw error
   }
-
-  const endTime = Date.now()
-
-  logger.info({
-    msg: 'Google Place Details API call successful - BILLABLE REQUEST UNIT',
-    event: 'google_place_details_api_billable',
-    metadata: {
-      googlePlaceId,
-      durationMs: endTime - startTime,
-    },
-  })
-
-  return response.json()
 }
 
 export async function getPlaceDetailsV1(

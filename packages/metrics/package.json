@@ -1,0 +1,37 @@
+{
+  "name": "@ritchy/metrics",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist/**", "src/**"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "format": "biome format .",
+    "check": "biome check .",
+    "format:fix": "biome format --write ./src",
+    "check:fix": "biome check --apply ./src"
+  },
+  "dependencies": {
+    "prom-client": "^15.1.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.14.1",
+    "tsup": "8.3.5",
+    "typescript": "5.7.2"
+  },
+  "peerDependencies": {
+    "express": "^4.0.0"
+  }
+}

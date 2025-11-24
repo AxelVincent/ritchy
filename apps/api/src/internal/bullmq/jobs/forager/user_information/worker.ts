@@ -1,6 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { getUserInformation } from '../../../../../external/forager/user_information'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -66,6 +67,8 @@ const foragerUserInformationWorker = new Worker(
     },
   },
 )
+
+setupQueueMetrics(foragerUserInformationWorker, 'forager_user', 'user_lookup')
 
 foragerUserInformationWorker.on('completed', (job) => {
   logger.info({
