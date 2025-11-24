@@ -8,6 +8,6 @@ scrape_configs:
   # Application metrics (prom-client)
   - job_name: 'ritchy-api'
     static_configs:
-      - targets: ['host.docker.internal:3030']
+      - targets: ['api.railway.internal']
     metrics_path: '/metrics'
     scrape_interval: 10s
