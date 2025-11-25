@@ -246,8 +246,14 @@ app.get('/health', (_, res) => {
   res.status(200).json({ status: 'ok' })
 })
 
-// Metrics endpoint for Prometheus
-app.get('/metrics', createMetricsHandler(metricsRegistry))
+// Metrics endpoint for Prometheus (protected with Basic Auth)
+app.get(
+  '/metrics',
+  createMetricsHandler(metricsRegistry, {
+    username: process.env.METRICS_USERNAME,
+    password: process.env.METRICS_PASSWORD,
+  }),
+)
 
 // Web routes
 app.use('/web', isAuthenticated, webRoutes)

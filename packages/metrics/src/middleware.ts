@@ -110,9 +110,54 @@ export const createHttpMetricsMiddleware = (
 
 /**
  * Creates an Express handler for the /metrics endpoint
+ * Supports optional HTTP Basic Auth protection
  */
-export const createMetricsHandler = (registry: Registry) => {
-  return async (_req: Request, res: Response): Promise<void> => {
+export const createMetricsHandler = (
+  registry: Registry,
+  options?: {
+    username?: string
+    password?: string
+  },
+) => {
+  return async (req: Request, res: Response): Promise<void> => {
+    // Basic Auth protection if credentials are provided
+    if (options?.username && options?.password) {
+      const authHeader = req.headers.authorization
+
+      if (!authHeader || !authHeader.startsWith('Basic ')) {
+        res.set('WWW-Authenticate', 'Basic realm="Metrics"')
+        res.status(401).end('Authentication required')
+        return
+      }
+
+      try {
+        const base64Credentials = authHeader.split(' ')[1]
+        const credentials = Buffer.from(base64Credentials, 'base64').toString(
+          'utf-8',
+        )
+        const [username, password] = credentials.split(':')
+
+        // Use constant-time comparison to prevent timing attacks
+        const usernameMatch =
+          username.length === options.username.length &&
+          Buffer.from(username).equals(Buffer.from(options.username))
+        const passwordMatch =
+          password.length === options.password.length &&
+          Buffer.from(password).equals(Buffer.from(options.password))
+
+        if (!usernameMatch || !passwordMatch) {
+          res.set('WWW-Authenticate', 'Basic realm="Metrics"')
+          res.status(401).end('Invalid credentials')
+          return
+        }
+      } catch (_error) {
+        res.set('WWW-Authenticate', 'Basic realm="Metrics"')
+        res.status(401).end('Invalid authorization header')
+        return
+      }
+    }
+
+    // Serve metrics
     try {
       res.set('Content-Type', registry.contentType)
       const metrics = await registry.metrics()
