@@ -1,3 +1,5 @@
+import { useUserMe } from '@/api/queries/users/useUserMe'
+import { useUpgradeModal } from '@/components/marketing/UpgradeModalContext'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -23,6 +25,8 @@ const EnrichmentActionButtonComponent = ({
   liveStatus,
 }: EnrichmentActionButtonProps) => {
   const mutation = useEnrichmentMutation()
+  const { data: me } = useUserMe()
+  const { showUpgradeModal } = useUpgradeModal()
 
   // Use local state to track pending status for THIS button only
   // This prevents other buttons from re-rendering when this button's state changes
@@ -37,6 +41,14 @@ const EnrichmentActionButtonComponent = ({
       ) {
         return
       }
+
+      // Check if FREE user has no credits
+      const currentCredits = me?.credits?.credits ?? 0
+      if (me?.plan === 'FREE' && currentCredits === 0) {
+        showUpgradeModal('insufficient_credits', 0)
+        return
+      }
+
       // Set local pending state IMMEDIATELY (synchronous)
       setIsLocalPending(true)
 
@@ -50,7 +62,14 @@ const EnrichmentActionButtonComponent = ({
         },
       )
     },
-    [liveStatus?.status, mutation, userPlaceId],
+    [
+      liveStatus?.status,
+      mutation,
+      userPlaceId,
+      me?.plan,
+      me?.credits?.credits,
+      showUpgradeModal,
+    ],
   )
 
   // Memoize button state to avoid recreating objects on every render

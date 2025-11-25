@@ -1,5 +1,6 @@
 import { useBulkEnrichment } from '@/api/mutations/enrichment/useBulkEnrichment'
 import { useUserMe } from '@/api/queries/users/useUserMe'
+import { useUpgradeModal } from '@/components/marketing/UpgradeModalContext'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import type { SearchResult } from '@ritchy/types'
@@ -34,6 +35,7 @@ export const EnrichmentButtons = <TData extends SearchResult>({
   const hasSelectedRows = selectedRows.length > 0
   const bulkEnrichmentMutation = useBulkEnrichment()
   const { data: me } = useUserMe()
+  const { showUpgradeModal } = useUpgradeModal()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [progress, setProgress] = useState({
     current: 0,
@@ -59,6 +61,14 @@ export const EnrichmentButtons = <TData extends SearchResult>({
       const allUserPlaceIds = rowsToEnrich.map((row) => row.original.id)
       const userPlaceIds =
         mode === 'test' ? allUserPlaceIds.slice(0, TEST_SIZE) : allUserPlaceIds
+
+      // Check if FREE user has no credits
+      if (me?.plan === 'FREE' && currentCredits === 0) {
+        // Close dialog and show upgrade modal
+        setIsDialogOpen(false)
+        showUpgradeModal('insufficient_credits', 0)
+        return
+      }
 
       const chunks = chunkArray(userPlaceIds, 500)
       setProgress({ current: 0, total: chunks.length, processed: 0 })
