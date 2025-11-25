@@ -4,7 +4,6 @@ import { PlanEnum } from '../payments/checkout'
 
 export const UserMeDataSchema = z.object({
   plan: PlanEnum,
-  isDemoValidated: z.boolean(),
   credits: z.object({
     plan: z.number(),
     credits: z.number(),

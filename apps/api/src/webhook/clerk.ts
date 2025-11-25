@@ -3,10 +3,9 @@ import type { Request, Response } from 'express'
 import { Webhook } from 'svix'
 import { CLERK_CONFIG } from '../config/clerk'
 
-import crypto from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { db } from '../db/db'
-import { user, userDemoCode, webhookEvent } from '../db/schema'
+import { user, webhookEvent } from '../db/schema'
 import { credits as creditsTable } from '../db/schema/credits'
 import { sendSlackNotification } from '../external/slack/slack'
 import { CREDIT_CONFIG } from '../services/payment/config'
@@ -50,15 +49,6 @@ export type ClerkUserData = {
   firstName: string
   lastName: string
   phoneNumber: string
-}
-
-// Helper function to generate a simple random code
-function generateDemoCode(length = 8): string {
-  return crypto
-    .randomBytes(Math.ceil(length / 2))
-    .toString('hex')
-    .slice(0, length)
-    .toUpperCase()
 }
 
 export const clerkWebhook = async (
@@ -155,21 +145,7 @@ export const clerkWebhook = async (
                 .values(userData)
                 .returning()
 
-              // Generate and store demo code
-              const demoCodeString = generateDemoCode()
               if (createdUser) {
-                await db.insert(userDemoCode).values({
-                  userId: createdUser.id,
-                  code: demoCodeString,
-                })
-                logger.info({
-                  msg: 'Demo code generated and stored for new user',
-                  event: 'demo_code_generated',
-                  metadata: {
-                    userId: createdUser.id,
-                    demoCode: demoCodeString,
-                  },
-                })
                 const creditConfig = CREDIT_CONFIG.find(
                   (config) => config.plan === 'FREE',
                 )
@@ -183,20 +159,19 @@ export const clerkWebhook = async (
                   event: 'credits_generated',
                   metadata: {
                     userId: createdUser.id,
-                    enrichment: 20,
-                    search: 200,
+                    credits,
                   },
                 })
               } else {
                 logger.error({
-                  msg: 'Failed to retrieve created user ID for demo code generation',
-                  event: 'user_creation_no_id_for_demo_code',
+                  msg: 'Failed to retrieve created user ID',
+                  event: 'user_creation_no_id',
                   metadata: { clerkId: userData.clerkId },
                 })
               }
 
               sendSlackNotification({
-                text: `🎉 New user registered!\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nPhone: ${userData.phoneNumber}\nDemo Code: ${demoCodeString}`,
+                text: `🎉 New user registered!\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nPhone: ${userData.phoneNumber}`,
                 channel: 'users',
               })
 

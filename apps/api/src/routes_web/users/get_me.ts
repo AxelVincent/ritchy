@@ -1,9 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { UserMeApiResponse } from '@ritchy/types' // This type will be from packages/types/src/api/users/me.ts
-import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
-import { db } from '../../db/db'
-import { userDemoCode } from '../../db/schema'
 import { CREDIT_CONFIG } from '../../services/payment/config'
 import { getNextRenewalDate } from '../../services/payment/queries/get_next_renewal_date'
 import { getUserCredits } from '../../services/payment/queries/get_user_credits'
@@ -29,28 +26,10 @@ export const getMe = async (
   try {
     const plan = await getUserPlan(userId)
 
-    let isDemoValidated = false
-    const [demoCodeRecord] = await db
-      .select({
-        isValidated: userDemoCode.isValidated,
-      })
-      .from(userDemoCode)
-      .where(eq(userDemoCode.userId, userId))
-
-    if (demoCodeRecord) {
-      isDemoValidated = demoCodeRecord.isValidated
-    } else {
-      logger.info({
-        msg: 'No demo code record found for user in getMe. Assuming not validated.',
-        event: 'get_me_no_demo_record',
-        metadata: { userId },
-      })
-    }
-
     logger.info({
       msg: 'Successfully retrieved consolidated user data for /me endpoint',
       event: 'get_me_success',
-      metadata: { userId, plan, isDemoValidated },
+      metadata: { userId, plan },
     })
 
     const credits = await getUserCredits(userId)
@@ -71,7 +50,7 @@ export const getMe = async (
       credits,
     }
 
-    res.json({ plan, isDemoValidated, credits: creditsData, nextRenewalDate })
+    res.json({ plan, credits: creditsData, nextRenewalDate })
   } catch (error) {
     logger.error({
       msg: 'Error fetching user data for /me endpoint',
