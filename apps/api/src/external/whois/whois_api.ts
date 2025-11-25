@@ -1,6 +1,11 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import type { DomainRegistration } from '@ritchy/types'
 import { WHOIS_CONFIG } from '../../config/whois'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 import {
   isWhoisApiError,
   validateWhoisApiResponse,
@@ -16,7 +21,8 @@ export const performWhoisLookup = async (
   domain: string,
   timeoutMs = 10000,
 ): Promise<DomainRegistration | null> => {
-  const startTime = Date.now()
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   try {
     logger.debug({
@@ -41,13 +47,26 @@ export const performWhoisLookup = async (
     )
 
     const whoisResponse = await Promise.race([fetchPromise, timeoutPromise])
+    httpStatusCode = whoisResponse.status.toString()
 
     if (!whoisResponse.ok) {
       if (whoisResponse.status === 429) {
+        metricsTimer.stop({ service: 'whois', endpoint: 'api' })
+        externalApiRequestsCounter.inc({
+          service: 'whois',
+          endpoint: 'api',
+          status_code: httpStatusCode,
+        })
         throw new Error('WHOIS API rate limit exceeded')
       }
 
       if (whoisResponse.status === 404) {
+        metricsTimer.stop({ service: 'whois', endpoint: 'api' })
+        externalApiRequestsCounter.inc({
+          service: 'whois',
+          endpoint: 'api',
+          status_code: httpStatusCode,
+        })
         throw new Error('Domain not found')
       }
 
@@ -62,6 +81,12 @@ export const performWhoisLookup = async (
               event: 'whois_api_invalid_domain',
               metadata: { domain, error: errorData.message },
             })
+            metricsTimer.stop({ service: 'whois', endpoint: 'api' })
+            externalApiRequestsCounter.inc({
+              service: 'whois',
+              endpoint: 'api',
+              status_code: httpStatusCode,
+            })
             return null // Return null instead of throwing
           }
         } catch {
@@ -70,6 +95,12 @@ export const performWhoisLookup = async (
       }
 
       const errorText = await whoisResponse.text()
+      metricsTimer.stop({ service: 'whois', endpoint: 'api' })
+      externalApiRequestsCounter.inc({
+        service: 'whois',
+        endpoint: 'api',
+        status_code: httpStatusCode,
+      })
       throw new Error(`WHOIS API error: ${whoisResponse.status} - ${errorText}`)
     }
 
@@ -77,6 +108,12 @@ export const performWhoisLookup = async (
 
     // Check if response is an error
     if (isWhoisApiError(rawWhoisResponse)) {
+      metricsTimer.stop({ service: 'whois', endpoint: 'api' })
+      externalApiRequestsCounter.inc({
+        service: 'whois',
+        endpoint: 'api',
+        status_code: httpStatusCode,
+      })
       throw new Error(
         `WHOIS API error: ${rawWhoisResponse.error} - ${rawWhoisResponse.message || 'Unknown error'}`,
       )
@@ -111,8 +148,15 @@ export const performWhoisLookup = async (
         registrationDate: whoisData.registrationDate
           ? new Date(whoisData.registrationDate).toISOString()
           : null,
-        durationMs: Date.now() - startTime,
       },
+    })
+
+    // Track successful request
+    metricsTimer.stop({ service: 'whois', endpoint: 'api' })
+    externalApiRequestsCounter.inc({
+      service: 'whois',
+      endpoint: 'api',
+      status_code: httpStatusCode,
     })
 
     return whoisData
@@ -125,9 +169,18 @@ export const performWhoisLookup = async (
       metadata: {
         domain,
         error: errorMessage,
-        durationMs: Date.now() - startTime,
       },
     })
+
+    // Track other errors if not already tracked
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({ service: 'whois', endpoint: 'api' })
+      externalApiRequestsCounter.inc({
+        service: 'whois',
+        endpoint: 'api',
+        status_code: httpStatusCode,
+      })
+    }
 
     // Return null for domain not found, but log other errors
     if (errorMessage.includes('Domain not found')) {

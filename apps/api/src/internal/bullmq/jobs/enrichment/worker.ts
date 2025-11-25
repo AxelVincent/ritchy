@@ -1,5 +1,6 @@
 import { logger } from '@ritchy/logger'
 import { type Job, UnrecoverableError, Worker } from 'bullmq'
+import { setupQueueMetrics } from '../../../../metrics/queue'
 import { setEnrichmentStatus } from '../../../../services/enrichment/status_manager'
 import { websiteEnrichmentManager } from '../../../../services/enrichment/website_enrichment_manager'
 import { bullmqRedisOptions, workerConfig } from '../../config'
@@ -69,6 +70,8 @@ const worker = new Worker<EnrichmentUnitJobData>(
     maxStalledCount: workerConfig.enrichment_unit.maxStalledCount,
   },
 )
+
+setupQueueMetrics(worker, 'enrichment', 'enrichment_unit')
 
 worker.on('completed', (job) => {
   const usage = process.memoryUsage()

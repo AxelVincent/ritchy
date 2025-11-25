@@ -1,6 +1,11 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import type { DomainRegistration } from '@ritchy/types'
 import { enqueueWhoisJob } from '../../internal/bullmq/jobs/whois/queue'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 import { isSocialMediaUrl } from '../../services/enrichment/utils/is_social_media_url'
 
 /**
@@ -13,6 +18,9 @@ export const performWhoisLookup = async (
   domain: string,
   timeoutMs = 10000,
 ): Promise<DomainRegistration | null> => {
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '200'
+
   // Skip social media domains
   if (isSocialMediaUrl(domain)) {
     logger.debug({
@@ -35,14 +43,31 @@ export const performWhoisLookup = async (
       },
     })
 
+    // Track successful request
+    metricsTimer.stop({ service: 'whois', endpoint: 'lookup' })
+    externalApiRequestsCounter.inc({
+      service: 'whois',
+      endpoint: 'lookup',
+      status_code: httpStatusCode,
+    })
+
     return whoisData
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
+    httpStatusCode = '500'
 
     logger.error({
       event: 'whois_lookup_failed',
       msg: 'WHOIS lookup failed',
       metadata: { domain, error: errorMessage },
+    })
+
+    // Track failed request
+    metricsTimer.stop({ service: 'whois', endpoint: 'lookup' })
+    externalApiRequestsCounter.inc({
+      service: 'whois',
+      endpoint: 'lookup',
+      status_code: httpStatusCode,
     })
 
     return null

@@ -3,11 +3,16 @@ import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { place } from '../../db/schema/place'
 import { enqueueTextSearchJob } from '../../internal/bullmq/jobs/google/places/queue'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 import { sanitizeApiData } from '../../utils/sanitize_api_data'
 import {
   type GooglePlacesTextSearchRequestBody,
@@ -22,6 +27,9 @@ import { mapToPlaceDetails } from './utils/mapper'
 export async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
 ): Promise<GooglePlacesTextSearchResponse> {
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
+
   const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places:searchText`)
 
   const body = {
@@ -30,8 +38,6 @@ export async function fetchSinglePage(
     pageToken: formattedRequest.nextPageToken,
     pageSize: 20,
   }
-
-  const startTime = Date.now()
 
   try {
     const response = await fetch(url.toString(), {
@@ -45,6 +51,8 @@ export async function fetchSinglePage(
       body: JSON.stringify(body),
     })
 
+    httpStatusCode = response.status.toString()
+
     if (!response.ok) {
       const errorData = await response.json()
       logger.error({
@@ -54,15 +62,21 @@ export async function fetchSinglePage(
           errorData,
           textQuery: formattedRequest.textQuery,
           statusCode: response.status,
-          durationMs: Date.now() - startTime,
         },
       })
+
+      // Track error in metrics
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'text_search' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'text_search',
+        status_code: httpStatusCode,
+      })
+
       throw new Error(
         `Google API error: ${response.status} - ${JSON.stringify(errorData)}`,
       )
     }
-
-    const endTime = Date.now()
 
     logger.info({
       msg: 'Google Text Search API call successful - BILLABLE REQUEST UNIT',
@@ -70,21 +84,35 @@ export async function fetchSinglePage(
       metadata: {
         textQuery: formattedRequest.textQuery,
         pageToken: formattedRequest.nextPageToken ? 'present' : 'none',
-        durationMs: endTime - startTime,
       },
+    })
+
+    // Track successful request
+    metricsTimer.stop({ service: 'google_maps', endpoint: 'text_search' })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'text_search',
+      status_code: httpStatusCode,
     })
 
     return response.json()
   } catch (error) {
-    const endTime = Date.now()
+    // Track error if not already tracked above
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'text_search' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'text_search',
+        status_code: httpStatusCode,
+      })
+    }
 
     logger.error({
       msg: 'Google Text Search API call failed',
       event: 'google_text_search_api_failure',
       metadata: {
         textQuery: formattedRequest.textQuery,
-        durationMs: endTime - startTime,
-        error,
+        error: error instanceof Error ? error.message : String(error),
       },
     })
 
@@ -95,6 +123,9 @@ export async function fetchSinglePage(
 export async function postTextSearchV1(
   requestBody: PlacesSearchRequestBody,
 ): Promise<Omit<PlaceBase, 'id'>[]> {
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const httpStatusCode = '200'
+
   const ratio = 1
   // 60 potential results
   // 1 * 3 = 3 requests
@@ -141,7 +172,6 @@ export async function postTextSearchV1(
     const allResults: GooglePlacesTextSearchResponse['places'] = []
     let apiRequestCount = 0
     const resultsQuantity = 60
-    const startTime = Date.now()
     for (const square of squares) {
       let nextPageToken = undefined
       let currentSquareQuantity = 0
@@ -204,6 +234,15 @@ export async function postTextSearchV1(
           uniqueResultsCount: uniqueResults.length,
         },
       })
+
+      // Track successful request (even with 0 results)
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'text_search' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'text_search',
+        status_code: httpStatusCode,
+      })
+
       return []
     }
 
@@ -364,7 +403,6 @@ export async function postTextSearchV1(
 
     const results = places.map((place) => mapToPlaceDetails(place))
 
-    const endTime = Date.now()
     logger.info({
       msg: 'Google Places Text Search complete',
       event: 'google_places_text_search_complete',
@@ -374,17 +412,32 @@ export async function postTextSearchV1(
         resultCount: results.length,
         apiRequestCount,
         squareCount: squares.length,
-        totalDurationMs: endTime - startTime,
       },
+    })
+
+    // Track successful request
+    metricsTimer.stop({ service: 'google_maps', endpoint: 'text_search' })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'text_search',
+      status_code: httpStatusCode,
     })
 
     return results
   } catch (error) {
+    // Track error in metrics
+    metricsTimer.stop({ service: 'google_maps', endpoint: 'text_search' })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'text_search',
+      status_code: '500',
+    })
+
     logger.info({
       msg: 'Google Places API request failed',
       event: 'google_places_api_failure',
       metadata: {
-        error,
+        error: error instanceof Error ? error.message : String(error),
         query: requestBody.textQuery,
       },
     })

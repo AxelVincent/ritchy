@@ -1,13 +1,19 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import type { GeocodeRequestParams, GeocodeResult } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 export async function getGeocodeV1(
   params: GeocodeRequestParams,
 ): Promise<GeocodeResult> {
-  const startTime = Date.now()
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   // Validate place ID
   if (!params.placeId) {
@@ -54,6 +60,8 @@ export async function getGeocodeV1(
       },
     })
 
+    httpStatusCode = response.status.toString()
+
     if (!response.ok) {
       const responseBody = await response.text()
       let errorData: { error_message: string }
@@ -70,10 +78,18 @@ export async function getGeocodeV1(
           errorData,
           placeId: params.placeId,
           statusCode: response.status,
-          durationMs: Date.now() - startTime,
           responseBody,
         },
       })
+
+      // Track error in metrics
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'geocode' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'geocode',
+        status_code: httpStatusCode,
+      })
+
       throw new Error(
         `Google API error: ${response.status} - ${errorData.error_message || 'Unknown error'}`,
       )
@@ -92,12 +108,29 @@ export async function getGeocodeV1(
       event: 'google_geocode_success',
       metadata: {
         placeId: params.placeId,
-        durationMs: Date.now() - startTime,
       },
+    })
+
+    // Track successful request
+    metricsTimer.stop({ service: 'google_maps', endpoint: 'geocode' })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'geocode',
+      status_code: httpStatusCode,
     })
 
     return data.results[0]
   } catch (error) {
+    // Track error if not already tracked above
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({ service: 'google_maps', endpoint: 'geocode' })
+      externalApiRequestsCounter.inc({
+        service: 'google_maps',
+        endpoint: 'geocode',
+        status_code: httpStatusCode,
+      })
+    }
+
     logger.error({
       msg: 'Geocode failed',
       event: 'geocode_error',

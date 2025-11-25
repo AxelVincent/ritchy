@@ -1,8 +1,13 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { search, searchPlace } from '../../db/schema'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 import type { PlaceWithEnrichedAt } from '../../services/places/queries/get_places_by_user_place_ids'
 import { getPlaceDetailsV1 } from './place_details_V1'
@@ -25,6 +30,9 @@ const isInCache = (place: PlaceWithEnrichedAt): boolean => {
 export async function getPlaceDetailsOptimized(
   place: PlaceWithEnrichedAt,
 ): Promise<PlaceDetailsOptimized> {
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
+
   if (place.is_deleted) {
     logger.info({
       msg: 'Returning cached deleted place data',
@@ -156,6 +164,7 @@ export async function getPlaceDetailsOptimized(
 
   try {
     const result = await getPlaceDetailsV1({ userPlaceId: place.user_place_id })
+    httpStatusCode = '200'
 
     logger.info({
       msg: 'Place details optimization metrics',
@@ -167,6 +176,17 @@ export async function getPlaceDetailsOptimized(
       },
     })
 
+    // Track successful request
+    metricsTimer.stop({
+      service: 'google_maps',
+      endpoint: 'place_details_optimized',
+    })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'place_details_optimized',
+      status_code: httpStatusCode,
+    })
+
     return {
       ...result,
       id: place.user_place_id,
@@ -174,13 +194,24 @@ export async function getPlaceDetailsOptimized(
       enrichedAt: place.enriched_at,
     }
   } catch (error) {
+    // Track error in metrics
+    metricsTimer.stop({
+      service: 'google_maps',
+      endpoint: 'place_details_optimized',
+    })
+    externalApiRequestsCounter.inc({
+      service: 'google_maps',
+      endpoint: 'place_details_optimized',
+      status_code: httpStatusCode,
+    })
+
     logger.error({
       msg: 'Place details fetch failed',
       event: 'place_details_fetch_error',
       metadata: {
         userPlaceId: place.user_place_id,
         searchId: searchPlaceResult.searchId,
-        error,
+        error: error instanceof Error ? error.message : String(error),
       },
     })
     throw error

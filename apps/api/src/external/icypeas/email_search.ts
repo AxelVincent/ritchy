@@ -1,6 +1,11 @@
 import { logger } from '@ritchy/logger'
+import { startDurationTimer } from '@ritchy/metrics'
 import z from 'zod'
 import { ICYPEAS_CONFIG } from '../../config/icypeas'
+import {
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../metrics/collectors'
 
 // Custom webhook/tracking object
 const CustomObjectSchema = z
@@ -83,6 +88,8 @@ export const emailSearch = async ({
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 45000)
+  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  let httpStatusCode = '500'
 
   try {
     const url = `${ICYPEAS_CONFIG.SYNC_BASE_URL}/email-search`
@@ -108,6 +115,7 @@ export const emailSearch = async ({
       signal: controller.signal,
     })
 
+    httpStatusCode = response.status.toString()
     const data = await response.json()
 
     // Handle error responses (401, 429, validation errors)
@@ -122,6 +130,14 @@ export const emailSearch = async ({
           lastname: validatedBody.lastname,
           domainOrCompany: validatedBody.domainOrCompany,
         },
+      })
+
+      // Track error in metrics
+      metricsTimer.stop({ service: 'icypeas', endpoint: 'email_search' })
+      externalApiRequestsCounter.inc({
+        service: 'icypeas',
+        endpoint: 'email_search',
+        status_code: httpStatusCode,
       })
 
       // Handle specific error types
@@ -151,6 +167,14 @@ export const emailSearch = async ({
 
     const parsedData = EmailSearchResponseSchema.parse(data)
 
+    // Track successful request
+    metricsTimer.stop({ service: 'icypeas', endpoint: 'email_search' })
+    externalApiRequestsCounter.inc({
+      service: 'icypeas',
+      endpoint: 'email_search',
+      status_code: httpStatusCode,
+    })
+
     logger.info({
       msg: 'Icypeas Email Search API response parsed successfully',
       event: 'icypeas_email_search_response_parsed',
@@ -164,6 +188,14 @@ export const emailSearch = async ({
     return parsedData
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
+      httpStatusCode = '408'
+      metricsTimer.stop({ service: 'icypeas', endpoint: 'email_search' })
+      externalApiRequestsCounter.inc({
+        service: 'icypeas',
+        endpoint: 'email_search',
+        status_code: httpStatusCode,
+      })
+
       logger.error({
         msg: 'Icypeas Email Search API request timed out',
         event: 'icypeas_email_search_timeout',
@@ -173,6 +205,7 @@ export const emailSearch = async ({
     }
 
     if (error instanceof z.ZodError) {
+      // Don't re-track metrics for validation errors (already tracked above if response.ok)
       logger.error({
         msg: 'Icypeas Email Search API response validation error',
         event: 'icypeas_email_search_validation_error',
@@ -185,6 +218,16 @@ export const emailSearch = async ({
         },
       })
       throw new Error(`Invalid response from Icypeas API: ${error.message}`)
+    }
+
+    // Track other errors if not already tracked
+    if (httpStatusCode === '500') {
+      metricsTimer.stop({ service: 'icypeas', endpoint: 'email_search' })
+      externalApiRequestsCounter.inc({
+        service: 'icypeas',
+        endpoint: 'email_search',
+        status_code: httpStatusCode,
+      })
     }
 
     logger.error({

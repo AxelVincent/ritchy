@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { MILLION_VERIFIER_CONFIG } from '../../../../config/million_verifier'
 import { MillionVerifierResponseSchema } from '../../../../external/million_verifier'
+import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions } from '../../config'
 
 const worker = new Worker(
@@ -36,6 +37,8 @@ const worker = new Worker(
     },
   },
 )
+
+setupQueueMetrics(worker, 'million_verifier', 'email_verification')
 
 worker.on('completed', (job) => {
   logger.info({

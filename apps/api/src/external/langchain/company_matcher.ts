@@ -1,5 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { Place } from '../../db/schema'
+import { trackExternalApiCall } from '../../metrics/external-api'
 import type { InternationalSearchResponse } from '../pappers/international_search_v1'
 import { anthropic_haiku } from './llms'
 import { CompanyMatchSchema, companyMatcher } from './prompts/company_matcher'
@@ -112,7 +113,9 @@ export const matchCompany = async (
     searchResults: formattedResults,
   })
 
-  const result = await structuredOutput.invoke(prompt)
+  const result = await trackExternalApiCall('openai', 'company_matcher', () =>
+    structuredOutput.invoke(prompt),
+  )
 
   logger.info({
     msg: 'Enhanced company matching result',

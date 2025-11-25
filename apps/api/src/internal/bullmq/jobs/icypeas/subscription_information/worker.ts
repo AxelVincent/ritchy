@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import type { SubscriptionInformationParams } from '../../../../../external/icypeas/subscription_information'
 import { getSubscriptionInformation } from '../../../../../external/icypeas/subscription_information'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -66,6 +67,12 @@ const icypeasSubscriptionInformationWorker = new Worker(
       duration: 1000,
     },
   },
+)
+
+setupQueueMetrics(
+  icypeasSubscriptionInformationWorker,
+  'icypeas_subscription',
+  'subscription_check',
 )
 
 icypeasSubscriptionInformationWorker.on('completed', (job) => {

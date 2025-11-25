@@ -61,22 +61,41 @@ const baseLogger = pino({
               target: 'pino-loki',
               options: {
                 batching: false,
-                host: 'http://localhost:3100',
+                host: process.env.LOKI_HOST || 'http://localhost:3100',
                 labels: { job: 'pino', service: 'ritchy' },
               },
             },
           ],
         },
       }
-    : {}),
-  ...(process.env.NODE_ENV !== 'development' && {
-    formatters: {
-      level: (label: string) => ({ level: label }),
-    },
-    timestamp: () => `,"time":"${new Date().toISOString()}"`,
-    messageKey: 'msg',
-    singleLine: true,
-  }),
+    : {
+        transport: {
+          targets: [
+            {
+              level: process.env.LOG_LEVEL || 'info',
+              target: 'pino/file',
+              options: {
+                destination: 1, // stdout (1 = stdout, 2 = stderr)
+              },
+            },
+            {
+              level: process.env.LOG_LEVEL || 'info',
+              target: 'pino-loki',
+              options: {
+                batching: false,
+                host: process.env.LOKI_HOST || 'http://localhost:3100',
+                labels: {
+                  job: 'pino',
+                  service: 'ritchy',
+                  environment: process.env.NODE_ENV || 'production',
+                },
+              },
+            },
+          ],
+        },
+        messageKey: 'msg',
+        serializers: pino.stdSerializers,
+      }),
   serializers: pino.stdSerializers,
 })
 

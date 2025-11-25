@@ -1,4 +1,5 @@
 import { logger } from '@ritchy/logger'
+import { trackExternalApiCall } from '../../metrics/external-api'
 import { gemini_2_5_flash, gemini_2_5_pro } from './llms'
 import {
   WebDescriptionAssistantSchema,
@@ -45,7 +46,11 @@ export const getWebsiteDescription = async (domain: string) => {
     const anthropic_structuredOutput = gemini_2_5_flash.withStructuredOutput(
       WebDescriptionAssistantSchema,
     )
-    const anthropic_result = await anthropic_structuredOutput.invoke(prompt)
+    const anthropic_result = await trackExternalApiCall(
+      'openai',
+      'get_website_description',
+      () => anthropic_structuredOutput.invoke(prompt),
+    )
 
     logger.info({
       msg: 'Website description',

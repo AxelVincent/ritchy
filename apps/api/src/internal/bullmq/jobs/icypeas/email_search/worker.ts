@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import type { EmailSearchParams } from '../../../../../external/icypeas/email_search'
 import { emailSearch } from '../../../../../external/icypeas/email_search'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -52,6 +53,12 @@ const icypeasEmailSearchWorker = new Worker(
       duration: 1000,
     },
   },
+)
+
+setupQueueMetrics(
+  icypeasEmailSearchWorker,
+  'icypeas_email_search',
+  'email_search',
 )
 
 icypeasEmailSearchWorker.on('completed', (job) => {

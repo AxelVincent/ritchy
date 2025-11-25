@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import type { PhoneLookupParams } from '../../../../../external/forager/phone_lookup'
 import { lookupPhoneNumbers } from '../../../../../external/forager/phone_lookup'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../../config'
 import { queueName } from './queue'
 
@@ -61,6 +62,8 @@ const foragerPhoneLookupWorker = new Worker(
     },
   },
 )
+
+setupQueueMetrics(foragerPhoneLookupWorker, 'forager_phone', 'phone_lookup')
 
 foragerPhoneLookupWorker.on('completed', (job) => {
   logger.info({

@@ -6,6 +6,10 @@ import {
   UnsubscribeEventSchema,
 } from '@ritchy/types'
 import type { Namespace, Server as SocketIOServer } from 'socket.io'
+import {
+  websocketConnectionsGauge,
+  websocketMessagesCounter,
+} from '../metrics/collectors'
 import { getEnrichmentStatus } from '../services/enrichment/status_manager'
 import { verifyOwnership } from './ownership-cache'
 import { authenticationMiddleware } from './server'
@@ -28,6 +32,9 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
   enrichmentNs.use(authenticationMiddleware)
 
   enrichmentNs.on('connection', (socket) => {
+    // Increment connection gauge
+    websocketConnectionsGauge.inc({ namespace: 'enrichment' })
+
     logger.info({
       msg: 'Client connected to enrichment namespace',
       event: 'enrichment_websocket_connect',
@@ -39,6 +46,13 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
      * Client will receive real-time updates via 'status-update' event
      */
     socket.on('subscribe', async (userPlaceId: unknown) => {
+      // Track inbound message
+      websocketMessagesCounter.inc({
+        namespace: 'enrichment',
+        event_type: 'subscribe',
+        direction: 'inbound',
+      })
+
       try {
         // Validate UUID format
         const validatedId = SubscribeEventSchema.parse(userPlaceId)
@@ -63,6 +77,14 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
             code: 'FORBIDDEN',
             userPlaceId: validatedId,
           })
+
+          // Track outbound error message
+          websocketMessagesCounter.inc({
+            namespace: 'enrichment',
+            event_type: 'error',
+            direction: 'outbound',
+          })
+
           return
         }
 
@@ -75,6 +97,13 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
         socket.emit('status-update', {
           userPlaceId: validatedId,
           ...status,
+        })
+
+        // Track outbound status update message
+        websocketMessagesCounter.inc({
+          namespace: 'enrichment',
+          event_type: 'status-update',
+          direction: 'outbound',
         })
 
         logger.debug({
@@ -102,6 +131,13 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
           message: 'Invalid user place ID format',
           code: 'INVALID_UUID',
         })
+
+        // Track outbound error message
+        websocketMessagesCounter.inc({
+          namespace: 'enrichment',
+          event_type: 'error',
+          direction: 'outbound',
+        })
       }
     })
 
@@ -110,6 +146,13 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
      * Client will stop receiving updates for this enrichment
      */
     socket.on('unsubscribe', async (userPlaceId: unknown) => {
+      // Track inbound message
+      websocketMessagesCounter.inc({
+        namespace: 'enrichment',
+        event_type: 'unsubscribe',
+        direction: 'inbound',
+      })
+
       try {
         // Validate UUID format
         const validatedId = UnsubscribeEventSchema.parse(userPlaceId)
@@ -161,6 +204,9 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
      * Handle disconnection - cleanup subscriptions
      */
     socket.on('disconnect', (reason) => {
+      // Decrement connection gauge
+      websocketConnectionsGauge.dec({ namespace: 'enrichment' })
+
       // Socket.IO automatically removes socket from all rooms on disconnect
       logger.info({
         msg: 'Client disconnected from enrichment namespace',

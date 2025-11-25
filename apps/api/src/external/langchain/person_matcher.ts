@@ -1,5 +1,6 @@
 import { logger } from '@ritchy/logger'
 import type { Place } from '../../db/schema'
+import { trackExternalApiCall } from '../../metrics/external-api'
 import { formatDateOfBirthWithAge } from '../../utils/calculate_age'
 import type { Person } from '../icypeas/find_people'
 import { anthropic_haiku } from './llms'
@@ -170,7 +171,9 @@ export const matchPerson = async (
     searchResults: formattedResults,
   })
 
-  const result = await structuredOutput.invoke(prompt)
+  const result = await trackExternalApiCall('openai', 'person_matcher', () =>
+    structuredOutput.invoke(prompt),
+  )
 
   logger.info({
     msg: 'Person matching result',

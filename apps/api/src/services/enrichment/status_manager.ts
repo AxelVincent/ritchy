@@ -4,6 +4,7 @@ import type { Namespace } from 'socket.io'
 import { db } from '../../db/db'
 import { userPlace as userPlaceTable } from '../../db/schema'
 import { redisClient } from '../../internal/redis/redis'
+import { websocketMessagesCounter } from '../../metrics/collectors'
 
 export type EnrichmentProgressStatus =
   | 'idle'
@@ -74,6 +75,13 @@ const flushBatchUpdates = () => {
     enrichmentNamespace.to(room).emit('status-update', {
       userPlaceId: update.userPlaceId,
       ...update.statusData,
+    })
+
+    // Track outbound status update message
+    websocketMessagesCounter.inc({
+      namespace: 'enrichment',
+      event_type: 'status-update',
+      direction: 'outbound',
     })
   }
 
@@ -192,6 +200,13 @@ export const setEnrichmentStatus = async (
         enrichmentNamespace.to(room).emit('status-update', {
           userPlaceId,
           ...statusData,
+        })
+
+        // Track outbound status update message
+        websocketMessagesCounter.inc({
+          namespace: 'enrichment',
+          event_type: 'status-update',
+          direction: 'outbound',
         })
 
         logger.debug({

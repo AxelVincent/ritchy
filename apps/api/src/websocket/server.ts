@@ -3,6 +3,7 @@ import { verifyToken } from '@clerk/express'
 import { logger } from '@ritchy/logger'
 import { type Socket, Server as SocketIOServer } from 'socket.io'
 import { CLERK_CONFIG } from '../config/clerk'
+import { websocketConnectionsGauge } from '../metrics/collectors'
 
 /**
  * Create and configure WebSocket server with Socket.IO
@@ -111,6 +112,9 @@ export const createWebSocketServer = (httpServer: HTTPServer) => {
 
   // Connection event (fires for main namespace)
   io.on('connection', (socket) => {
+    // Increment connection gauge
+    websocketConnectionsGauge.inc({ namespace: 'main' })
+
     logger.info({
       msg: 'Client connected to WebSocket server',
       event: 'websocket_connection',
@@ -118,6 +122,9 @@ export const createWebSocketServer = (httpServer: HTTPServer) => {
     })
 
     socket.on('disconnect', (reason) => {
+      // Decrement connection gauge
+      websocketConnectionsGauge.dec({ namespace: 'main' })
+
       logger.info({
         msg: 'Client disconnected from WebSocket server',
         event: 'websocket_disconnection',

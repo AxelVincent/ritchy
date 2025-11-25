@@ -7,6 +7,7 @@ import { getGeocodeV1 } from '../../../../../external/google_maps/geocode_V1'
 import { fetchPlaceDetails } from '../../../../../external/google_maps/place_details_V1'
 import { fetchSinglePage } from '../../../../../external/google_maps/text_search_V1'
 import type { GooglePlacesTextSearchRequestBody } from '../../../../../external/google_maps/types'
+import { setupQueueMetrics } from '../../../../../metrics/queue'
 import { bullmqRedisOptions } from '../../../config'
 
 // Define job types for type safety
@@ -64,6 +65,8 @@ const googlePlacesWorker = new Worker(
     concurrency: 50,
   },
 )
+
+setupQueueMetrics(googlePlacesWorker, 'google_places', 'place_lookup')
 
 googlePlacesWorker.on('completed', (job) => {
   const jobType = (job.data as GooglePlacesJobData).type
