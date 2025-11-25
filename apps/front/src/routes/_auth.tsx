@@ -1,8 +1,8 @@
 import { useUserMe } from '@/api/queries/users/useUserMe'
+import { UpgradeModalProvider } from '@/components/marketing/UpgradeModalContext'
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
-import { DemoCodeModal } from '@/components/demo-code/DemoCodeModal'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-react'
 import { useUser } from '@clerk/clerk-react'
@@ -11,17 +11,13 @@ import {
   Outlet,
   createFileRoute,
   useNavigate,
-  useRouterState,
 } from '@tanstack/react-router'
 import posthog from 'posthog-js'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/_auth')({
   component: AuthedLayout,
 })
-
-// Define paths where the demo code modal should NOT be shown
-const MODAL_EXEMPT_PATHS = ['/pricing', '/checkout']
 
 function AuthedLayout() {
   return (
@@ -30,12 +26,14 @@ function AuthedLayout() {
         <PostHogIdentify />
         <ClerkRedirect />
         <AuthChecksAndRedirects>
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="h-full w-full overflow-hidden">
-              <Outlet />
-            </SidebarInset>
-          </SidebarProvider>
+          <UpgradeModalProvider>
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarInset className="h-full w-full overflow-hidden">
+                <Outlet />
+              </SidebarInset>
+            </SidebarProvider>
+          </UpgradeModalProvider>
         </AuthChecksAndRedirects>
       </SignedIn>
 
@@ -104,66 +102,33 @@ function AuthChecksAndRedirects({ children }: { children: React.ReactNode }) {
   const { user, isLoaded: isClerkLoaded } = useUser()
   const { isSignedIn } = useAuth()
   const navigate = useNavigate()
-  const routerState = useRouterState()
-  const currentPath = routerState.location.pathname
 
   const { data: meData, isLoading: isLoadingMe, error: meError } = useUserMe()
 
   const userPlan = meData?.plan || null
-  const isDemoValidated = meData?.isDemoValidated || false
 
   const isMobile = useIsMobile()
-  const [showDemoCodeModal, setShowDemoCodeModal] = useState(false)
 
-  // Effect to update localStorage based on API response for demo status
-  useEffect(() => {
-    if (meData) {
-      if (meData.isDemoValidated) {
-        localStorage.setItem('demoCodeValidated', 'true')
-      } else {
-        localStorage.removeItem('demoCodeValidated')
-      }
-    }
-  }, [meData])
-
-  // Main effect for showing modal and redirects
+  // Main effect for pricing redirects
   useEffect(() => {
     if (!isClerkLoaded || !isSignedIn || isLoadingMe || !user) {
-      setShowDemoCodeModal(false) // Don't show modal while loading crucial data
       return
     }
 
     if (meError) {
-      // Error fetching meData, don't show modal, rely on error display below
-      setShowDemoCodeModal(false)
       return
     }
 
     // This check ensures we don't proceed if userPlan is still null after loading and no error
-    // (which might indicate an unexpected API response or issue with isUserMeSuccess)
     if (!userPlan && !isLoadingMe && !meError) {
       console.warn(
         'User plan could not be determined from /me endpoint after loading.',
       )
-      setShowDemoCodeModal(false)
       return
     }
 
-    const isPathExempt = MODAL_EXEMPT_PATHS.some((exemptPath) =>
-      currentPath.startsWith(exemptPath),
-    )
-
-    if (isPathExempt) {
-      setShowDemoCodeModal(false)
-    } else if (userPlan === 'FREE' && !isDemoValidated) {
-      setShowDemoCodeModal(true)
-    } else {
-      setShowDemoCodeModal(false)
-    }
-
-    // Pricing redirect logic
-    // Only attempt redirect if modal is not shown, plan is determined, and path is not exempt
-    if (!showDemoCodeModal && userPlan && !isPathExempt) {
+    // Pricing redirect logic for new mobile users
+    if (userPlan) {
       const userCreatedAt = user.createdAt
         ? new Date(user.createdAt)
         : new Date()
@@ -190,15 +155,7 @@ function AuthChecksAndRedirects({ children }: { children: React.ReactNode }) {
     isLoadingMe,
     meError,
     isMobile,
-    isDemoValidated,
-    currentPath,
-    showDemoCodeModal, // showDemoCodeModal is a dependency for the pricing redirect logic
   ])
-
-  const handleCodeValidated = () => {
-    localStorage.setItem('demoCodeValidated', 'true') // Optimistic update for localStorage
-    setShowDemoCodeModal(false)
-  }
 
   // Combined Loading State
   if (!isClerkLoaded || isLoadingMe) {
@@ -227,12 +184,5 @@ function AuthChecksAndRedirects({ children }: { children: React.ReactNode }) {
     )
   }
 
-  return (
-    <>
-      {children}
-      {showDemoCodeModal && (
-        <DemoCodeModal onCodeValidated={handleCodeValidated} />
-      )}
-    </>
-  )
+  return <>{children}</>
 }
