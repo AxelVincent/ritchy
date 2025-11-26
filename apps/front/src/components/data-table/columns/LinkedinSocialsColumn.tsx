@@ -1,7 +1,7 @@
-import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ClickableCell } from './utils/ClickableCell'
 import { SimpleArrayCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -21,16 +21,16 @@ export const linkedinSocialsColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => <HeaderWrapper column={column} title="LinkedIn" />,
   cell: ({ row }) => {
     const linkedinUrls = row.original.contactLinkedins?.map((s) => s.url) || []
-    const { selectPlaceAndTab } = useMapStore()
 
     return (
-      <SimpleArrayCell
-        items={linkedinUrls}
-        itemLabel="more"
-        href={(url) => url}
-        formatDisplay={getCleanUrlDisplay}
-        onClick={() => selectPlaceAndTab(row.original.id, 'contact')}
-      />
+      <ClickableCell placeId={row.original.id} tab="contacts" className="p-0">
+        <SimpleArrayCell
+          items={linkedinUrls}
+          itemLabel="more"
+          href={(url) => url}
+          formatDisplay={getCleanUrlDisplay}
+        />
+      </ClickableCell>
     )
   },
 }

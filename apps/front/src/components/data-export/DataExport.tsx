@@ -524,7 +524,7 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
 
       validateAllSearchResultFieldsHaveColumns(columns)
 
-      validateAndExportToCsv<SearchResult>({
+      validateAndExportToCsv({
         data: exportData,
         filename: 'places.csv',
         schema: PlaceSchema,

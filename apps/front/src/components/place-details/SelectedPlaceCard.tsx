@@ -1,4 +1,7 @@
-import { useMapStore } from '@/components/map-display/store/useMapStore'
+import {
+  type PlaceTabValue,
+  useMapStore,
+} from '@/components/map-display/store/useMapStore'
 import { StatusDropdown } from '@/components/status/status-dropdown'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -42,7 +45,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
   }
 
   // Use activeTab from store, fallback to 'details' if not set
-  const currentTab = activeTab || 'details'
+  const currentTab: PlaceTabValue = activeTab || 'details'
 
   return (
     <div className="flex flex-col h-full min-h-[200px]">
@@ -103,7 +106,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
       <div className="p-0 flex-1 flex flex-col overflow-hidden">
         <Tabs
           value={currentTab}
-          onValueChange={setActiveTab}
+          onValueChange={(value) => setActiveTab(value as PlaceTabValue)}
           className="flex flex-col h-full"
         >
           <TabsList

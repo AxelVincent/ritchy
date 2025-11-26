@@ -50,20 +50,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
 
   const [currentLocation, setLocation] = useState<Location>(defaultLocation)
 
-  // Panel sizes state with localStorage persistence (desktop only)
-  const [panelSizes, setPanelSizes] = useState<number[]>(() => {
-    const savedSizes = localStorage.getItem('mapDisplayPanelSizes')
-    return savedSizes ? JSON.parse(savedSizes) : [60, 40]
-  })
-
-  // Save panel sizes to localStorage when they change (desktop only)
-  const handlePanelResize = (sizes: number[]) => {
-    if (!isMobile) {
-      setPanelSizes(sizes)
-      localStorage.setItem('mapDisplayPanelSizes', JSON.stringify(sizes))
-    }
-  }
-
   const [searchResults, setSearchResults] = useState<Place[]>(places || [])
 
   // Search and selection state
@@ -117,15 +103,6 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
     return <EmptyListState listId={listId} />
   }
 
-  // Calculate panel sizes based on mobile layout state
-  const mobilePanelSizes = isMobile
-    ? mobileLayout === 'table'
-      ? [80, 20] // More table
-      : mobileLayout === 'balanced'
-        ? [50, 50] // Balanced
-        : [20, 80] // More map
-    : undefined
-
   const setLayoutWithFeedback = (layout: MobileLayoutState) => {
     // Trigger haptic feedback if available
     if ('vibrate' in navigator) {
@@ -136,87 +113,50 @@ export const MapDisplay = ({ listId, searchId, places }: MapDisplayProps) => {
 
   return (
     <EnrichmentMutationProvider>
-      <div className="flex flex-col h-full relative">
-        <ResizablePanelGroup
-          direction={isMobile ? 'vertical' : 'horizontal'}
-          onLayout={handlePanelResize}
-          className="min-h-[200px]"
-        >
-          <ResizablePanel
-            defaultSize={isMobile ? mobilePanelSizes?.[0] : panelSizes[0]}
-            className="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
-            style={
-              isMobile
-                ? {
-                    flexBasis: `${mobilePanelSizes?.[0]}%`,
-                    flexGrow: 0,
-                    flexShrink: 0,
-                  }
-                : undefined
-            }
-          >
-            <ResizablePanelGroup direction="vertical" className="h-full">
-              <ResizablePanel
-                defaultSize={70}
-                className="flex flex-col overflow-hidden"
-              >
-                <div className="flex flex-col h-full overflow-hidden">
-                  <EnrichmentErrorBoundary>
-                    <DataTable
-                      columns={columns}
-                      data={tableData}
-                      setDataTableRowSelection={setDataTableRowSelection}
-                      dataTableRowSelection={dataTableRowSelection}
-                      onFilteredDataChange={setFilteredPlaceIds}
-                      listId={listId}
-                      searchId={searchId}
-                      isMobile={isMobile}
-                    />
-                  </EnrichmentErrorBoundary>
-                </div>
-              </ResizablePanel>
-              {selectedPlaceId && (
-                <>
-                  {!isMobile && <ResizableHandle withHandle />}
-                  <ResizablePanel
-                    defaultSize={isMobile ? 80 : 50}
-                    minSize={20}
-                    maxSize={80}
-                  >
-                    <div className="border-t bg-background h-full">
-                      <SelectedPlaceCard
-                        places={places}
-                        displayedPlaceIds={safeFilteredPlaceIds}
-                      />
-                    </div>
-                  </ResizablePanel>
-                </>
-              )}
-            </ResizablePanelGroup>
-          </ResizablePanel>
+      <div className="flex h-full relative">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ResizablePanelGroup direction="vertical" className="h-full">
+            <ResizablePanel
+              defaultSize={70}
+              className="flex flex-col overflow-hidden"
+            >
+              <div className="flex flex-col h-full overflow-hidden">
+                <EnrichmentErrorBoundary>
+                  <DataTable
+                    columns={columns}
+                    data={tableData}
+                    setDataTableRowSelection={setDataTableRowSelection}
+                    dataTableRowSelection={dataTableRowSelection}
+                    onFilteredDataChange={setFilteredPlaceIds}
+                    listId={listId}
+                    searchId={searchId}
+                    isMobile={isMobile}
+                  />
+                </EnrichmentErrorBoundary>
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel
+              defaultSize={30}
+              className="flex flex-col overflow-hidden"
+            >
+              <MapBox
+                searchResults={searchResults}
+                userLocation={currentLocation}
+                filteredPlaceIds={safeFilteredPlaceIds}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
 
-          {!isMobile && <ResizableHandle withHandle />}
-
-          <ResizablePanel
-            defaultSize={isMobile ? mobilePanelSizes?.[1] : panelSizes[1]}
-            className="flex-1 transition-all duration-300 ease-in-out"
-            style={
-              isMobile
-                ? {
-                    flexBasis: `${mobilePanelSizes?.[1]}%`,
-                    flexGrow: 0,
-                    flexShrink: 0,
-                  }
-                : undefined
-            }
-          >
-            <MapBox
-              searchResults={searchResults}
-              userLocation={currentLocation}
-              filteredPlaceIds={safeFilteredPlaceIds}
+        {!isMobile && selectedPlaceId && (
+          <div className="w-[550px] border-l bg-background h-full overflow-auto">
+            <SelectedPlaceCard
+              places={places}
+              displayedPlaceIds={safeFilteredPlaceIds}
             />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        )}
 
         {/* Mobile segmented control */}
         {isMobile && (

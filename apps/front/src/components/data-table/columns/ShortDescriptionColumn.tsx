@@ -7,6 +7,7 @@ import {
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import React from 'react'
+import { ClickableCell } from './utils/ClickableCell'
 import { CopyButton } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -20,7 +21,7 @@ const ShortDescriptionCell = React.memo(function ShortDescriptionCell({
       <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="block truncate px-2 py-1 cursor-default">
+            <span className="block truncate px-2 py-1 cursor-pointer">
               {content}
             </span>
           </TooltipTrigger>
@@ -46,9 +47,13 @@ export const shortDescriptionColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Short Description" />
   ),
-  cell: ({ getValue }) => {
+  cell: ({ getValue, row }) => {
     const content = getValue() as string | null
-    if (!content) return null
-    return <ShortDescriptionCell content={content} />
+
+    return (
+      <ClickableCell placeId={row.original.id} tab="details" className="p-0">
+        {content && <ShortDescriptionCell content={content} />}
+      </ClickableCell>
+    )
   },
 }

@@ -17,7 +17,7 @@ interface ColumnsSelectionProps<TData> {
   storageKey?: string
 }
 
-const columnVisibilitySchema = z.record(z.boolean())
+const columnVisibilitySchema = z.record(z.string(), z.boolean())
 const columnOrderSchema = z.array(z.string())
 
 export const ColumnsSelection = <TData,>({

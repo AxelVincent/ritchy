@@ -133,7 +133,7 @@ export function NavCustomLists() {
                 isActive={match?.params.listId === list.id}
                 className={cn('justify-between')}
               >
-                <Link to={`/lists/${list.id}`}>
+                <Link to="/lists/$listId" params={{ listId: list.id }}>
                   <div className="flex items-center gap-2">
                     <p className="text-sm">{list.emoji}</p>
                     <p

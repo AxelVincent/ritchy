@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { SimpleCell } from './utils/ColumnCells'
+import { ClickableCell } from './utils/ClickableCell'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const primaryTypeColumn: ColumnDef<SearchResult> = {
@@ -14,11 +14,13 @@ export const primaryTypeColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Primary Type" />
   ),
-  cell: ({ row }) => (
-    <SimpleCell>
-      {row.original.primaryType && (
-        <Badge variant="secondary">{row.original.primaryType}</Badge>
-      )}
-    </SimpleCell>
-  ),
+  cell: ({ row }) => {
+    return (
+      <ClickableCell placeId={row.original.id} tab="details">
+        {row.original.primaryType && (
+          <Badge variant="secondary">{row.original.primaryType}</Badge>
+        )}
+      </ClickableCell>
+    )
+  },
 }

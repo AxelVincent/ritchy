@@ -58,9 +58,7 @@ const complexFormSchema = z.object({
     message: 'Please enter a valid email address.',
   }),
   phone: z.string().optional(),
-  role: z.string({
-    required_error: 'Please select a role.',
-  }),
+  role: z.string().min(1, { message: 'Please select a role.' }),
   bio: z.string().max(500, {
     message: 'Bio must be less than 500 characters.',
   }),

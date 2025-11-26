@@ -1,5 +1,7 @@
+import type { PlaceTabValue } from '@/components/map-display/store/useMapStore'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ClickableCell } from './ClickableCell'
 import { CopyCell } from './ColumnCells'
 import { HeaderWrapper } from './HeaderWrapper'
 
@@ -13,6 +15,7 @@ interface TextColumnConfig {
   isEnrichment?: boolean
   defaultVisible?: boolean
   href?: (row: SearchResult) => string | undefined
+  openTab?: PlaceTabValue // New: which tab to open on click
 }
 
 export const createTextColumn = ({
@@ -25,6 +28,7 @@ export const createTextColumn = ({
   isEnrichment = false,
   defaultVisible,
   href,
+  openTab = 'details', // Default to details tab
 }: TextColumnConfig): ColumnDef<SearchResult> => ({
   id,
   accessorKey,
@@ -38,8 +42,12 @@ export const createTextColumn = ({
   header: ({ column }) => <HeaderWrapper column={column} title={title} />,
   cell: ({ getValue, row }) => {
     const content = getValue() as string | null
-    if (!content) return null
     const linkHref = href ? href(row.original) : undefined
-    return <CopyCell content={content} href={linkHref} />
+
+    return (
+      <ClickableCell placeId={row.original.id} tab={openTab} className="p-0">
+        {content && <CopyCell content={content} href={linkHref} />}
+      </ClickableCell>
+    )
   },
 })

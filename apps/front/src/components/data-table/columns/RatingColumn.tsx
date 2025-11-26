@@ -1,7 +1,7 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Star } from 'lucide-react'
-import { SimpleCell } from './utils/ColumnCells'
+import { ClickableCell } from './utils/ClickableCell'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const ratingColumn: ColumnDef<SearchResult> = {
@@ -20,7 +20,7 @@ export const ratingColumn: ColumnDef<SearchResult> = {
     const rating = row.original.rating
 
     return (
-      <SimpleCell>
+      <ClickableCell placeId={row.original.id} tab="reviews">
         {rating ? (
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -29,7 +29,7 @@ export const ratingColumn: ColumnDef<SearchResult> = {
         ) : (
           <span className="text-muted-foreground">No rating</span>
         )}
-      </SimpleCell>
+      </ClickableCell>
     )
   },
 }

@@ -58,7 +58,7 @@ export const CreateContactForm = ({
 
     if (!result.success) {
       const fieldErrors: typeof errors = {}
-      for (const error of result.error.errors) {
+      for (const error of result.error.issues) {
         const field = error.path[0] as keyof typeof errors
         fieldErrors[field] = error.message
       }

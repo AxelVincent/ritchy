@@ -97,38 +97,20 @@ export const SimpleArrayCell = React.memo(function SimpleArrayCell({
   itemLabel,
   href,
   formatDisplay,
-  onClick,
   getBadge,
 }: {
   items: string[]
   itemLabel?: string
   href?: (item: string) => string
   formatDisplay?: (item: string) => string
-  onClick?: () => void
   getBadge?: (item: string) => BadgeConfig
 }) {
   const firstItem = items[0]
   const displayText = formatDisplay ? formatDisplay(firstItem) : firstItem
   const badge = getBadge?.(firstItem)
 
-  const handleCellClick = React.useCallback(() => {
-    onClick?.()
-  }, [onClick])
-
   if (!items.length) {
-    return (
-      <div
-        className="w-full h-full flex items-center px-2 cursor-pointer"
-        onClick={handleCellClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleCellClick()
-          }
-        }}
-      >
-        {null}
-      </div>
-    )
+    return null
   }
 
   const content = href ? (
@@ -149,15 +131,7 @@ export const SimpleArrayCell = React.memo(function SimpleArrayCell({
   )
 
   return (
-    <div
-      className="group/cell relative w-full h-full flex items-center px-2 gap-2 cursor-pointer"
-      onClick={handleCellClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          handleCellClick()
-        }
-      }}
-    >
+    <div className="group/cell relative w-full h-full flex items-center px-2 gap-2">
       <div className="flex-1 min-w-0 overflow-hidden">{content}</div>
       {badge && <CustomBadge text={badge.text} color={badge.color} />}
       {items.length > 1 && (
@@ -172,43 +146,17 @@ export const SimpleArrayCell = React.memo(function SimpleArrayCell({
 
 export const SimpleNotesCell = React.memo(function SimpleNotesCell({
   notes,
-  onClick,
 }: {
   notes: Array<{ note: string; createdAt: Date }> | null | undefined
-  onClick?: () => void
 }) {
   const latestNote = notes?.[0]
 
-  const handleCellClick = React.useCallback(() => {
-    onClick?.()
-  }, [onClick])
-
   if (!notes?.length) {
-    return (
-      <div
-        className="w-full h-full flex items-center px-2 cursor-pointer"
-        onClick={handleCellClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleCellClick()
-          }
-        }}
-      >
-        {null}
-      </div>
-    )
+    return null
   }
 
   return (
-    <div
-      className="group/cell relative w-full h-full flex items-center px-2 gap-2 cursor-pointer"
-      onClick={handleCellClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          handleCellClick()
-        }
-      }}
-    >
+    <div className="group/cell relative w-full h-full flex items-center px-2 gap-2">
       <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
         <span className="truncate flex-1" title={latestNote?.note}>
           {latestNote?.note}
