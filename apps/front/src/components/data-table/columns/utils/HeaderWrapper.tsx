@@ -45,11 +45,13 @@ export const HeaderWrapper = ({
                     }
                   : undefined
               }
-              className={`w-full h-8 px-4 py-2 text-left ${!canSort ? 'cursor-default' : ''}`}
+              className={`w-full h-8 px-4 py-2 text-left transition-colors duration-150 ${!canSort ? 'cursor-default hover:bg-transparent' : 'hover:bg-accent/30'}`}
               disabled={!canSort}
             >
               <div className="flex items-center justify-between w-full">
-                <span className="font-medium truncate">{title}</span>
+                <span className="font-semibold text-sm tracking-tight truncate">
+                  {title}
+                </span>
                 {canSort &&
                   (column.getIsSorted() === 'asc' ? (
                     <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
