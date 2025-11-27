@@ -14,7 +14,7 @@ import { formatUtcOffset } from '@/lib/formatUtcOffset'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { SimpleCell } from './utils/ColumnCells'
+import { ClickableCell } from './utils/ClickableCell'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 export const openingHoursColumn: ColumnDef<SearchResult> = {
@@ -33,7 +33,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
     const utcOffsetMinutes = row.original.utcOffsetMinutes
 
     return (
-      <SimpleCell>
+      <ClickableCell placeId={row.original.id} tab="details">
         {openingHours ? (
           <Dialog>
             <DialogTrigger asChild>
@@ -42,6 +42,7 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
                 size="sm"
                 className="w-40 relative flex items-center justify-start pl-7"
                 title="Click to view full schedule"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div
                   className={cn(
@@ -72,10 +73,8 @@ export const openingHoursColumn: ColumnDef<SearchResult> = {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        ) : (
-          ''
-        )}
-      </SimpleCell>
+        ) : null}
+      </ClickableCell>
     )
   },
 }

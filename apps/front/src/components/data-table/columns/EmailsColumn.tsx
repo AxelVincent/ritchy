@@ -1,6 +1,6 @@
-import { useMapStore } from '@/components/map-display/store/useMapStore'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ClickableCell } from './utils/ClickableCell'
 import { type BadgeConfig, SimpleArrayCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -20,7 +20,6 @@ export const emailsColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => <HeaderWrapper column={column} title="Emails" />,
   cell: ({ row }) => {
     const emails = row.original.contactEmails?.map((e) => e.email) || []
-    const { selectPlaceAndTab } = useMapStore()
 
     const getBadge = (email: string): BadgeConfig => {
       const emailObj = row.original.contactEmails?.find(
@@ -43,13 +42,14 @@ export const emailsColumn: ColumnDef<SearchResult> = {
     }
 
     return (
-      <SimpleArrayCell
-        items={emails}
-        itemLabel="more"
-        href={(email) => `mailto:${email}`}
-        onClick={() => selectPlaceAndTab(row.original.id, 'contact')}
-        getBadge={getBadge}
-      />
+      <ClickableCell placeId={row.original.id} tab="contacts" className="p-0">
+        <SimpleArrayCell
+          items={emails}
+          itemLabel="more"
+          href={(email) => `mailto:${email}`}
+          getBadge={getBadge}
+        />
+      </ClickableCell>
     )
   },
 }

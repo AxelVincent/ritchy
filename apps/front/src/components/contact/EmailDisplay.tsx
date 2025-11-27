@@ -131,7 +131,7 @@ export const EmailDisplay = ({
       return { isValid: true, message: 'Email address looks good' }
     }
 
-    const error = result.error.errors?.[0]
+    const error = result.error.issues?.[0]
     return {
       isValid: false,
       message: error?.message || 'Invalid email address',

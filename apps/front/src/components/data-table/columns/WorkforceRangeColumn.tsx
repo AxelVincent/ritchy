@@ -1,5 +1,6 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ClickableCell } from './utils/ClickableCell'
 import { CopyCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -15,9 +16,17 @@ export const workforceRangeColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Workforce Range" />
   ),
-  cell: ({ getValue }) => {
+  cell: ({ getValue, row }) => {
     const content = getValue() as string | null
-    if (!content) return null
-    return <CopyCell content={content} />
+
+    return (
+      <ClickableCell
+        placeId={row.original.id}
+        tab="company_details"
+        className="p-0"
+      >
+        {content && <CopyCell content={content} />}
+      </ClickableCell>
+    )
   },
 }

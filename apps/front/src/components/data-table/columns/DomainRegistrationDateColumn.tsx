@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { HelpCircle } from 'lucide-react'
 import React from 'react'
-import { SimpleCell } from './utils/ColumnCells'
+import { ClickableCell } from './utils/ClickableCell'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const formatRegistrationDate = (registrationDate: string): string | null => {
@@ -27,21 +27,15 @@ const DomainRegistrationDateCell = React.memo(
 
     // No website
     if (!place.website) {
-      return (
-        <SimpleCell>
-          <span className="text-xs text-muted-foreground">No website</span>
-        </SimpleCell>
-      )
+      return <span className="text-xs text-muted-foreground">No website</span>
     }
 
     // No domain registration data
     if (!domainRegistration) {
       return (
-        <SimpleCell>
-          <span className="text-xs text-muted-foreground">
-            No registration data
-          </span>
-        </SimpleCell>
+        <span className="text-xs text-muted-foreground">
+          No registration data
+        </span>
       )
     }
 
@@ -52,25 +46,21 @@ const DomainRegistrationDateCell = React.memo(
     // Handle invalid date format
     if (!formattedDate) {
       return (
-        <SimpleCell>
-          <span className="text-xs text-muted-foreground">
-            Invalid date format
-          </span>
-        </SimpleCell>
+        <span className="text-xs text-muted-foreground">
+          Invalid date format
+        </span>
       )
     }
 
     return (
-      <SimpleCell>
-        <div className="flex items-center gap-1.5 text-sm w-full">
-          <span className="truncate">{formattedDate}</span>
-          <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
-            {formatDistanceToNow(new Date(domainRegistration), {
-              addSuffix: true,
-            })}
-          </span>
-        </div>
-      </SimpleCell>
+      <div className="flex items-center gap-1.5 text-sm w-full">
+        <span className="truncate">{formattedDate}</span>
+        <span className="truncate text-[11px] w-15 text-muted-foreground/75 whitespace-nowrap">
+          {formatDistanceToNow(new Date(domainRegistration), {
+            addSuffix: true,
+          })}
+        </span>
+      </div>
     )
   },
 )
@@ -159,5 +149,11 @@ export const domainRegistrationDateColumn: ColumnDef<SearchResult> = {
       }
     />
   ),
-  cell: ({ row }) => <DomainRegistrationDateCell place={row.original} />,
+  cell: ({ row }) => {
+    return (
+      <ClickableCell placeId={row.original.id} tab="company_details">
+        <DomainRegistrationDateCell place={row.original} />
+      </ClickableCell>
+    )
+  },
 }

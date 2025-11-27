@@ -1,6 +1,6 @@
-import { useMapStore } from '@/components/map-display/store/useMapStore'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ClickableCell } from './utils/ClickableCell'
 import { CopyButton } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -22,28 +22,12 @@ export const activitiesColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => <HeaderWrapper column={column} title="Activities" />,
   cell: ({ row }) => {
     const activities = row.original.companyActivities || []
-    const { selectPlaceAndTab } = useMapStore()
-
-    const handleCellClick = () => {
-      // company is at root level, not under enrichment!
-      selectPlaceAndTab(
-        row.original.id,
-        'company_details',
-        'company.activities',
-      )
-    }
 
     if (!activities.length) {
       return (
-        <div
-          className="w-full h-full flex items-center px-2 cursor-pointer"
-          onClick={handleCellClick}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              handleCellClick()
-            }
-          }}
-        />
+        <ClickableCell placeId={row.original.id} tab="company_details">
+          {null}
+        </ClickableCell>
       )
     }
 
@@ -52,14 +36,10 @@ export const activitiesColumn: ColumnDef<SearchResult> = {
       firstActivity.name || firstActivity.code || 'Unknown'
 
     return (
-      <div
-        className="group/cell relative w-full h-full flex items-center px-2 gap-2 cursor-pointer"
-        onClick={handleCellClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleCellClick()
-          }
-        }}
+      <ClickableCell
+        placeId={row.original.id}
+        tab="company_details"
+        className="group/cell relative gap-2"
       >
         <div className="flex-1 min-w-0 flex items-center gap-2">
           <span className="truncate" title={firstActivityName}>
@@ -72,7 +52,7 @@ export const activitiesColumn: ColumnDef<SearchResult> = {
           )}
         </div>
         <CopyButton valueToCopy={firstActivityName} ariaLabel="Copy activity" />
-      </div>
+      </ClickableCell>
     )
   },
 }

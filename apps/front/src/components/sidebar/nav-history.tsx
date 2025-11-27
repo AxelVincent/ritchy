@@ -140,7 +140,10 @@ export function NavHistory() {
                       className={cn('justify-between')}
                       isActive={match?.params.searchId === search.id}
                     >
-                      <Link to={`/search/${search.id}`}>
+                      <Link
+                        to="/search/$searchId"
+                        params={{ searchId: search.id }}
+                      >
                         {open ? (
                           <>
                             <div className="w-full flex flex-row items-center gap-2">

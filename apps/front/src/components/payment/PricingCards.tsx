@@ -518,7 +518,12 @@ export const PricingCards = ({
                   asChild
                 >
                   <Link
-                    to={`/checkout?plan=${tier.plan}&billingInterval=${billingPeriod}&currency=${currency}`}
+                    to="/checkout"
+                    search={{
+                      plan: tier.plan,
+                      billingInterval: billingPeriod,
+                      currency: currency,
+                    }}
                     className="flex items-center justify-center"
                   >
                     {getPlanAction(tier.plan)}

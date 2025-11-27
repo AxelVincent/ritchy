@@ -1,6 +1,7 @@
 import { getCleanUrlDisplay } from '@/lib/utils/url-utils'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ClickableCell } from './utils/ClickableCell'
 import { CopyCell } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -12,11 +13,19 @@ export const websiteColumn: ColumnDef<SearchResult> = {
     filterVariant: 'text',
   },
   header: ({ column }) => <HeaderWrapper column={column} title="Website" />,
-  cell: ({ getValue }) => {
+  cell: ({ getValue, row }) => {
     const url = getValue() as string | null
-    if (!url) return null
+
     return (
-      <CopyCell content={url} href={url} formatDisplay={getCleanUrlDisplay} />
+      <ClickableCell placeId={row.original.id} tab="details" className="p-0">
+        {url && (
+          <CopyCell
+            content={url}
+            href={url}
+            formatDisplay={getCleanUrlDisplay}
+          />
+        )}
+      </ClickableCell>
     )
   },
 }

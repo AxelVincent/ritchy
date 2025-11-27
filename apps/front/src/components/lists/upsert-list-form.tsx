@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/popover'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from '@tanstack/react-form'
-import { zodValidator } from '@tanstack/zod-form-adapter'
 import { useRef, useState } from 'react'
 import { z } from 'zod'
 
@@ -47,7 +46,6 @@ export function UpsertListForm({
       name: initialValues?.name ?? '',
       emoji: initialValues?.emoji ?? '🙂',
     },
-    validatorAdapter: zodValidator(),
     validators: {
       onChange: schema,
     },

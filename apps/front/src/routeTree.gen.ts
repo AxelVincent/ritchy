@@ -8,175 +8,240 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthPricingRouteImport } from './routes/_auth/pricing'
+import { Route as AuthImportRouteImport } from './routes/_auth/import'
+import { Route as AuthCheckoutRouteImport } from './routes/_auth/checkout'
+import { Route as AuthSearchIndexRouteImport } from './routes/_auth/search/index'
+import { Route as AuthIntegrationsIndexRouteImport } from './routes/_auth/integrations/index'
+import { Route as AuthSearchSearchIdRouteImport } from './routes/_auth/search/$searchId'
+import { Route as AuthListsListIdRouteImport } from './routes/_auth/lists/$listId'
+import { Route as AuthIntegrationsHubspotIndexRouteImport } from './routes/_auth/integrations/hubspot/index'
+import { Route as AuthIntegrationsHubspotCallbackRouteImport } from './routes/_auth/integrations/hubspot/callback'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as AuthImport } from './routes/_auth'
-import { Route as IndexImport } from './routes/index'
-import { Route as AuthPricingImport } from './routes/_auth/pricing'
-import { Route as AuthImportImport } from './routes/_auth/import'
-import { Route as AuthCheckoutImport } from './routes/_auth/checkout'
-import { Route as AuthSearchIndexImport } from './routes/_auth/search/index'
-import { Route as AuthIntegrationsIndexImport } from './routes/_auth/integrations/index'
-import { Route as AuthSearchSearchIdImport } from './routes/_auth/search/$searchId'
-import { Route as AuthListsListIdImport } from './routes/_auth/lists/$listId'
-import { Route as AuthIntegrationsHubspotIndexImport } from './routes/_auth/integrations/hubspot/index'
-import { Route as AuthIntegrationsHubspotCallbackImport } from './routes/_auth/integrations/hubspot/callback'
-
-// Create/Update Routes
-
-const AuthRoute = AuthImport.update({
+const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const IndexRoute = IndexImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const AuthPricingRoute = AuthPricingImport.update({
+const AuthPricingRoute = AuthPricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthImportRoute = AuthImportImport.update({
+const AuthImportRoute = AuthImportRouteImport.update({
   id: '/import',
   path: '/import',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthCheckoutRoute = AuthCheckoutImport.update({
+const AuthCheckoutRoute = AuthCheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthSearchIndexRoute = AuthSearchIndexImport.update({
+const AuthSearchIndexRoute = AuthSearchIndexRouteImport.update({
   id: '/search/',
   path: '/search/',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthIntegrationsIndexRoute = AuthIntegrationsIndexImport.update({
+const AuthIntegrationsIndexRoute = AuthIntegrationsIndexRouteImport.update({
   id: '/integrations/',
   path: '/integrations/',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthSearchSearchIdRoute = AuthSearchSearchIdImport.update({
+const AuthSearchSearchIdRoute = AuthSearchSearchIdRouteImport.update({
   id: '/search/$searchId',
   path: '/search/$searchId',
   getParentRoute: () => AuthRoute,
 } as any)
-
-const AuthListsListIdRoute = AuthListsListIdImport.update({
+const AuthListsListIdRoute = AuthListsListIdRouteImport.update({
   id: '/lists/$listId',
   path: '/lists/$listId',
   getParentRoute: () => AuthRoute,
 } as any)
-
 const AuthIntegrationsHubspotIndexRoute =
-  AuthIntegrationsHubspotIndexImport.update({
+  AuthIntegrationsHubspotIndexRouteImport.update({
     id: '/integrations/hubspot/',
     path: '/integrations/hubspot/',
     getParentRoute: () => AuthRoute,
   } as any)
-
 const AuthIntegrationsHubspotCallbackRoute =
-  AuthIntegrationsHubspotCallbackImport.update({
+  AuthIntegrationsHubspotCallbackRouteImport.update({
     id: '/integrations/hubspot/callback',
     path: '/integrations/hubspot/callback',
     getParentRoute: () => AuthRoute,
   } as any)
 
-// Populate the FileRoutesByPath interface
+export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/checkout': typeof AuthCheckoutRoute
+  '/import': typeof AuthImportRoute
+  '/pricing': typeof AuthPricingRoute
+  '/lists/$listId': typeof AuthListsListIdRoute
+  '/search/$searchId': typeof AuthSearchSearchIdRoute
+  '/integrations': typeof AuthIntegrationsIndexRoute
+  '/search': typeof AuthSearchIndexRoute
+  '/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
+  '/integrations/hubspot': typeof AuthIntegrationsHubspotIndexRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/checkout': typeof AuthCheckoutRoute
+  '/import': typeof AuthImportRoute
+  '/pricing': typeof AuthPricingRoute
+  '/lists/$listId': typeof AuthListsListIdRoute
+  '/search/$searchId': typeof AuthSearchSearchIdRoute
+  '/integrations': typeof AuthIntegrationsIndexRoute
+  '/search': typeof AuthSearchIndexRoute
+  '/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
+  '/integrations/hubspot': typeof AuthIntegrationsHubspotIndexRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/_auth/checkout': typeof AuthCheckoutRoute
+  '/_auth/import': typeof AuthImportRoute
+  '/_auth/pricing': typeof AuthPricingRoute
+  '/_auth/lists/$listId': typeof AuthListsListIdRoute
+  '/_auth/search/$searchId': typeof AuthSearchSearchIdRoute
+  '/_auth/integrations/': typeof AuthIntegrationsIndexRoute
+  '/_auth/search/': typeof AuthSearchIndexRoute
+  '/_auth/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
+  '/_auth/integrations/hubspot/': typeof AuthIntegrationsHubspotIndexRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/checkout'
+    | '/import'
+    | '/pricing'
+    | '/lists/$listId'
+    | '/search/$searchId'
+    | '/integrations'
+    | '/search'
+    | '/integrations/hubspot/callback'
+    | '/integrations/hubspot'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/checkout'
+    | '/import'
+    | '/pricing'
+    | '/lists/$listId'
+    | '/search/$searchId'
+    | '/integrations'
+    | '/search'
+    | '/integrations/hubspot/callback'
+    | '/integrations/hubspot'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/_auth/checkout'
+    | '/_auth/import'
+    | '/_auth/pricing'
+    | '/_auth/lists/$listId'
+    | '/_auth/search/$searchId'
+    | '/_auth/integrations/'
+    | '/_auth/search/'
+    | '/_auth/integrations/hubspot/callback'
+    | '/_auth/integrations/hubspot/'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
+}
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
     '/_auth': {
       id: '/_auth'
       path: ''
       fullPath: ''
-      preLoaderRoute: typeof AuthImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_auth/checkout': {
-      id: '/_auth/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof AuthCheckoutImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/import': {
-      id: '/_auth/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof AuthImportImport
-      parentRoute: typeof AuthImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_auth/pricing': {
       id: '/_auth/pricing'
       path: '/pricing'
       fullPath: '/pricing'
-      preLoaderRoute: typeof AuthPricingImport
-      parentRoute: typeof AuthImport
+      preLoaderRoute: typeof AuthPricingRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/lists/$listId': {
-      id: '/_auth/lists/$listId'
-      path: '/lists/$listId'
-      fullPath: '/lists/$listId'
-      preLoaderRoute: typeof AuthListsListIdImport
-      parentRoute: typeof AuthImport
+    '/_auth/import': {
+      id: '/_auth/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AuthImportRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/search/$searchId': {
-      id: '/_auth/search/$searchId'
-      path: '/search/$searchId'
-      fullPath: '/search/$searchId'
-      preLoaderRoute: typeof AuthSearchSearchIdImport
-      parentRoute: typeof AuthImport
-    }
-    '/_auth/integrations/': {
-      id: '/_auth/integrations/'
-      path: '/integrations'
-      fullPath: '/integrations'
-      preLoaderRoute: typeof AuthIntegrationsIndexImport
-      parentRoute: typeof AuthImport
+    '/_auth/checkout': {
+      id: '/_auth/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AuthCheckoutRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/search/': {
       id: '/_auth/search/'
       path: '/search'
       fullPath: '/search'
-      preLoaderRoute: typeof AuthSearchIndexImport
-      parentRoute: typeof AuthImport
+      preLoaderRoute: typeof AuthSearchIndexRouteImport
+      parentRoute: typeof AuthRoute
     }
-    '/_auth/integrations/hubspot/callback': {
-      id: '/_auth/integrations/hubspot/callback'
-      path: '/integrations/hubspot/callback'
-      fullPath: '/integrations/hubspot/callback'
-      preLoaderRoute: typeof AuthIntegrationsHubspotCallbackImport
-      parentRoute: typeof AuthImport
+    '/_auth/integrations/': {
+      id: '/_auth/integrations/'
+      path: '/integrations'
+      fullPath: '/integrations'
+      preLoaderRoute: typeof AuthIntegrationsIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/search/$searchId': {
+      id: '/_auth/search/$searchId'
+      path: '/search/$searchId'
+      fullPath: '/search/$searchId'
+      preLoaderRoute: typeof AuthSearchSearchIdRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/lists/$listId': {
+      id: '/_auth/lists/$listId'
+      path: '/lists/$listId'
+      fullPath: '/lists/$listId'
+      preLoaderRoute: typeof AuthListsListIdRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_auth/integrations/hubspot/': {
       id: '/_auth/integrations/hubspot/'
       path: '/integrations/hubspot'
       fullPath: '/integrations/hubspot'
-      preLoaderRoute: typeof AuthIntegrationsHubspotIndexImport
-      parentRoute: typeof AuthImport
+      preLoaderRoute: typeof AuthIntegrationsHubspotIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/integrations/hubspot/callback': {
+      id: '/_auth/integrations/hubspot/callback'
+      path: '/integrations/hubspot/callback'
+      fullPath: '/integrations/hubspot/callback'
+      preLoaderRoute: typeof AuthIntegrationsHubspotCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
   }
 }
-
-// Create and export the route tree
 
 interface AuthRouteChildren {
   AuthCheckoutRoute: typeof AuthCheckoutRoute
@@ -204,169 +269,10 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
-export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '': typeof AuthRouteWithChildren
-  '/checkout': typeof AuthCheckoutRoute
-  '/import': typeof AuthImportRoute
-  '/pricing': typeof AuthPricingRoute
-  '/lists/$listId': typeof AuthListsListIdRoute
-  '/search/$searchId': typeof AuthSearchSearchIdRoute
-  '/integrations': typeof AuthIntegrationsIndexRoute
-  '/search': typeof AuthSearchIndexRoute
-  '/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
-  '/integrations/hubspot': typeof AuthIntegrationsHubspotIndexRoute
-}
-
-export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '': typeof AuthRouteWithChildren
-  '/checkout': typeof AuthCheckoutRoute
-  '/import': typeof AuthImportRoute
-  '/pricing': typeof AuthPricingRoute
-  '/lists/$listId': typeof AuthListsListIdRoute
-  '/search/$searchId': typeof AuthSearchSearchIdRoute
-  '/integrations': typeof AuthIntegrationsIndexRoute
-  '/search': typeof AuthSearchIndexRoute
-  '/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
-  '/integrations/hubspot': typeof AuthIntegrationsHubspotIndexRoute
-}
-
-export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/': typeof IndexRoute
-  '/_auth': typeof AuthRouteWithChildren
-  '/_auth/checkout': typeof AuthCheckoutRoute
-  '/_auth/import': typeof AuthImportRoute
-  '/_auth/pricing': typeof AuthPricingRoute
-  '/_auth/lists/$listId': typeof AuthListsListIdRoute
-  '/_auth/search/$searchId': typeof AuthSearchSearchIdRoute
-  '/_auth/integrations/': typeof AuthIntegrationsIndexRoute
-  '/_auth/search/': typeof AuthSearchIndexRoute
-  '/_auth/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
-  '/_auth/integrations/hubspot/': typeof AuthIntegrationsHubspotIndexRoute
-}
-
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | ''
-    | '/checkout'
-    | '/import'
-    | '/pricing'
-    | '/lists/$listId'
-    | '/search/$searchId'
-    | '/integrations'
-    | '/search'
-    | '/integrations/hubspot/callback'
-    | '/integrations/hubspot'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | ''
-    | '/checkout'
-    | '/import'
-    | '/pricing'
-    | '/lists/$listId'
-    | '/search/$searchId'
-    | '/integrations'
-    | '/search'
-    | '/integrations/hubspot/callback'
-    | '/integrations/hubspot'
-  id:
-    | '__root__'
-    | '/'
-    | '/_auth'
-    | '/_auth/checkout'
-    | '/_auth/import'
-    | '/_auth/pricing'
-    | '/_auth/lists/$listId'
-    | '/_auth/search/$searchId'
-    | '/_auth/integrations/'
-    | '/_auth/search/'
-    | '/_auth/integrations/hubspot/callback'
-    | '/_auth/integrations/hubspot/'
-  fileRoutesById: FileRoutesById
-}
-
-export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRouteWithChildren
-}
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/",
-        "/_auth"
-      ]
-    },
-    "/": {
-      "filePath": "index.tsx"
-    },
-    "/_auth": {
-      "filePath": "_auth.tsx",
-      "children": [
-        "/_auth/checkout",
-        "/_auth/import",
-        "/_auth/pricing",
-        "/_auth/lists/$listId",
-        "/_auth/search/$searchId",
-        "/_auth/integrations/",
-        "/_auth/search/",
-        "/_auth/integrations/hubspot/callback",
-        "/_auth/integrations/hubspot/"
-      ]
-    },
-    "/_auth/checkout": {
-      "filePath": "_auth/checkout.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/import": {
-      "filePath": "_auth/import.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/pricing": {
-      "filePath": "_auth/pricing.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/lists/$listId": {
-      "filePath": "_auth/lists/$listId.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/search/$searchId": {
-      "filePath": "_auth/search/$searchId.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/integrations/": {
-      "filePath": "_auth/integrations/index.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/search/": {
-      "filePath": "_auth/search/index.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/integrations/hubspot/callback": {
-      "filePath": "_auth/integrations/hubspot/callback.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/integrations/hubspot/": {
-      "filePath": "_auth/integrations/hubspot/index.tsx",
-      "parent": "/_auth"
-    }
-  }
-}
-ROUTE_MANIFEST_END */

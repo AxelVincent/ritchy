@@ -1,4 +1,7 @@
-import { useMapStore } from '@/components/map-display/store/useMapStore'
+import {
+  type PlaceTabValue,
+  useMapStore,
+} from '@/components/map-display/store/useMapStore'
 import { StatusDropdown } from '@/components/status/status-dropdown'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -10,7 +13,6 @@ import { PlaceCompanyDetailsTab } from './tabs/PlaceCompanyDetailsTab'
 import { PlaceContactTab } from './tabs/PlaceContactTab'
 import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
-import { PlaceReviewsTab } from './tabs/PlaceReviewsTab'
 
 interface SelectedPlaceCardProps {
   places: Place[] | null
@@ -42,7 +44,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
   }
 
   // Use activeTab from store, fallback to 'details' if not set
-  const currentTab = activeTab || 'details'
+  const currentTab: PlaceTabValue = activeTab || 'details'
 
   return (
     <div className="flex flex-col h-full min-h-[200px]">
@@ -103,7 +105,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
       <div className="p-0 flex-1 flex flex-col overflow-hidden">
         <Tabs
           value={currentTab}
-          onValueChange={setActiveTab}
+          onValueChange={(value) => setActiveTab(value as PlaceTabValue)}
           className="flex flex-col h-full"
         >
           <TabsList
@@ -138,13 +140,6 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
             >
               Notes
             </TabsTrigger>
-            <TabsTrigger
-              value="reviews"
-              aria-label="Reviews"
-              className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
-            >
-              Top Reviews
-            </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-hidden flex flex-col">
@@ -174,13 +169,6 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
               className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
             >
               <PlaceNotesTab place={currentPlace} />
-            </TabsContent>
-
-            <TabsContent
-              value="reviews"
-              className="mt-0 px-4 h-full flex-1 overflow-auto data-[state=active]:flex data-[state=active]:flex-col"
-            >
-              <PlaceReviewsTab place={currentPlace} />
             </TabsContent>
           </div>
         </Tabs>

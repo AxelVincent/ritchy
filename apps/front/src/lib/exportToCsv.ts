@@ -11,7 +11,7 @@ interface ExportOptions<T> {
   schema: z.ZodSchema
 }
 
-export function validateAndExportToCsv<T>({
+export function validateAndExportToCsv({
   data,
   filename = 'export.csv',
   columns,
@@ -27,14 +27,14 @@ export function validateAndExportToCsv<T>({
       contactInstagrams: item.contactInstagrams ?? [],
       hubspotSynced: item.hubspotSynced ?? false,
     }),
-  )
+  ) as SearchResult[]
 
   // If no columns provided, use default object keys
   const effectiveColumns =
     columns ||
-    Object.keys(validatedData[0]).map((key) => ({
+    Object.keys(validatedData[0] as Record<string, unknown>).map((key) => ({
       header: key,
-      accessor: (row: T) => row[key as keyof T],
+      accessor: (row: SearchResult) => row[key as keyof SearchResult],
     }))
 
   // Generate CSV content

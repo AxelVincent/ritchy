@@ -2,7 +2,7 @@ import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow } from 'date-fns'
 import React from 'react'
-import { SimpleCell } from './utils/ColumnCells'
+import { ClickableCell } from './utils/ClickableCell'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const formatCreationDate = (date: Date | string): string => {
@@ -23,14 +23,12 @@ const DateOfCreationCell = React.memo(function DateOfCreationCell({
   const formattedDate = formatCreationDate(dateObj)
 
   return (
-    <SimpleCell>
-      <div className="flex items-center gap-1.5 text-sm w-full">
-        <span className="truncate">{formattedDate}</span>
-        <span className="truncate text-[11px] text-muted-foreground/75 whitespace-nowrap">
-          {formatDistanceToNow(dateObj, { addSuffix: true })}
-        </span>
-      </div>
-    </SimpleCell>
+    <div className="flex items-center gap-1.5 text-sm w-full">
+      <span className="truncate">{formattedDate}</span>
+      <span className="truncate text-[11px] text-muted-foreground/75 whitespace-nowrap">
+        {formatDistanceToNow(dateObj, { addSuffix: true })}
+      </span>
+    </div>
   )
 })
 
@@ -67,9 +65,15 @@ export const dateOfCreationColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => (
     <HeaderWrapper column={column} title="Company Creation Date" />
   ),
-  cell: ({ getValue }) => {
+  cell: ({ getValue, row }) => {
     const dateValue = getValue()
-    if (!dateValue) return null
-    return <DateOfCreationCell date={dateValue as Date | string} />
+
+    return (
+      <ClickableCell placeId={row.original.id} tab="company_details">
+        {dateValue ? (
+          <DateOfCreationCell date={dateValue as Date | string} />
+        ) : null}
+      </ClickableCell>
+    )
   },
 }

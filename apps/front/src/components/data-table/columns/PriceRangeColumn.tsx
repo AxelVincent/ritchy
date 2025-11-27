@@ -1,6 +1,6 @@
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
-import { SimpleCell } from './utils/ColumnCells'
+import { ClickableCell } from './utils/ClickableCell'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
 const noPriceRange = 'No price range'
@@ -29,10 +29,11 @@ export const priceRangeColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => <HeaderWrapper column={column} title="Price Range" />,
   cell: ({ row }) => {
     const formattedPrice = formatPriceRange(row.original.priceRange)
+
     return (
-      <SimpleCell>
+      <ClickableCell placeId={row.original.id} tab="details">
         {formattedPrice === noPriceRange ? null : formattedPrice}
-      </SimpleCell>
+      </ClickableCell>
     )
   },
 }

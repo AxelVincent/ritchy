@@ -1,6 +1,6 @@
-import { useMapStore } from '@/components/map-display/store/useMapStore'
 import type { CompanyOfficer, SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ClickableCell } from './utils/ClickableCell'
 import { CopyButton } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
@@ -36,23 +36,12 @@ export const officersColumn: ColumnDef<SearchResult> = {
   header: ({ column }) => <HeaderWrapper column={column} title="Officers" />,
   cell: ({ row }) => {
     const officers = row.original.companyOfficers || []
-    const { selectPlaceAndTab } = useMapStore()
-
-    const handleCellClick = () => {
-      selectPlaceAndTab(row.original.id, 'contacts')
-    }
 
     if (!officers.length) {
       return (
-        <div
-          className="w-full h-full flex items-center px-2 cursor-pointer"
-          onClick={handleCellClick}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              handleCellClick()
-            }
-          }}
-        />
+        <ClickableCell placeId={row.original.id} tab="contacts">
+          {null}
+        </ClickableCell>
       )
     }
 
@@ -60,14 +49,10 @@ export const officersColumn: ColumnDef<SearchResult> = {
     const firstOfficerName = formatOfficerName(firstOfficer)
 
     return (
-      <div
-        className="group/cell relative w-full h-full flex items-center px-2 gap-2 cursor-pointer"
-        onClick={handleCellClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleCellClick()
-          }
-        }}
+      <ClickableCell
+        placeId={row.original.id}
+        tab="contacts"
+        className="group/cell relative gap-2"
       >
         <div className="flex-1 min-w-0 flex items-center gap-2">
           <span className="truncate" title={firstOfficerName}>
@@ -80,7 +65,7 @@ export const officersColumn: ColumnDef<SearchResult> = {
           )}
         </div>
         <CopyButton valueToCopy={firstOfficerName} ariaLabel="Copy officer" />
-      </div>
+      </ClickableCell>
     )
   },
 }
