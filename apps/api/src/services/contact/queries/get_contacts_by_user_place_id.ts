@@ -6,6 +6,7 @@ import {
   contactPhone,
   contactSocialMedia,
   enrichmentCompanyOfficer,
+  enrichmentCompanyOfficerLinkedin,
 } from '../../../db/schema'
 
 export const getContactsByUserPlaceId = async (userPlaceId: string) => {
@@ -26,7 +27,7 @@ export const getContactsByUserPlaceId = async (userPlaceId: string) => {
   // Get all related data for each contact
   const contactsWithRelations = await Promise.all(
     contacts.map(async (contactRecord) => {
-      const [emails, phones, socials] = await Promise.all([
+      const [emails, phones, socials, linkedin] = await Promise.all([
         db
           .select()
           .from(contactEmail)
@@ -41,6 +42,19 @@ export const getContactsByUserPlaceId = async (userPlaceId: string) => {
           .select()
           .from(contactSocialMedia)
           .where(eq(contactSocialMedia.contactId, contactRecord.contact.id)),
+
+        contactRecord.contact.officerId
+          ? db
+              .select()
+              .from(enrichmentCompanyOfficerLinkedin)
+              .where(
+                eq(
+                  enrichmentCompanyOfficerLinkedin.officer_id,
+                  contactRecord.contact.officerId,
+                ),
+              )
+              .limit(1)
+          : Promise.resolve([]),
       ])
 
       return {
@@ -48,6 +62,7 @@ export const getContactsByUserPlaceId = async (userPlaceId: string) => {
         emails,
         phones,
         socials,
+        linkedin: linkedin[0] ?? null,
       }
     }),
   )

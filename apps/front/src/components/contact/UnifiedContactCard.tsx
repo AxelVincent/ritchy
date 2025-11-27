@@ -21,13 +21,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import { faLinkedin } from '@fortawesome/free-brands-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import type { Email, Phone, PhoneTypeEnum, SocialMedia } from '@ritchy/types'
 import {
   Building2,
   ChevronDown,
-  ChevronUp,
   Mail,
+  MoreVertical,
   Phone as PhoneIcon,
   ShieldCheck,
   Star,
@@ -36,7 +45,6 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { SocialMediaList } from '../data-table/columns/utils/SocialMediaList'
-import { ContactActions } from './ContactActions'
 import { EmailDisplay } from './EmailDisplay'
 import { OfficerDetails } from './OfficerDetails'
 import {
@@ -71,6 +79,7 @@ interface UnifiedContactCardProps {
     city?: string | null
     country?: string | null
     country_code?: string | null
+    linkedinUrl?: string | null
     emails: Email[]
     phones: Phone[]
     socials: SocialMedia[]
@@ -173,25 +182,26 @@ export const UnifiedContactCard = ({
     contact.emails.find((e) => e.isPrimary) || contact.emails[0]
   const primaryPhone =
     contact.phones.find((p) => p.isPrimary) || contact.phones[0]
+  const hasLinkedIn = !!contact.linkedinUrl
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggle}>
       <Card
         className={
           isPrimary
-            ? 'border-2 border-primary/50  shadow-sm hover:shadow-md transition-shadow'
-            : 'border-2 shadow-sm hover:shadow-md transition-shadow'
+            ? 'border-l-4 border-l-primary border-t border-r border-b shadow-sm hover:shadow-lg transition-all duration-200 bg-primary/5'
+            : 'border shadow-sm hover:shadow-lg transition-all duration-200 hover:border-border/80'
         }
         aria-label={`Contact card for ${displayName}`}
       >
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 min-w-0">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               {getContactIcon(contact.type)}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <CardTitle
-                    className="text-base sm:text-lg truncate"
+                    className="text-base sm:text-lg font-semibold tracking-tight truncate"
                     id={`contact-name-${contact.id}`}
                   >
                     {displayName}
@@ -199,7 +209,7 @@ export const UnifiedContactCard = ({
                   {contact.role && (
                     <Badge
                       variant="secondary"
-                      className="flex-shrink-0 text-xs"
+                      className="flex-shrink-0 text-xs font-normal"
                       aria-label={`Role: ${contact.role}`}
                     >
                       {contact.role}
@@ -209,44 +219,61 @@ export const UnifiedContactCard = ({
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-end">
-              <ContactActions
-                onAddEmail={handleAddEmailClick}
-                onAddPhone={handleAddPhoneClick}
-              />
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-2">
                 {isPrimary && (
                   <div className="flex items-center pl-2 pr-2">
                     <Star className="h-4 w-4 fill-current" aria-hidden="true" />
                   </div>
                 )}
-                {!isPrimary && onSetPrimaryContact && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleSetPrimaryContact}
-                    disabled={isSettingPrimary}
-                    aria-label={`Set ${displayName} as primary contact`}
-                    title="Set as Primary Contact"
-                  >
-                    <Star className="h-4 w-4" aria-hidden="true" />
-                    <span className="sr-only">Set as Primary Contact</span>
-                  </Button>
-                )}
-                {!isPrimary && onDeleteContact && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setShowDeleteDialog(true)}
-                    disabled={isDeleting}
-                    aria-label={`Delete ${displayName}`}
-                    title="Delete Contact"
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    <span className="sr-only">Delete Contact</span>
-                  </Button>
-                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label="Contact actions"
+                      title="More actions"
+                    >
+                      <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                      <span className="sr-only">More actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleAddEmailClick}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Add Email
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleAddPhoneClick}>
+                      <PhoneIcon className="h-4 w-4 mr-2" />
+                      Add Phone
+                    </DropdownMenuItem>
+                    {!isPrimary && (onSetPrimaryContact || onDeleteContact) && (
+                      <DropdownMenuSeparator />
+                    )}
+                    {!isPrimary && onSetPrimaryContact && (
+                      <DropdownMenuItem
+                        onClick={handleSetPrimaryContact}
+                        disabled={isSettingPrimary}
+                      >
+                        <Star className="h-4 w-4 mr-2" />
+                        Set as Primary
+                      </DropdownMenuItem>
+                    )}
+                    {!isPrimary && onDeleteContact && (
+                      <>
+                        {onSetPrimaryContact && <DropdownMenuSeparator />}
+                        <DropdownMenuItem
+                          onClick={() => setShowDeleteDialog(true)}
+                          disabled={isDeleting}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Contact
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"
@@ -260,11 +287,10 @@ export const UnifiedContactCard = ({
                         : 'Expand contact details'
                     }
                   >
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                    )}
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    />
                     <span className="sr-only">
                       {isExpanded ? 'Collapse' : 'Expand'} contact details
                     </span>
@@ -274,21 +300,46 @@ export const UnifiedContactCard = ({
             </div>
           </div>
           <CardDescription
-            className="truncate"
-            aria-label={`Contact has ${contact.emails.length} emails, ${contact.phones.length} phone numbers, and ${contact.socials.length} social media accounts`}
+            className="flex items-center gap-2 text-sm flex-wrap"
+            aria-label={`Contact has ${contact.emails.length} emails, ${contact.phones.length} phone numbers, and ${contact.socials.length + (hasLinkedIn ? 1 : 0)} social media accounts`}
           >
-            {contact.emails.length} email(s), {contact.phones.length} phone(s),{' '}
-            {contact.socials.length} social(s)
+            {contact.emails.length > 0 && (
+              <span>
+                {contact.emails.length} email
+                {contact.emails.length !== 1 ? 's' : ''}
+              </span>
+            )}
+            {contact.emails.length > 0 && contact.phones.length > 0 && (
+              <span className="text-muted-foreground/50">•</span>
+            )}
+            {contact.phones.length > 0 && (
+              <span>
+                {contact.phones.length} phone
+                {contact.phones.length !== 1 ? 's' : ''}
+              </span>
+            )}
+            {(contact.emails.length > 0 || contact.phones.length > 0) &&
+              (contact.socials.length > 0 || hasLinkedIn) && (
+                <span className="text-muted-foreground/50">•</span>
+              )}
+            {(contact.socials.length > 0 || hasLinkedIn) && (
+              <span>
+                {contact.socials.length + (hasLinkedIn ? 1 : 0)} social
+                {contact.socials.length + (hasLinkedIn ? 1 : 0) !== 1
+                  ? 's'
+                  : ''}
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
 
-        {/* Collapsed View: Show primary email & phone for quick access */}
-        {!isExpanded && (primaryEmail || primaryPhone) && (
-          <CardContent className="pt-0 pb-3">
+        {/* Collapsed View: Show primary email, phone & LinkedIn for quick access */}
+        {!isExpanded && (primaryEmail || primaryPhone || hasLinkedIn) && (
+          <CardContent className="pt-0 pb-4">
             <div className="@container">
-              <div className="flex flex-col @xl:flex-row @md:justify-between gap-3">
+              <div className="flex flex-col gap-2">
                 {primaryEmail && (
-                  <div className="flex items-center gap-2 w-full @md:max-w-md min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 w-full min-w-0 overflow-hidden">
                     <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className="min-w-40 flex-1 overflow-hidden">
                       <CopyCell
@@ -308,7 +359,7 @@ export const UnifiedContactCard = ({
                 )}
 
                 {primaryPhone && (
-                  <div className="flex items-center gap-2 w-full @md:max-w-md min-w-0 overflow-hidden">
+                  <div className="flex items-center gap-2 w-full min-w-0 overflow-hidden">
                     <PhoneIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className="min-w-40 flex-1 overflow-hidden">
                       <CopyCell
@@ -326,14 +377,40 @@ export const UnifiedContactCard = ({
                     )}
                   </div>
                 )}
+
+                {hasLinkedIn && contact.linkedinUrl && (
+                  <div className="flex items-center gap-2 w-full min-w-0 overflow-hidden">
+                    <FontAwesomeIcon
+                      icon={faLinkedin}
+                      className="h-4 w-4 text-blue-600 flex-shrink-0"
+                    />
+                    <span className="min-w-40 flex-1 overflow-hidden">
+                      <CopyCell
+                        content={(() => {
+                          try {
+                            const url = new URL(contact.linkedinUrl)
+                            const path = url.pathname.replace(/^\/+|\/+$/g, '')
+                            return path || contact.linkedinUrl
+                          } catch {
+                            return contact.linkedinUrl
+                          }
+                        })()}
+                        href={contact.linkedinUrl}
+                      />
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
         )}
 
-        <CollapsibleContent id={`contact-details-${contact.id}`}>
+        <CollapsibleContent
+          id={`contact-details-${contact.id}`}
+          className="transition-all duration-200"
+        >
           <CardContent
-            className="space-y-6 pt-0"
+            className="space-y-4 pt-0"
             aria-labelledby={`contact-name-${contact.id}`}
           >
             <EmailDisplay
@@ -353,6 +430,39 @@ export const UnifiedContactCard = ({
               showAddForm={showPhoneForm}
               onShowAddFormChange={setShowPhoneForm}
             />
+
+            {/* LinkedIn URL */}
+            {contact.linkedinUrl && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={faLinkedin}
+                    className="h-5 w-5 text-blue-600"
+                  />
+                  <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                    LinkedIn Profile
+                  </h3>
+                </div>
+                <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 hover:bg-blue-50 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <CopyCell
+                        content={(() => {
+                          try {
+                            const url = new URL(contact.linkedinUrl)
+                            const path = url.pathname.replace(/^\/+|\/+$/g, '')
+                            return path || contact.linkedinUrl
+                          } catch {
+                            return contact.linkedinUrl
+                          }
+                        })()}
+                        href={contact.linkedinUrl}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Socials */}
             {contact.socials.length > 0 && (
