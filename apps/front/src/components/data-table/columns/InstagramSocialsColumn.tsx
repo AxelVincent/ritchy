@@ -27,7 +27,6 @@ export const instagramSocialsColumn: ColumnDef<SearchResult> = {
       <ClickableCell placeId={row.original.id} tab="contacts" className="p-0">
         <SimpleArrayCell
           items={instagramUrls}
-          itemLabel="more"
           href={(url) => url}
           formatDisplay={getCleanUrlDisplay}
         />

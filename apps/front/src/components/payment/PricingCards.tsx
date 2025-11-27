@@ -352,12 +352,7 @@ export const PricingCards = ({
                   {/* Show savings badge for quarterly/yearly */}
                   {savingsPercentage && savingsPercentage > 0 && (
                     <div className="mb-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                      >
-                        Save {savingsPercentage}%
-                      </Badge>
+                      <Badge variant="emerald">Save {savingsPercentage}%</Badge>
                     </div>
                   )}
 

@@ -42,9 +42,7 @@ export const DynamicBadgeList = ({
               onKeyDown={(e) => e.stopPropagation()}
               onKeyUp={(e) => e.stopPropagation()}
             >
-              <Badge className="border-0 bg-primary/10 text-primary font-medium px-2.5 py-0.5">
-                +{remainingCount}
-              </Badge>
+              <Badge variant="secondary">+{remainingCount}</Badge>
             </div>
           </PopoverTrigger>
           <PopoverContent>

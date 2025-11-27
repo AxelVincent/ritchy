@@ -378,9 +378,7 @@ export const CsvPreview = ({
                     )}
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="font-mono">
-                  {headers.length} columns
-                </Badge>
+                <Badge variant="outline">{headers.length} columns</Badge>
               </div>
             </CardHeader>
             <CardContent>

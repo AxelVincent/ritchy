@@ -39,7 +39,6 @@ export const emailsColumn: ColumnDef<SearchResult> = {
       <ClickableCell placeId={row.original.id} tab="contacts" className="p-0">
         <SimpleArrayCell
           items={emails}
-          itemLabel="more"
           href={(email) => `mailto:${email}`}
           getBadge={getBadge}
         />

@@ -26,7 +26,6 @@ export const linkedinSocialsColumn: ColumnDef<SearchResult> = {
       <ClickableCell placeId={row.original.id} tab="contacts" className="p-0">
         <SimpleArrayCell
           items={linkedinUrls}
-          itemLabel="more"
           href={(url) => url}
           formatDisplay={getCleanUrlDisplay}
         />
