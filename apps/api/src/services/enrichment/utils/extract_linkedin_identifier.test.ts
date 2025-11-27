@@ -95,6 +95,31 @@ describe('extractLinkedInIdentifier', () => {
         expect(result.identifier).toBe(longIdentifier)
       }
     })
+
+    it('should extract identifier from country-specific subdomain', () => {
+      const result = extractLinkedInIdentifier(
+        'https://fr.linkedin.com/in/alix-di-meglio/',
+      )
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.identifier).toBe('alix-di-meglio')
+        expect(result.originalUrl).toBe(
+          'https://fr.linkedin.com/in/alix-di-meglio/',
+        )
+      }
+    })
+
+    it('should extract identifier from UK subdomain', () => {
+      const result = extractLinkedInIdentifier(
+        'https://uk.linkedin.com/in/john-doe/',
+      )
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.identifier).toBe('john-doe')
+      }
+    })
   })
 
   describe('invalid URL format', () => {
