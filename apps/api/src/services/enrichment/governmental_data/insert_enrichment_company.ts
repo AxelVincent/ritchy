@@ -29,7 +29,6 @@ import { enrichCompanyOfficers } from './enrich_company_officers'
  * @param companyData - Company data from Pappers API
  * @param bestMatch - Match confidence and reasoning from search
  * @param context - Optional enrichment context for status tracking
- * @param tx - Optional database transaction
  */
 export const insertEnrichmentCompany = async (
   enrichmentId: string,

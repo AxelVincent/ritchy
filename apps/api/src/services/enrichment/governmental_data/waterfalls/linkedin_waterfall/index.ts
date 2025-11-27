@@ -6,18 +6,19 @@ import type {
 import type { EnrichmentContext } from '../../../status_builder'
 import type { OfficerRecord } from '../../../utils/validate_officer'
 import { runLinkedInWaterfall } from './run_linkedin_waterfall'
-import { runLinkedInWaterfallWithData } from './run_linkedin_waterfall_with_data'
 
 export interface LinkedInWaterfallContext extends Partial<EnrichmentContext> {
-  readonly officerId: string
-}
-
-export interface LinkedInWaterfallWithDataContext
-  extends Partial<EnrichmentContext> {
   readonly officerId: string
   readonly officer: OfficerRecord
   readonly company: CompanyContextData & { activities: ActivityData[] }
   readonly place: PlaceContextData
+}
+
+export interface LinkedInResult {
+  readonly profileUrl: string
+  readonly confidence: number
+  readonly reasoning: string
+  readonly source?: string
 }
 
 export interface LinkedInWaterfallResult {
@@ -27,4 +28,4 @@ export interface LinkedInWaterfallResult {
   readonly source?: string
 }
 
-export { runLinkedInWaterfall, runLinkedInWaterfallWithData }
+export { runLinkedInWaterfall }

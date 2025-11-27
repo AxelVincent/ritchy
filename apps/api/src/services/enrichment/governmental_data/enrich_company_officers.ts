@@ -5,7 +5,7 @@ import { getOfficersEnrichmentContext } from '../queries/get_officers_enrichment
 import { type EnrichmentContext, createStatusManager } from '../status_builder'
 import {
   runEmailWaterfallWithData,
-  runLinkedInWaterfallWithData,
+  runLinkedInWaterfall,
   runPhoneWaterfall,
 } from './waterfalls'
 
@@ -65,23 +65,20 @@ export const enrichCompanyOfficers = async (
       }
 
       // Run LinkedIn Waterfall (Priority 1) with pre-fetched data
-      await runLinkedInWaterfallWithData(
-        {
-          officerId: officer.id,
-          officer: officer,
-          company: {
-            ...officersContext.company,
-            activities: officersContext.activities,
-          },
-          place: officersContext.place,
-          ...(context && {
-            userPlaceId: context.userPlaceId,
-            trackStatus: context.trackStatus,
-            tx: context.tx,
-          }),
+      await runLinkedInWaterfall({
+        officerId: officer.id,
+        officer: officer,
+        company: {
+          ...officersContext.company,
+          activities: officersContext.activities,
         },
-        tx,
-      )
+        place: officersContext.place,
+        ...(context && {
+          userPlaceId: context.userPlaceId,
+          trackStatus: context.trackStatus,
+          tx: context.tx,
+        }),
+      })
 
       // Update status for email enrichment
       if (statusManager) {
