@@ -201,9 +201,7 @@ const FinancialsTable = ({ financials }: { financials: Financial }) => {
             Financial Data
           </CardTitle>
           {primaryCurrency && (
-            <Badge variant="outline" className="text-xs">
-              {primaryCurrency}
-            </Badge>
+            <Badge variant="outline">{primaryCurrency}</Badge>
           )}
         </div>
       </CardHeader>
@@ -221,9 +219,7 @@ const FinancialsTable = ({ financials }: { financials: Financial }) => {
                     {financial.type || `Period ${index + 1}`}
                   </p>
                   {financial.currency && (
-                    <Badge variant="secondary" className="text-xs">
-                      {financial.currency}
-                    </Badge>
+                    <Badge variant="secondary">{financial.currency}</Badge>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -239,7 +235,7 @@ const FinancialsTable = ({ financials }: { financials: Financial }) => {
                   </p>
                 )}
                 {financial.availability && (
-                  <Badge variant="outline" className="text-xs mt-1">
+                  <Badge variant="outline" className="mt-1">
                     {financial.availability}
                   </Badge>
                 )}
@@ -848,12 +844,12 @@ const UBOSection = ({
                       {ubo.firstName} {ubo.lastName}
                     </span>
                     {ubo.percentageOfShares && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary">
                         {ubo.percentageOfShares}% shares
                       </Badge>
                     )}
                     {ubo.votingPercentage && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline">
                         {ubo.votingPercentage}% voting
                       </Badge>
                     )}
@@ -985,9 +981,7 @@ const EstablishmentsSection = ({
                     <div className="flex items-start gap-2 mb-1">
                       <p className="text-sm font-semibold">{displayName}</p>
                       {est.acronym && (
-                        <Badge variant="outline" className="text-xs">
-                          {est.acronym}
-                        </Badge>
+                        <Badge variant="outline">{est.acronym}</Badge>
                       )}
                       <Badge
                         variant={

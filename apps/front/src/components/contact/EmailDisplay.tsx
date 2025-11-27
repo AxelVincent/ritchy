@@ -481,7 +481,7 @@ export const EmailDisplay = ({
                             <span className="text-xs text-muted-foreground">
                               Role-based:
                             </span>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline">
                               {email.role ? 'Yes' : 'No'}
                             </Badge>
                           </div>
@@ -489,7 +489,7 @@ export const EmailDisplay = ({
                             <span className="text-xs text-muted-foreground">
                               Free provider:
                             </span>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline">
                               {email.free ? 'Yes' : 'No'}
                             </Badge>
                           </div>

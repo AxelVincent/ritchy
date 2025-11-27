@@ -23,19 +23,15 @@ const CustomBadge = ({
   text,
   color,
 }: { text: string; color: NonNullable<BadgeConfig>['color'] }) => {
-  const styles = {
-    green: 'border-green-600 text-green-600',
-    yellow: 'border-orange-400 text-orange-400',
-    red: 'border-red-600 text-red-600',
-    blue: 'border-blue-600 text-blue-600',
-    gray: 'border-gray-500 text-gray-600',
+  const variant = {
+    green: 'emerald' as const,
+    yellow: 'amber' as const,
+    red: 'rose' as const,
+    blue: 'sky' as const,
+    gray: 'slate' as const,
   }[color]
 
-  return (
-    <Badge variant="outline" className={` ${styles}`}>
-      {text}
-    </Badge>
-  )
+  return <Badge variant={variant}>{text}</Badge>
 }
 
 // Reusable copy button component for all cells
@@ -60,7 +56,7 @@ export const CopyButton = React.memo(function CopyButton({
   )
 
   return (
-    <div className="opacity-0 group-hover/cell:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2 bg-background rounded-md p-0.5 border border-border">
+    <div className="opacity-0 group-hover/cell:opacity-100 transition-all duration-200 ease-out absolute right-2 top-1/2 -translate-y-1/2 bg-background rounded-md p-0.5 border border-border">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -94,20 +90,18 @@ export const SimpleCell = React.memo(function SimpleCell({
 
 export const SimpleArrayCell = React.memo(function SimpleArrayCell({
   items,
-  itemLabel,
   href,
   formatDisplay,
   getBadge,
 }: {
   items: string[]
-  itemLabel?: string
   href?: (item: string) => string
   formatDisplay?: (item: string) => string
-  getBadge?: (item: string) => BadgeConfig
+  getBadge?: (item: string) => BadgeConfig | React.ReactNode
 }) {
   const firstItem = items[0]
   const displayText = formatDisplay ? formatDisplay(firstItem) : firstItem
-  const badge = getBadge?.(firstItem)
+  const badgeResult = getBadge?.(firstItem)
 
   if (!items.length) {
     return null
@@ -130,14 +124,30 @@ export const SimpleArrayCell = React.memo(function SimpleArrayCell({
     </span>
   )
 
+  // Check if badgeResult is a BadgeConfig object or a React node
+  const isBadgeConfig = (badge: unknown): badge is NonNullable<BadgeConfig> => {
+    return (
+      badge !== null &&
+      typeof badge === 'object' &&
+      'text' in badge &&
+      'color' in badge
+    )
+  }
+
+  const badgeElement = badgeResult ? (
+    isBadgeConfig(badgeResult) ? (
+      <CustomBadge text={badgeResult.text} color={badgeResult.color} />
+    ) : (
+      badgeResult
+    )
+  ) : null
+
   return (
     <div className="group/cell relative w-full h-full flex items-center px-2 gap-2">
       <div className="flex-1 min-w-0 overflow-hidden">{content}</div>
-      {badge && <CustomBadge text={badge.text} color={badge.color} />}
+      {badgeElement}
       {items.length > 1 && (
-        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-          +{items.length - 1} {itemLabel || 'more'}
-        </span>
+        <Badge variant="secondary">+{items.length - 1}</Badge>
       )}
       <CopyButton valueToCopy={firstItem} ariaLabel="Copy first item" />
     </div>
@@ -161,7 +171,7 @@ export const SimpleNotesCell = React.memo(function SimpleNotesCell({
         <span className="truncate flex-1" title={latestNote?.note}>
           {latestNote?.note}
         </span>
-        <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
+        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 font-medium">
           {notes.length} {notes.length === 1 ? 'note' : 'notes'}
         </span>
         {latestNote?.createdAt && (

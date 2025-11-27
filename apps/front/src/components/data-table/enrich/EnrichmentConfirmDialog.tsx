@@ -87,9 +87,7 @@ export const EnrichmentConfirmDialog = ({
         header: 'Type',
         size: 100,
         cell: ({ getValue }) => (
-          <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4">
-            {getValue() as string}
-          </Badge>
+          <Badge variant="outline">{getValue() as string}</Badge>
         ),
       },
       {

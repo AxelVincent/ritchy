@@ -33,9 +33,7 @@ export const EnrichmentStatusCell = ({
       return (
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-          <Badge variant="secondary" className="text-xs py-0 h-5">
-            Queued
-          </Badge>
+          <Badge variant="secondary">Queued</Badge>
         </div>
       )
 
@@ -65,12 +63,7 @@ export const EnrichmentStatusCell = ({
       return (
         <div className="flex items-center gap-1.5">
           <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-          <Badge
-            variant="outline"
-            className="text-xs py-0 h-5 text-green-700 border-green-300"
-          >
-            Completed
-          </Badge>
+          <Badge variant="emerald">Completed</Badge>
         </div>
       )
 
@@ -79,9 +72,7 @@ export const EnrichmentStatusCell = ({
         <div className="flex flex-col gap-0.5 w-full max-w-[180px]">
           <div className="flex items-center gap-1.5">
             <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-            <Badge variant="destructive" className="text-xs py-0 h-5">
-              Failed
-            </Badge>
+            <Badge variant="destructive">Failed</Badge>
           </div>
           {status.error && (
             <span

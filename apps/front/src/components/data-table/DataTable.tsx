@@ -45,7 +45,7 @@ interface DataTableProps<TData, TValue> {
 }
 
 // Add a fixed height for table rows
-const ROW_HEIGHT = '34px'
+const ROW_HEIGHT = '40px'
 
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
@@ -294,7 +294,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
       </div>
       <div
         ref={tableContainerRef}
-        className="border-t border-b border-border p-0"
+        className="border-t border-b border-border/60 p-0"
         style={{
           overflow: 'auto',
           position: 'relative',
@@ -309,7 +309,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
               top: 0,
               zIndex: 1,
             }}
-            className="bg-background border-b"
+            className="bg-gradient-to-b from-background/95 to-background border-b border-border/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] backdrop-blur-sm"
           >
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
@@ -326,7 +326,12 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       left: header.index === 0 ? 0 : undefined,
                       zIndex: header.index === 0 ? 2 : 1,
                     }}
-                    className={cn('border-r border-border bg-background')}
+                    className={cn(
+                      'border-r border-border/60',
+                      header.index === 0
+                        ? 'bg-gradient-to-b from-background/95 to-background backdrop-blur-sm'
+                        : 'bg-transparent',
+                    )}
                   >
                     <div
                       {...{
@@ -346,7 +351,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                       onTouchStart={header.getResizeHandler()}
                       className={cn(
                         'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none',
-                        'hover:bg-primary',
+                        'hover:bg-primary transition-colors duration-150',
                         header.column.getIsResizing() ? 'bg-primary' : '',
                       )}
                     />
@@ -378,7 +383,7 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     width: '100%',
                     height: ROW_HEIGHT,
                   }}
-                  className="border-b border-border group/row hover:bg-accent/50"
+                  className="border-b border-border/60 group/row hover:bg-accent/50 transition-colors duration-150"
                 >
                   {visibleCells.map((cell) => {
                     const isEnrichmentCell =
@@ -387,12 +392,20 @@ export const DataTable = <TData extends SearchResult, TValue>({
                     return (
                       <td
                         key={cell.id}
-                        className={cn('border-r border-border relative', {
-                          'bg-background':
-                            cell.column.id === visibleCells[0].column.id,
-                          'bg-primary-foreground':
-                            selectedPlaceId === row.original.id,
-                        })}
+                        className={cn(
+                          'border-r border-border/60 relative transition-colors duration-150 group-hover/row:[&.sticky-cell]:bg-[color-mix(in_srgb,hsl(var(--accent))_50%,hsl(var(--background)))]',
+                          {
+                            'bg-background sticky-cell':
+                              cell.column.id === visibleCells[0].column.id &&
+                              selectedPlaceId !== row.original.id,
+                            'border-l-2 border-l-primary':
+                              cell.column.id === visibleCells[0].column.id &&
+                              selectedPlaceId === row.original.id,
+                            'bg-primary/5':
+                              cell.column.id !== visibleCells[0].column.id &&
+                              selectedPlaceId === row.original.id,
+                          },
+                        )}
                         style={{
                           display: 'flex',
                           width: cell.column.getSize(),
@@ -406,9 +419,16 @@ export const DataTable = <TData extends SearchResult, TValue>({
                               : undefined,
                           zIndex:
                             cell.column.id === visibleCells[0].column.id
-                              ? 1
+                              ? selectedPlaceId === row.original.id
+                                ? 2
+                                : 1
                               : 0,
                           alignItems: 'center',
+                          backgroundColor:
+                            cell.column.id === visibleCells[0].column.id &&
+                            selectedPlaceId === row.original.id
+                              ? 'color-mix(in srgb, hsl(var(--primary)) 5%, hsl(var(--background)))'
+                              : undefined,
                         }}
                       >
                         {isEnrichmentCell ? (

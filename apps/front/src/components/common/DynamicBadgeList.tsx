@@ -23,7 +23,7 @@ export const DynamicBadgeList = ({
   const remainingCount = items.length - 1
 
   return (
-    <div className={`flex gap-2 items-center ${containerClassName}`}>
+    <div className={`flex gap-1.5 items-center ${containerClassName}`}>
       {items.length > 0 && (
         <Badge
           variant={badgeVariant}
@@ -37,12 +37,12 @@ export const DynamicBadgeList = ({
         <Popover>
           <PopoverTrigger asChild>
             <div
-              className="cursor-pointer"
+              className="cursor-pointer flex items-center"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               onKeyUp={(e) => e.stopPropagation()}
             >
-              <Badge variant="outline">+{remainingCount}</Badge>
+              <Badge variant="secondary">+{remainingCount}</Badge>
             </div>
           </PopoverTrigger>
           <PopoverContent>

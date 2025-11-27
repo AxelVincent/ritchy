@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import type { CompanyOfficer, SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClickableCell } from './utils/ClickableCell'
@@ -59,9 +60,7 @@ export const officersColumn: ColumnDef<SearchResult> = {
             {firstOfficerName}
           </span>
           {officers.length > 1 && (
-            <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-              +{officers.length - 1}
-            </span>
+            <Badge variant="secondary">+{officers.length - 1}</Badge>
           )}
         </div>
         <CopyButton valueToCopy={firstOfficerName} ariaLabel="Copy officer" />

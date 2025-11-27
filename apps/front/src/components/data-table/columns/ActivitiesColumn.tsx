@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClickableCell } from './utils/ClickableCell'
@@ -46,9 +47,7 @@ export const activitiesColumn: ColumnDef<SearchResult> = {
             {firstActivityName}
           </span>
           {activities.length > 1 && (
-            <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-              +{activities.length - 1}
-            </span>
+            <Badge variant="secondary">+{activities.length - 1}</Badge>
           )}
         </div>
         <CopyButton valueToCopy={firstActivityName} ariaLabel="Copy activity" />
