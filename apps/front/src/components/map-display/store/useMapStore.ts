@@ -6,7 +6,6 @@ export const PLACE_TABS = [
   'company_details',
   'contacts',
   'notes',
-  'reviews',
 ] as const
 export type PlaceTabValue = (typeof PLACE_TABS)[number]
 

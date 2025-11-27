@@ -20,7 +20,7 @@ export const ratingColumn: ColumnDef<SearchResult> = {
     const rating = row.original.rating
 
     return (
-      <ClickableCell placeId={row.original.id} tab="reviews">
+      <ClickableCell placeId={row.original.id} tab="details">
         {rating ? (
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />

@@ -21,7 +21,7 @@ export const ratingCountColumn: ColumnDef<SearchResult> = {
     const count = row.original.ratingCount
 
     return (
-      <ClickableCell placeId={row.original.id} tab="reviews">
+      <ClickableCell placeId={row.original.id} tab="details">
         {count ? (
           <span>{count.toLocaleString()} reviews</span>
         ) : (
