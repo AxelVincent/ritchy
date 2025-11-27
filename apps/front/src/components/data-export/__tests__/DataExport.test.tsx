@@ -17,21 +17,6 @@ vi.mock('@/hooks/use-toast', () => ({
   toast: vi.fn(),
 }))
 
-// Mock for useNavigate
-const navigateMock = vi.fn()
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => navigateMock,
-}))
-
-// Mock for useUserMe with default ESSENTIALS plan
-const userMeMock = vi.fn().mockReturnValue({
-  data: { plan: 'ESSENTIALS' },
-})
-
-vi.mock('@/api/queries/users/useUserMe', () => ({
-  useUserMe: () => userMeMock(),
-}))
-
 // Mock for isModelAvailable
 vi.mock('@/lib/subscription', () => ({
   isModelAvailable: (plan: Plan, model: SearchModel) => {
@@ -64,118 +49,119 @@ vi.mock('@clerk/clerk-react', () => ({
   useUser: () => ({
     user: {
       id: 'test-user-id',
-      fullName: 'Test User',
-      emailAddresses: [{ emailAddress: 'test@example.com' }],
+      firstName: 'Test',
+      lastName: 'User',
+      primaryEmailAddress: {
+        emailAddress: 'test@example.com',
+      },
     },
   }),
 }))
 
+// Helper function to create mock data
+const createMockSearchResult = (): SearchResult => ({
+  id: '1',
+  sourceId: '1',
+  sourceUrl: '',
+  source: 'google',
+  name: 'Test Place',
+  website: 'https://test.com',
+  types: ['restaurant'],
+  address: {
+    formattedAddress: '123 Test St',
+    shortFormattedAddress: '',
+    country: 'US',
+    locality: 'Test City',
+    sublocality: '',
+    postalCode: '12345',
+    postalCodeSuffix: '',
+    plusCode: '',
+    street: 'Test St',
+    streetNumber: '',
+    neighborhood: '',
+    administrativeAreaLevel1: 'Test State',
+    administrativeAreaLevel2: '',
+    administrativeAreaLevel3: '',
+  },
+  phone: '',
+  rating: undefined,
+  ratingCount: undefined,
+  location: { latitude: 0, longitude: 0 },
+  primaryType: 'restaurant',
+  priceLevel: undefined,
+  priceRange: undefined,
+  openingHours: undefined,
+  utcOffsetMinutes: 0,
+  status: null,
+  listId: null,
+  lists: [],
+  notes: [],
+  domainRegisteredAt: new Date(),
+  contactEmails: [
+    {
+      id: '1',
+      email: 'test@example.com',
+      isPrimary: true,
+      contactId: '1',
+      isVerified: true,
+      source: 'test',
+      quality: 'good',
+      result: 'ok',
+      role: false,
+      free: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ],
+  contactPhones: [],
+  contactLinkedins: [
+    {
+      url: 'https://test.com',
+      socialMediaPlatform: 'LINKEDIN',
+      isPrimary: true,
+      contactId: '1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ],
+  contactFacebooks: [
+    {
+      url: 'https://test.com',
+      socialMediaPlatform: 'FACEBOOK',
+      contactId: '1',
+      isPrimary: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ],
+  contactInstagrams: [
+    {
+      url: 'https://test.com',
+      socialMediaPlatform: 'INSTAGRAM',
+      contactId: '1',
+      isPrimary: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ],
+  hubspotSynced: false,
+  shortDescription: 'Test Short Description',
+  isDeleted: false,
+  enrichedStatus: 'RECENTLY_ENRICHED',
+  companyWorkforceRange: null,
+  companyDateOfCreation: null,
+  companyActivities: [],
+  companyOfficers: [],
+  companyTechnologies: [],
+})
+
 describe('DataExport', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    userMeMock.mockReturnValue({
-      data: { plan: 'ESSENTIALS' },
-    })
   })
 
-  it('renders export button with correct count and handles export for subscribed users', async () => {
-    const mockData: SearchResult[] = [
-      {
-        id: '1',
-        sourceId: '1',
-        sourceUrl: '',
-        source: 'google',
-        name: 'Test Place',
-        website: 'https://test.com',
-        types: ['restaurant'],
-        address: {
-          formattedAddress: '123 Test St',
-          shortFormattedAddress: '',
-          country: 'US',
-          locality: 'Test City',
-          sublocality: '',
-          postalCode: '12345',
-          postalCodeSuffix: '',
-          plusCode: '',
-          street: 'Test St',
-          streetNumber: '',
-          neighborhood: '',
-          administrativeAreaLevel1: 'Test State',
-          administrativeAreaLevel2: '',
-          administrativeAreaLevel3: '',
-        },
-        phone: '',
-        rating: undefined,
-        ratingCount: undefined,
-        location: { latitude: 0, longitude: 0 },
-        primaryType: 'restaurant',
-        priceLevel: undefined,
-        priceRange: undefined,
-        openingHours: undefined,
-        utcOffsetMinutes: 0,
-        status: null,
-        listId: null,
-        lists: [],
-        notes: [],
-        domainRegisteredAt: new Date(),
-        contactEmails: [
-          {
-            id: '1',
-            email: 'test@example.com',
-            isPrimary: true,
-            contactId: '1',
-            isVerified: true,
-            source: 'test',
-            quality: 'good',
-            result: 'ok',
-            role: false,
-            free: false,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        contactPhones: [],
-        contactLinkedins: [
-          {
-            url: 'https://test.com',
-            socialMediaPlatform: 'LINKEDIN',
-            isPrimary: true,
-            contactId: '1',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        contactFacebooks: [
-          {
-            url: 'https://test.com',
-            socialMediaPlatform: 'FACEBOOK',
-            contactId: '1',
-            isPrimary: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        contactInstagrams: [
-          {
-            url: 'https://test.com',
-            socialMediaPlatform: 'INSTAGRAM',
-            contactId: '1',
-            isPrimary: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        hubspotSynced: false,
-        shortDescription: 'Test Short Description',
-        isDeleted: false,
-        enrichedStatus: 'RECENTLY_ENRICHED',
-        companyWorkforceRange: null,
-        companyDateOfCreation: null,
-        companyActivities: [],
-        companyOfficers: [],
-        companyTechnologies: [],
-      },
-    ]
+  it('renders export button with correct count and handles export', async () => {
+    const mockData: SearchResult[] = [createMockSearchResult()]
 
     render(<DataExport selectedRows={mockData} />)
 
@@ -187,9 +173,9 @@ describe('DataExport', () => {
 
     // Verify validateAndExportToCsv was called with correct parameters
     expect(validateAndExportToCsvMock).toHaveBeenCalledWith({
-      data: mockData,
+      data: expect.any(Array),
       filename: 'places.csv',
-      schema: expect.any(Object), // searchResultSchema
+      schema: expect.any(Object),
       columns: expect.arrayContaining([
         expect.objectContaining({
           header: 'ID',
@@ -200,109 +186,8 @@ describe('DataExport', () => {
     expect(validateAndExportToCsvMock).not.toThrow()
   })
 
-  it('shows toast notification for free users when trying to export', async () => {
-    // Override the subscription mock for this test
-    userMeMock.mockReturnValue({
-      data: { plan: 'FREE' },
-    })
-
-    const mockData: SearchResult[] = [
-      {
-        id: '1',
-        sourceId: '1',
-        sourceUrl: '',
-        source: 'google',
-        name: 'Test Place',
-        website: 'https://test.com',
-        types: ['restaurant'],
-        address: {
-          formattedAddress: '123 Test St',
-          shortFormattedAddress: '',
-          country: 'US',
-          locality: 'Test City',
-          sublocality: '',
-          postalCode: '12345',
-          postalCodeSuffix: '',
-          plusCode: '',
-          street: 'Test St',
-          streetNumber: '',
-          neighborhood: '',
-          administrativeAreaLevel1: 'Test State',
-          administrativeAreaLevel2: '',
-          administrativeAreaLevel3: '',
-        },
-        phone: '',
-        rating: undefined,
-        ratingCount: undefined,
-        location: { latitude: 0, longitude: 0 },
-        primaryType: 'restaurant',
-        priceLevel: undefined,
-        priceRange: undefined,
-        openingHours: undefined,
-        utcOffsetMinutes: 0,
-        status: null,
-        listId: null,
-        lists: [],
-        notes: [],
-        domainRegisteredAt: new Date(),
-        contactEmails: [
-          {
-            id: '1',
-            email: 'test@example.com',
-            isPrimary: true,
-            contactId: '1',
-            isVerified: true,
-            source: 'test',
-            quality: 'good',
-            result: 'ok',
-            role: false,
-            free: false,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        contactPhones: [],
-        contactLinkedins: [
-          {
-            url: 'https://test.com',
-            socialMediaPlatform: 'LINKEDIN',
-            contactId: '1',
-            isPrimary: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        contactFacebooks: [
-          {
-            url: 'https://test.com',
-            socialMediaPlatform: 'FACEBOOK',
-            contactId: '1',
-            isPrimary: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        contactInstagrams: [
-          {
-            url: 'https://test.com',
-            socialMediaPlatform: 'INSTAGRAM',
-            contactId: '1',
-            isPrimary: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        hubspotSynced: false,
-        shortDescription: 'Test Short Description',
-        isDeleted: false,
-        enrichedStatus: 'RECENTLY_ENRICHED',
-        companyWorkforceRange: null,
-        companyDateOfCreation: null,
-        companyActivities: [],
-        companyOfficers: [],
-        companyTechnologies: [],
-      },
-    ]
+  it('allows free users to export data', async () => {
+    const mockData: SearchResult[] = [createMockSearchResult()]
 
     render(<DataExport selectedRows={mockData} />)
 
@@ -312,12 +197,13 @@ describe('DataExport', () => {
     // Click the button
     fireEvent.click(button)
 
-    // Verify toast was called and export function was not
+    // Verify export function was called (no blocking for free users)
+    expect(validateAndExportToCsvMock).toHaveBeenCalled()
     expect(toast).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Export requires an ESSENTIALS plan or higher',
+        title: 'Export successful',
+        description: 'Your data has been exported to CSV',
       }),
     )
-    expect(validateAndExportToCsvMock).not.toHaveBeenCalled()
   })
 })

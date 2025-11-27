@@ -1,10 +1,8 @@
-import { useUserMe } from '@/api/queries/users/useUserMe'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { validateAndExportToCsv } from '@/lib/exportToCsv'
 import { useUser } from '@clerk/clerk-react'
 import { PlaceSchema, type SearchResult } from '@ritchy/types'
-import { useNavigate } from '@tanstack/react-router'
 import { Download } from 'lucide-react'
 import posthog from 'posthog-js'
 import { useState } from 'react'
@@ -94,31 +92,9 @@ export const DataExport = React.memo(({ selectedRows }: DataExportProps) => {
   if (!selectedRows?.length) return null
 
   const [isExporting, setIsExporting] = useState(false)
-  const { data: me } = useUserMe()
-  const userPlan = me?.plan || 'FREE'
   const { user } = useUser()
-  const navigate = useNavigate()
 
   const handleExport = async () => {
-    // Check if user has required subscription
-    if (userPlan === 'FREE') {
-      posthog.capture('data_export_blocked_free_user', {
-        user_id: user?.id,
-        email: user?.primaryEmailAddress?.emailAddress,
-        name: `${user?.firstName} ${user?.lastName}`.trim(),
-      })
-      toast({
-        title: 'Export requires an ESSENTIALS plan or higher',
-        variant: 'default',
-        action: (
-          <Button onClick={() => navigate({ to: '/pricing' })}>
-            View Plans
-          </Button>
-        ),
-      })
-      return
-    }
-
     try {
       setIsExporting(true)
 
