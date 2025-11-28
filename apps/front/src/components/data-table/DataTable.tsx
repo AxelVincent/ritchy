@@ -23,7 +23,6 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HubspotSyncManagementButtons } from '../integrations/hubspot/HubspotSyncManagementButtons'
 import { ListManagementButtons } from '../lists/ListManagementButtons'
 import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
@@ -272,7 +271,6 @@ export const DataTable = <TData extends SearchResult, TValue>({
               searchId={searchId}
             />
             <ListManagementButtons table={table} listId={listId} />
-            <HubspotSyncManagementButtons table={table} />
           </div>
           <div className="flex md:gap-2 gap-1">
             {!isMobile && (

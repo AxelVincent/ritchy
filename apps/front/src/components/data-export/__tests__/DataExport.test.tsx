@@ -144,7 +144,6 @@ const createMockSearchResult = (): SearchResult => ({
       updatedAt: new Date(),
     },
   ],
-  hubspotSynced: false,
   shortDescription: 'Test Short Description',
   isDeleted: false,
   enrichedStatus: 'RECENTLY_ENRICHED',

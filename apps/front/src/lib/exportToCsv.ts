@@ -25,7 +25,6 @@ export function validateAndExportToCsv({
       contactLinkedins: item.contactLinkedins ?? [],
       contactFacebooks: item.contactFacebooks ?? [],
       contactInstagrams: item.contactInstagrams ?? [],
-      hubspotSynced: item.hubspotSynced ?? false,
     }),
   ) as SearchResult[]
 

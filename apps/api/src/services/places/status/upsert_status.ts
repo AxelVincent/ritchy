@@ -3,11 +3,9 @@ import type { Status, StatusType } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { status as statusTable, userPlace } from '../../../db/schema'
-import { updateHubspotContactStatus } from '../../hubspot/update_hubspot_contact_status'
-import type { HubspotContext } from '../../hubspot/update_place_status'
 
 export const upsertStatus = async (
-  context: HubspotContext,
+  userId: string,
   userPlaceId: string,
   status: StatusType,
 ): Promise<Status> => {
@@ -18,7 +16,6 @@ export const upsertStatus = async (
       metadata: {
         userPlaceId,
         status,
-        changeSource: context.changeSource,
       },
     })
 
@@ -34,9 +31,9 @@ export const upsertStatus = async (
     }
 
     // Verify the user owns this user_place record
-    if (userPlaceRecord.user_id !== context.userId) {
+    if (userPlaceRecord.user_id !== userId) {
       throw new Error(
-        `User place with ID ${userPlaceId} does not belong to user ${context.userId}`,
+        `User place with ID ${userPlaceId} does not belong to user ${userId}`,
       )
     }
 
@@ -54,10 +51,6 @@ export const upsertStatus = async (
         },
       })
       .returning()
-
-    if (context.changeSource === 'user') {
-      updateHubspotContactStatus(context.userId, userPlaceId, status)
-    }
 
     return {
       status: result.status,

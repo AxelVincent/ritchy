@@ -24,15 +24,7 @@ export const updateStatus = async (
     const { status } = req.body
     const { userPlaceId } = req.params
 
-    const result = await upsertStatus(
-      {
-        userId: req.auth.userId,
-        sessionId: req.auth.sessionId,
-        changeSource: 'user',
-      },
-      userPlaceId,
-      status,
-    )
+    const result = await upsertStatus(req.auth.userId, userPlaceId, status)
 
     res.json(result)
     logger.info({

@@ -288,7 +288,6 @@ export const PlaceSchema = PlaceSchemaBase.extend({
   contactLinkedins: z.array(SocialMediaSchema).optional(),
   contactFacebooks: z.array(SocialMediaSchema).optional(),
   contactInstagrams: z.array(SocialMediaSchema).optional(),
-  hubspotSynced: z.boolean(),
   enrichedStatus: EnrichedStatusEnum.nullable(),
   companyWorkforceRange: z.string().nullable(),
   companyDateOfCreation: z

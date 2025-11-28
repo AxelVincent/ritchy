@@ -443,24 +443,29 @@ export const UnifiedContactCard = ({
                     LinkedIn Profile
                   </h3>
                 </div>
-                <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 hover:bg-blue-50 transition-colors">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex-1 min-w-0">
-                      <CopyCell
-                        content={(() => {
-                          try {
-                            const url = new URL(contact.linkedinUrl)
-                            const path = url.pathname.replace(/^\/+|\/+$/g, '')
-                            return path || contact.linkedinUrl
-                          } catch {
-                            return contact.linkedinUrl
-                          }
-                        })()}
-                        href={contact.linkedinUrl}
-                      />
+                <Card className="w-full">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex-1 min-w-0">
+                        <CopyCell
+                          content={(() => {
+                            try {
+                              const url = new URL(contact.linkedinUrl)
+                              const path = url.pathname.replace(
+                                /^\/+|\/+$/g,
+                                '',
+                              )
+                              return path || contact.linkedinUrl
+                            } catch {
+                              return contact.linkedinUrl
+                            }
+                          })()}
+                          href={contact.linkedinUrl}
+                        />
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
