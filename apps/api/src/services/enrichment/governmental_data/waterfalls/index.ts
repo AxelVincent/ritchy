@@ -9,9 +9,7 @@ export {
 // LinkedIn waterfall exports
 export {
   runLinkedInWaterfall,
-  runLinkedInWaterfallWithData,
   type LinkedInWaterfallContext,
-  type LinkedInWaterfallWithDataContext,
   type LinkedInWaterfallResult,
 } from './linkedin_waterfall'
 

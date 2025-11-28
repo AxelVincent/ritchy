@@ -1,11 +1,16 @@
 import { logger } from '@ritchy/logger'
 import { enqueueContactoutPeopleSearchJob } from '../../../../../../internal/bullmq/jobs/contactout/people_search/queue'
-import type { InsertOfficerLinkedInData } from '../../../../queries/insert_enrichment_company_officer_linkedin'
+import {
+  type ProviderError,
+  type Result,
+  createNoResultsError,
+} from '../../../../types/error_handling'
 import type { ValidatedOfficerData } from '../../../../utils/validate_officer'
+import type { LinkedInResult } from '../index'
 
 export const enrichWithContactOut = async (
   validated: ValidatedOfficerData,
-): Promise<InsertOfficerLinkedInData | null> => {
+): Promise<Result<LinkedInResult, ProviderError>> => {
   logger.debug({
     msg: '[linkedin_waterfall] Starting ContactOut search',
     event: 'contactout_search_start',
@@ -42,18 +47,19 @@ export const enrichWithContactOut = async (
         },
       })
 
-      // Return LinkedIn data instead of inserting
       return {
-        officer_id: validated.id,
-        profile_url: linkedinUrls[0],
-        confidence: 50, // Lower confidence for ContactOut without LLM matching
-        reasoning: 'Found via ContactOut People Search (waterfall fallback)',
-        source: 'contactout',
+        success: true,
+        data: {
+          profileUrl: linkedinUrls[0],
+          confidence: 50, // Lower confidence for ContactOut without LLM matching
+          reasoning: 'Found via ContactOut People Search (waterfall fallback)',
+          source: 'contactout',
+        },
       }
     }
 
     logger.info({
-      msg: '[linkedin_waterfall] ContactOut found profiles but no LinkedIn URLs, trying next provider',
+      msg: '[linkedin_waterfall] ContactOut found profiles but no LinkedIn URLs',
       event: 'contactout_no_linkedin',
       metadata: {
         officerId: validated.id,
@@ -62,7 +68,7 @@ export const enrichWithContactOut = async (
     })
   } else {
     logger.info({
-      msg: '[linkedin_waterfall] No profiles found via ContactOut, trying next provider',
+      msg: '[linkedin_waterfall] No profiles found via ContactOut',
       event: 'contactout_no_profiles',
       metadata: {
         officerId: validated.id,
@@ -71,5 +77,11 @@ export const enrichWithContactOut = async (
     })
   }
 
-  return null
+  return {
+    success: false,
+    error: createNoResultsError('contactout_people_search', {
+      officerId: validated.id,
+      statusCode: contactoutResult.status_code,
+    }),
+  }
 }

@@ -71,6 +71,7 @@ export const GetPlacesContactsResponseSchema = z.object({
           updatedAt: z.string(),
         }),
       ),
+      linkedinUrl: z.string().nullable(),
       createdAt: z.string(),
       updatedAt: z.string(),
     }),

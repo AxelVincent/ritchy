@@ -31,6 +31,7 @@ export type LinkedInExtractionError =
  * - https://www.linkedin.com/in/john-doe-123456/
  * - https://linkedin.com/in/jane-smith/
  * - http://www.linkedin.com/in/bob-jones
+ * - https://fr.linkedin.com/in/alix-di-meglio/ (country-specific subdomains)
  *
  * Validates:
  * - URL format
@@ -67,8 +68,32 @@ export const extractLinkedInIdentifier = (
   }
 
   // Validate hostname
-  const validHostnames = ['linkedin.com', 'www.linkedin.com']
-  if (!validHostnames.includes(urlObj.hostname.toLowerCase())) {
+  // Accept linkedin.com, www.linkedin.com, and country-specific subdomains (fr.linkedin.com, uk.linkedin.com, etc.)
+  // Reject other subdomains like api.linkedin.com, developer.linkedin.com, etc.
+  const hostnameLower = urlObj.hostname.toLowerCase()
+
+  // Check for exact matches first
+  if (
+    hostnameLower === 'linkedin.com' ||
+    hostnameLower === 'www.linkedin.com'
+  ) {
+    // Valid base domains
+  } else if (hostnameLower.endsWith('.linkedin.com')) {
+    // Check if it's a country-specific subdomain (2-letter country code)
+    const subdomain = hostnameLower.replace('.linkedin.com', '')
+    const isCountryCode = /^[a-z]{2}$/.test(subdomain)
+
+    if (!isCountryCode) {
+      return {
+        success: false,
+        error: {
+          type: 'invalid_url',
+          message: `Invalid LinkedIn hostname: ${urlObj.hostname}`,
+        },
+        originalUrl: url,
+      }
+    }
+  } else {
     return {
       success: false,
       error: {

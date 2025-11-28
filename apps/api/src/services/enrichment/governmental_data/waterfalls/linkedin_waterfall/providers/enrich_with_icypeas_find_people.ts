@@ -6,14 +6,19 @@ import type {
   CompanyContextData,
   PlaceContextData,
 } from '../../../../queries/get_officers_enrichment_context'
-import type { InsertOfficerLinkedInData } from '../../../../queries/insert_enrichment_company_officer_linkedin'
+import {
+  type ProviderError,
+  type Result,
+  createNoResultsError,
+} from '../../../../types/error_handling'
 import type { ValidatedOfficerData } from '../../../../utils/validate_officer'
+import type { LinkedInResult } from '../index'
 
 export const enrichWithIcypeasFindPeople = async (
   validated: ValidatedOfficerData,
   company: CompanyContextData & { activities: ActivityData[] },
   place: PlaceContextData,
-): Promise<InsertOfficerLinkedInData | null> => {
+): Promise<Result<LinkedInResult, ProviderError>> => {
   const findPeopleResult = await enqueueIcypeasFindPeopleJob({
     query: {
       firstname: {
@@ -83,13 +88,14 @@ export const enrichWithIcypeasFindPeople = async (
         },
       })
 
-      // Return LinkedIn data instead of inserting
       return {
-        officer_id: validated.id,
-        profile_url: matchResult.bestMatch.profileUrl,
-        confidence: matchResult.bestMatch.confidence,
-        reasoning: matchResult.bestMatch.reasoning,
-        source: 'icypeas_find_people',
+        success: true,
+        data: {
+          profileUrl: matchResult.bestMatch.profileUrl,
+          confidence: matchResult.bestMatch.confidence,
+          reasoning: matchResult.bestMatch.reasoning,
+          source: 'icypeas_find_people',
+        },
       }
     }
 
@@ -104,5 +110,11 @@ export const enrichWithIcypeasFindPeople = async (
     })
   }
 
-  return null
+  return {
+    success: false,
+    error: createNoResultsError('icypeas_find_people', {
+      officerId: validated.id,
+      leadCount: findPeopleResult.leads.length,
+    }),
+  }
 }

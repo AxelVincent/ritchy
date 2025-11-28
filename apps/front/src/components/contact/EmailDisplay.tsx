@@ -275,8 +275,10 @@ export const EmailDisplay = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Emails</h3>
-            <Badge variant="secondary">{emails.length}</Badge>
+            <h3 className="text-sm font-semibold tracking-tight">Emails</h3>
+            <Badge variant="secondary" className="font-normal">
+              {emails.length}
+            </Badge>
           </div>
         </div>
       )}
