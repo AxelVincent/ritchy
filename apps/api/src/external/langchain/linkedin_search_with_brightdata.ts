@@ -2,8 +2,8 @@ import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { logger } from '@ritchy/logger'
 import { z } from 'zod'
 import { trackExternalApiCall } from '../../metrics/external-api'
-import { callMCPTool } from '../brightdata/mcp/client'
 import { anthropic_haiku } from './llms'
+import { getBrightDataTool } from './tools/brightdata'
 
 const LinkedInProfileResultSchema = z.object({
   profileUrl: z.string().url().nullable(),
@@ -83,12 +83,10 @@ const analyzeResults = async (
  */
 const executeQuery = async (query: string): Promise<string | null> => {
   try {
-    const result = await trackExternalApiCall(
-      'brightdata_mcp',
-      'search_engine',
-      () => callMCPTool('search_engine', { query, engine: 'google' }),
-    )
-    const resultStr = JSON.stringify(result, null, 2)
+    const searchTool = await getBrightDataTool('search_engine')
+    const result = await searchTool.invoke({ query, engine: 'google' })
+    const resultStr =
+      typeof result === 'string' ? result : JSON.stringify(result, null, 2)
     return resultStr.length > 100 ? resultStr : null
   } catch (error) {
     logger.warn({

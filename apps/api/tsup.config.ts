@@ -16,5 +16,5 @@ export default defineConfig({
   treeshake: true,
   splitting: false,
   outDir: 'dist',
-  external: ['@modelcontextprotocol/sdk'],
+  external: ['@modelcontextprotocol/sdk', '@langchain/mcp-adapters'],
 })
