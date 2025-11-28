@@ -27,7 +27,6 @@ export const validateAllSearchResultFieldsHaveColumns = (
     'enrichment',
     'searchId',
     'listId',
-    'hubspotSynced',
     'isDeleted',
   ]
   // Get all fields from SearchResult schema

@@ -15,16 +15,9 @@ interface StripeEvent {
   request?: StripeRequest
 }
 
-interface HubSpotEvent {
-  eventId: number
-  subscriptionId: number
-  subscriptionType: string
-  // ... other HubSpot event fields
-}
-
 interface IdempotencyResult {
   idempotencyKey: string
-  provider: 'clerk' | 'stripe' | 'hubspot'
+  provider: 'clerk' | 'stripe'
 }
 
 /**
@@ -32,9 +25,8 @@ interface IdempotencyResult {
  */
 const getWebhookProvider = (
   headers: IncomingHttpHeaders,
-): 'clerk' | 'stripe' | 'hubspot' => {
+): 'clerk' | 'stripe' => {
   if (headers['svix-id']) return 'clerk'
-  if (headers['x-hubspot-signature-v3']) return 'hubspot'
   if (headers['stripe-signature']) return 'stripe'
   throw new Error('Unsupported webhook provider')
 }
@@ -54,17 +46,6 @@ const generateIdempotencyKey = (
       if (!svixId) throw new Error('Missing svix-id header')
       return {
         idempotencyKey: `clerk_${svixId}`,
-        provider,
-      }
-    }
-
-    case 'hubspot': {
-      const hubspotEvent = event as HubSpotEvent
-      if (!hubspotEvent?.eventId) {
-        throw new Error('Invalid HubSpot event: Missing eventId')
-      }
-      return {
-        idempotencyKey: `hubspot_${hubspotEvent.eventId}`,
         provider,
       }
     }

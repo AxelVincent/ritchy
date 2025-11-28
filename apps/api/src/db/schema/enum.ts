@@ -1,6 +1,4 @@
 import {
-  CompanyFieldEnum,
-  ContactFieldEnum,
   ContactTypeEnum,
   EmailQualityEnum,
   EmailResultEnum,
@@ -9,7 +7,6 @@ import {
   PriceLevelEnum,
   SearchModelEnum,
   SocialMediaPlatformEnum,
-  StatusFieldEnum,
 } from '@ritchy/types'
 import { pgEnum } from 'drizzle-orm/pg-core'
 
@@ -26,11 +23,7 @@ export const placeSourceEnum = pgEnum('place_source', ['google'])
 
 export const searchModelEnum = pgEnum('search_model', SearchModelEnum.options)
 
-export const webhookServiceEnum = pgEnum('webhook_service', [
-  'clerk',
-  'stripe',
-  'hubspot',
-])
+export const webhookServiceEnum = pgEnum('webhook_service', ['clerk', 'stripe'])
 
 export const subscriptionStatusEnum = pgEnum('subscription_status', [
   'incomplete', // Payment failed during subscription creation
@@ -57,13 +50,6 @@ export const leadStatusEnum = pgEnum('lead_status', [
   'INTERESTED',
   'WON',
   'LOST',
-])
-
-// Update the enum to include status fields
-export const internalFieldEnum = pgEnum('internal_field', [
-  ...CompanyFieldEnum.options,
-  ...ContactFieldEnum.options,
-  ...StatusFieldEnum.options,
 ])
 
 export const emailQualityEnum = pgEnum('email_quality', [

@@ -1,7 +1,6 @@
 import express, { type Router } from 'express'
 import contactsRouter from './contacts'
 import enrichRouter from './enrich'
-import hubspotRouter from './hubspot'
 import listsRouter from './lists'
 import paymentsRouter from './payments'
 import placesRouter from './places'
@@ -30,8 +29,5 @@ router.use('/payments', paymentsRouter)
 
 // Users routes
 router.use('/users', usersRouter)
-
-// HubSpot routes
-router.use('/hubspot', hubspotRouter)
 
 export default router

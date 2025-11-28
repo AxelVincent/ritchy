@@ -18,8 +18,6 @@ import { Route as AuthSearchIndexRouteImport } from './routes/_auth/search/index
 import { Route as AuthIntegrationsIndexRouteImport } from './routes/_auth/integrations/index'
 import { Route as AuthSearchSearchIdRouteImport } from './routes/_auth/search/$searchId'
 import { Route as AuthListsListIdRouteImport } from './routes/_auth/lists/$listId'
-import { Route as AuthIntegrationsHubspotIndexRouteImport } from './routes/_auth/integrations/hubspot/index'
-import { Route as AuthIntegrationsHubspotCallbackRouteImport } from './routes/_auth/integrations/hubspot/callback'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -65,18 +63,6 @@ const AuthListsListIdRoute = AuthListsListIdRouteImport.update({
   path: '/lists/$listId',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthIntegrationsHubspotIndexRoute =
-  AuthIntegrationsHubspotIndexRouteImport.update({
-    id: '/integrations/hubspot/',
-    path: '/integrations/hubspot/',
-    getParentRoute: () => AuthRoute,
-  } as any)
-const AuthIntegrationsHubspotCallbackRoute =
-  AuthIntegrationsHubspotCallbackRouteImport.update({
-    id: '/integrations/hubspot/callback',
-    path: '/integrations/hubspot/callback',
-    getParentRoute: () => AuthRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,8 +73,6 @@ export interface FileRoutesByFullPath {
   '/search/$searchId': typeof AuthSearchSearchIdRoute
   '/integrations': typeof AuthIntegrationsIndexRoute
   '/search': typeof AuthSearchIndexRoute
-  '/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
-  '/integrations/hubspot': typeof AuthIntegrationsHubspotIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,8 +83,6 @@ export interface FileRoutesByTo {
   '/search/$searchId': typeof AuthSearchSearchIdRoute
   '/integrations': typeof AuthIntegrationsIndexRoute
   '/search': typeof AuthSearchIndexRoute
-  '/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
-  '/integrations/hubspot': typeof AuthIntegrationsHubspotIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,8 +95,6 @@ export interface FileRoutesById {
   '/_auth/search/$searchId': typeof AuthSearchSearchIdRoute
   '/_auth/integrations/': typeof AuthIntegrationsIndexRoute
   '/_auth/search/': typeof AuthSearchIndexRoute
-  '/_auth/integrations/hubspot/callback': typeof AuthIntegrationsHubspotCallbackRoute
-  '/_auth/integrations/hubspot/': typeof AuthIntegrationsHubspotIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,8 +107,6 @@ export interface FileRouteTypes {
     | '/search/$searchId'
     | '/integrations'
     | '/search'
-    | '/integrations/hubspot/callback'
-    | '/integrations/hubspot'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -139,8 +117,6 @@ export interface FileRouteTypes {
     | '/search/$searchId'
     | '/integrations'
     | '/search'
-    | '/integrations/hubspot/callback'
-    | '/integrations/hubspot'
   id:
     | '__root__'
     | '/'
@@ -152,8 +128,6 @@ export interface FileRouteTypes {
     | '/_auth/search/$searchId'
     | '/_auth/integrations/'
     | '/_auth/search/'
-    | '/_auth/integrations/hubspot/callback'
-    | '/_auth/integrations/hubspot/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -226,20 +200,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthListsListIdRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/integrations/hubspot/': {
-      id: '/_auth/integrations/hubspot/'
-      path: '/integrations/hubspot'
-      fullPath: '/integrations/hubspot'
-      preLoaderRoute: typeof AuthIntegrationsHubspotIndexRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/integrations/hubspot/callback': {
-      id: '/_auth/integrations/hubspot/callback'
-      path: '/integrations/hubspot/callback'
-      fullPath: '/integrations/hubspot/callback'
-      preLoaderRoute: typeof AuthIntegrationsHubspotCallbackRouteImport
-      parentRoute: typeof AuthRoute
-    }
   }
 }
 
@@ -251,8 +211,6 @@ interface AuthRouteChildren {
   AuthSearchSearchIdRoute: typeof AuthSearchSearchIdRoute
   AuthIntegrationsIndexRoute: typeof AuthIntegrationsIndexRoute
   AuthSearchIndexRoute: typeof AuthSearchIndexRoute
-  AuthIntegrationsHubspotCallbackRoute: typeof AuthIntegrationsHubspotCallbackRoute
-  AuthIntegrationsHubspotIndexRoute: typeof AuthIntegrationsHubspotIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -263,8 +221,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthSearchSearchIdRoute: AuthSearchSearchIdRoute,
   AuthIntegrationsIndexRoute: AuthIntegrationsIndexRoute,
   AuthSearchIndexRoute: AuthSearchIndexRoute,
-  AuthIntegrationsHubspotCallbackRoute: AuthIntegrationsHubspotCallbackRoute,
-  AuthIntegrationsHubspotIndexRoute: AuthIntegrationsHubspotIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
