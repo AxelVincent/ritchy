@@ -16,12 +16,12 @@ export const icypeasFindPeopleQueue = new Queue(queueName, {
       delay: 2000,
     },
     removeOnComplete: {
-      age: 3600,
-      count: 1000,
+      age: 300, // 5 minutes
+      count: 100,
     },
     removeOnFail: {
-      age: 24 * 3600,
-      count: 1000,
+      age: 3600, // 1 hour
+      count: 100,
     },
   },
 })
