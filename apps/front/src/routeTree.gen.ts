@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthPricingRouteImport } from './routes/_auth/pricing'
+import { Route as AuthLeadsRouteImport } from './routes/_auth/leads'
 import { Route as AuthImportRouteImport } from './routes/_auth/import'
 import { Route as AuthCheckoutRouteImport } from './routes/_auth/checkout'
 import { Route as AuthSearchIndexRouteImport } from './routes/_auth/search/index'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthPricingRoute = AuthPricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthLeadsRoute = AuthLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthImportRoute = AuthImportRouteImport.update({
@@ -62,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/checkout': typeof AuthCheckoutRoute
   '/import': typeof AuthImportRoute
+  '/leads': typeof AuthLeadsRoute
   '/pricing': typeof AuthPricingRoute
   '/lists/$listId': typeof AuthListsListIdRoute
   '/search/$searchId': typeof AuthSearchSearchIdRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/checkout': typeof AuthCheckoutRoute
   '/import': typeof AuthImportRoute
+  '/leads': typeof AuthLeadsRoute
   '/pricing': typeof AuthPricingRoute
   '/lists/$listId': typeof AuthListsListIdRoute
   '/search/$searchId': typeof AuthSearchSearchIdRoute
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_auth/checkout': typeof AuthCheckoutRoute
   '/_auth/import': typeof AuthImportRoute
+  '/_auth/leads': typeof AuthLeadsRoute
   '/_auth/pricing': typeof AuthPricingRoute
   '/_auth/lists/$listId': typeof AuthListsListIdRoute
   '/_auth/search/$searchId': typeof AuthSearchSearchIdRoute
@@ -93,6 +102,7 @@ export interface FileRouteTypes {
     | '/'
     | '/checkout'
     | '/import'
+    | '/leads'
     | '/pricing'
     | '/lists/$listId'
     | '/search/$searchId'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/checkout'
     | '/import'
+    | '/leads'
     | '/pricing'
     | '/lists/$listId'
     | '/search/$searchId'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/_auth/checkout'
     | '/_auth/import'
+    | '/_auth/leads'
     | '/_auth/pricing'
     | '/_auth/lists/$listId'
     | '/_auth/search/$searchId'
@@ -144,6 +156,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof AuthPricingRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/leads': {
+      id: '/_auth/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AuthLeadsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/import': {
@@ -187,6 +206,7 @@ declare module '@tanstack/react-router' {
 interface AuthRouteChildren {
   AuthCheckoutRoute: typeof AuthCheckoutRoute
   AuthImportRoute: typeof AuthImportRoute
+  AuthLeadsRoute: typeof AuthLeadsRoute
   AuthPricingRoute: typeof AuthPricingRoute
   AuthListsListIdRoute: typeof AuthListsListIdRoute
   AuthSearchSearchIdRoute: typeof AuthSearchSearchIdRoute
@@ -196,6 +216,7 @@ interface AuthRouteChildren {
 const AuthRouteChildren: AuthRouteChildren = {
   AuthCheckoutRoute: AuthCheckoutRoute,
   AuthImportRoute: AuthImportRoute,
+  AuthLeadsRoute: AuthLeadsRoute,
   AuthPricingRoute: AuthPricingRoute,
   AuthListsListIdRoute: AuthListsListIdRoute,
   AuthSearchSearchIdRoute: AuthSearchSearchIdRoute,

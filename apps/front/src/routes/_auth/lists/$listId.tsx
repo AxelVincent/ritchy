@@ -1,25 +1,33 @@
-import { useListContentQuery } from '@/api/queries/lists/useListContent'
-import { ApiErrorDisplay } from '@/components/common/ApiErrorDisplay'
-import { LoadingMessages } from '@/components/common/LoadingMessages'
-import { MapDisplay } from '@/components/map-display/MapDisplay'
-import { createFileRoute } from '@tanstack/react-router'
+import { serializeFiltersToParams } from '@ritchy/types'
+import { Navigate, createFileRoute } from '@tanstack/react-router'
 
+/**
+ * Legacy route - redirects to /leads with listIds filter
+ *
+ * This route is preserved for backward compatibility.
+ * All list viewing now happens through /leads with the listIds filter.
+ */
 export const Route = createFileRoute('/_auth/lists/$listId')({
-  loader: async ({ params }) => {
-    return {
-      listId: params.listId,
-    }
-  },
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const { listId } = Route.useLoaderData()
-  const { data, isLoading, error } = useListContentQuery(listId)
+  const { listId } = Route.useParams()
 
-  if (isLoading) return <LoadingMessages />
-  if (error) return <ApiErrorDisplay error={error} />
-  if (!data || 'error' in data) return null
+  // Create a filter rule for the listId
+  const filterRules = [
+    {
+      id: `rule_${Date.now()}`,
+      property: 'listIds',
+      type: 'multi_select' as const,
+      operator: 'is_any_of' as const,
+      values: [listId],
+    },
+  ]
 
-  return <MapDisplay key={listId} listId={listId} places={data.items} />
+  // Serialize to individual params (listIds.op, listIds.v)
+  const filterParams = serializeFiltersToParams(filterRules)
+
+  // Redirect to /leads with the listIds filter
+  return <Navigate to="/leads" search={filterParams} replace />
 }

@@ -85,6 +85,13 @@ export const useMapInitialization = ({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
 
+    // Check if container has valid dimensions (prevents WebGL context errors)
+    const { offsetWidth, offsetHeight } = mapContainerRef.current
+    if (offsetWidth === 0 || offsetHeight === 0) {
+      console.warn('Map container has zero dimensions, skipping initialization')
+      return
+    }
+
     // Set global accessToken
     mapboxgl.accessToken = accessToken
 
@@ -92,6 +99,15 @@ export const useMapInitialization = ({
     performance.mark('map-init-start')
 
     try {
+      // Check WebGL support before attempting to create map
+      const canvas = document.createElement('canvas')
+      const gl =
+        canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+      if (!gl) {
+        console.error('WebGL is not supported in this browser')
+        return
+      }
+
       // Use initialBounds if provided, otherwise calculate from initialCenter
       const bounds = searchResults
         ? calculateInitialBounds(initialCenter, searchResults)

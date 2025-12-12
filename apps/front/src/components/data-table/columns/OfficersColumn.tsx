@@ -1,13 +1,13 @@
 import { Badge } from '@/components/ui/badge'
-import type { CompanyOfficer, SearchResult } from '@ritchy/types'
+import type { PlaceContact, SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClickableCell } from './utils/ClickableCell'
 import { CopyButton } from './utils/ColumnCells'
 import { HeaderWrapper } from './utils/HeaderWrapper'
 
-const formatOfficerName = (officer: CompanyOfficer): string => {
-  const firstName = officer.firstName?.trim() || ''
-  const lastName = officer.lastName?.trim() || ''
+const formatContactName = (contact: PlaceContact): string => {
+  const firstName = contact.firstName?.trim() || ''
+  const lastName = contact.lastName?.trim() || ''
 
   if (firstName && lastName) {
     return `${firstName} ${lastName}`
@@ -17,28 +17,28 @@ const formatOfficerName = (officer: CompanyOfficer): string => {
   return 'Unknown'
 }
 
-export const officersColumn: ColumnDef<SearchResult> = {
-  id: 'officers',
+export const contactsColumn: ColumnDef<SearchResult> = {
+  id: 'contacts',
   size: 250,
-  accessorKey: 'companyOfficers',
+  accessorKey: 'placeContacts',
   meta: {
     filterVariant: 'text',
     isEnrichment: true,
   },
   accessorFn: (row) => {
-    const officersSearchString =
-      row.companyOfficers
-        ?.map((officer) =>
-          `${officer.firstName || ''} ${officer.lastName || ''} ${officer.role || ''}`.trim(),
+    const contactsSearchString =
+      row.placeContacts
+        ?.map((contact) =>
+          `${contact.firstName || ''} ${contact.lastName || ''} ${contact.role || ''}`.trim(),
         )
         .join(', ') ?? ''
-    return officersSearchString
+    return contactsSearchString
   },
-  header: ({ column }) => <HeaderWrapper column={column} title="Officers" />,
+  header: ({ column }) => <HeaderWrapper column={column} title="Contacts" />,
   cell: ({ row }) => {
-    const officers = row.original.companyOfficers || []
+    const contacts = row.original.placeContacts || []
 
-    if (!officers.length) {
+    if (!contacts.length) {
       return (
         <ClickableCell placeId={row.original.id} tab="contacts">
           {null}
@@ -46,8 +46,8 @@ export const officersColumn: ColumnDef<SearchResult> = {
       )
     }
 
-    const firstOfficer = officers[0]
-    const firstOfficerName = formatOfficerName(firstOfficer)
+    const firstContact = contacts[0]
+    const firstContactName = formatContactName(firstContact)
 
     return (
       <ClickableCell
@@ -56,14 +56,14 @@ export const officersColumn: ColumnDef<SearchResult> = {
         className="group/cell relative gap-2"
       >
         <div className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="truncate" title={firstOfficerName}>
-            {firstOfficerName}
+          <span className="truncate" title={firstContactName}>
+            {firstContactName}
           </span>
-          {officers.length > 1 && (
-            <Badge variant="secondary">+{officers.length - 1}</Badge>
+          {contacts.length > 1 && (
+            <Badge variant="secondary">+{contacts.length - 1}</Badge>
           )}
         </div>
-        <CopyButton valueToCopy={firstOfficerName} ariaLabel="Copy officer" />
+        <CopyButton valueToCopy={firstContactName} ariaLabel="Copy contact" />
       </ClickableCell>
     )
   },

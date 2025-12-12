@@ -41,80 +41,108 @@ interface LogPayload {
   metadata?: Record<string, unknown>
 }
 
+const usePrettyLogs =
+  process.env.NODE_ENV === 'development' || process.env.PINO_PRETTY === 'true'
+const isTest = process.env.NODE_ENV === 'test'
+
 const baseLogger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  ...(process.env.NODE_ENV === 'development'
+  level: isTest ? 'silent' : process.env.LOG_LEVEL || 'info',
+  // In test mode, silence pino output - logs are captured via globalThis.__testLogs
+  ...(isTest
     ? {
-        transport: {
-          targets: [
-            {
-              level: process.env.LOG_LEVEL || 'debug',
-              target: 'pino-pretty',
-              options: {
-                colorize: true,
-                translateTime: 'HH:MM:ss.l',
-                ignore: 'pid,hostname',
-              },
-            },
-            {
-              level: process.env.LOG_LEVEL || 'debug',
-              target: 'pino-loki',
-              options: {
-                batching: false,
-                host: process.env.LOKI_HOST || 'http://localhost:3100',
-                labels: { job: 'pino', service: 'ritchy' },
-              },
-            },
-          ],
-        },
+        // No transport needed - logs captured separately
       }
-    : {
-        transport: {
-          targets: [
-            {
-              level: process.env.LOG_LEVEL || 'info',
-              target: 'pino/file',
-              options: {
-                destination: 1, // stdout (1 = stdout, 2 = stderr)
-              },
-            },
-            {
-              level: process.env.LOG_LEVEL || 'info',
-              target: 'pino-loki',
-              options: {
-                batching: false,
-                host: process.env.LOKI_HOST || 'http://localhost:3100',
-                labels: {
-                  job: 'pino',
-                  service: 'ritchy',
-                  environment: process.env.NODE_ENV || 'production',
+    : usePrettyLogs
+      ? {
+          transport: {
+            targets: [
+              {
+                level: process.env.LOG_LEVEL || 'debug',
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  translateTime: 'HH:MM:ss.l',
+                  ignore: 'pid,hostname',
                 },
               },
-            },
-          ],
-        },
-        messageKey: 'msg',
-        serializers: pino.stdSerializers,
-      }),
+              {
+                level: process.env.LOG_LEVEL || 'debug',
+                target: 'pino-loki',
+                options: {
+                  batching: false,
+                  host: process.env.LOKI_HOST || 'http://localhost:3100',
+                  labels: { job: 'pino', service: 'ritchy' },
+                },
+              },
+            ],
+          },
+        }
+      : {
+          transport: {
+            targets: [
+              {
+                level: process.env.LOG_LEVEL || 'info',
+                target: 'pino/file',
+                options: {
+                  destination: 1, // stdout (1 = stdout, 2 = stderr)
+                },
+              },
+              {
+                level: process.env.LOG_LEVEL || 'info',
+                target: 'pino-loki',
+                options: {
+                  batching: false,
+                  host: process.env.LOKI_HOST || 'http://localhost:3100',
+                  labels: {
+                    job: 'pino',
+                    service: 'ritchy',
+                    environment: process.env.NODE_ENV || 'production',
+                  },
+                },
+              },
+            ],
+          },
+          messageKey: 'msg',
+          serializers: pino.stdSerializers,
+        }),
   serializers: pino.stdSerializers,
 })
+
+// Helper to capture logs in test mode
+const captureTestLog = (level: string, payload: LogPayload) => {
+  if (isTest && globalThis.__testLogs) {
+    const time = new Date().toISOString().slice(11, 23)
+    globalThis.__testLogs.push(
+      `[${time}] ${level.toUpperCase()}: ${payload.msg}\n    event: "${payload.event}"${payload.metadata ? `\n    metadata: ${JSON.stringify(payload.metadata, null, 2).split('\n').join('\n    ')}` : ''}`,
+    )
+  }
+}
+
+// Declare global for test log capture
+declare global {
+  var __testLogs: string[] | undefined
+}
 
 // Wrap the logger to enforce the payload structure and inject context
 const logger = {
   info: (payload: LogPayload) => {
     const context = asyncLocalStorage.getStore()
+    captureTestLog('info', payload)
     baseLogger.info({ ...payload, ...(context || {}) })
   },
   error: (payload: LogPayload) => {
     const context = asyncLocalStorage.getStore()
+    captureTestLog('error', payload)
     baseLogger.error({ ...payload, ...(context || {}) })
   },
   warn: (payload: LogPayload) => {
     const context = asyncLocalStorage.getStore()
+    captureTestLog('warn', payload)
     baseLogger.warn({ ...payload, ...(context || {}) })
   },
   debug: (payload: LogPayload) => {
     const context = asyncLocalStorage.getStore()
+    captureTestLog('debug', payload)
     baseLogger.debug({ ...payload, ...(context || {}) })
   },
   runWithContext: <T>(newContext: LogContext, fn: () => T): T => {

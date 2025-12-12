@@ -1,25 +1,19 @@
-import { useSearchContentQuery } from '@/api/queries/search/useSearchContent'
-import { ApiErrorDisplay } from '@/components/common/ApiErrorDisplay'
-import { LoadingMessages } from '@/components/common/LoadingMessages'
-import { MapDisplay } from '@/components/map-display/MapDisplay'
-import { createFileRoute } from '@tanstack/react-router'
+import { Navigate, createFileRoute } from '@tanstack/react-router'
 
+/**
+ * Legacy route - redirects to /leads with searchId scope
+ *
+ * This route is preserved for backward compatibility.
+ * Search viewing now happens through /leads with searchId as a scope param.
+ * Note: searchId is NOT a filter - it's a navigation context for historical searches.
+ */
 export const Route = createFileRoute('/_auth/search/$searchId')({
-  loader: async ({ params }) => {
-    return {
-      searchId: params.searchId,
-    }
-  },
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const { searchId } = Route.useLoaderData()
-  const { data, isLoading, error } = useSearchContentQuery(searchId)
+  const { searchId } = Route.useParams()
 
-  if (isLoading) return <LoadingMessages />
-  if (error) return <ApiErrorDisplay error={error} />
-  if (!data || 'error' in data) return null
-
-  return <MapDisplay key={searchId} places={data} searchId={searchId} />
+  // Redirect to /leads with the searchId scope
+  return <Navigate to="/leads" search={{ searchId }} replace />
 }

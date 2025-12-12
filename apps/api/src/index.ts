@@ -28,6 +28,10 @@ import webhookRoutes from './webhook'
 // Import the bullmq workers
 import './internal/bullmq'
 import { bullmqQueues } from './internal/bullmq'
+import {
+  startQueueCleanupScheduler,
+  stopQueueCleanupScheduler,
+} from './internal/bullmq/cleanup'
 
 import {
   flushPendingUpdates,
@@ -321,6 +325,9 @@ initQdrantCollection().then(() => {
 // Start Redis health monitor
 redisHealthMonitor.start(1000 * 60 * 15) // Check every 15 minutes
 
+// Start BullMQ queue cleanup scheduler
+startQueueCleanupScheduler()
+
 // Then start the server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
 
@@ -379,6 +386,9 @@ process.on('SIGTERM', async () => {
   // Shutdown Redis health monitor
   redisHealthMonitor.stop()
 
+  // Stop BullMQ queue cleanup scheduler
+  stopQueueCleanupScheduler()
+
   process.exit(0)
 })
 
@@ -393,6 +403,9 @@ process.on('SIGINT', async () => {
 
   // Shutdown Redis health monitor
   redisHealthMonitor.stop()
+
+  // Stop BullMQ queue cleanup scheduler
+  stopQueueCleanupScheduler()
 
   process.exit(0)
 })

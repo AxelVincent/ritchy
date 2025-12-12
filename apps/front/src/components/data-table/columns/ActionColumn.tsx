@@ -1,6 +1,5 @@
 import { useEnrichmentStatus } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { EnrichmentActionButton } from '@/components/data-table/enrich/EnrichmentActionButton'
-import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -9,6 +8,8 @@ import {
   TooltipProvider,
 } from '@/components/ui/tooltip'
 import { TooltipTrigger } from '@/components/ui/tooltip'
+import { useSelectionSafe } from '@/contexts/SelectionContext'
+import { useTableSelectionContextSafe } from '@/contexts/TableSelectionContext'
 import { cn } from '@/lib/utils'
 import type { SearchResult } from '@ritchy/types'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -28,7 +29,7 @@ const ActionCellContent = ({
   rowId: string
   enrichedStatus?: 'ENRICHED' | 'RECENTLY_ENRICHED' | 'ENRICHMENT_ERROR'
   isSelected: boolean
-  onToggleSelected: (value: boolean) => void
+  onToggleSelected: () => void
   onFocus: () => void
 }) => {
   // Fetch individual enrichment status with WebSocket support
@@ -49,7 +50,7 @@ const ActionCellContent = ({
         >
           <Checkbox
             checked={isSelected}
-            onCheckedChange={(value) => onToggleSelected(!!value)}
+            onCheckedChange={onToggleSelected}
             aria-label="Select row"
           />
         </div>
@@ -97,45 +98,75 @@ const ActionCellContent = ({
 
 ActionCellContent.displayName = 'ActionCellContent'
 
+// Header component that uses table selection context
+const ActionColumnHeader = () => {
+  const tableSelection = useTableSelectionContextSafe()
+
+  if (!tableSelection) {
+    // Fallback if no context (shouldn't happen in normal use)
+    return (
+      <div className="w-full h-full flex items-center justify-center left-2 relative">
+        <Checkbox disabled aria-label="Select all" />
+      </div>
+    )
+  }
+
+  const { isAllSelected, isSomeSelected, selectAll, clearAll } = tableSelection
+
+  return (
+    <div className="w-full h-full flex items-center justify-center left-2 relative">
+      <Checkbox
+        checked={isAllSelected || (isSomeSelected && 'indeterminate')}
+        onCheckedChange={(checked) => {
+          if (checked) {
+            selectAll()
+          } else {
+            clearAll()
+          }
+        }}
+        aria-label="Select all"
+      />
+    </div>
+  )
+}
+
+// Cell component that uses table selection context
+const ActionColumnCell = ({
+  row,
+}: { row: { original: SearchResult; index: number } }) => {
+  const selection = useSelectionSafe()
+  const tableSelection = useTableSelectionContextSafe()
+
+  const rowId = row.original.id
+  const isSelected = tableSelection?.isSelected(rowId) ?? false
+
+  const handleFocus = () => {
+    posthog.capture('pin_cell_place', { property: 'action_column' })
+    selection?.selectPlace(rowId)
+  }
+
+  const handleToggle = () => {
+    tableSelection?.toggle(rowId)
+  }
+
+  return (
+    <ActionCellContent
+      rowIndex={row.index}
+      rowId={rowId}
+      enrichedStatus={row.original.enrichedStatus ?? undefined}
+      isSelected={isSelected}
+      onToggleSelected={handleToggle}
+      onFocus={handleFocus}
+    />
+  )
+}
+
 export const actionColumn: ColumnDef<SearchResult> = {
   id: 'action',
   enableColumnFilter: false,
   size: 100,
-  header: ({ table }) => (
-    <div className="w-full relative min-h-[85px]">
-      <div className="absolute bottom-0 left-2">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && 'indeterminate')
-          }
-          onCheckedChange={(value: boolean) =>
-            table.toggleAllPageRowsSelected(!!value)
-          }
-          aria-label="Select all"
-        />
-      </div>
-    </div>
-  ),
-  cell: ({ row }) => {
-    const { setSelectedPlaceId } = useMapStore()
-
-    const handleFocus = () => {
-      posthog.capture('pin_cell_place', { property: 'action_column' })
-      setSelectedPlaceId(row.original.id, 'table')
-    }
-
-    return (
-      <ActionCellContent
-        rowIndex={row.index}
-        rowId={row.original.id}
-        enrichedStatus={row.original.enrichedStatus ?? undefined}
-        isSelected={row.getIsSelected()}
-        onToggleSelected={(value) => row.toggleSelected(value)}
-        onFocus={handleFocus}
-      />
-    )
-  },
+  header: () => <ActionColumnHeader />,
+  cell: ({ row }) => <ActionColumnCell row={row} />,
   enableSorting: false,
   enableHiding: false,
 }

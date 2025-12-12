@@ -6,6 +6,12 @@ import type { GeocodeLocation } from '@ritchy/types'
 import mapboxgl from 'mapbox-gl'
 import { type FC, useCallback, useEffect, useRef } from 'react'
 
+// Search map uses streets style for better landmark visibility
+const SEARCH_MAP_SETTINGS = {
+  ...MAP_SETTINGS,
+  style: 'mapbox://styles/mapbox/streets-v12',
+}
+
 type center = {
   latitude: number
   longitude: number
@@ -93,7 +99,7 @@ export const SearchMap: FC<MapBoxProps> = ({
   const mapRef = useMapInitialization({
     mapContainerRef,
     initialCenter,
-    settings: MAP_SETTINGS,
+    settings: SEARCH_MAP_SETTINGS,
     searchResults: [],
   })
 

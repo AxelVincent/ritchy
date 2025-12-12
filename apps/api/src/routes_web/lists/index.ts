@@ -9,14 +9,16 @@ import { addItemsToList } from './add_items'
 import { deleteList } from './delete'
 import { deleteItemsFromList } from './delete_items'
 import { getLists } from './get_all'
-import { getListContent } from './get_content'
 import { upsertList } from './upsertList'
 
 const listsRouter: Router = express.Router()
 
 listsRouter.post('/', upsertList)
 listsRouter.get('/', getLists)
-listsRouter.get('/:id', getListContent)
+// GET /:id removed - use GET /user-places?listId=:id instead
+// GET /:id/filter-options removed - use GET /user-places/filter-options?listId=:id instead
+// GET /:id/markers removed - use GET /user-places/markers?listId=:id instead
+// GET /:id/items/:itemId/page removed - use GET /user-places/items/:itemId/page?listId=:id instead
 listsRouter.post('/:id/items', addItemsToList)
 listsRouter.delete('/:id/items', deleteItemsFromList)
 listsRouter.delete('/:id', deleteList)

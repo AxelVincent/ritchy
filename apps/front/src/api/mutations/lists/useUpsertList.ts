@@ -1,7 +1,7 @@
-import { listContentKeys } from '@/api/queries/lists/useListContent'
-import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
+  GetUserPlacesApiResponse,
   Lists,
   UpsertListRequest,
   UpsertListResponse,
@@ -29,17 +29,15 @@ export const useUpsertList = () => {
       })
 
       if (newList.id) {
-        const listContentQueries = queryClient.getQueryCache().findAll({
-          queryKey: listContentKeys.all,
-        })
-        for (const query of listContentQueries) {
-          const listContent = query.state.data as {
-            items: Array<{ lists?: Array<{ id: string; emoji: string }> }>
-          }
-          if (listContent?.items) {
-            queryClient.setQueryData(query.queryKey, {
-              ...listContent,
-              items: listContent.items.map((place) => {
+        // Update user places queries to reflect emoji changes
+        queryClient.setQueriesData<GetUserPlacesApiResponse>(
+          { queryKey: userPlacesKeys.all },
+          (oldData) => {
+            if (!oldData || 'error' in oldData) return oldData
+
+            return {
+              ...oldData,
+              items: oldData.items.map((place) => {
                 if (!place.lists) return place
                 const updatedList = place.lists.find(
                   (list) => list.id === newList.id,
@@ -56,9 +54,9 @@ export const useUpsertList = () => {
                   ],
                 }
               }),
-            })
-          }
-        }
+            }
+          },
+        )
       }
 
       return { previousLists }
@@ -73,10 +71,7 @@ export const useUpsertList = () => {
       queryClient.invalidateQueries({ queryKey: ['lists'] })
       if (data?.id) {
         queryClient.invalidateQueries({
-          queryKey: listContentKeys.list(data.id),
-        })
-        queryClient.invalidateQueries({
-          queryKey: searchContentKeys.all,
+          queryKey: userPlacesKeys.all,
         })
       }
     },

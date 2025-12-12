@@ -4,11 +4,13 @@ import type {
   PostContactEmailRequest,
   PostContactEmailResponse,
 } from '@ritchy/types'
+import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { contact, contactEmail } from '../../db/schema'
 import { getOrCreatePrimaryContact } from '../../services/contact/queries/insert_primary_contact'
 import { verifyAndInsertContactEmail } from '../../services/contact/verify_and_insert_contact_email'
+import { updateLastInteraction } from '../../services/places/utils/update_last_interaction'
 
 export const postContactEmail = async (
   req: Request<
@@ -31,6 +33,17 @@ export const postContactEmail = async (
       '',
       email,
     )
+
+    // Get userPlaceId from contact and update last interaction
+    const [contactRecord] = await db
+      .select({ userPlaceId: contact.userPlaceId })
+      .from(contact)
+      .where(eq(contact.id, contactId))
+      .limit(1)
+
+    if (contactRecord) {
+      await updateLastInteraction(contactRecord.userPlaceId)
+    }
 
     res.json({
       id: contactEmailResult?.id ?? '',

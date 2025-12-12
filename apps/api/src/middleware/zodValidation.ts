@@ -2,21 +2,23 @@ import { logger } from '@ritchy/logger'
 import type { NextFunction, Request, Response } from 'express'
 import { z } from 'zod'
 
-type ZodValidationOptions<TParams, TBody, TResponse> = {
+type ZodValidationOptions<TParams, TQuery, TBody, TResponse> = {
   paramsSchema?: z.ZodType<TParams>
+  querySchema?: z.ZodType<TQuery>
   bodySchema?: z.ZodType<TBody>
   responseSchema?: z.ZodType<TResponse>
 }
 
 export const validateRequest = <
   TParams = unknown,
+  TQuery = unknown,
   TBody = unknown,
   TResponse = unknown,
 >(
-  options: ZodValidationOptions<TParams, TBody, TResponse>,
+  options: ZodValidationOptions<TParams, TQuery, TBody, TResponse>,
 ) => {
   return async (
-    req: Request<TParams, TResponse, TBody>,
+    req: Request<TParams, TResponse, TBody, TQuery>,
     res: Response,
     next: NextFunction,
   ) => {
@@ -24,6 +26,11 @@ export const validateRequest = <
       // Validate params if schema provided
       if (options.paramsSchema) {
         req.params = await options.paramsSchema.parseAsync(req.params)
+      }
+
+      // Validate query if schema provided
+      if (options.querySchema) {
+        req.query = await options.querySchema.parseAsync(req.query)
       }
 
       // Validate body if schema provided

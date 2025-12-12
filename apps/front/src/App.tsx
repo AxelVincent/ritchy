@@ -1,4 +1,5 @@
 import './App.css'
+import { GlobalErrorBoundary } from '@/components/common/GlobalErrorBoundary'
 import { Toaster } from '@/components/ui/toaster'
 import { ClerkProvider, useUser } from '@clerk/clerk-react'
 import { RouterProvider } from '@tanstack/react-router'
@@ -34,16 +35,18 @@ function InnerApp() {
 
 const App = () => {
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
-      <QueryProvider>
-        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-          <WebSocketProvider>
-            <InnerApp />
-            <Toaster />
-          </WebSocketProvider>
-        </ThemeProvider>
-      </QueryProvider>
-    </ClerkProvider>
+    <GlobalErrorBoundary>
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+        <QueryProvider>
+          <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+            <WebSocketProvider>
+              <InnerApp />
+              <Toaster />
+            </WebSocketProvider>
+          </ThemeProvider>
+        </QueryProvider>
+      </ClerkProvider>
+    </GlobalErrorBoundary>
   )
 }
 

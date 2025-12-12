@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
 import type { Search } from '@ritchy/types'
-import { Link, useMatch, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   History,
   Loader2,
@@ -82,10 +82,14 @@ function groupSearchesByDate(searches: Search): SearchGroup[] {
 export function NavHistory() {
   const { open } = useSidebar()
   const navigate = useNavigate()
-  const match = useMatch({
-    from: '/_auth/search/$searchId',
-    shouldThrow: false,
-  })
+  const routerState = useRouterState()
+
+  // Check if a search is active by looking at URL search params
+  const isSearchActive = (searchId: string): boolean => {
+    const search = routerState.location.search as Record<string, string>
+    return search.searchId === searchId
+  }
+
   const {
     data: { searches = [] } = { searches: [] },
     isLoading,
@@ -138,7 +142,7 @@ export function NavHistory() {
                       asChild
                       tooltip={`${search.keyword} - ${search.locationFormatted}`}
                       className={cn('justify-between')}
-                      isActive={match?.params.searchId === search.id}
+                      isActive={isSearchActive(search.id)}
                     >
                       <Link
                         to="/search/$searchId"

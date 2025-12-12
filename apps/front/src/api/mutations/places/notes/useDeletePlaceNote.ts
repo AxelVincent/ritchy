@@ -1,14 +1,12 @@
-import { listContentKeys } from '@/api/queries/lists/useListContent'
 import { placeKeys } from '@/api/queries/places/usePlace'
-import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation, webApiClient } from '@/hooks/useApi'
 import { useAuth } from '@clerk/clerk-react'
 import type {
   DeleteNoteApiResponse,
   DeleteNoteRequest,
-  GetListContentApiResponse,
   GetPlaceApiResponse,
-  GetSearchContentApiResponse,
+  GetUserPlacesApiResponse,
   Note,
 } from '@ritchy/types'
 import { useQueryClient } from '@tanstack/react-query'
@@ -81,9 +79,9 @@ export const useDeletePlaceNote = () => {
 
         const updatedPlace = placeData.place
 
-        // Update all list content queries
-        queryClient.setQueriesData<GetListContentApiResponse>(
-          { queryKey: listContentKeys.all },
+        // Update all user places queries (unified endpoint)
+        queryClient.setQueriesData<GetUserPlacesApiResponse>(
+          { queryKey: userPlacesKeys.all },
           (oldData) => {
             if (!oldData || 'error' in oldData) return oldData
 
@@ -102,22 +100,6 @@ export const useDeletePlaceNote = () => {
           },
         )
 
-        // Update all search content queries
-        queryClient.setQueriesData<GetSearchContentApiResponse>(
-          { queryKey: searchContentKeys.all },
-          (oldData) => {
-            if (!oldData || 'error' in oldData) return oldData
-
-            const placeIndex = oldData.findIndex((p) => p.id === userPlaceId)
-            if (placeIndex === -1) return oldData
-
-            const newPlaces = [...oldData]
-            newPlaces[placeIndex] = updatedPlace
-
-            return newPlaces
-          },
-        )
-
         // Invalidate notes query to get fresh data
         queryClient.invalidateQueries({
           queryKey: ['notes', 'place', userPlaceId],
@@ -129,8 +111,7 @@ export const useDeletePlaceNote = () => {
           error,
         )
         // Fallback: invalidate queries
-        queryClient.invalidateQueries({ queryKey: listContentKeys.all })
-        queryClient.invalidateQueries({ queryKey: searchContentKeys.all })
+        queryClient.invalidateQueries({ queryKey: userPlacesKeys.all })
         queryClient.invalidateQueries({
           queryKey: ['notes', 'place', userPlaceId],
           exact: true,

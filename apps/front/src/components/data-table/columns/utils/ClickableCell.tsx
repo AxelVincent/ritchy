@@ -1,5 +1,5 @@
 import type { PlaceTabValue } from '@/components/map-display/store/useMapStore'
-import { useMapStore } from '@/components/map-display/store/useMapStore'
+import { useSelectionSafe } from '@/contexts/SelectionContext'
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 
@@ -18,11 +18,11 @@ export const ClickableCell = ({
   className,
   disabled = false,
 }: ClickableCellProps) => {
-  const { selectPlaceAndTab } = useMapStore()
+  const selection = useSelectionSafe()
 
   const handleClick = () => {
-    if (!disabled) {
-      selectPlaceAndTab(placeId, tab)
+    if (!disabled && selection) {
+      selection.selectPlaceAndTab(placeId, tab)
     }
   }
 

@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '../db/db'
 import { userPlace as userPlaceTable, user as userTable } from '../db/schema'
 import { redisClient } from '../internal/redis/redis'
@@ -161,6 +161,141 @@ export const invalidateOwnershipCache = async (
         error: error instanceof Error ? error.message : String(error),
       },
     })
+  }
+}
+
+/**
+ * Verify ownership for multiple userPlaces in a single batch operation
+ * Uses Redis MGET for efficient batch retrieval, falls back to database for cache misses
+ *
+ * @param userPlaceIds - Array of userPlace UUIDs to verify
+ * @param clerkUserId - Clerk user ID to verify ownership against
+ * @returns Array of userPlaceIds that the user owns
+ *
+ * @example
+ * ```typescript
+ * const ownedIds = await verifyOwnershipBatch(userPlaceIds, socket.data.userId)
+ * for (const id of ownedIds) {
+ *   socket.join(`enrichment:${id}`)
+ * }
+ * ```
+ */
+export const verifyOwnershipBatch = async (
+  userPlaceIds: string[],
+  clerkUserId: string,
+): Promise<string[]> => {
+  if (userPlaceIds.length === 0) return []
+
+  const ownedIds: string[] = []
+  const cacheMisses: string[] = []
+
+  try {
+    // Try Redis cache first with MGET
+    const cacheKeys = userPlaceIds.map(
+      (id) => `${OWNERSHIP_CACHE_PREFIX}:${id}`,
+    )
+    const cachedValues = await redisClient.redis.mget(...cacheKeys)
+
+    // Process cached results and identify misses
+    for (let i = 0; i < userPlaceIds.length; i++) {
+      const userPlaceId = userPlaceIds[i]
+      const cachedClerkId = cachedValues[i]
+
+      if (cachedClerkId !== null) {
+        // Cache hit
+        if (cachedClerkId === clerkUserId) {
+          ownedIds.push(userPlaceId)
+        }
+        // Empty string means not found (cached negative result)
+      } else {
+        // Cache miss - need to query database
+        cacheMisses.push(userPlaceId)
+      }
+    }
+
+    // Query database for cache misses
+    if (cacheMisses.length > 0) {
+      logger.debug({
+        msg: 'Batch ownership cache misses, querying database',
+        event: 'ownership_batch_cache_miss',
+        metadata: { missCount: cacheMisses.length },
+      })
+
+      const results = await db
+        .select({
+          userPlaceId: userPlaceTable.id,
+          clerkId: userTable.clerkId,
+        })
+        .from(userPlaceTable)
+        .innerJoin(userTable, eq(userPlaceTable.user_id, userTable.id))
+        .where(inArray(userPlaceTable.id, cacheMisses))
+
+      // Create a map for quick lookup
+      const ownershipMap = new Map<string, string>()
+      for (const result of results) {
+        ownershipMap.set(result.userPlaceId, result.clerkId)
+      }
+
+      // Cache results and check ownership
+      const cachePromises: Promise<string>[] = []
+      for (const userPlaceId of cacheMisses) {
+        const ownerClerkId = ownershipMap.get(userPlaceId)
+        const cacheKey = `${OWNERSHIP_CACHE_PREFIX}:${userPlaceId}`
+
+        if (ownerClerkId) {
+          // Cache the owner
+          cachePromises.push(
+            redisClient.redis.setex(
+              cacheKey,
+              OWNERSHIP_CACHE_TTL,
+              ownerClerkId,
+            ),
+          )
+          if (ownerClerkId === clerkUserId) {
+            ownedIds.push(userPlaceId)
+          }
+        } else {
+          // Cache as not found (empty string)
+          cachePromises.push(
+            redisClient.redis.setex(cacheKey, OWNERSHIP_CACHE_TTL, ''),
+          )
+        }
+      }
+
+      // Execute cache writes in parallel (non-blocking)
+      Promise.all(cachePromises).catch((error) => {
+        logger.error({
+          msg: 'Failed to cache batch ownership results',
+          event: 'ownership_batch_cache_write_error',
+          metadata: {
+            error: error instanceof Error ? error.message : String(error),
+          },
+        })
+      })
+    }
+
+    logger.debug({
+      msg: 'Batch ownership verification completed',
+      event: 'ownership_batch_verified',
+      metadata: {
+        requested: userPlaceIds.length,
+        owned: ownedIds.length,
+        cacheHits: userPlaceIds.length - cacheMisses.length,
+        cacheMisses: cacheMisses.length,
+      },
+    })
+
+    return ownedIds
+  } catch (error) {
+    logger.error({
+      msg: 'Failed to verify batch ownership',
+      event: 'ownership_batch_verification_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+    // On error, deny access (fail closed)
+    return []
   }
 }
 

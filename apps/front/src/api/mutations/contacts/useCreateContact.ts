@@ -1,6 +1,5 @@
-import { listContentKeys } from '@/api/queries/lists/useListContent'
 import { placeContactsKeys } from '@/api/queries/places/contacts/usePlaceContacts'
-import { searchContentKeys } from '@/api/queries/search/useSearchContent'
+import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   CreateContactApiResponse,
@@ -18,10 +17,7 @@ export const useCreateContact = () => {
       onSettled: (_, __, { placeId }) => {
         // Invalidate and refetch
         queryClient.invalidateQueries({
-          queryKey: searchContentKeys.all,
-        })
-        queryClient.invalidateQueries({
-          queryKey: listContentKeys.all,
+          queryKey: userPlacesKeys.all,
         })
         queryClient.invalidateQueries({
           queryKey: placeContactsKeys.place(placeId),

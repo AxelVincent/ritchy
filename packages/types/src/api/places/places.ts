@@ -207,7 +207,7 @@ export type EmailResult = z.infer<typeof EmailResultEnum>
 
 export const EmailSchema = z.object({
   id: z.string().uuid(),
-  email: z.string().email(),
+  email: z.string(), // Relaxed validation - DB may contain non-standard email formats
   isPrimary: z.boolean(),
   contactId: z.string(),
   source: z.string().nullable().optional(),
@@ -264,20 +264,27 @@ const CompanyActivitySchema = z.object({
 })
 export type CompanyActivity = z.infer<typeof CompanyActivitySchema>
 
-const CompanyOfficerSchema = z.object({
+const PlaceContactSchema = z.object({
   id: z.string(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
   role: z.string().nullable(),
   type: z.string().nullable(),
 })
-export type CompanyOfficer = z.infer<typeof CompanyOfficerSchema>
+export type PlaceContact = z.infer<typeof PlaceContactSchema>
 
 export const PlaceSchema = PlaceSchemaBase.extend({
   listId: z.string().uuid().nullable(),
   lists: z.array(PlaceListAssociationSchema).optional(),
   notes: z.array(NoteSchema).optional().nullable(),
   status: StatusEnum.nullable(),
+  createdAt: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val)),
+  lastInteractionAt: z
+    .union([z.string(), z.date()])
+    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
+    .nullable(),
   domainRegisteredAt: z
     .union([z.string(), z.date()])
     .transform((val) => (typeof val === 'string' ? new Date(val) : val))
@@ -295,7 +302,7 @@ export const PlaceSchema = PlaceSchemaBase.extend({
     .transform((val) => (typeof val === 'string' ? new Date(val) : val))
     .nullable(),
   companyActivities: z.array(CompanyActivitySchema),
-  companyOfficers: z.array(CompanyOfficerSchema),
+  placeContacts: z.array(PlaceContactSchema),
   companyTechnologies: z.array(z.string()),
 })
 

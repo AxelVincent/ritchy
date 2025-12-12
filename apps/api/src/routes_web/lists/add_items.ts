@@ -11,6 +11,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
+import { updateLastInteractionBatch } from '../../services/places/utils/update_last_interaction'
 
 export const addItemsToList = async (
   req: Request<
@@ -83,6 +84,10 @@ export const addItemsToList = async (
     const duplicatePlaceIds = upsertResults
       .filter((record) => record.operation === 'update')
       .map((record) => record.placeId)
+
+    // Update last interaction for all affected places
+    const allUserPlaceIds = items.map((item) => item.userPlaceId)
+    await updateLastInteractionBatch(allUserPlaceIds)
 
     res.json({
       success: true,

@@ -38,12 +38,10 @@ export const getPlace = async (
       return
     }
 
-    let placesResults = await getAggregatedUserPlaces(
+    let { items: placesResults } = await getAggregatedUserPlaces({
       userId,
-      undefined,
-      undefined,
       userPlaceId,
-    )
+    })
 
     // Check if place data is incomplete and needs refresh
     const place = placesResults[0]
@@ -64,12 +62,11 @@ export const getPlace = async (
       await refreshPlaces([place.id], {
         userId,
       })
-      placesResults = await getAggregatedUserPlaces(
+      const refreshedResult = await getAggregatedUserPlaces({
         userId,
-        undefined,
-        undefined,
         userPlaceId,
-      )
+      })
+      placesResults = refreshedResult.items
     }
 
     if (!placesResults.length) {

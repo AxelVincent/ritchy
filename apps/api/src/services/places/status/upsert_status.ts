@@ -3,6 +3,7 @@ import type { Status, StatusType } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { status as statusTable, userPlace } from '../../../db/schema'
+import { updateLastInteraction } from '../utils/update_last_interaction'
 
 export const upsertStatus = async (
   userId: string,
@@ -51,6 +52,8 @@ export const upsertStatus = async (
         },
       })
       .returning()
+
+    await updateLastInteraction(userPlaceId)
 
     return {
       status: result.status,

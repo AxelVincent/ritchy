@@ -4,6 +4,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../../db/db'
 import { note as noteTable } from '../../../db/schema'
+import { updateLastInteraction } from '../../../services/places/utils/update_last_interaction'
 
 export const addPlaceNote = async (
   req: Request<AddNoteRequest>,
@@ -30,6 +31,8 @@ export const addPlaceNote = async (
         userId: req.auth.userId,
       })
       .returning()
+
+    await updateLastInteraction(userPlaceId)
 
     res.json({
       id: result.id,

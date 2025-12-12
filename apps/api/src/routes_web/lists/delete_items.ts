@@ -11,6 +11,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
 import { list, listPlace } from '../../db/schema'
+import { updateLastInteractionBatch } from '../../services/places/utils/update_last_interaction'
 
 export const deleteItemsFromList = async (
   req: Request<
@@ -65,6 +66,9 @@ export const deleteItemsFromList = async (
           inArray(listPlace.userPlaceId, parsedBody.items),
         ),
       )
+
+    // Update last interaction for all affected places
+    await updateLastInteractionBatch(parsedBody.items)
 
     res.json({
       success: true,

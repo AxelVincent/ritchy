@@ -128,6 +128,7 @@ export const userPlace = pgTable(
       .notNull()
       .references(() => place.id, { onDelete: 'cascade' }),
     enriched_at: timestamp('enriched_at'),
+    last_interaction_at: timestamp('last_interaction_at'),
     created_at: timestamp('created_at').notNull().defaultNow(),
     updated_at: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -136,5 +137,6 @@ export const userPlace = pgTable(
     unique().on(table.place_id, table.user_id),
     index('idx_user_place_place_id').on(table.place_id),
     index('idx_user_place_user_id').on(table.user_id),
+    index('idx_user_place_last_interaction').on(table.last_interaction_at),
   ],
 )

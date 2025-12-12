@@ -13,8 +13,7 @@ export type WebSocketErrorCode =
 /**
  * Zod schemas for WebSocket event validation
  */
-export const SubscribeEventSchema = z.string().uuid()
-export const UnsubscribeEventSchema = z.string().uuid()
+export const BatchSubscribeEventSchema = z.array(z.string().uuid())
 
 export const WebSocketErrorSchema = z.object({
   message: z.string(),
@@ -33,8 +32,18 @@ export const StatusUpdateEventSchema = z.object({
 })
 
 /**
+ * Batch status update response - map of userPlaceId to status
+ */
+export type BatchStatusUpdate = Record<string, EnrichmentStatusResponse>
+
+/**
  * Type-safe WebSocket event definitions for enrichment namespace
  * Use with Socket.IO's typed event system
+ *
+ * Simplified architecture (v2):
+ * - Single batch-subscribe event replaces individual subscribe/unsubscribe
+ * - Server leaves all previous rooms and joins new ones in a single operation
+ * - batch-status-update provides initial status for all subscribed IDs
  *
  * @example Backend
  * ```typescript
@@ -57,6 +66,9 @@ export interface EnrichmentWebSocketServerEvents {
     } & EnrichmentStatusResponse,
   ) => void
 
+  // Batch status update sent after batch-subscribe
+  'batch-status-update': (data: BatchStatusUpdate) => void
+
   error: (error: {
     message: string
     code: WebSocketErrorCode
@@ -66,17 +78,9 @@ export interface EnrichmentWebSocketServerEvents {
 
 export interface EnrichmentWebSocketClientEvents {
   // Client → Server events
-  subscribe: (userPlaceId: string) => void
-  unsubscribe: (userPlaceId: string) => void
+  // Replaces all current subscriptions with the new set
+  'batch-subscribe': (userPlaceIds: string[]) => void
 }
-
-/**
- * Combined interface for backward compatibility
- * @deprecated Use EnrichmentWebSocketServerEvents and EnrichmentWebSocketClientEvents separately
- */
-export interface EnrichmentWebSocketEvents
-  extends EnrichmentWebSocketServerEvents,
-    EnrichmentWebSocketClientEvents {}
 
 // Type exports for Zod schemas
 export type WebSocketError = z.infer<typeof WebSocketErrorSchema>
