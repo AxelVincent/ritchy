@@ -4,9 +4,12 @@ import { DEFAULT_LOCATION } from '@/components/map-display/constants'
 import { type Location, SearchMap } from '@/components/search/search-map'
 import { SearchOptions } from '@/components/search/search-options'
 import { Button } from '@/components/ui/button'
+import { useSidebar } from '@/components/ui/sidebar'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { toast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { CreateSearchRequestBody, GeocodeLocation } from '@ritchy/types'
+import { Menu } from 'lucide-react'
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { debounce } from 'lodash'
@@ -46,6 +49,8 @@ function RouteComponent() {
     navTimestamp,
   } = Route.useSearch()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
+  const { toggleSidebar } = useSidebar()
   const defaultLocation = DEFAULT_LOCATION
   const { location: geoLocation, loading } = useGeolocation(
     defaultLocation,
@@ -265,12 +270,30 @@ function RouteComponent() {
         selectedPlace={selectedPlace}
         setSelectedPlace={setSelectedPlace}
       />
-      <SearchMap
-        key={navTimestamp}
-        updateSearchParams={updateSearchParams}
-        userLocation={currentLocation}
-        selectedPlace={selectedPlace}
-      />
+      <div className={isMobile ? 'flex-1 pb-14' : 'flex-1'}>
+        <SearchMap
+          key={navTimestamp}
+          updateSearchParams={updateSearchParams}
+          userLocation={currentLocation}
+          selectedPlace={selectedPlace}
+        />
+      </div>
+      {/* Mobile bottom bar with menu button */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.08)] safe-area-bottom">
+          <div className="flex items-center h-14 px-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+              onClick={toggleSidebar}
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
