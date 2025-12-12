@@ -5,7 +5,7 @@ import type {
   EnrichmentWebSocketClientEvents,
   EnrichmentWebSocketServerEvents,
 } from '@ritchy/types'
-import { useEffect } from 'react'
+import { useEffect, useId } from 'react'
 import type { Socket } from 'socket.io-client'
 
 export type { WebSocketStatus }
@@ -24,13 +24,13 @@ interface UseEnrichmentWebSocketReturn {
 
 /**
  * Hook to manage WebSocket subscription for a single enrichment
- * Uses the singleton WebSocket context to prevent duplicate connections
  *
- * Features:
- * - Automatic subscription/unsubscription
- * - Shared connection state
- * - No duplicate connections
- * - Graceful cleanup on unmount
+ * v2 Architecture:
+ * - Uses source-based subscription merging
+ * - Can be used alongside useBatchEnrichmentWebSocket without conflicts
+ * - Cleanup on unmount removes this component's subscription
+ *
+ * Use case: Place detail page where only one enrichment needs monitoring
  *
  * @param userPlaceId - The ID of the enrichment to subscribe to
  * @param enabled - Whether the subscription should be active (default: true)
@@ -41,26 +41,25 @@ export const useEnrichmentWebSocket = (
 ): UseEnrichmentWebSocketReturn => {
   const { socket, status, isConnected, subscribe, unsubscribe } = useWebSocket()
 
-  useEffect(() => {
-    debugLog('[WS Single] useEnrichmentWebSocket effect triggered', {
-      enabled,
-      userPlaceId,
-    })
+  // Generate a unique source key for this hook instance
+  const sourceKey = useId()
 
+  useEffect(() => {
     if (!enabled || !userPlaceId) {
-      debugLog('[WS Single] WebSocket disabled or no userPlaceId')
+      debugLog('[WS Single] Subscription disabled or no userPlaceId')
+      unsubscribe(sourceKey)
       return
     }
 
-    // Subscribe to this enrichment
-    subscribe(userPlaceId)
+    debugLog('[WS Single] Subscribing to:', userPlaceId)
+    subscribe(sourceKey, [userPlaceId])
 
-    // Cleanup: unsubscribe on unmount or when userPlaceId changes
+    // Cleanup on unmount - remove this source's subscription
     return () => {
-      debugLog('[WS Single] Unsubscribing from:', userPlaceId)
-      unsubscribe(userPlaceId)
+      debugLog('[WS Single] Cleanup - unsubscribing source:', sourceKey)
+      unsubscribe(sourceKey)
     }
-  }, [userPlaceId, enabled, subscribe, unsubscribe])
+  }, [userPlaceId, enabled, subscribe, unsubscribe, sourceKey])
 
   return {
     socket,

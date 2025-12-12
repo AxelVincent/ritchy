@@ -12,28 +12,31 @@ import {
 } from '../../metrics/collectors'
 
 // Schema for Google's specific response format
+// Note: Google returns an empty object {} when no results are found, so suggestions must be optional
 const GooglePlacesResponseSchema = z.object({
-  suggestions: z.array(
-    z.object({
-      placePrediction: z.object({
-        placeId: z.string(),
-        text: z.object({
-          text: z.string(),
-        }),
-        structuredFormat: z.object({
-          mainText: z.object({
+  suggestions: z
+    .array(
+      z.object({
+        placePrediction: z.object({
+          placeId: z.string(),
+          text: z.object({
             text: z.string(),
           }),
-          secondaryText: z
-            .object({
+          structuredFormat: z.object({
+            mainText: z.object({
               text: z.string(),
-            })
-            .optional(),
+            }),
+            secondaryText: z
+              .object({
+                text: z.string(),
+              })
+              .optional(),
+          }),
+          types: z.array(z.string()),
         }),
-        types: z.array(z.string()),
       }),
-    }),
-  ),
+    )
+    .default([]),
 })
 
 export async function postAutocompleteV1(

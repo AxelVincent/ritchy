@@ -27,13 +27,15 @@ import { ratingCountColumn } from './columns/RatingCountColumn'
 
 import { actionColumn } from './columns/ActionColumn'
 import { activitiesColumn } from './columns/ActivitiesColumn'
+import { createdAtColumn } from './columns/CreatedAtColumn'
 import { dateOfCreationColumn } from './columns/DateOfCreationColumn'
 import { domainRegistrationDateColumn } from './columns/DomainRegistrationDateColumn'
 import { emailsColumn } from './columns/EmailsColumn'
 import { facebookSocialsColumn } from './columns/FacebookSocialsColumn'
 import { instagramSocialsColumn } from './columns/InstagramSocialsColumn'
+import { lastInteractionAtColumn } from './columns/LastInteractionAtColumn'
 import { linkedinSocialsColumn } from './columns/LinkedinSocialsColumn'
-import { officersColumn } from './columns/OfficersColumn'
+import { contactsColumn } from './columns/OfficersColumn'
 import { shortDescriptionColumn } from './columns/ShortDescriptionColumn'
 import { sourceColumn } from './columns/SourceColumn'
 import { sourceIdColumn } from './columns/SourceIdColumn'
@@ -56,13 +58,15 @@ export const columns: ColumnDef<SearchResult>[] = [
   workforceRangeColumn,
   dateOfCreationColumn,
   activitiesColumn,
-  officersColumn,
+  contactsColumn,
   technologiesColumn,
   emailsColumn,
   instagramSocialsColumn,
   linkedinSocialsColumn,
   facebookSocialsColumn,
   domainRegistrationDateColumn,
+  createdAtColumn,
+  lastInteractionAtColumn,
   associatedListsColumn,
   primaryTypeColumn,
   typesColumn,

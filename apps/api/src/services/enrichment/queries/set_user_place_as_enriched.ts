@@ -5,9 +5,10 @@ import { userPlace } from '../../../db/schema'
 
 export const setUserPlaceAsEnriched = async (userPlaceId: string) => {
   try {
+    const now = new Date()
     await db
       .update(userPlace)
-      .set({ enriched_at: new Date() })
+      .set({ enriched_at: now, last_interaction_at: now })
       .where(eq(userPlace.id, userPlaceId))
   } catch (error) {
     logger.error({

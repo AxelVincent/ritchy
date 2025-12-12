@@ -23,8 +23,14 @@ export const MAP_PERFORMANCE_OPTIONS: MapPerformanceOptions = {
   collectResourceTiming: true,
 }
 
+// Theme-aware map styles
+export const MAP_STYLES = {
+  light: 'mapbox://styles/mapbox/light-v11',
+  dark: 'mapbox://styles/mapbox/dark-v11',
+} as const
+
 export const MAP_SETTINGS: MapSettings = {
-  style: 'mapbox://styles/mapbox/streets-v12',
+  style: MAP_STYLES.light, // Default to light, will be overridden by theme
   zoom: 10,
   maxZoom: 20,
   minZoom: 1,

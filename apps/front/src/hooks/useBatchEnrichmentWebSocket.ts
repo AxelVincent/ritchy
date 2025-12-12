@@ -5,7 +5,7 @@ import type {
   EnrichmentWebSocketClientEvents,
   EnrichmentWebSocketServerEvents,
 } from '@ritchy/types'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useId } from 'react'
 import type { Socket } from 'socket.io-client'
 
 export type { WebSocketStatus }
@@ -23,17 +23,14 @@ interface UseBatchEnrichmentWebSocketReturn {
 }
 
 /**
- * Hook to manage WebSocket subscriptions for multiple enrichments efficiently
- * Uses the singleton WebSocket context to prevent duplicate connections
+ * Hook to manage WebSocket subscriptions for page data
  *
- * Features:
- * - Batch subscribe/unsubscribe operations
- * - Automatic subscription management on userPlaceIds change
- * - Debounced subscription updates to prevent rapid churn
- * - Shared connection state
- * - Graceful cleanup on unmount
+ * v2 Architecture:
+ * - Uses source-based subscription merging
+ * - Multiple components can subscribe independently
+ * - Cleanup on unmount removes this component's subscriptions
  *
- * @param userPlaceIds - Array of enrichment IDs to subscribe to
+ * @param userPlaceIds - Array of userPlace IDs to subscribe to (current page)
  * @param enabled - Whether subscriptions should be active (default: true)
  */
 export const useBatchEnrichmentWebSocket = (
@@ -42,74 +39,26 @@ export const useBatchEnrichmentWebSocket = (
 ): UseBatchEnrichmentWebSocketReturn => {
   const { socket, status, isConnected, subscribe, unsubscribe } = useWebSocket()
 
-  // Track previous IDs to detect changes
-  const prevIdsRef = useRef<Set<string>>(new Set())
+  // Generate a unique source key for this hook instance
+  const sourceKey = useId()
 
-  // Memoize ID set for efficient comparison
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const currentIdsSet = useMemo(
-    () => new Set(userPlaceIds),
-    [userPlaceIds.join(',')],
-  )
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: using join for stable comparison
   useEffect(() => {
-    debugLog('[WS Batch] useBatchEnrichmentWebSocket effect triggered', {
-      enabled,
-      count: userPlaceIds.length,
-    })
-
-    if (!enabled || userPlaceIds.length === 0) {
-      debugLog('[WS Batch] WebSocket disabled or no userPlaceIds')
+    if (!enabled) {
+      debugLog('[WS Batch] Subscriptions disabled')
+      unsubscribe(sourceKey)
       return
     }
 
-    // Calculate diff: what to subscribe and unsubscribe
-    const toSubscribe: string[] = []
-    const toUnsubscribe: string[] = []
+    debugLog('[WS Batch] Subscribing to:', userPlaceIds.length, 'places')
+    subscribe(sourceKey, userPlaceIds)
 
-    // Find new IDs to subscribe
-    for (const id of currentIdsSet) {
-      if (!prevIdsRef.current.has(id)) {
-        toSubscribe.push(id)
-      }
-    }
-
-    // Find old IDs to unsubscribe
-    for (const id of prevIdsRef.current) {
-      if (!currentIdsSet.has(id)) {
-        toUnsubscribe.push(id)
-      }
-    }
-
-    // Unsubscribe from removed IDs
-    if (toUnsubscribe.length > 0) {
-      debugLog('[WS Batch] Unsubscribing from:', toUnsubscribe)
-      for (const id of toUnsubscribe) {
-        unsubscribe(id)
-      }
-    }
-
-    // Subscribe to new IDs
-    if (toSubscribe.length > 0) {
-      debugLog('[WS Batch] Subscribing to:', toSubscribe)
-      for (const id of toSubscribe) {
-        subscribe(id)
-      }
-    }
-
-    // Update previous IDs
-    prevIdsRef.current = new Set(currentIdsSet)
-
-    // Cleanup: unsubscribe from all on unmount
+    // Cleanup on unmount - remove this source's subscriptions
     return () => {
-      debugLog('[WS Batch] Cleanup - unsubscribing from all:', userPlaceIds)
-      for (const id of currentIdsSet) {
-        unsubscribe(id)
-      }
-      prevIdsRef.current.clear()
+      debugLog('[WS Batch] Cleanup - unsubscribing source:', sourceKey)
+      unsubscribe(sourceKey)
     }
-  }, [userPlaceIds.join(','), enabled])
+  }, [userPlaceIds.join(','), enabled, subscribe, unsubscribe, sourceKey])
 
   return {
     socket,

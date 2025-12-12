@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { Link, useMatch } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { ListPlus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -83,13 +83,24 @@ export function NavCustomLists() {
   const { open } = useSidebar()
   const { data: lists, isLoading } = useListsQuery()
   const deleteList = useDeleteList()
-  const match = useMatch({ from: '/_auth/lists/$listId', shouldThrow: false })
+  const routerState = useRouterState()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingList, setEditingList] = useState<{
     id: string
     name: string
     emoji: string
   } | null>(null)
+
+  // Check if a list is active by looking at URL search params
+  const isListActive = (listId: string): boolean => {
+    const search = routerState.location.search as Record<string, string>
+    const listIdsValue = search['listIds.v']
+    if (!listIdsValue) return false
+    // listIds.v can be comma-separated for multiple lists
+    const activeListIds = listIdsValue.split(',')
+    // Only highlight if this is the ONLY selected list
+    return activeListIds.length === 1 && activeListIds[0] === listId
+  }
 
   if (isLoading) {
     return (
@@ -130,10 +141,13 @@ export function NavCustomLists() {
               <SidebarMenuButton
                 asChild
                 tooltip={list.name}
-                isActive={match?.params.listId === list.id}
+                isActive={isListActive(list.id)}
                 className={cn('justify-between')}
               >
-                <Link to="/lists/$listId" params={{ listId: list.id }}>
+                <Link
+                  to="/leads"
+                  search={{ 'listIds.op': 'is_any_of', 'listIds.v': list.id }}
+                >
                   <div className="flex items-center gap-2">
                     <p className="text-sm">{list.emoji}</p>
                     <p

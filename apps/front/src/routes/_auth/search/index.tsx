@@ -88,9 +88,11 @@ function RouteComponent() {
       navigate({
         to: '/search',
         search: (prev) => ({
-          mode: prev.mode ?? 'keyword',
           ...prev,
           ...updates,
+          mode: (updates.mode ?? prev.mode ?? 'keyword') as
+            | 'keyword'
+            | 'unique',
         }),
         replace: true,
       })

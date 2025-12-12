@@ -3,16 +3,14 @@ import { useUserMe } from '@/api/queries/users/useUserMe'
 import { useUpgradeModal } from '@/components/marketing/UpgradeModalContext'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import type { SearchResult } from '@ritchy/types'
-import type { Table } from '@tanstack/react-table'
 import { Sparkles } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { EnrichmentConfirmDialog } from './EnrichmentConfirmDialog'
 import { CREDIT_COST_PER_ENRICHMENT, TEST_SIZE } from './constants'
 
-interface EnrichmentButtonsProps<TData extends SearchResult> {
-  table: Table<TData>
+interface EnrichmentButtonsProps {
+  selectedIds?: Set<string>
   listId?: string
   searchId?: string
 }
@@ -26,13 +24,9 @@ const chunkArray = <T,>(array: T[], size: number): T[][] => {
   return chunks
 }
 
-export const EnrichmentButtons = <TData extends SearchResult>({
-  table,
-  // listId,
-  // searchId,
-}: EnrichmentButtonsProps<TData>) => {
-  const selectedRows = table.getSelectedRowModel().rows
-  const hasSelectedRows = selectedRows.length > 0
+export const EnrichmentButtons = ({ selectedIds }: EnrichmentButtonsProps) => {
+  const selectedCount = selectedIds?.size ?? 0
+  const hasSelectedRows = selectedCount > 0
   const bulkEnrichmentMutation = useBulkEnrichment()
   const { data: me } = useUserMe()
   const { showUpgradeModal } = useUpgradeModal()
@@ -43,22 +37,13 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     processed: 0,
   })
 
-  const rowsToEnrich = hasSelectedRows
-    ? selectedRows
-    : table.getFilteredRowModel().rows
-
   const currentCredits = me?.credits.credits ?? 0
 
-  // Get preview of first 5 rows for display in dialog
-  const previewRows = rowsToEnrich.slice(0, 5).map((row) => ({
-    name: row.original.name,
-    address: row.original.address?.formattedAddress ?? 'No address',
-    type: row.original.primaryType ?? row.original.types?.[0] ?? 'Unknown',
-  }))
-
   const handleEnrichClick = async (mode: 'test' | 'full') => {
+    if (!selectedIds || selectedIds.size === 0) return
+
     try {
-      const allUserPlaceIds = rowsToEnrich.map((row) => row.original.id)
+      const allUserPlaceIds = Array.from(selectedIds)
       const userPlaceIds =
         mode === 'test' ? allUserPlaceIds.slice(0, TEST_SIZE) : allUserPlaceIds
 
@@ -126,9 +111,7 @@ export const EnrichmentButtons = <TData extends SearchResult>({
     return (
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4" />
-        <span>
-          {label} ({itemCount})
-        </span>
+        <span>{label}</span>
       </div>
     )
   }
@@ -145,18 +128,18 @@ export const EnrichmentButtons = <TData extends SearchResult>({
             disabled={isProcessing}
             className={isProcessing ? 'h-auto' : ''}
           >
-            {renderButtonContent(selectedRows.length, 'Enrich Selected')}
+            {renderButtonContent(selectedCount, 'Enrich')}
           </Button>
         </div>
 
         <EnrichmentConfirmDialog
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
-          itemCount={selectedRows.length}
+          itemCount={selectedCount}
           currentCredits={currentCredits}
           onConfirm={handleEnrichClick}
           isProcessing={isProcessing}
-          previewRows={previewRows}
+          previewRows={[]} // Preview not available with IDs only
         />
       </>
     )

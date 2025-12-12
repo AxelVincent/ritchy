@@ -1,9 +1,11 @@
+import { usePlaceQuery } from '@/api/queries/places/usePlace'
 import {
   type PlaceTabValue,
   useMapStore,
 } from '@/components/map-display/store/useMapStore'
 import { StatusDropdown } from '@/components/status/status-dropdown'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -15,31 +17,71 @@ import { PlaceInfoTab } from './tabs/PlaceInfoTab'
 import { PlaceNotesTab } from './tabs/PlaceNotesTab'
 
 interface SelectedPlaceCardProps {
-  places: Place[] | null
-  displayedPlaceIds: Set<string>
+  places?: Place[] | null
+  displayedPlaceIds?: Set<string>
+  selectedPlaceId: string | null
+  onClose?: () => void
 }
 
 export const EMPTY_MESSAGE =
   'Use the enrichment button in the table (top left) to enrich this place and get detailed information including short description, business analysis, verified emails, phone numbers, social media, and more.'
 
-export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
-  const {
-    selectedPlaceId,
-    setSelectedPlaceId,
-    setCenterPlaceSpreadsheetId,
-    activeTab,
-    setActiveTab,
-  } = useMapStore()
+export const SelectedPlaceCard = ({
+  places,
+  selectedPlaceId,
+  onClose,
+}: SelectedPlaceCardProps) => {
+  const { activeTab, setActiveTab } = useMapStore()
 
-  const currentPlace = places?.find((place) => place.id === selectedPlaceId)
+  // Check if place exists in provided places array (optimization)
+  const placeFromProps = places?.find((place) => place.id === selectedPlaceId)
 
-  const onClose = () => {
-    setCenterPlaceSpreadsheetId(null)
-    setSelectedPlaceId(null)
+  // Always fetch the place data - this ensures we have fresh data
+  // and handles cases where the place is not in the current page
+  const { data: fetchedData, isLoading } = usePlaceQuery(
+    selectedPlaceId ?? '',
+    !!selectedPlaceId,
+  )
+
+  // Extract place from API response (response shape is { place: Place })
+  const fetchedPlace =
+    fetchedData && 'place' in fetchedData ? fetchedData.place : null
+
+  // Use fetched data, fall back to props if available during loading
+  const currentPlace = fetchedPlace ?? placeFromProps ?? null
+
+  const handleClose = () => {
+    onClose?.()
     setActiveTab(null)
   }
 
-  if (!currentPlace || !selectedPlaceId) {
+  if (!selectedPlaceId) {
+    return null
+  }
+
+  // Show loading state
+  if (isLoading && !currentPlace) {
+    return (
+      <div className="flex flex-col h-full min-h-[200px] p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-48" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={handleClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    )
+  }
+
+  if (!currentPlace) {
     return null
   }
 
@@ -93,7 +135,7 @@ export const SelectedPlaceCard = ({ places }: SelectedPlaceCardProps) => {
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              onClick={onClose}
+              onClick={handleClose}
             >
               <X className="h-4 w-4" />
             </Button>

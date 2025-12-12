@@ -3,9 +3,13 @@ import type {
   DeleteContactEmailApiResponse,
   DeleteContactEmailRequest,
 } from '@ritchy/types'
+import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
+import { db } from '../../db/db'
+import { contact } from '../../db/schema'
 import { deleteContactEmail } from '../../services/contact/queries/delete_contact_email'
 import { verifyContactOwnership } from '../../services/contact/verify_contact_ownership'
+import { updateLastInteraction } from '../../services/places/utils/update_last_interaction'
 
 export const deleteContactEmailHandler = async (
   req: Request<
@@ -46,6 +50,17 @@ export const deleteContactEmailHandler = async (
         message: 'Email not found',
       })
       return
+    }
+
+    // Get userPlaceId from contact and update last interaction
+    const [contactRecord] = await db
+      .select({ userPlaceId: contact.userPlaceId })
+      .from(contact)
+      .where(eq(contact.id, contactId))
+      .limit(1)
+
+    if (contactRecord) {
+      await updateLastInteraction(contactRecord.userPlaceId)
     }
 
     res.json({ success: true })

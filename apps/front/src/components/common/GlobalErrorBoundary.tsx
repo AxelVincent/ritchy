@@ -31,7 +31,9 @@ export class GlobalErrorBoundary extends Component<
     this.state = { hasError: false, error: null, errorId: null, copied: false }
   }
 
-  static getDerivedStateFromError(error: Error): Partial<GlobalErrorBoundaryState> {
+  static getDerivedStateFromError(
+    error: Error,
+  ): Partial<GlobalErrorBoundaryState> {
     return { hasError: true, error, errorId: generateErrorId() }
   }
 
@@ -72,7 +74,7 @@ export class GlobalErrorBoundary extends Component<
   render(): ReactNode {
     if (this.state.hasError) {
       const whatsappMessage = encodeURIComponent(
-        `Hi! I encountered an error on Ritchy.\nError ID: ${this.state.errorId}\nURL: ${window.location.href}`
+        `Hi! I encountered an error on Ritchy.\nError ID: ${this.state.errorId}\nURL: ${window.location.href}`,
       )
 
       return (

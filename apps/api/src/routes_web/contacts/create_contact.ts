@@ -8,6 +8,7 @@ import type { Request, Response } from 'express'
 import { db } from '../../db/db'
 import { userPlace } from '../../db/schema'
 import { insertContact } from '../../services/contact/queries/insert_contact'
+import { updateLastInteraction } from '../../services/places/utils/update_last_interaction'
 
 export const createContactHandler = async (
   req: Request<
@@ -59,6 +60,8 @@ export const createContactHandler = async (
       lastName: lastName ?? null,
       isPrimary: false, // New manual contacts are not primary by default
     })
+
+    await updateLastInteraction(placeId)
 
     logger.info({
       msg: '[POST /contacts] Contact created successfully',

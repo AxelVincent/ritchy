@@ -3,9 +3,13 @@ import type {
   DeleteContactApiResponse,
   DeleteContactRequest,
 } from '@ritchy/types'
+import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
+import { db } from '../../db/db'
+import { contact } from '../../db/schema'
 import { deleteContact } from '../../services/contact/queries/delete_contact'
 import { verifyContactOwnership } from '../../services/contact/verify_contact_ownership'
+import { updateLastInteraction } from '../../services/places/utils/update_last_interaction'
 
 export const deleteContactHandler = async (
   req: Request<
@@ -43,8 +47,19 @@ export const deleteContactHandler = async (
       return
     }
 
+    // Get userPlaceId before deleting
+    const [contactRecord] = await db
+      .select({ userPlaceId: contact.userPlaceId })
+      .from(contact)
+      .where(eq(contact.id, contactId))
+      .limit(1)
+
     // Delete the contact
     const deletedContact = await deleteContact(contactId)
+
+    if (contactRecord) {
+      await updateLastInteraction(contactRecord.userPlaceId)
+    }
 
     logger.info({
       msg: '[DELETE /contacts/:contactId] Contact deleted successfully',

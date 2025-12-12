@@ -1,5 +1,4 @@
 import type { Action } from '@/components/common/TextWrapper'
-import { useMapStore } from '@/components/map-display/store/useMapStore'
 import { toast } from '@/hooks/use-toast'
 import posthog from 'posthog-js'
 
@@ -14,18 +13,21 @@ const showCopiedToast = (displayName: string) => {
 export const createColumnPinCopyActions = (
   id: string,
   text: string | null,
+  selectPlace?: (id: string) => void,
 ): Action[] => {
-  const setSelectedPlaceId = useMapStore.getState().setSelectedPlaceId
-
   return [
-    {
-      icon: 'MapPinned' as const,
-      onClick: () => {
-        posthog.capture('pin_cell_place', { property: 'value' })
-        setSelectedPlaceId(id)
-      },
-      label: 'Pin to map',
-    },
+    ...(selectPlace
+      ? [
+          {
+            icon: 'MapPinned' as const,
+            onClick: () => {
+              posthog.capture('pin_cell_place', { property: 'value' })
+              selectPlace(id)
+            },
+            label: 'Pin to map',
+          },
+        ]
+      : []),
     ...(text
       ? [
           {
@@ -42,15 +44,18 @@ export const createColumnPinCopyActions = (
   ]
 }
 
-export const createColumnPinActions = (id: string): Action[] => {
-  const setSelectedPlaceId = useMapStore.getState().setSelectedPlaceId
+export const createColumnPinActions = (
+  id: string,
+  selectPlace?: (id: string) => void,
+): Action[] => {
+  if (!selectPlace) return []
 
   return [
     {
       icon: 'MapPinned',
       onClick: () => {
         posthog.capture('pin_cell_place', { property: 'value' })
-        setSelectedPlaceId(id)
+        selectPlace(id)
       },
       label: 'Pin to map',
     },
@@ -60,18 +65,21 @@ export const createColumnPinActions = (id: string): Action[] => {
 export const createColumnPinNoteActions = (
   id: string,
   openNotesDialog: () => void,
+  selectPlace?: (id: string) => void,
 ): Action[] => {
-  const setSelectedPlaceId = useMapStore.getState().setSelectedPlaceId
-
   return [
-    {
-      icon: 'MapPinned' as const,
-      onClick: () => {
-        posthog.capture('pin_cell_place', { property: 'value' })
-        setSelectedPlaceId(id)
-      },
-      label: 'Pin to map',
-    },
+    ...(selectPlace
+      ? [
+          {
+            icon: 'MapPinned' as const,
+            onClick: () => {
+              posthog.capture('pin_cell_place', { property: 'value' })
+              selectPlace(id)
+            },
+            label: 'Pin to map',
+          },
+        ]
+      : []),
     {
       icon: 'MessageSquareText',
       onClick: () => {
@@ -86,11 +94,12 @@ export const createColumnPinNoteActions = (
 export const createColumnPinMailtoActions = (
   id: string,
   email: string | null,
+  selectPlace?: (id: string) => void,
 ): Action[] => {
   return [
     ...(email
       ? [
-          ...createColumnPinCopyActions(id, email),
+          ...createColumnPinCopyActions(id, email, selectPlace),
           {
             icon: 'Mail' as const,
             onClick: () => {

@@ -12,7 +12,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import type { Note } from '@ritchy/types'
 import { formatDistanceToNow } from 'date-fns'
-import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react'
+import { Check, Loader2, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 interface NoteItemProps {
@@ -23,7 +23,6 @@ interface NoteItemProps {
 export const NoteItem = ({ note, userPlaceId }: NoteItemProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(note.note)
-  const [isHovered, setIsHovered] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -112,11 +111,7 @@ export const NoteItem = ({ note, userPlaceId }: NoteItemProps) => {
 
   return (
     <>
-      <div
-        className="relative flex gap-3 pl-4 group"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+      <div className="relative flex gap-3 pl-4 group">
         {/* Dot with white center */}
         <div className="absolute -left-[3px] top-1">
           <div className="h-4 w-4 rounded-full border-[1px] border-border bg-background" />
@@ -173,50 +168,29 @@ export const NoteItem = ({ note, userPlaceId }: NoteItemProps) => {
                   <X className="h-3 w-3 mr-1" />
                   Cancel
                 </Button>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  <kbd className="px-1 py-0.5 text-xs bg-muted rounded border">
-                    Enter
-                  </kbd>{' '}
-                  to save •{' '}
-                  <kbd className="px-1 py-0.5 text-xs bg-muted rounded border">
-                    Esc
-                  </kbd>{' '}
-                  to cancel
-                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={isUpdating || isDeleting}
+                  className="h-7 px-2 ml-auto text-muted-foreground hover:text-destructive"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
+                </Button>
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-2">
-              <div className="text-sm break-words whitespace-pre-wrap mt-0.5 flex-1">
-                {note.note}
-              </div>
-              {(isHovered || isDeleting) && (
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={handleStartEdit}
-                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                    disabled={isDeleting}
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              className="text-sm break-words whitespace-pre-wrap mt-0.5 cursor-pointer rounded px-1 -mx-1 py-0.5 -my-0.5 hover:bg-muted/50 transition-colors text-left w-full"
+              onClick={handleStartEdit}
+            >
+              {note.note}
+            </button>
           )}
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from '../../common'
+import { ApiErrorResponseSchema, PaginationMetaSchema } from '../../common'
 import { PlaceSchema } from '../places/places'
 
 // Basic/Common Schemas
@@ -19,6 +19,7 @@ export const GetListContentResponseSchema = z.object({
   name: z.string(),
   emoji: z.string(),
   items: z.array(PlaceSchema),
+  pagination: PaginationMetaSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -165,3 +166,30 @@ export type DeleteListRequestParams = z.infer<
 >
 export type DeleteListResponse = z.infer<typeof DeleteListResponseSchema>
 export type DeleteListApiResponse = z.infer<typeof DeleteListApiResponseSchema>
+
+// Filter Options Schemas
+export const GetListFilterOptionsResponseSchema = z.object({
+  status: z.array(z.string()),
+  primaryType: z.array(z.string()),
+  types: z.array(z.string()),
+  country: z.array(z.string()),
+  locality: z.array(z.string()),
+  postalCode: z.array(z.string()),
+  source: z.array(z.string()),
+  workforceRange: z.array(z.string()),
+  priceLevel: z.array(z.string()),
+  technologies: z.array(z.string()),
+  lists: z.array(z.string()),
+})
+
+export const GetListFilterOptionsApiResponseSchema = z.union([
+  GetListFilterOptionsResponseSchema,
+  ApiErrorResponseSchema,
+])
+
+export type GetListFilterOptionsResponse = z.infer<
+  typeof GetListFilterOptionsApiResponseSchema
+>
+export type ListFilterOptions = z.infer<
+  typeof GetListFilterOptionsResponseSchema
+>

@@ -12,6 +12,7 @@ import {
   unsetContactPrimary,
 } from '../../services/contact/queries/update_contact'
 import { verifyContactOwnership } from '../../services/contact/verify_contact_ownership'
+import { updateLastInteraction } from '../../services/places/utils/update_last_interaction'
 
 export const updateContactHandler = async (
   req: Request<
@@ -67,6 +68,8 @@ export const updateContactHandler = async (
         await unsetContactPrimary(contactId, contactRecord.userPlaceId)
       }
     }
+
+    await updateLastInteraction(contactRecord.userPlaceId)
 
     res.json({ success: true })
   } catch (error) {

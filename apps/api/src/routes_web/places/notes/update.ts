@@ -5,6 +5,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../../db/db'
 import { note as noteTable } from '../../../db/schema'
+import { updateLastInteraction } from '../../../services/places/utils/update_last_interaction'
 
 export const updatePlaceNote = async (
   req: Request<UpdateNoteRequest>,
@@ -62,6 +63,8 @@ export const updatePlaceNote = async (
       })
       .where(eq(noteTable.id, noteId))
       .returning()
+
+    await updateLastInteraction(userPlaceId)
 
     res.json({
       id: updatedNote.id,

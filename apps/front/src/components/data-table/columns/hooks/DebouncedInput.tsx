@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface DebouncedInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
@@ -17,6 +17,7 @@ export const DebouncedInput = ({
   ...props
 }: DebouncedInputProps) => {
   const [value, setValue] = useState(initialValue)
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
     setValue(initialValue)
@@ -24,6 +25,12 @@ export const DebouncedInput = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
+    // Skip onChange on initial render to prevent setting default filter values
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+
     const timeout = setTimeout(() => {
       onChange(value)
     }, debounce)

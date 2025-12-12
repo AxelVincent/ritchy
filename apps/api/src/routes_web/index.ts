@@ -5,9 +5,13 @@ import listsRouter from './lists'
 import paymentsRouter from './payments'
 import placesRouter from './places'
 import searchesRouter from './searches'
+import userPlacesRouter from './user-places'
 import usersRouter from './users'
 
 const router: Router = express.Router()
+
+// User places routes (unified endpoint for all leads)
+router.use('/user-places', userPlacesRouter)
 
 // Lists routes
 router.use('/lists', listsRouter)

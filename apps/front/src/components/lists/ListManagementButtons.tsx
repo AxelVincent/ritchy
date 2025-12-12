@@ -1,26 +1,24 @@
 import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialog'
 import { DeleteItemsFromListDialog } from '@/components/lists/delete-items-from-list-dialog'
 import { Button } from '@/components/ui/button'
-import type { SearchResult } from '@ritchy/types'
-import type { Table } from '@tanstack/react-table'
 import { Plus, Trash } from 'lucide-react'
 import { useState } from 'react'
 
-interface ListManagementButtonsProps<TData extends SearchResult> {
-  table: Table<TData>
+interface ListManagementButtonsProps {
+  selectedIds?: Set<string>
   listId?: string
 }
 
-export const ListManagementButtons = <TData extends SearchResult>({
-  table,
+export const ListManagementButtons = ({
+  selectedIds,
   listId,
-}: ListManagementButtonsProps<TData>) => {
+}: ListManagementButtonsProps) => {
   const [showAddListDialog, setShowAddListDialog] = useState(false)
   const [showDeleteListDialog, setShowDeleteListDialog] = useState(false)
 
-  const selectedRows = table.getSelectedRowModel().rows
-  const hasSelectedRows = selectedRows.length > 0
-  const filteredRows = table.getFilteredRowModel().rows
+  const selectedCount = selectedIds?.size ?? 0
+  const hasSelectedRows = selectedCount > 0
+  const selectedIdsArray = selectedIds ? Array.from(selectedIds) : []
 
   if (hasSelectedRows) {
     return (
@@ -28,23 +26,22 @@ export const ListManagementButtons = <TData extends SearchResult>({
         <AddItemsToListDialog
           open={showAddListDialog}
           onOpenChange={setShowAddListDialog}
-          selectedItems={selectedRows.map((row) => ({
-            userPlaceId: row.original.id,
+          selectedItems={selectedIdsArray.map((id) => ({
+            userPlaceId: id,
           }))}
         />
         {listId && (
           <DeleteItemsFromListDialog
             open={showDeleteListDialog}
             onOpenChange={setShowDeleteListDialog}
-            selectedItems={selectedRows.map((row) => row.original.id)}
+            selectedItems={selectedIdsArray}
             listId={listId}
           />
         )}
         <div className="flex gap-2">
           <Button variant="default" onClick={() => setShowAddListDialog(true)}>
             <Plus className="w-4 h-4" />
-            Add {selectedRows.length} lead
-            {selectedRows.length === 1 ? '' : 's'} to a list
+            Add to list
           </Button>
           {listId && (
             <Button
@@ -52,8 +49,7 @@ export const ListManagementButtons = <TData extends SearchResult>({
               onClick={() => setShowDeleteListDialog(true)}
             >
               <Trash className="w-4 h-4" />
-              Remove {selectedRows.length} lead
-              {selectedRows.length === 1 ? '' : 's'}
+              Remove from list
             </Button>
           )}
         </div>
@@ -61,21 +57,6 @@ export const ListManagementButtons = <TData extends SearchResult>({
     )
   }
 
-  // Show "Add All" when no rows are selected
-  return (
-    <>
-      <AddItemsToListDialog
-        open={showAddListDialog}
-        onOpenChange={setShowAddListDialog}
-        selectedItems={filteredRows.map((row) => ({
-          userPlaceId: row.original.id,
-        }))}
-      />
-      <Button variant="default" onClick={() => setShowAddListDialog(true)}>
-        <Plus className="w-4 h-4" />
-        Add {filteredRows.length} lead
-        {filteredRows.length === 1 ? '' : 's'} to a list
-      </Button>
-    </>
-  )
+  // Don't show "Add All" button when no selection - export handles bulk operations now
+  return null
 }

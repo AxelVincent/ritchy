@@ -1,4 +1,4 @@
-import { FileUp, Search } from 'lucide-react'
+import { Building2, FileUp, Search } from 'lucide-react'
 
 import {
   SidebarMenu,
@@ -17,8 +17,25 @@ export function NavMain() {
     shouldThrow: false,
   })
 
+  const leadsMatch = useMatch({
+    from: '/_auth/leads',
+    shouldThrow: false,
+  })
+
   return (
     <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          tooltip="My Places"
+          isActive={leadsMatch?.pathname === '/leads'}
+        >
+          <Link to="/leads">
+            <Building2 className="text-muted-foreground text-sm" />
+            <p className="pl-2 font-medium">My Places</p>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
       <SidebarMenuItem>
         <SidebarMenuButton
           asChild

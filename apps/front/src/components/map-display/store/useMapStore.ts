@@ -10,31 +10,25 @@ export const PLACE_TABS = [
 export type PlaceTabValue = (typeof PLACE_TABS)[number]
 
 interface MapStore {
-  selectedPlaceId: string | null
+  // Used for map centering when clicking markers
   centerPlaceSpreadsheetId: string | null
+  // Used for place details tab navigation
   activeTab: PlaceTabValue | null
-  selectionSource: 'map' | 'table' | null
 
-  setSelectedPlaceId: (id: string | null, source?: 'map' | 'table') => void
   setCenterPlaceSpreadsheetId: (id: string | null) => void
   setActiveTab: (tab: PlaceTabValue | null) => void
-  selectPlaceAndTab: (placeId: string, tab: PlaceTabValue) => void
 }
 
+/**
+ * Minimal store for map-related state that needs to be shared.
+ *
+ * Note: Selection state (selectedPlaceId) is now managed by useMarkerSelection hook
+ * and passed down via props for better colocation and simpler data flow.
+ */
 export const useMapStore = create<MapStore>((set) => ({
-  selectedPlaceId: null,
   centerPlaceSpreadsheetId: null,
   activeTab: null,
-  selectionSource: null,
 
-  setSelectedPlaceId: (id, source = 'map') =>
-    set({ selectedPlaceId: id, selectionSource: source }),
   setCenterPlaceSpreadsheetId: (id) => set({ centerPlaceSpreadsheetId: id }),
   setActiveTab: (tab) => set({ activeTab: tab }),
-  selectPlaceAndTab: (placeId, tab) =>
-    set({
-      selectedPlaceId: placeId,
-      activeTab: tab,
-      selectionSource: 'table',
-    }),
 }))

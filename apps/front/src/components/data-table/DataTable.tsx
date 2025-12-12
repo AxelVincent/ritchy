@@ -1,46 +1,69 @@
 import { useBatchEnrichmentStatus } from '@/api/queries/enrichment/useBatchEnrichmentStatus'
-import { DataExport } from '@/components/data-export/DataExport'
-import { useMapStore } from '@/components/map-display/store/useMapStore'
-import { Label } from '@/components/ui/label'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useBatchEnrichmentWebSocket } from '@/hooks/useBatchEnrichmentWebSocket'
+import { useTableKeyboardShortcuts } from '@/hooks/useTableKeyboardShortcuts'
 import { cn } from '@/lib/utils'
-import type { SearchResult } from '@ritchy/types'
+import type {
+  ContentFilters,
+  FilterRule,
+  ListFilterOptions,
+  PaginationMeta,
+  SearchResult,
+  SortOrder,
+} from '@ritchy/types'
 import {
   type ColumnDef,
-  type ColumnFiltersState,
-  type RowSelectionState,
   type SortingState,
+  type Table,
   type VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFacetedMinMaxValues,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ListManagementButtons } from '../lists/ListManagementButtons'
-import { ActiveFilters } from './ActiveFilters'
 import { ColumnsSelection } from './ColumnsSelection'
-import { EnrichmentButtons } from './enrich/EnrichmentButtons'
+import { DataTableToolbar } from './DataTableToolbar'
+import { MobileCardList } from './MobileCardList'
+import { Pagination } from './Pagination'
 import { EnrichmentCell } from './enrich/EnrichmentCell'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  setDataTableRowSelection: React.Dispatch<
-    React.SetStateAction<RowSelectionState>
-  >
-  dataTableRowSelection: RowSelectionState
   listId?: string
   searchId?: string
   onFilteredDataChange: (ids: Set<string>) => void
   storageKey?: string
   isMobile?: boolean
+  // Server-side mode props
+  serverSide?: boolean
+  onSortingChange?: (sorting: SortingState) => void
+  // External state for server-side mode
+  externalSorting?: SortingState
+  // Selection props (from useMarkerSelection hook)
+  selectedPlaceId?: string | null
+  onRowClick?: (placeId: string) => void
+  shouldScrollToSelection?: boolean
+  onScrollComplete?: () => void
+  // Filter props
+  filterRules?: FilterRule[]
+  onFilterRulesChange?: (rules: FilterRule[]) => void
+  filterOptions?: ListFilterOptions
+  filterOptionsLoading?: boolean
+  // Pagination props
+  pagination?: PaginationMeta
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
+  isLoading?: boolean
+  // Export props (for toolbar)
+  filters?: ContentFilters
+  sortBy?: string
+  sortOrder?: SortOrder
+  // Table selection props - passed via context now, but we need selectAll for keyboard shortcuts
+  onSelectAll?: () => void
 }
 
 // Add a fixed height for table rows
@@ -49,28 +72,62 @@ const ROW_HEIGHT = '40px'
 export const DataTable = <TData extends SearchResult, TValue>({
   columns,
   data,
-  setDataTableRowSelection,
-  dataTableRowSelection,
   listId,
   searchId,
   onFilteredDataChange,
   storageKey,
   isMobile,
+  // Server-side mode props
+  serverSide = false,
+  onSortingChange,
+  externalSorting,
+  // Selection props
+  selectedPlaceId,
+  onRowClick,
+  shouldScrollToSelection,
+  onScrollComplete,
+  // Filter props
+  filterRules,
+  onFilterRulesChange,
+  filterOptions,
+  filterOptionsLoading,
+  // Pagination props
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  isLoading,
+  // Export props
+  filters,
+  sortBy,
+  sortOrder,
+  // Table selection
+  onSelectAll,
 }: DataTableProps<TData, TValue>) => {
-  // Get selectedPlaceId from the store
-  const { selectedPlaceId, selectionSource } = useMapStore()
-  // console.log('data', data)
-  const dataRef = useRef(data)
-  useEffect(() => {
-    if (dataRef.current !== data) {
-      console.log('⚠️ data prop changed (new reference)')
-      dataRef.current = data
-    }
-  }, [data])
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  // Use external state in server-side mode, internal state otherwise
+  const [internalSorting, setInternalSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnOrder, setColumnOrder] = useState<string[]>([])
+
+  // Ref to store the add filter callback from FilterBar
+  const openAddFilterRef = useRef<(() => void) | null>(null)
+
+  // Resolve sorting based on mode
+  const sorting =
+    serverSide && externalSorting ? externalSorting : internalSorting
+
+  // Handler for sorting change
+  const handleSortingChange = useCallback(
+    (updater: SortingState | ((old: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updater === 'function' ? updater(sorting) : updater
+      if (serverSide && onSortingChange) {
+        onSortingChange(newSorting)
+      } else {
+        setInternalSorting(newSorting)
+      }
+    },
+    [serverSide, onSortingChange, sorting],
+  )
 
   const localStorageKey = `tableColumnSizing_${storageKey || 'default'}`
 
@@ -85,63 +142,22 @@ export const DataTable = <TData extends SearchResult, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: handleSortingChange,
+    getSortedRowModel: serverSide ? undefined : getSortedRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
-    onRowSelectionChange: setDataTableRowSelection,
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getRowId: (row) => row.id,
+    // Server-side mode flags
+    manualSorting: serverSide,
     defaultColumn: {
       minSize: 60,
       maxSize: 800,
-      filterFn: (row, columnId, filterValue) => {
-        const column = table.getColumn(columnId)
-        const value = row.getValue(columnId)
-
-        switch (column?.columnDef.meta?.filterVariant) {
-          case 'multi-select':
-            return (
-              (filterValue as string[]).length === 0 ||
-              (filterValue as string[]).includes(value as string)
-            )
-
-          case 'select':
-            return !filterValue || value === filterValue
-
-          case 'range': {
-            const [min, max] = filterValue as [number, number]
-            const numValue =
-              value === '' || value === null || value === undefined
-                ? 0
-                : Number(value)
-            return (!min || numValue >= min) && (!max || numValue <= max)
-          }
-
-          case 'text':
-            return (
-              !filterValue ||
-              String(value)
-                .toLowerCase()
-                .includes(String(filterValue).toLowerCase())
-            )
-
-          default:
-            return true
-        }
-      },
     },
     columnResizeMode: 'onChange',
     state: {
       sorting,
-      columnFilters,
       columnVisibility,
       columnOrder,
-      rowSelection: dataTableRowSelection,
       columnSizing,
     },
     onColumnSizingChange: (updater) => {
@@ -171,66 +187,50 @@ export const DataTable = <TData extends SearchResult, TValue>({
 
   const virtualRows = rowVirtualizer.getVirtualItems()
 
-  // Batch enrichment status fetching for visible rows
-  // Memoize visible place IDs to prevent unnecessary refetches
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const visiblePlaceIds = useMemo(
-    () => virtualRows.map((vRow) => rows[vRow.index].original.id),
-    [virtualRows.map((vr) => vr.index).join(','), rows.length],
+  // Get all place IDs on current page for enrichment status
+  // With pagination, page sizes are small (25-100), so we subscribe to all
+  // biome-ignore lint/correctness/useExhaustiveDependencies: optimized dependency
+  const pageUserPlaceIds = useMemo(
+    () => data.map((item) => item.id),
+    [data.map((item) => item.id).join(',')],
   )
 
-  // Fetch batch enrichment status for all visible rows
-  const { data: batchStatus } = useBatchEnrichmentStatus(visiblePlaceIds)
+  // Fetch batch enrichment status for all page rows
+  const { data: batchStatus } = useBatchEnrichmentStatus(pageUserPlaceIds)
 
-  // Subscribe to WebSocket updates for visible rows
-  useBatchEnrichmentWebSocket(visiblePlaceIds)
+  // Subscribe to WebSocket updates for all page rows
+  useBatchEnrichmentWebSocket(pageUserPlaceIds)
 
-  // Track if we've already scrolled to the selected place
-  const hasScrolledToSelection = useRef<string | null>(null)
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // Scroll to selected row when shouldScrollToSelection is true
   useEffect(() => {
-    if (selectedPlaceId && rows.length > 0) {
-      // Only auto-scroll if selection came from the map, not the table
-      if (selectionSource === 'table') {
-        return
-      }
-
-      // Only auto-scroll if:
-      // 1. This is a new selection (selectedPlaceId changed)
-      // 2. We haven't already scrolled to this selection
-      if (hasScrolledToSelection.current === selectedPlaceId) {
-        return // Already scrolled to this selection, don't interrupt user
-      }
-
-      const selectedRowIndex = rows.findIndex(
-        (row) => row.original.id === selectedPlaceId,
-      )
-
-      if (selectedRowIndex !== -1) {
-        // Scroll to the selected row
-        rowVirtualizer.scrollToIndex(selectedRowIndex, {
-          align: 'start',
-          behavior: 'auto',
-        })
-        // Mark that we've scrolled to this selection
-        hasScrolledToSelection.current = selectedPlaceId
-      }
+    if (!shouldScrollToSelection || !selectedPlaceId || rows.length === 0) {
+      return
     }
 
-    // Reset tracking when selection is cleared
-    if (!selectedPlaceId) {
-      hasScrolledToSelection.current = null
+    const selectedRowIndex = rows.findIndex(
+      (row) => row.original.id === selectedPlaceId,
+    )
+
+    if (selectedRowIndex !== -1) {
+      rowVirtualizer.scrollToIndex(selectedRowIndex, {
+        align: 'start',
+        behavior: 'auto',
+      })
+      onScrollComplete?.()
     }
-  }, [selectedPlaceId, selectionSource, rows.length, rowVirtualizer])
+  }, [
+    shouldScrollToSelection,
+    selectedPlaceId,
+    rows,
+    rowVirtualizer,
+    onScrollComplete,
+  ])
 
   // Memoize filtered IDs calculation
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // All filtering is now done server-side, so all data rows are "filtered"
   const filteredIds = useMemo(() => {
-    return new Set(
-      table.getFilteredRowModel().rows.map((row) => row.original.id),
-    )
-  }, [table.getFilteredRowModel().rows.length])
+    return new Set(data.map((item) => item.id))
+  }, [data])
 
   // Memoize callback to prevent unnecessary effect triggers
   const onFilteredDataChangeMemoized = useCallback(
@@ -245,8 +245,25 @@ export const DataTable = <TData extends SearchResult, TValue>({
     onFilteredDataChangeMemoized(filteredIds)
   }, [filteredIds, onFilteredDataChangeMemoized])
 
-  // Note: Cleanup of completed enrichments is now handled automatically
-  // by useActiveEnrichments hook with event-driven timeouts (see useActiveEnrichments.ts:67-113)
+  // Keyboard shortcuts for table interactions
+  useTableKeyboardShortcuts({
+    onAddFilter: () => openAddFilterRef.current?.(),
+    onClearFilters: () => onFilterRulesChange?.([]),
+    onNextPage: () => {
+      if (pagination?.hasNextPage) {
+        onPageChange?.(pagination.page + 1)
+      }
+    },
+    onPrevPage: () => {
+      if (pagination?.hasPreviousPage) {
+        onPageChange?.(pagination.page - 1)
+      }
+    },
+    onSelectAll: () => {
+      onSelectAll?.()
+    },
+    enabled: !!filterRules,
+  })
 
   // If there are no visible columns, show a message
   if (visibleColumns.length === 0) {
@@ -261,234 +278,252 @@ export const DataTable = <TData extends SearchResult, TValue>({
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto">
-      <div className="flex flex-col space-y-2">
-        <div className="flex flex-row justify-between items-center md:p-4 p-2 md:gap-2 gap-1 overflow-x-auto md:pl-2 pl-2">
-          <div className="flex md:gap-2 gap-1">
-            <EnrichmentButtons
-              table={table}
-              listId={listId}
-              searchId={searchId}
-            />
-            <ListManagementButtons table={table} listId={listId} />
-          </div>
-          <div className="flex md:gap-2 gap-1">
-            {!isMobile && (
-              <DataExport
-                selectedRows={
-                  table.getSelectedRowModel().rows.length > 0
-                    ? table
-                        .getSelectedRowModel()
-                        .rows.map((row) => row.original)
-                    : table
-                        .getFilteredRowModel()
-                        .rows.map((row) => row.original)
-                }
-              />
-            )}
-            <ColumnsSelection table={table} storageKey={storageKey} />
-          </div>
-        </div>
-      </div>
-      <div
-        ref={tableContainerRef}
-        className="border-t border-b border-border/60 p-0"
-        style={{
-          overflow: 'auto',
-          position: 'relative',
-          height: '100%',
-        }}
-      >
-        <table style={{ display: 'grid' }} className="">
-          <thead
-            style={{
-              display: 'grid',
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
-            }}
-            className="bg-gradient-to-b from-background/95 to-background border-b border-border/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] backdrop-blur-sm"
-          >
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr
-                key={headerGroup.id}
-                style={{ display: 'flex', width: '100%' }}
-              >
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    style={{
-                      display: 'flex',
-                      width: header.getSize(),
-                      position: header.index === 0 ? 'sticky' : 'relative',
-                      left: header.index === 0 ? 0 : undefined,
-                      zIndex: header.index === 0 ? 2 : 1,
-                    }}
-                    className={cn(
-                      'border-r border-border/60',
-                      header.index === 0
-                        ? 'bg-gradient-to-b from-background/95 to-background backdrop-blur-sm'
-                        : 'bg-transparent',
-                    )}
-                  >
-                    <div
-                      {...{
-                        className: header.column.getCanSort()
-                          ? 'w-full cursor-pointer select-none'
-                          : '',
-                        onClick: header.column.getToggleSortingHandler(),
-                      }}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                    </div>
-                    <div
-                      onMouseDown={header.getResizeHandler()}
-                      onTouchStart={header.getResizeHandler()}
-                      className={cn(
-                        'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none',
-                        'hover:bg-primary transition-colors duration-150',
-                        header.column.getIsResizing() ? 'bg-primary' : '',
-                      )}
-                    />
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody
-            style={{
-              display: 'grid',
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              position: 'relative',
-            }}
-          >
-            {virtualRows.map((virtualRow) => {
-              const row = rows[virtualRow.index]
-              const visibleCells = row.getVisibleCells()
+    <div
+      className={cn(
+        'flex flex-1 flex-col min-h-0',
+        !isMobile && 'overflow-auto',
+      )}
+    >
+      {/* Toolbar - desktop only */}
+      {!isMobile && (
+        <DataTableToolbar
+          table={table as unknown as Table<SearchResult>}
+          listId={listId}
+          searchId={searchId}
+          storageKey={storageKey}
+          isMobile={isMobile}
+          filters={filters}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          pagination={pagination}
+        />
+      )}
 
-              return (
+      {/* Filter Bar - positioned under toolbar */}
+      {filterRules && onFilterRulesChange && (
+        <FilterBar
+          rules={filterRules}
+          onRulesChange={onFilterRulesChange}
+          filterOptions={filterOptions}
+          filterOptionsLoading={filterOptionsLoading}
+          resultsCount={data.length}
+          onOpenAddFilter={(callback) => {
+            openAddFilterRef.current = callback
+          }}
+          isMobile={isMobile}
+          isLoading={isLoading}
+        />
+      )}
+
+      {/* Mobile: Card List / Desktop: Data Table */}
+      {isMobile ? (
+        <MobileCardList
+          data={data}
+          selectedPlaceId={selectedPlaceId}
+          onRowClick={onRowClick}
+          isLoading={isLoading}
+          listId={listId}
+        />
+      ) : (
+        <div
+          ref={tableContainerRef}
+          className="border-t border-b border-border/60 p-0"
+          style={{
+            overflow: 'auto',
+            position: 'relative',
+            height: '100%',
+          }}
+        >
+          <table style={{ display: 'grid' }} className="">
+            <thead
+              style={{
+                display: 'grid',
+                position: 'sticky',
+                top: 0,
+                zIndex: 1,
+              }}
+              className="bg-gradient-to-b from-background/95 to-background border-b border-border/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.08)] backdrop-blur-sm"
+            >
+              {table.getHeaderGroups().map((headerGroup) => (
                 <tr
-                  data-index={virtualRow.index}
-                  ref={(node) => rowVirtualizer.measureElement(node)}
-                  key={row.id}
-                  style={{
-                    display: 'flex',
-                    position: 'absolute',
-                    transform: `translateY(${virtualRow.start}px)`,
-                    width: '100%',
-                    height: ROW_HEIGHT,
-                  }}
-                  className="border-b border-border/60 group/row hover:bg-accent/50 transition-colors duration-150"
+                  key={headerGroup.id}
+                  style={{ display: 'flex', width: '100%' }}
                 >
-                  {visibleCells.map((cell) => {
-                    const isEnrichmentCell =
-                      cell.column.columnDef.meta?.isEnrichment
-
-                    return (
-                      <td
-                        key={cell.id}
-                        className={cn(
-                          'border-r border-border/60 relative transition-colors duration-150 group-hover/row:[&.sticky-cell]:bg-[color-mix(in_srgb,hsl(var(--accent))_50%,hsl(var(--background)))]',
-                          {
-                            'bg-background sticky-cell':
-                              cell.column.id === visibleCells[0].column.id &&
-                              selectedPlaceId !== row.original.id,
-                            'border-l-2 border-l-primary':
-                              cell.column.id === visibleCells[0].column.id &&
-                              selectedPlaceId === row.original.id,
-                            'bg-primary/5':
-                              cell.column.id !== visibleCells[0].column.id &&
-                              selectedPlaceId === row.original.id,
-                          },
-                        )}
-                        style={{
-                          display: 'flex',
-                          width: cell.column.getSize(),
-                          position:
-                            cell.column.id === visibleCells[0].column.id
-                              ? 'sticky'
-                              : 'relative',
-                          left:
-                            cell.column.id === visibleCells[0].column.id
-                              ? 0
-                              : undefined,
-                          zIndex:
-                            cell.column.id === visibleCells[0].column.id
-                              ? selectedPlaceId === row.original.id
-                                ? 2
-                                : 1
-                              : 0,
-                          alignItems: 'center',
-                          backgroundColor:
-                            cell.column.id === visibleCells[0].column.id &&
-                            selectedPlaceId === row.original.id
-                              ? 'color-mix(in srgb, hsl(var(--primary)) 5%, hsl(var(--background)))'
-                              : undefined,
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      style={{
+                        display: 'flex',
+                        width: header.getSize(),
+                        position: header.index === 0 ? 'sticky' : 'relative',
+                        left: header.index === 0 ? 0 : undefined,
+                        zIndex: header.index === 0 ? 2 : 1,
+                      }}
+                      className={cn(
+                        'border-r border-border/60',
+                        header.index === 0
+                          ? 'bg-gradient-to-b from-background/95 to-background backdrop-blur-sm'
+                          : 'bg-transparent',
+                      )}
+                    >
+                      <div
+                        {...{
+                          className: header.column.getCanSort()
+                            ? 'w-full cursor-pointer select-none'
+                            : '',
+                          onClick: header.column.getToggleSortingHandler(),
                         }}
                       >
-                        {isEnrichmentCell ? (
-                          <>
-                            <div className="absolute top-1 right-1">
-                              <Sparkles
-                                className={cn('h-2.5 w-2.5', {
-                                  'text-purple-600':
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                      </div>
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className={cn(
+                          'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none',
+                          'hover:bg-primary transition-colors duration-150',
+                          header.column.getIsResizing() ? 'bg-primary' : '',
+                        )}
+                      />
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody
+              style={{
+                display: 'grid',
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                position: 'relative',
+              }}
+            >
+              {virtualRows.map((virtualRow) => {
+                const row = rows[virtualRow.index]
+                const visibleCells = row.getVisibleCells()
+                const isSelected = selectedPlaceId === row.original.id
+
+                return (
+                  <tr
+                    data-index={virtualRow.index}
+                    ref={(node) => rowVirtualizer.measureElement(node)}
+                    key={row.id}
+                    onClick={() => onRowClick?.(row.original.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        onRowClick?.(row.original.id)
+                      }
+                    }}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    role={onRowClick ? 'button' : undefined}
+                    style={{
+                      display: 'flex',
+                      position: 'absolute',
+                      transform: `translateY(${virtualRow.start}px)`,
+                      width: '100%',
+                      height: ROW_HEIGHT,
+                      cursor: onRowClick ? 'pointer' : undefined,
+                    }}
+                    className="border-b border-border/60 group/row hover:bg-accent/50 transition-colors duration-150"
+                  >
+                    {visibleCells.map((cell) => {
+                      const isEnrichmentCell =
+                        cell.column.columnDef.meta?.isEnrichment
+                      const isFirstColumn =
+                        cell.column.id === visibleCells[0].column.id
+
+                      return (
+                        <td
+                          key={cell.id}
+                          className={cn(
+                            'border-r border-border/60 relative transition-colors duration-150 group-hover/row:[&.sticky-cell]:bg-[color-mix(in_srgb,hsl(var(--accent))_50%,hsl(var(--background)))]',
+                            {
+                              'bg-background sticky-cell':
+                                isFirstColumn && !isSelected,
+                              'border-l-2 border-l-primary':
+                                isFirstColumn && isSelected,
+                              'bg-primary/5': !isFirstColumn && isSelected,
+                            },
+                          )}
+                          style={{
+                            display: 'flex',
+                            width: cell.column.getSize(),
+                            position: isFirstColumn ? 'sticky' : 'relative',
+                            left: isFirstColumn ? 0 : undefined,
+                            zIndex: isFirstColumn ? (isSelected ? 2 : 1) : 0,
+                            alignItems: 'center',
+                            backgroundColor:
+                              isFirstColumn && isSelected
+                                ? 'color-mix(in srgb, hsl(var(--primary)) 5%, hsl(var(--background)))'
+                                : undefined,
+                          }}
+                        >
+                          {isEnrichmentCell ? (
+                            <>
+                              <div className="absolute top-1 right-1">
+                                <Sparkles
+                                  className={cn('h-2.5 w-2.5', {
+                                    'text-purple-600':
+                                      row.original.enrichedStatus ===
+                                      'RECENTLY_ENRICHED',
+                                    'text-blue-600':
+                                      row.original.enrichedStatus ===
+                                      'ENRICHED',
+                                    'text-red-600':
+                                      row.original.enrichedStatus ===
+                                      'ENRICHMENT_ERROR',
+                                  })}
+                                  aria-label={
                                     row.original.enrichedStatus ===
-                                    'RECENTLY_ENRICHED',
-                                  'text-blue-600':
-                                    row.original.enrichedStatus === 'ENRICHED',
-                                  'text-red-600':
-                                    row.original.enrichedStatus ===
-                                    'ENRICHMENT_ERROR',
-                                })}
-                                aria-label={
-                                  row.original.enrichedStatus ===
-                                  'RECENTLY_ENRICHED'
-                                    ? 'Recently enriched'
-                                    : row.original.enrichedStatus === 'ENRICHED'
-                                      ? 'Previously enriched'
-                                      : 'Enrichment error'
-                                }
-                              />
-                            </div>
-                            <EnrichmentCell
-                              userPlaceId={row.original.id}
-                              status={batchStatus?.[row.original.id]}
-                            >
+                                    'RECENTLY_ENRICHED'
+                                      ? 'Recently enriched'
+                                      : row.original.enrichedStatus ===
+                                          'ENRICHED'
+                                        ? 'Previously enriched'
+                                        : 'Enrichment error'
+                                  }
+                                />
+                              </div>
+                              <EnrichmentCell
+                                userPlaceId={row.original.id}
+                                status={batchStatus?.[row.original.id]}
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
+                                )}
+                              </EnrichmentCell>
+                            </>
+                          ) : (
+                            <>
                               {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext(),
                               )}
-                            </EnrichmentCell>
-                          </>
-                        ) : (
-                          <>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-      {!isMobile && (
-        <div className="flex justify-between items-center p-4 gap-4">
-          <Label className="flex-shrink-0">
-            {table.getRowModel().rows.length} Results
-          </Label>
-          <div className="flex-1 min-w-0">
-            <ActiveFilters table={table} />
-          </div>
+                            </>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
+      )}
+
+      {/* Pagination - positioned below table (desktop only, mobile uses MobileBottomBar) */}
+      {serverSide && pagination && !isMobile && (
+        <Pagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          isLoading={isLoading}
+          isMobile={isMobile}
+        />
       )}
     </div>
   )

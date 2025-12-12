@@ -3,9 +3,13 @@ import type {
   PostContactPhoneApiResponse,
   PostContactPhoneRequest,
 } from '@ritchy/types'
+import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
+import { db } from '../../db/db'
+import { contact } from '../../db/schema'
 import { insertContactPhone } from '../../services/contact/queries/insert_contact_phone'
 import { verifyContactOwnership } from '../../services/contact/verify_contact_ownership'
+import { updateLastInteraction } from '../../services/places/utils/update_last_interaction'
 
 export const postContactPhone = async (
   req: Request<
@@ -49,6 +53,17 @@ export const postContactPhone = async (
       type,
       false,
     )
+
+    // Get userPlaceId from contact and update last interaction
+    const [contactRecord] = await db
+      .select({ userPlaceId: contact.userPlaceId })
+      .from(contact)
+      .where(eq(contact.id, contactId))
+      .limit(1)
+
+    if (contactRecord) {
+      await updateLastInteraction(contactRecord.userPlaceId)
+    }
 
     res.json({
       id: contactPhoneResult?.id ?? '',

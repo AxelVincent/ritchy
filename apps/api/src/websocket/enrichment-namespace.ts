@@ -1,24 +1,27 @@
 import { logger } from '@ritchy/logger'
 import {
+  BatchSubscribeEventSchema,
   type EnrichmentWebSocketClientEvents,
   type EnrichmentWebSocketServerEvents,
-  SubscribeEventSchema,
-  UnsubscribeEventSchema,
 } from '@ritchy/types'
 import type { Namespace, Server as SocketIOServer } from 'socket.io'
 import {
   websocketConnectionsGauge,
   websocketMessagesCounter,
 } from '../metrics/collectors'
-import { getEnrichmentStatus } from '../services/enrichment/status_manager'
-import { verifyOwnership } from './ownership-cache'
+import { getBatchEnrichmentStatus } from '../services/enrichment/status_manager'
+import { verifyOwnershipBatch } from './ownership-cache'
 import { authenticationMiddleware } from './server'
 
 /**
  * Set up the enrichment namespace for real-time status updates
  * Handles subscription management and broadcasting enrichment progress
  *
- * Type-safe WebSocket events using @ritchy/types
+ * Simplified architecture (v2):
+ * - Single batch-subscribe event replaces individual subscribe/unsubscribe
+ * - Server leaves all previous rooms and joins new ones atomically
+ * - Reduces WebSocket events from 2N to 1 per page change
+ * - Eliminates race conditions from rapid subscribe/unsubscribe cycles
  */
 export const setupEnrichmentNamespace = (io: SocketIOServer) => {
   // Create /enrichment namespace with type-safe events
@@ -42,160 +45,120 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
     })
 
     /**
-     * Subscribe to enrichment status updates for a specific userPlaceId
-     * Client will receive real-time updates via 'status-update' event
+     * Batch subscribe to enrichment status updates
+     * Replaces all current subscriptions with the new set
+     * - Leaves all previous enrichment rooms
+     * - Validates and verifies ownership in batch
+     * - Joins new rooms
+     * - Sends batch status update
      */
-    socket.on('subscribe', async (userPlaceId: unknown) => {
+    socket.on('batch-subscribe', async (userPlaceIds: unknown) => {
       // Track inbound message
       websocketMessagesCounter.inc({
         namespace: 'enrichment',
-        event_type: 'subscribe',
+        event_type: 'batch-subscribe',
         direction: 'inbound',
       })
 
       try {
-        // Validate UUID format
-        const validatedId = SubscribeEventSchema.parse(userPlaceId)
+        // Validate input array
+        const validatedIds = BatchSubscribeEventSchema.parse(userPlaceIds)
 
-        // Verify ownership using Redis-cached ownership check
-        const isOwner = await verifyOwnership(validatedId, socket.data.userId)
+        // Leave all current enrichment rooms
+        const currentRooms = Array.from(socket.rooms)
+        for (const room of currentRooms) {
+          if (room.startsWith('enrichment:') && room !== socket.id) {
+            await socket.leave(room)
+          }
+        }
 
-        if (!isOwner) {
-          logger.warn({
-            msg: 'Unauthorized subscription attempt or userPlace not found',
-            event: 'enrichment_websocket_subscribe_unauthorized',
-            metadata: {
-              socketId: socket.id,
-              authenticatedUserId: socket.data.userId,
-              userPlaceId: validatedId,
-            },
+        // Handle empty subscription (unsubscribe from all)
+        if (validatedIds.length === 0) {
+          logger.debug({
+            msg: 'Client cleared all enrichment subscriptions',
+            event: 'enrichment_websocket_batch_clear',
+            metadata: { socketId: socket.id, userId: socket.data.userId },
           })
 
-          socket.emit('error', {
-            message:
-              'Unauthorized: You do not own this enrichment or it does not exist',
-            code: 'FORBIDDEN',
-            userPlaceId: validatedId,
-          })
-
-          // Track outbound error message
+          // Send empty batch status
+          socket.emit('batch-status-update', {})
           websocketMessagesCounter.inc({
             namespace: 'enrichment',
-            event_type: 'error',
+            event_type: 'batch-status-update',
             direction: 'outbound',
           })
 
           return
         }
 
-        // Join room for this enrichment
-        const room = `enrichment:${validatedId}`
-        await socket.join(room)
+        // Verify ownership in batch (single Redis MGET + potential DB query)
+        const ownedIds = await verifyOwnershipBatch(
+          validatedIds,
+          socket.data.userId,
+        )
 
-        // Send current status immediately to the subscriber
-        const status = await getEnrichmentStatus(validatedId)
-        socket.emit('status-update', {
-          userPlaceId: validatedId,
-          ...status,
-        })
+        // Log unauthorized attempts (but don't fail the whole batch)
+        const unauthorizedCount = validatedIds.length - ownedIds.length
+        if (unauthorizedCount > 0) {
+          logger.warn({
+            msg: 'Some batch subscription IDs failed authorization',
+            event: 'enrichment_websocket_batch_partial_auth',
+            metadata: {
+              socketId: socket.id,
+              userId: socket.data.userId,
+              requested: validatedIds.length,
+              authorized: ownedIds.length,
+              unauthorized: unauthorizedCount,
+            },
+          })
+        }
 
-        // Track outbound status update message
+        // Join rooms for all owned places
+        for (const userPlaceId of ownedIds) {
+          const room = `enrichment:${userPlaceId}`
+          await socket.join(room)
+        }
+
+        // Get current status for all owned IDs in batch
+        const statuses = await getBatchEnrichmentStatus(ownedIds)
+
+        // Send batch status update
+        socket.emit('batch-status-update', statuses)
         websocketMessagesCounter.inc({
           namespace: 'enrichment',
-          event_type: 'status-update',
+          event_type: 'batch-status-update',
           direction: 'outbound',
         })
 
         logger.debug({
-          msg: 'Client subscribed to enrichment updates',
-          event: 'enrichment_websocket_subscribe',
+          msg: 'Client batch subscribed to enrichment updates',
+          event: 'enrichment_websocket_batch_subscribe',
           metadata: {
             socketId: socket.id,
             userId: socket.data.userId,
-            userPlaceId: validatedId,
-            room,
+            subscribed: ownedIds.length,
+            requested: validatedIds.length,
           },
         })
       } catch (error) {
         logger.error({
-          msg: 'Failed to subscribe to enrichment',
-          event: 'enrichment_websocket_subscribe_error',
+          msg: 'Failed to process batch subscription',
+          event: 'enrichment_websocket_batch_subscribe_error',
           metadata: {
             socketId: socket.id,
-            userPlaceId,
             error: error instanceof Error ? error.message : String(error),
           },
         })
 
         socket.emit('error', {
-          message: 'Invalid user place ID format',
+          message: 'Invalid subscription format',
           code: 'INVALID_UUID',
         })
 
-        // Track outbound error message
         websocketMessagesCounter.inc({
           namespace: 'enrichment',
           event_type: 'error',
           direction: 'outbound',
-        })
-      }
-    })
-
-    /**
-     * Unsubscribe from enrichment status updates
-     * Client will stop receiving updates for this enrichment
-     */
-    socket.on('unsubscribe', async (userPlaceId: unknown) => {
-      // Track inbound message
-      websocketMessagesCounter.inc({
-        namespace: 'enrichment',
-        event_type: 'unsubscribe',
-        direction: 'inbound',
-      })
-
-      try {
-        // Validate UUID format
-        const validatedId = UnsubscribeEventSchema.parse(userPlaceId)
-
-        // Verify ownership (optional but good for audit trail)
-        // Note: We allow unsubscribe even if not owner (graceful cleanup)
-        const isOwner = await verifyOwnership(validatedId, socket.data.userId)
-
-        if (!isOwner) {
-          logger.debug({
-            msg: 'Unsubscribe from unauthorized or non-existent userPlace (graceful cleanup)',
-            event: 'enrichment_websocket_unsubscribe_not_owner',
-            metadata: {
-              socketId: socket.id,
-              userId: socket.data.userId,
-              userPlaceId: validatedId,
-            },
-          })
-        }
-
-        // Leave the room
-        const room = `enrichment:${validatedId}`
-        await socket.leave(room)
-
-        logger.debug({
-          msg: 'Client unsubscribed from enrichment updates',
-          event: 'enrichment_websocket_unsubscribe',
-          metadata: {
-            socketId: socket.id,
-            userId: socket.data.userId,
-            userPlaceId: validatedId,
-            room,
-          },
-        })
-      } catch (error) {
-        logger.error({
-          msg: 'Failed to unsubscribe from enrichment',
-          event: 'enrichment_websocket_unsubscribe_error',
-          metadata: {
-            socketId: socket.id,
-            userPlaceId,
-            error: error instanceof Error ? error.message : String(error),
-          },
         })
       }
     })
@@ -236,36 +199,8 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
     })
   })
 
-  // Periodic cleanup of empty rooms (runs every 5 minutes)
-  setInterval(
-    () => {
-      const rooms = enrichmentNs.adapter.rooms
-      let cleanedCount = 0
-
-      for (const [roomName, sockets] of rooms.entries()) {
-        // Clean up enrichment rooms with no subscribers
-        if (
-          roomName.startsWith('enrichment:') &&
-          (!sockets || sockets.size === 0)
-        ) {
-          rooms.delete(roomName)
-          cleanedCount++
-        }
-      }
-
-      if (cleanedCount > 0) {
-        logger.info({
-          msg: 'Cleaned up empty enrichment rooms',
-          event: 'enrichment_websocket_room_cleanup',
-          metadata: { cleanedCount },
-        })
-      }
-    },
-    5 * 60 * 1000,
-  ) // 5 minutes
-
   logger.info({
-    msg: 'Enrichment WebSocket namespace initialized',
+    msg: 'Enrichment WebSocket namespace initialized (v2 - simplified)',
     event: 'enrichment_websocket_namespace_initialized',
   })
 

@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../../db/db'
 import { note as noteTable } from '../../../db/schema'
+import { updateLastInteraction } from '../../../services/places/utils/update_last_interaction'
 
 export const deletePlaceNote = async (
   req: Request<DeleteNoteRequest>,
@@ -53,6 +54,8 @@ export const deletePlaceNote = async (
 
     // Delete the note
     await db.delete(noteTable).where(eq(noteTable.id, noteId))
+
+    await updateLastInteraction(userPlaceId)
 
     res.json({ success: true })
 
