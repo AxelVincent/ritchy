@@ -1,10 +1,12 @@
-import type {
-  EnrichedStatus,
-  ListContentFilters,
-  PaginationParams,
-  Place as PlaceApi,
-  PlaceListAssociation,
-  SortOrder,
+import {
+  type EnrichedStatus,
+  type ListContentFilters,
+  type PaginationParams,
+  type Place as PlaceApi,
+  type PlaceListAssociation,
+  type SortOrder,
+  USER_PLACES_DEFAULT_SORT,
+  getEffectiveSortColumn,
 } from '@ritchy/types'
 import { type InferSelectModel, sql } from 'drizzle-orm'
 import { db } from '../../../db/db'
@@ -154,20 +156,18 @@ const getAggregatedUserPlacesInternal = async (
     ? buildPlaceFilterConditions(filters)
     : sql`TRUE`
 
-  // Build sort clause (CTE uses original table aliases, main query uses CTE aliases)
-  // For search views: use searchPlaceCreatedAt to preserve enrichment score ordering
-  // This applies when sortBy is undefined OR 'createdAt' (frontend default)
-  // For list/all views: use createdAt (user_place.created_at)
-  const effectiveSortBy =
-    searchId && (!sortBy || sortBy === 'createdAt')
-      ? 'searchPlaceCreatedAt'
-      : sortBy
-  const defaultSort = 'createdAt'
-  const sortClause = buildSortClause(effectiveSortBy, sortOrder, defaultSort)
+  // Build sort clause using shared configuration from @ritchy/types
+  // This ensures consistent sorting between main query and item page lookup
+  const effectiveSortBy = getEffectiveSortColumn(sortBy, searchId)
+  const sortClause = buildSortClause(
+    effectiveSortBy,
+    sortOrder,
+    USER_PLACES_DEFAULT_SORT.sortBy,
+  )
   const sortClauseMain = buildSortClauseMain(
     effectiveSortBy,
     sortOrder,
-    defaultSort,
+    USER_PLACES_DEFAULT_SORT.sortBy,
   )
 
   // Build pagination clause
@@ -628,6 +628,8 @@ export const getAggregatedUserPlaces = (
 
 /**
  * Get just the IDs of filtered places in order (for page lookup)
+ * Uses shared sort configuration from @ritchy/types to ensure consistency
+ * with getAggregatedUserPlacesInternal
  */
 export const getFilteredPlaceIds = async (
   options: Omit<GetAggregatedUserPlacesOptions, 'pagination'>,
@@ -638,7 +640,7 @@ export const getFilteredPlaceIds = async (
     listId,
     filters,
     sortBy,
-    sortOrder = 'desc',
+    sortOrder = USER_PLACES_DEFAULT_SORT.sortOrder,
   } = options
 
   // Determine mode
@@ -649,13 +651,23 @@ export const getFilteredPlaceIds = async (
     ? buildPlaceFilterConditions(filters)
     : sql`TRUE`
 
-  // Build sort clause
-  const sortClause = buildSortClause(sortBy, sortOrder)
+  // Use shared sort configuration from @ritchy/types
+  // This ensures consistency with getAggregatedUserPlacesInternal
+  const effectiveSortBy = getEffectiveSortColumn(sortBy, searchId)
+  const sortClause = buildSortClause(
+    effectiveSortBy,
+    sortOrder,
+    USER_PLACES_DEFAULT_SORT.sortBy,
+  )
 
   // For "all places" mode, query directly through user_place
   if (isAllPlacesMode) {
     const query = sql`
-      SELECT DISTINCT ON (up.id) up.id as user_place_id, p.updated_at
+      SELECT DISTINCT ON (up.id)
+        up.id as user_place_id,
+        up.created_at as user_place_created_at,
+        up.last_interaction_at,
+        p.updated_at
       FROM "user_place" up
       JOIN "place" p ON p.id = up.place_id
       LEFT JOIN "status" sts ON sts.user_place_id = up.id
@@ -669,15 +681,32 @@ export const getFilteredPlaceIds = async (
 
     const innerResult = (await db.execute(query)) as unknown as Array<{
       user_place_id: string
+      user_place_created_at: Date
+      last_interaction_at: Date | null
       updated_at: Date
     }>
 
-    // Sort by updated_at DESC after deduplication
+    // Sort after deduplication using same logic as main query
     return innerResult
-      .sort(
-        (a, b) =>
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-      )
+      .sort((a, b) => {
+        const aVal =
+          sortBy === 'lastInteractionAt'
+            ? a.last_interaction_at
+            : a.user_place_created_at
+        const bVal =
+          sortBy === 'lastInteractionAt'
+            ? b.last_interaction_at
+            : b.user_place_created_at
+
+        // Handle nulls - NULLS LAST for DESC
+        if (!aVal && !bVal) return 0
+        if (!aVal) return sortOrder === 'desc' ? 1 : -1
+        if (!bVal) return sortOrder === 'desc' ? -1 : 1
+
+        const aTime = new Date(aVal).getTime()
+        const bTime = new Date(bVal).getTime()
+        return sortOrder === 'desc' ? bTime - aTime : aTime - bTime
+      })
       .map((row) => row.user_place_id)
   }
 

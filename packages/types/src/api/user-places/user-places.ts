@@ -123,6 +123,69 @@ export type GetUserPlaceItemPageQuery = z.infer<
 >
 
 // ============================================================================
+// Sorting Configuration
+// ============================================================================
+
+/**
+ * Valid sort columns for user places queries.
+ * These map to database columns in the backend.
+ */
+export const USER_PLACES_SORT_COLUMNS = [
+  'name',
+  'rating',
+  'ratingCount',
+  'status',
+  'country',
+  'locality',
+  'postalCode',
+  'createdAt',
+  'updatedAt',
+  'lastInteractionAt',
+  'dateOfCreation',
+  'domainRegisteredAt',
+  'workforceRange',
+  'primaryType',
+  'website',
+  'searchPlaceCreatedAt', // Internal: used for search views to preserve enrichment score
+] as const
+
+export type UserPlacesSortColumn = (typeof USER_PLACES_SORT_COLUMNS)[number]
+
+/**
+ * Default sort configuration for user places queries
+ */
+export const USER_PLACES_DEFAULT_SORT = {
+  sortBy: 'createdAt' as UserPlacesSortColumn,
+  sortOrder: 'desc' as const,
+} as const
+
+/**
+ * Compute the effective sort column based on context.
+ * For search views, default/createdAt sorting uses searchPlaceCreatedAt
+ * to preserve the enrichment score ordering from the search results.
+ *
+ * IMPORTANT: This logic must be used consistently in:
+ * - Main user places query (getAggregatedUserPlaces)
+ * - Item page lookup query (getFilteredPlaceIds)
+ *
+ * @param sortBy - The requested sort column (may be undefined)
+ * @param searchId - The search ID if viewing search results
+ * @returns The effective sort column to use
+ */
+export const getEffectiveSortColumn = (
+  sortBy: string | undefined,
+  searchId: string | undefined,
+): UserPlacesSortColumn => {
+  // For search views: use searchPlaceCreatedAt when sortBy is undefined or 'createdAt'
+  // This preserves the enrichment score ordering from search results
+  if (searchId && (!sortBy || sortBy === 'createdAt')) {
+    return 'searchPlaceCreatedAt'
+  }
+  // For other cases, use the provided sortBy or fall back to default
+  return (sortBy as UserPlacesSortColumn) || USER_PLACES_DEFAULT_SORT.sortBy
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 

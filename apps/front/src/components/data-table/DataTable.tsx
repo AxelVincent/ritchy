@@ -202,25 +202,31 @@ export const DataTable = <TData extends SearchResult, TValue>({
   useBatchEnrichmentWebSocket(pageUserPlaceIds)
 
   // Scroll to selected row when shouldScrollToSelection is true
+  // biome-ignore lint/correctness/useExhaustiveDependencies: data is needed to re-run when page changes, even though rows is derived from it
   useEffect(() => {
-    if (!shouldScrollToSelection || !selectedPlaceId || rows.length === 0) {
+    if (!shouldScrollToSelection || !selectedPlaceId) {
       return
     }
 
+    // Find the row index - rows are derived from data, so check after data changes
     const selectedRowIndex = rows.findIndex(
       (row) => row.original.id === selectedPlaceId,
     )
 
     if (selectedRowIndex !== -1) {
+      // Row found - scroll to it and mark complete
       rowVirtualizer.scrollToIndex(selectedRowIndex, {
         align: 'start',
         behavior: 'auto',
       })
       onScrollComplete?.()
     }
+    // If row not found, don't call onScrollComplete - the effect will re-run
+    // when data changes and the row becomes available
   }, [
     shouldScrollToSelection,
     selectedPlaceId,
+    data, // Needed to re-run when page changes
     rows,
     rowVirtualizer,
     onScrollComplete,
