@@ -55,16 +55,19 @@ export const LeadsView = ({
   const listIds = filters.listIds ?? []
 
   // Fetch paginated content with filters (listIds is now part of filters)
-  const { data, isLoading, isFetching, error } = useUserPlacesQuery({
+  // This query also populates search places if empty on the backend
+  const { data, isLoading, isFetching, error, isSuccess } = useUserPlacesQuery({
     searchId,
     filters,
     pagination,
   })
 
   // Fetch all markers for map (applies same filters, no pagination)
+  // Wait for places query to succeed first (it populates search places on backend)
   const { data: markersData } = useUserPlaceMarkersQuery({
     searchId,
     filters,
+    enabled: isSuccess,
   })
 
   // Fetch filter options for multi-select dropdowns
