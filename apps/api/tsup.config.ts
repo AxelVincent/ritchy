@@ -1,7 +1,14 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: [
+    'src/index.ts',
+    'src/workers/index.ts',
+    // Sandbox files for BullMQ worker threads (must be separate entries)
+    'src/internal/bullmq/jobs/enrichment-company/sandbox.ts',
+    'src/internal/bullmq/jobs/enrichment-contact/sandbox.ts',
+    'src/internal/bullmq/jobs/scraper/sandbox.ts',
+  ],
   clean: true,
   format: ['esm'],
   dts: {

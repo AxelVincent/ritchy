@@ -117,6 +117,10 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
 
               <UnifiedContactCard
                 contact={primaryContact}
+                companyEnriched={
+                  place.enrichedStatus === 'ENRICHED' ||
+                  place.enrichedStatus === 'RECENTLY_ENRICHED'
+                }
                 isPrimary
                 isExpanded={expandedContacts.has(primaryContact.id)}
                 onToggle={() => toggleContact(primaryContact.id)}
@@ -164,6 +168,10 @@ export const PlaceContactTab = ({ place }: { place: Place }) => {
                   <UnifiedContactCard
                     key={contact.id}
                     contact={contact}
+                    companyEnriched={
+                      place.enrichedStatus === 'ENRICHED' ||
+                      place.enrichedStatus === 'RECENTLY_ENRICHED'
+                    }
                     isExpanded={expandedContacts.has(contact.id)}
                     onToggle={() => toggleContact(contact.id)}
                     onAddEmail={(email) =>

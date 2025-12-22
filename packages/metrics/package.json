@@ -32,6 +32,12 @@
     "typescript": "5.7.2"
   },
   "peerDependencies": {
-    "express": "^4.0.0"
+    "express": "^4.0.0",
+    "ioredis": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": {
+      "optional": true
+    }
   }
 }

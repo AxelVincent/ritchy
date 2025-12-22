@@ -631,6 +631,20 @@
       "when": 1765553296099,
       "tag": "0089_petite_tomorrow_man",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1766109119787,
+      "tag": "0090_hard_caretaker",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1766110330176,
+      "tag": "0091_closed_ricochet",
+      "breakpoints": true
     }
   ]
 }

@@ -1,10 +1,11 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import type { GeocodeRequestParams, GeocodeResult } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -12,7 +13,7 @@ import {
 export async function getGeocodeV1(
   params: GeocodeRequestParams,
 ): Promise<GeocodeResult> {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   // Validate place ID

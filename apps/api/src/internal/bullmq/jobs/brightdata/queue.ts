@@ -2,6 +2,7 @@ import { logger } from '@ritchy/logger'
 import { Queue, QueueEvents } from 'bullmq'
 import type { BrightdataWebUnlockerResponse } from '../../../../external/brightdata/web_unlocker'
 import { bullmqRedisOptions } from '../../config'
+import { extractErrorMessage } from '../../utils/extract-error-message'
 
 export const queueName = 'brightdata-api'
 export const brightdataQueue = new Queue(queueName, {
@@ -31,20 +32,22 @@ export const enqueueBrightdataJob = async (
   try {
     return await job.waitUntilFinished(brightdataQueueEvents)
   } catch (error) {
+    const errorMessage = extractErrorMessage(error)
+
     logger.error({
       msg: '[Brightdata Queue] Job failed',
       event: 'brightdata_queue_job_failed',
       metadata: {
         url,
         jobId: job.id,
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
       },
     })
 
     return {
       status_code: 500,
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       headers: {},
       body: '',
     }

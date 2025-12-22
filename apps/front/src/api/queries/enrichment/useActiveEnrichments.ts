@@ -23,8 +23,10 @@ export const activeEnrichmentsKeys = {
  * - Type-safe
  * - Proper cache invalidation
  * - localStorage only used for persistence
+ *
+ * @internal Currently unused - kept for potential future use. activeEnrichmentsKeys is used instead.
  */
-export const useActiveEnrichments = () => {
+const _useActiveEnrichments = () => {
   const queryClient = useQueryClient()
 
   // Query for active enrichments - single source of truth
@@ -160,3 +162,6 @@ export const useActiveEnrichments = () => {
     isLoading: query.isLoading,
   }
 }
+
+// Suppress unused variable warning - hook kept for potential future use
+void _useActiveEnrichments

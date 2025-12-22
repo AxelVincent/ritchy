@@ -3,12 +3,13 @@ import type {
   BulkEnrichmentRequestBody,
   BulkEnrichmentResponse,
 } from '@ritchy/types'
+import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
-import {
-  enrichmentUnitQueue,
-  queueName,
-} from '../../internal/bullmq/jobs/enrichment/queue'
-import { setEnrichmentStatus } from '../../services/enrichment/status_manager'
+import { db } from '../../db/db'
+import { enrichment as enrichmentTable, userPlace } from '../../db/schema'
+import { enqueueCompanyEnrichment } from '../../internal/bullmq/jobs/enrichment-company/queue'
+import { setCompanyEnrichmentStatus } from '../../services/enrichment/status_manager'
+import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 
 /**
  * Bulk enrichment endpoint for processing multiple places
@@ -33,27 +34,88 @@ export const bulkEnrich = async (
       metadata: { userId, placeCount: userPlaceIds.length },
     })
 
+    let enqueuedCount = 0
+
     // Add each place to the enrichment queue
     for (const userPlaceId of userPlaceIds) {
-      await setEnrichmentStatus(
+      // Verify user has access to this userPlace
+      const [userPlaceRecord] = await db
+        .select({ id: userPlace.id, place_id: userPlace.place_id })
+        .from(userPlace)
+        .where(eq(userPlace.id, userPlaceId))
+        .limit(1)
+
+      if (!userPlaceRecord) continue
+
+      // Get place data
+      const place = await getPlaceByUserPlaceId(userPlaceId)
+      if (!place) continue
+
+      // Get or create enrichment record
+      let [existingEnrichment] = await db
+        .select({
+          id: enrichmentTable.id,
+          companyStatus: enrichmentTable.companyStatus,
+        })
+        .from(enrichmentTable)
+        .where(eq(enrichmentTable.placeId, place.id))
+        .limit(1)
+
+      // Skip if already enriched or in progress
+      if (
+        existingEnrichment?.companyStatus === 'completed' ||
+        existingEnrichment?.companyStatus === 'queued' ||
+        existingEnrichment?.companyStatus === 'processing'
+      ) {
+        continue
+      }
+
+      // Create enrichment record if doesn't exist
+      if (!existingEnrichment) {
+        const [newEnrichment] = await db
+          .insert(enrichmentTable)
+          .values({
+            placeId: place.id,
+            companyStatus: 'queued',
+          })
+          .returning({ id: enrichmentTable.id })
+
+        existingEnrichment = { id: newEnrichment.id, companyStatus: 'queued' }
+      } else {
+        // Update existing record to queued
+        await db
+          .update(enrichmentTable)
+          .set({ companyStatus: 'queued' })
+          .where(eq(enrichmentTable.id, existingEnrichment.id))
+      }
+
+      await setCompanyEnrichmentStatus(
         userPlaceId,
         'queued',
         'Queued for enrichment',
         0,
       )
-      await enrichmentUnitQueue.add(queueName, { userPlaceId })
+
+      await enqueueCompanyEnrichment({
+        userPlaceId,
+        enrichmentId: existingEnrichment.id,
+        placeId: place.id,
+        userId,
+      })
+
+      enqueuedCount++
     }
 
     logger.info({
       msg: 'Bulk enrichment jobs enqueued successfully',
       event: 'bulk_enrichment_enqueued',
-      metadata: { userId, enqueuedCount: userPlaceIds.length },
+      metadata: { userId, enqueuedCount },
     })
 
     res.json({
       success: true,
-      message: `Successfully enqueued ${userPlaceIds.length} place(s) for enrichment`,
-      enqueuedCount: userPlaceIds.length,
+      message: `Successfully enqueued ${enqueuedCount} place(s) for enrichment`,
+      enqueuedCount,
     })
   } catch (error) {
     logger.error({

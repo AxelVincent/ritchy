@@ -105,11 +105,11 @@
             "mode": "absolute",
             "steps": [{ "color": "green", "value": null }]
           },
-          "unit": "ops"
+          "unit": "short"
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
-      "id": 2,
+      "id": 19,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -129,13 +129,59 @@
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "sum(rate(ritchy_enrichment_requests_total[5m]))",
-          "legendFormat": "Enrichment Rate",
+          "expr": "sum(increase(ritchy_enrichment_requests_total{enrichment_type=\"company\"}[1h]))",
+          "legendFormat": "Company (1h)",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Enrichment Rate",
+      "title": "Company Enrichments (1h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "sum(increase(ritchy_enrichment_requests_total{enrichment_type=\"contact\"}[1h]))",
+          "legendFormat": "Contact (1h)",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Contact Enrichments (1h)",
       "type": "stat"
     },
     {
@@ -158,7 +204,7 @@
           "unit": "percentunit"
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
       "id": 3,
       "options": {
         "colorMode": "value",
@@ -185,7 +231,7 @@
           "refId": "A"
         }
       ],
-      "title": "Failure Rate",
+      "title": "Overall Failure Rate",
       "type": "stat"
     },
     {
@@ -208,54 +254,8 @@
           "unit": "s"
         }
       },
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
-      "id": 4,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.0.0",
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess=\"overall\"}[5m])) by (le))",
-          "legendFormat": "P95 Duration",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "P95 Enrichment Duration",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          },
-          "unit": "short"
-        }
-      },
       "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
-      "id": 5,
+      "id": 21,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -275,13 +275,13 @@
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "sum(increase(ritchy_enrichment_requests_total{status=\"success\"}[1h]))",
-          "legendFormat": "Completed (1h)",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"company\", subprocess=\"overall\"}[5m])) by (le))",
+          "legendFormat": "P95 Company",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Completed (Last Hour)",
+      "title": "P95 Company Duration",
       "type": "stat"
     },
     {
@@ -297,14 +297,15 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "red", "value": 1 }
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 60 }
             ]
           },
-          "unit": "short"
+          "unit": "s"
         }
       },
       "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
-      "id": 6,
+      "id": 22,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -324,13 +325,13 @@
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "sum(increase(ritchy_enrichment_requests_total{status=\"failed\"}[1h]))",
-          "legendFormat": "Failed (1h)",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"contact\", subprocess=\"overall\"}[5m])) by (le))",
+          "legendFormat": "P95 Contact",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Failed (Last Hour)",
+      "title": "P95 Contact Duration",
       "type": "stat"
     },
     {
@@ -338,7 +339,7 @@
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
       "id": 101,
       "panels": [],
-      "title": "Overall Performance",
+      "title": "Throughput & Volume",
       "type": "row"
     },
     {
@@ -349,76 +350,109 @@
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "percent"
-            },
-            "thresholdsStyle": { "mode": "off" }
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [{ "color": "green", "value": null }]
           },
-          "unit": "percentunit"
+          "unit": "short"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
-      "id": 7,
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 6 },
+      "id": 23,
       "options": {
-        "legend": {
-          "calcs": ["mean", "last"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
       },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "sum(rate(ritchy_enrichment_requests_total{cached=\"true\"}[5m])) by (cached)",
-          "legendFormat": "Cached",
-          "range": true,
+          "expr": "round(sum(increase(ritchy_enrichment_requests_total{enrichment_type=\"company\", status=\"success\"}[1h])))",
+          "legendFormat": "Success",
+          "instant": true,
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "sum(rate(ritchy_enrichment_requests_total{cached=\"false\"}[5m])) by (cached)",
-          "legendFormat": "Fresh",
-          "range": true,
+          "expr": "round(sum(increase(ritchy_enrichment_requests_total{enrichment_type=\"company\", status=\"failed\"}[1h])))",
+          "legendFormat": "Failed",
+          "instant": true,
           "refId": "B"
         }
       ],
-      "title": "Cached vs Fresh Enrichments",
-      "type": "timeseries"
+      "title": "Company Volume (Last Hour)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 6 },
+      "id": 29,
+      "options": {
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "round(sum(increase(ritchy_enrichment_requests_total{enrichment_type=\"contact\", status=\"success\"}[1h])))",
+          "legendFormat": "Success",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "round(sum(increase(ritchy_enrichment_requests_total{enrichment_type=\"contact\", status=\"failed\"}[1h])))",
+          "legendFormat": "Failed",
+          "instant": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Contact Volume (Last Hour)",
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -461,94 +495,15 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 30 },
-              { "color": "red", "value": 60 }
+              { "color": "yellow", "value": 0.9 },
+              { "color": "red", "value": 0.8 }
             ]
           },
-          "unit": "s"
+          "unit": "percentunit"
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
-      "id": 8,
-      "options": {
-        "legend": {
-          "calcs": ["mean", "max", "last"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess=\"overall\", cached=\"true\"}[5m])) by (le))",
-          "legendFormat": "Cached",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess=\"overall\", cached=\"false\"}[5m])) by (le))",
-          "legendFormat": "Fresh",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "P95 Duration: Cached vs Fresh (Overall)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "percent"
-            },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          },
-          "unit": "short"
-        }
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
-      "id": 9,
+      "id": 24,
       "options": {
         "legend": {
           "calcs": ["mean", "last"],
@@ -565,13 +520,21 @@
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "sum(rate(ritchy_enrichment_requests_total[5m])) by (status)",
-          "legendFormat": "{{status}}",
+          "expr": "sum(rate(ritchy_enrichment_requests_total{enrichment_type=\"company\", status=\"success\"}[5m])) / sum(rate(ritchy_enrichment_requests_total{enrichment_type=\"company\"}[5m]))",
+          "legendFormat": "Company Success Rate",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "sum(rate(ritchy_enrichment_requests_total{enrichment_type=\"contact\", status=\"success\"}[5m])) / sum(rate(ritchy_enrichment_requests_total{enrichment_type=\"contact\"}[5m]))",
+          "legendFormat": "Contact Success Rate",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "Enrichment Status Distribution",
+      "title": "Success Rate (Company vs Contact)",
       "type": "timeseries"
     },
     {
@@ -618,7 +581,7 @@
           "unit": "ops"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
       "id": 10,
       "options": {
         "legend": {
@@ -646,11 +609,82 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "percent"
+            },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "last"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "sum(rate(ritchy_enrichment_requests_total[5m])) by (status)",
+          "legendFormat": "{{status}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Enrichment Status Distribution",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
-      "id": 102,
+      "id": 105,
       "panels": [],
-      "title": "Subprocess Performance Analysis",
+      "title": "Company Enrichment Performance",
       "type": "row"
     },
     {
@@ -702,7 +736,7 @@
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
-      "id": 11,
+      "id": 25,
       "options": {
         "legend": {
           "calcs": ["mean", "max", "last"],
@@ -721,13 +755,13 @@
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"company\", subprocess!=\"overall\"}[5m])) by (le, subprocess))",
           "legendFormat": "{{subprocess}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "P95 Duration by Subprocess",
+      "title": "Company P95 Duration by Subprocess",
       "type": "timeseries"
     },
     {
@@ -779,7 +813,7 @@
         }
       },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
-      "id": 12,
+      "id": 8,
       "options": {
         "legend": {
           "calcs": ["mean", "max", "last"],
@@ -796,21 +830,278 @@
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\", cached=\"true\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}} (Cached)",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"company\", subprocess=\"overall\", cached=\"true\"}[5m])) by (le))",
+          "legendFormat": "Company Cached",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\", cached=\"false\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}} (Fresh)",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"company\", subprocess=\"overall\", cached=\"false\"}[5m])) by (le))",
+          "legendFormat": "Company Fresh",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "P95 Duration: Subprocess Comparison (Cached vs Fresh)",
+      "title": "Company P95 Duration: Cached vs Fresh",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "id": 106,
+      "panels": [],
+      "title": "Contact Enrichment Performance",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 15 },
+              { "color": "red", "value": 30 }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 26,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Last",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"contact\", subprocess!=\"overall\"}[5m])) by (le, subprocess))",
+          "legendFormat": "{{subprocess}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Contact P95 Duration by Waterfall",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 27,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "last"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"contact\", subprocess=\"linkedin_waterfall\"}[5m])) by (le))",
+          "legendFormat": "LinkedIn (P50)",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"contact\", subprocess=\"email_waterfall\"}[5m])) by (le))",
+          "legendFormat": "Email (P50)",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum(rate(ritchy_enrichment_duration_seconds_bucket{enrichment_type=\"contact\", subprocess=\"phone_waterfall\"}[5m])) by (le))",
+          "legendFormat": "Phone (P50)",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Contact Waterfall Duration Breakdown (P50 Stacked)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "id": 102,
+      "panels": [],
+      "title": "All Subprocess Performance",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 60 }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 41 },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Last",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
+          "legendFormat": "{{subprocess}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "P95 Duration by Subprocess (All Types)",
       "type": "timeseries"
     },
     {
@@ -836,7 +1127,7 @@
           "unit": "s"
         }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 41 },
       "id": 13,
       "options": {
         "calculate": false,
@@ -890,253 +1181,8 @@
       "type": "heatmap"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": { "mode": "line" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          },
-          "unit": "s"
-        }
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
-      "id": 14,
-      "options": {
-        "legend": {
-          "calcs": ["sum", "last"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Subprocess Duration Breakdown (P50 Stacked)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": { "mode": "line" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          },
-          "unit": "s"
-        }
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
-      "id": 15,
-      "options": {
-        "legend": {
-          "calcs": ["mean", "max", "last"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.25, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}} P25",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}} P50",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.75, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}} P75",
-          "range": true,
-          "refId": "C"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}} P95",
-          "range": true,
-          "refId": "D"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
-          "legendFormat": "{{subprocess}} P99",
-          "range": true,
-          "refId": "E"
-        }
-      ],
-      "title": "Subprocess Duration Distribution (Percentiles)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": { "mode": "off" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          },
-          "unit": "ops"
-        }
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 39 },
-      "id": 16,
-      "options": {
-        "legend": {
-          "calcs": ["mean", "max", "last"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "expr": "sum(rate(ritchy_enrichment_requests_total[5m])) by (subprocess)",
-          "legendFormat": "{{subprocess}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Subprocess Throughput (req/s)",
-      "type": "timeseries"
-    },
-    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
       "id": 103,
       "panels": [],
       "title": "Subprocess Performance Table",
@@ -1173,7 +1219,19 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 200
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
               }
             ]
           },
@@ -1275,42 +1333,10 @@
                 }
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "P95 Cached"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "s"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "P95 Fresh"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "s"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
           }
         ]
       },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 48 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 50 },
       "id": 17,
       "options": {
         "cellHeight": "sm",
@@ -1334,7 +1360,7 @@
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "histogram_quantile(0.50, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
+          "expr": "histogram_quantile(0.50, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess, enrichment_type))",
           "format": "table",
           "instant": true,
           "legendFormat": "__auto",
@@ -1345,7 +1371,7 @@
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
+          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess, enrichment_type))",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1357,37 +1383,13 @@
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "histogram_quantile(0.99, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess))",
+          "expr": "histogram_quantile(0.99, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\"}[5m])) by (le, subprocess, enrichment_type))",
           "format": "table",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
           "range": false,
           "refId": "P99"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\", cached=\"true\"}[5m])) by (le, subprocess))",
-          "format": "table",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "P95Cached"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "histogram_quantile(0.95, sum(rate(ritchy_enrichment_duration_seconds_bucket{subprocess!=\"overall\", cached=\"false\"}[5m])) by (le, subprocess))",
-          "format": "table",
-          "hide": false,
-          "instant": true,
-          "legendFormat": "__auto",
-          "range": false,
-          "refId": "P95Fresh"
         }
       ],
       "title": "Subprocess Performance Table",
@@ -1403,7 +1405,7 @@
               "Time": true,
               "__name__": true,
               "app": true,
-              "enrichment_type": false,
+              "cached": true,
               "environment": true,
               "instance": true,
               "job": true,
@@ -1411,19 +1413,17 @@
             },
             "indexByName": {
               "Time": 0,
-              "Value #P50": 2,
-              "Value #P95": 3,
-              "Value #P99": 4,
-              "Value #P95Cached": 5,
-              "Value #P95Fresh": 6,
-              "subprocess": 1
+              "enrichment_type": 1,
+              "subprocess": 2,
+              "Value #P50": 3,
+              "Value #P95": 4,
+              "Value #P99": 5
             },
             "renameByName": {
               "Value #P50": "P50 Duration",
               "Value #P95": "P95 Duration",
               "Value #P99": "P99 Duration",
-              "Value #P95Cached": "P95 Cached",
-              "Value #P95Fresh": "P95 Fresh",
+              "enrichment_type": "Type",
               "subprocess": "Subprocess"
             }
           }
@@ -1433,7 +1433,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 58 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 60 },
       "id": 104,
       "panels": [],
       "title": "Error Analysis",
@@ -1483,7 +1483,7 @@
           "unit": "ops"
         }
       },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 59 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 61 },
       "id": 18,
       "options": {
         "legend": {
@@ -1501,13 +1501,84 @@
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
           "editorMode": "code",
-          "expr": "sum(rate(ritchy_enrichment_errors_total[5m])) by (enrichment_type, error_type)",
-          "legendFormat": "{{enrichment_type}} - {{error_type}}",
+          "expr": "sum(rate(ritchy_enrichment_errors_total{enrichment_type=\"company\"}[5m])) by (error_type)",
+          "legendFormat": "Company - {{error_type}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Errors by Type and Enrichment",
+      "title": "Company Errors by Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "ops"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 61 },
+      "id": 28,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "editorMode": "code",
+          "expr": "sum(rate(ritchy_enrichment_errors_total{enrichment_type=\"contact\"}[5m])) by (error_type)",
+          "legendFormat": "Contact - {{error_type}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Contact Errors by Type",
       "type": "timeseries"
     }
   ],

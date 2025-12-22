@@ -1,110 +1,116 @@
-import { createCounter, createGauge, createHistogram } from '@ritchy/metrics'
+import { type DurationTimer, createCounter, createGauge } from '@ritchy/metrics'
 import { metricsRegistry } from './registry'
+import { getMetrics } from './singleton'
 
 // ============================================
-// USER METRICS
+// TIMER UTILITIES FOR AGGREGATED HISTOGRAMS
 // ============================================
 
-export const activeUsersGauge = createGauge(
-  metricsRegistry,
-  'ritchy_active_users',
-  'Number of currently active users',
-)
+/**
+ * Simple histogram interface that our aggregated histograms implement
+ */
+export interface SimpleHistogram {
+  observe: (value: number, labels: Record<string, string>) => void
+}
 
-export const userOperationsCounter = createCounter(
-  metricsRegistry,
-  'ritchy_user_operations_total',
-  'Total number of user operations',
-  ['operation_type', 'status'],
-)
+/**
+ * Create a duration timer for a simple histogram interface
+ * Works with both prom-client Histogram and our aggregated histograms
+ */
+export const createSimpleDurationTimer = (
+  histogram: SimpleHistogram,
+): DurationTimer => {
+  const startTime = process.hrtime()
 
-// ============================================
-// ENRICHMENT METRICS
-// ============================================
-
-export const enrichmentRequestsCounter = createCounter(
-  metricsRegistry,
-  'ritchy_enrichment_requests_total',
-  'Total number of enrichment requests',
-  ['enrichment_type', 'status', 'cached'],
-)
-
-export const enrichmentDurationHistogram = createHistogram(
-  metricsRegistry,
-  'ritchy_enrichment_duration_seconds',
-  'Duration of enrichment operations',
-  ['enrichment_type', 'subprocess', 'cached'],
-  [0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300], // Up to 5 minutes
-)
-
-export const enrichmentErrorsCounter = createCounter(
-  metricsRegistry,
-  'ritchy_enrichment_errors_total',
-  'Total number of enrichment errors',
-  ['enrichment_type', 'error_type'],
-)
-
-export const enrichmentStatusGauge = createGauge(
-  metricsRegistry,
-  'ritchy_enrichment_active',
-  'Number of active enrichments by status',
-  ['status'], // queued, processing, completed, failed
-)
+  return {
+    stop: (labels: Record<string, string> = {}) => {
+      const [seconds, nanoseconds] = process.hrtime(startTime)
+      const durationSeconds = seconds + nanoseconds / 1e9
+      histogram.observe(durationSeconds, labels)
+      return durationSeconds
+    },
+    elapsed: () => {
+      const [seconds, nanoseconds] = process.hrtime(startTime)
+      return seconds + nanoseconds / 1e9
+    },
+  }
+}
 
 // ============================================
-// DATABASE METRICS
+// ENRICHMENT METRICS (aggregated across processes)
+// Proxies to the auto-initializing singleton
 // ============================================
 
-export const databaseQueriesCounter = createCounter(
-  metricsRegistry,
-  'ritchy_database_queries_total',
-  'Total number of database queries',
-  ['operation', 'table'],
-)
+export const enrichmentRequestsCounter = {
+  inc: (labels: Record<string, string>, value = 1) =>
+    getMetrics().enrichmentRequests.inc(labels, value),
+}
 
-export const databaseQueryDurationHistogram = createHistogram(
-  metricsRegistry,
-  'ritchy_database_query_duration_seconds',
-  'Duration of database queries',
-  ['operation', 'table'],
-  [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5],
-)
+export const enrichmentDurationHistogram = {
+  observe: (value: number, labels: Record<string, string>) =>
+    getMetrics().enrichmentDuration.observe(value, labels),
+}
 
-// ============================================
-// QUEUE METRICS (BullMQ)
-// ============================================
+export const enrichmentErrorsCounter = {
+  inc: (labels: Record<string, string>, value = 1) =>
+    getMetrics().enrichmentErrors.inc(labels, value),
+}
 
-export const queueJobsProcessedCounter = createCounter(
-  metricsRegistry,
-  'ritchy_queue_jobs_processed_total',
-  'Total number of queue jobs processed',
-  ['queue_name', 'job_type', 'status'],
-)
-
-export const queueJobDurationHistogram = createHistogram(
-  metricsRegistry,
-  'ritchy_queue_job_duration_seconds',
-  'Duration of queue job processing',
-  ['queue_name', 'job_type'],
-  [0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300],
-)
-
-export const queueJobsFailedCounter = createCounter(
-  metricsRegistry,
-  'ritchy_queue_jobs_failed_total',
-  'Total number of failed queue jobs',
-  ['queue_name', 'job_type', 'error_type'],
-)
-
-export const queueActiveJobsGauge = createGauge(
-  metricsRegistry,
-  'ritchy_queue_active_jobs',
-  'Number of currently active jobs in queue',
-  ['queue_name'],
-)
+export const enrichmentStatusGauge = {
+  inc: (labels: Record<string, string>, value = 1) =>
+    getMetrics().enrichmentStatus.inc(labels, value),
+  dec: (labels: Record<string, string>, value = 1) =>
+    getMetrics().enrichmentStatus.dec(labels, value),
+  set: (value: number, labels: Record<string, string>) =>
+    getMetrics().enrichmentStatus.set(value, labels),
+}
 
 // ============================================
-// WEBSOCKET METRICS
+// QUEUE METRICS (aggregated across processes)
+// Proxies to the auto-initializing singleton
+// ============================================
+
+export const queueJobsProcessedCounter = {
+  inc: (labels: Record<string, string>, value = 1) =>
+    getMetrics().queueJobsProcessed.inc(labels, value),
+}
+
+export const queueJobDurationHistogram = {
+  observe: (value: number, labels: Record<string, string>) =>
+    getMetrics().queueJobDuration.observe(value, labels),
+}
+
+export const queueJobsFailedCounter = {
+  inc: (labels: Record<string, string>, value = 1) =>
+    getMetrics().queueJobsFailed.inc(labels, value),
+}
+
+export const queueActiveJobsGauge = {
+  inc: (labels: Record<string, string>, value = 1) =>
+    getMetrics().queueActiveJobs.inc(labels, value),
+  dec: (labels: Record<string, string>, value = 1) =>
+    getMetrics().queueActiveJobs.dec(labels, value),
+  set: (value: number, labels: Record<string, string>) =>
+    getMetrics().queueActiveJobs.set(value, labels),
+}
+
+// ============================================
+// EXTERNAL API METRICS (aggregated across processes)
+// Proxies to the auto-initializing singleton
+// ============================================
+
+export const externalApiRequestsCounter = {
+  inc: (labels: Record<string, string>, value = 1) =>
+    getMetrics().externalApiRequests.inc(labels, value),
+}
+
+export const externalApiDurationHistogram = {
+  observe: (value: number, labels: Record<string, string>) =>
+    getMetrics().externalApiDuration.observe(value, labels),
+}
+
+// ============================================
+// WEBSOCKET METRICS (API-only, local registry)
 // ============================================
 
 export const websocketConnectionsGauge = createGauge(
@@ -119,23 +125,4 @@ export const websocketMessagesCounter = createCounter(
   'ritchy_websocket_messages_total',
   'Total number of WebSocket messages',
   ['namespace', 'event_type', 'direction'], // direction: inbound/outbound
-)
-
-// ============================================
-// EXTERNAL API METRICS
-// ============================================
-
-export const externalApiRequestsCounter = createCounter(
-  metricsRegistry,
-  'ritchy_external_api_requests_total',
-  'Total number of external API requests',
-  ['service', 'endpoint', 'status_code'],
-)
-
-export const externalApiDurationHistogram = createHistogram(
-  metricsRegistry,
-  'ritchy_external_api_duration_seconds',
-  'Duration of external API requests',
-  ['service', 'endpoint'],
-  [0.1, 0.5, 1, 2, 5, 10, 30],
 )

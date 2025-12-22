@@ -1,6 +1,8 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
-import { enrichmentDurationHistogram } from '../../../../metrics/collectors'
+import {
+  createSimpleDurationTimer,
+  enrichmentDurationHistogram,
+} from '../../../../metrics/collectors'
 import { deduplicateTechnologies } from './detect_technologies_utils'
 import { extractScripts } from './extract_scripts'
 import { identifyScriptsBatch } from './llm_detector'
@@ -20,7 +22,7 @@ export const detectTechnologies = async (
   url: string,
   enrichmentId: string,
 ): Promise<DetectedTechnology[]> => {
-  const timer = startDurationTimer(enrichmentDurationHistogram)
+  const timer = createSimpleDurationTimer(enrichmentDurationHistogram)
   const startTime = Date.now()
 
   logger.debug({

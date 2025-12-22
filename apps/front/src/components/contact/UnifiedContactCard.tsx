@@ -45,6 +45,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { SocialMediaList } from '../data-table/columns/utils/SocialMediaList'
+import { ContactEnrichButton } from './ContactEnrichButton'
 import { EmailDisplay } from './EmailDisplay'
 import { OfficerDetails } from './OfficerDetails'
 import {
@@ -80,10 +81,12 @@ interface UnifiedContactCardProps {
     country?: string | null
     country_code?: string | null
     linkedinUrl?: string | null
+    enrichmentStatus?: 'idle' | 'queued' | 'processing' | 'completed' | 'failed'
     emails: Email[]
     phones: Phone[]
     socials: SocialMedia[]
   }
+  companyEnriched?: boolean
   isPrimary?: boolean
   isExpanded: boolean
   onToggle: () => void
@@ -111,6 +114,7 @@ const getContactIcon = (type: 'legal' | 'physical' | null) => {
 
 export const UnifiedContactCard = ({
   contact,
+  companyEnriched = false,
   isPrimary = false,
   isExpanded,
   onToggle,
@@ -224,6 +228,12 @@ export const UnifiedContactCard = ({
                   <div className="flex items-center pl-2 pr-2">
                     <Star className="h-4 w-4 fill-current" aria-hidden="true" />
                   </div>
+                )}
+                {contact.type !== 'legal' && (
+                  <ContactEnrichButton
+                    contactId={contact.id}
+                    companyEnriched={companyEnriched}
+                  />
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

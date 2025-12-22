@@ -4,10 +4,7 @@ import { createServer } from 'node:http'
 import { clerkMiddleware, getAuth } from '@clerk/express'
 import { createQueueDashExpressMiddleware } from '@queuedash/api'
 import { baseLogger, logger } from '@ritchy/logger'
-import {
-  createHttpMetricsMiddleware,
-  createMetricsHandler,
-} from '@ritchy/metrics'
+import { createHttpMetricsMiddleware } from '@ritchy/metrics'
 import timeout from 'connect-timeout'
 import cors from 'cors'
 import { eq } from 'drizzle-orm'
@@ -20,26 +17,39 @@ import { user as userTable } from './db/schema'
 import { initQdrantCollection } from './external/qdrant'
 import { redisHealthMonitor } from './internal/redis/health-monitor'
 import { metricsRegistry } from './metrics/registry'
+import { ensureRegistryInitialized, getRegistry } from './metrics/singleton'
 import { basicAuth } from './middleware/basic_auth'
 import { addRequestMetadata } from './middleware/request_metadata'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
 
-// Import the bullmq workers
-import './internal/bullmq'
-import { bullmqQueues } from './internal/bullmq'
 import {
   startQueueCleanupScheduler,
   stopQueueCleanupScheduler,
 } from './internal/bullmq/cleanup'
+// Import BullMQ queues only (for queue dashboard and job enqueueing)
+// Workers run in a separate process via: pnpm dev:workers / pnpm start:workers
+import { bullmqQueues } from './internal/bullmq/queues'
 
+import { AdaptivePollingConsumer } from './internal/redis/polling-consumer'
+import websocketHealthRoutes from './routes/websocket-health'
 import {
-  flushPendingUpdates,
+  emitStatusUpdateToWebSocket,
   setEnrichmentNamespace,
 } from './services/enrichment/status_manager'
 import { setupEnrichmentNamespace } from './websocket/enrichment-namespace'
 // Import WebSocket server setup
 import { createWebSocketServer } from './websocket/server'
+
+// Initialize aggregated metrics registry (auto-initializing singleton)
+// This allows metrics from workers to be aggregated with API metrics
+const aggregatedRegistry = ensureRegistryInitialized()
+
+logger.info({
+  msg: 'Aggregated metrics registry initialized',
+  event: 'aggregated_metrics_initialized',
+  metadata: { processId: 'api' },
+})
 
 const app = express()
 const server = createServer(app)
@@ -51,8 +61,27 @@ const enrichmentNs = setupEnrichmentNamespace(io)
 // Make enrichment namespace accessible to status manager
 setEnrichmentNamespace(enrichmentNs)
 
+// Create adaptive polling consumer for worker status updates
+const pollingConsumer = new AdaptivePollingConsumer(
+  (message) => emitStatusUpdateToWebSocket(message),
+  {
+    minIntervalMs: 10,
+    maxIntervalMs: 200,
+    batchSize: 50,
+  },
+)
+
+// Start the polling consumer
+pollingConsumer.start().catch((error) => {
+  logger.error({
+    msg: 'Failed to start polling consumer',
+    event: 'polling_consumer_start_error',
+    metadata: { error: error instanceof Error ? error.message : String(error) },
+  })
+})
+
 logger.info({
-  msg: 'WebSocket server initialized in single-server mode (Redis pub/sub disabled)',
+  msg: 'WebSocket server initialized with adaptive polling consumer',
   event: 'websocket_initialized',
 })
 
@@ -245,19 +274,71 @@ app.use(
 // Replace the simple helmet() call with a configured version
 app.use(helmet())
 
-// Healthcheck route
+// Healthcheck routes
 app.get('/health', (_, res) => {
   res.status(200).json({ status: 'ok' })
 })
 
+// WebSocket health check
+app.use(websocketHealthRoutes)
+
 // Metrics endpoint for Prometheus (protected with Basic Auth)
-app.get(
-  '/metrics',
-  createMetricsHandler(metricsRegistry, {
-    username: process.env.METRICS_USERNAME,
-    password: process.env.METRICS_PASSWORD,
-  }),
-)
+// Uses aggregated registry to combine metrics from API + worker processes
+app.get('/metrics', async (req, res) => {
+  // Basic Auth protection
+  const username = process.env.METRICS_USERNAME
+  const password = process.env.METRICS_PASSWORD
+
+  if (username && password) {
+    const authHeader = req.headers.authorization
+
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+      res.set('WWW-Authenticate', 'Basic realm="Metrics"')
+      res.status(401).end('Authentication required')
+      return
+    }
+
+    try {
+      const base64Credentials = authHeader.split(' ')[1]
+      const credentials = Buffer.from(base64Credentials, 'base64').toString(
+        'utf-8',
+      )
+      const [user, pass] = credentials.split(':')
+
+      const usernameMatch =
+        user.length === username.length &&
+        Buffer.from(user).equals(Buffer.from(username))
+      const passwordMatch =
+        pass.length === password.length &&
+        Buffer.from(pass).equals(Buffer.from(password))
+
+      if (!usernameMatch || !passwordMatch) {
+        res.set('WWW-Authenticate', 'Basic realm="Metrics"')
+        res.status(401).end('Invalid credentials')
+        return
+      }
+    } catch {
+      res.set('WWW-Authenticate', 'Basic realm="Metrics"')
+      res.status(401).end('Invalid authorization header')
+      return
+    }
+  }
+
+  try {
+    res.set('Content-Type', aggregatedRegistry.contentType)
+    const metrics = await aggregatedRegistry.metrics()
+    res.end(metrics)
+  } catch (error) {
+    logger.error({
+      msg: 'Failed to collect aggregated metrics',
+      event: 'metrics_collection_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+    res.status(500).end('Error collecting metrics')
+  }
+})
 
 // Web routes
 app.use('/web', isAuthenticated, webRoutes)
@@ -374,14 +455,31 @@ process.on('unhandledRejection', (reason, promise) => {
 })
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
+const gracefulShutdown = async (signal: string) => {
   logger.info({
-    msg: 'Shutting down services',
+    msg: `Shutting down services (${signal})`,
     event: 'graceful_shutdown_start',
   })
 
-  // Flush pending WebSocket batch updates
-  flushPendingUpdates()
+  // Stop the polling consumer
+  await pollingConsumer.stop()
+
+  // Final sync of aggregated metrics before shutdown
+  const registry = getRegistry()
+  if (registry) {
+    try {
+      await registry.sync()
+      registry.stopSync()
+    } catch (error) {
+      logger.error({
+        msg: 'Failed to sync metrics during shutdown',
+        event: 'metrics_shutdown_error',
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      })
+    }
+  }
 
   // Shutdown Redis health monitor
   redisHealthMonitor.stop()
@@ -390,22 +488,7 @@ process.on('SIGTERM', async () => {
   stopQueueCleanupScheduler()
 
   process.exit(0)
-})
+}
 
-process.on('SIGINT', async () => {
-  logger.info({
-    msg: 'Shutting down services',
-    event: 'graceful_shutdown_start',
-  })
-
-  // Flush pending WebSocket batch updates
-  flushPendingUpdates()
-
-  // Shutdown Redis health monitor
-  redisHealthMonitor.stop()
-
-  // Stop BullMQ queue cleanup scheduler
-  stopQueueCleanupScheduler()
-
-  process.exit(0)
-})
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))

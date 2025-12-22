@@ -25,7 +25,7 @@ type CommonOptions = {
 }
 
 // Traffic split configuration
-const FIRECRAWL_TRAFFIC_PERCENTAGE = 0.5 // 50% of traffic to Firecrawl
+const FIRECRAWL_TRAFFIC_PERCENTAGE = 0.8 // 80% of traffic to Firecrawl
 
 /**
  * Determines which scraper to use as primary based on a 50/50 traffic split

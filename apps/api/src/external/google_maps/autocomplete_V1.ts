@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import type {
   AutocompletePrediction,
   AutocompleteRequestBody,
@@ -7,6 +7,7 @@ import type {
 import { z } from 'zod'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -42,7 +43,7 @@ const GooglePlacesResponseSchema = z.object({
 export async function postAutocompleteV1(
   requestBody: AutocompleteRequestBody,
 ): Promise<AutocompletePrediction[]> {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   try {

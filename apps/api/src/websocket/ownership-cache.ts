@@ -303,6 +303,8 @@ export const verifyOwnershipBatch = async (
  * Invalidate ownership cache for multiple userPlaces
  * Useful for bulk operations
  *
+ * @internal Currently unused - kept for potential future bulk operations
+ *
  * @param userPlaceIds - Array of userPlace UUIDs to invalidate
  *
  * @example
@@ -312,7 +314,7 @@ export const verifyOwnershipBatch = async (
  * await invalidateOwnershipCacheBulk(userPlaceIds)
  * ```
  */
-export const invalidateOwnershipCacheBulk = async (
+const _invalidateOwnershipCacheBulk = async (
   userPlaceIds: string[],
 ): Promise<void> => {
   if (userPlaceIds.length === 0) return
@@ -339,9 +341,14 @@ export const invalidateOwnershipCacheBulk = async (
   }
 }
 
+// Suppress unused variable warning - kept for potential future bulk operations
+void _invalidateOwnershipCacheBulk
+
 /**
  * Clear entire ownership cache
  * Use sparingly - mainly for testing or emergency cache busting
+ *
+ * @internal Currently unused - kept for testing and emergency situations
  *
  * @example
  * ```typescript
@@ -351,7 +358,7 @@ export const invalidateOwnershipCacheBulk = async (
  * })
  * ```
  */
-export const clearOwnershipCache = async (): Promise<void> => {
+const _clearOwnershipCache = async (): Promise<void> => {
   try {
     // Scan for all ownership keys and delete them
     const pattern = `${OWNERSHIP_CACHE_PREFIX}:*`
@@ -389,3 +396,6 @@ export const clearOwnershipCache = async (): Promise<void> => {
     })
   }
 }
+
+// Suppress unused variable warning - kept for testing and emergency situations
+void _clearOwnershipCache

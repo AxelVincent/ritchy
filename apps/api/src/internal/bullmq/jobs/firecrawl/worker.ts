@@ -1,6 +1,11 @@
 import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { getFirecrawlClient } from '../../../../external/firecrawl'
+import {
+  createSimpleDurationTimer,
+  externalApiDurationHistogram,
+  externalApiRequestsCounter,
+} from '../../../../metrics/collectors'
 import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 
@@ -10,11 +15,34 @@ const worker = new Worker(
   async (job) => {
     const { url, options } = job.data
     const app = getFirecrawlClient()
-    return app.scrapeUrl(url, {
-      ...options,
-      maxAge: 604800000,
-      timeout: TIMEOUT,
-    })
+    const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
+    let statusCode = '500'
+
+    try {
+      const result = await app.scrapeUrl(url, {
+        ...options,
+        maxAge: 604800000,
+        timeout: TIMEOUT,
+      })
+
+      statusCode = result.success ? '200' : '400'
+      metricsTimer.stop({ service: 'firecrawl', endpoint: 'scrape' })
+      externalApiRequestsCounter.inc({
+        service: 'firecrawl',
+        endpoint: 'scrape',
+        status_code: statusCode,
+      })
+
+      return result
+    } catch (error) {
+      metricsTimer.stop({ service: 'firecrawl', endpoint: 'scrape' })
+      externalApiRequestsCounter.inc({
+        service: 'firecrawl',
+        endpoint: 'scrape',
+        status_code: statusCode,
+      })
+      throw error
+    }
   },
   {
     connection: bullmqRedisOptions,

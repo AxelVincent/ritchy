@@ -1,10 +1,11 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import { EmailQualityEnum } from '@ritchy/types'
 import { z } from 'zod'
 import { enqueueMillionVerifierJob } from '../../internal/bullmq/jobs/million_verifier/queue'
 import { redisClient } from '../../internal/redis/redis'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -73,7 +74,7 @@ export type MillionVerifierResponse = z.infer<
 export const verifyWithMillionVerifier = async (
   email: string,
 ): Promise<MillionVerifierResponse> => {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   try {

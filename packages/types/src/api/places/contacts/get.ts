@@ -72,6 +72,10 @@ export const GetPlacesContactsResponseSchema = z.object({
         }),
       ),
       linkedinUrl: z.string().nullable(),
+      enrichmentStatus: z
+        .enum(['idle', 'queued', 'processing', 'completed', 'failed'])
+        .default('idle'),
+      enrichedAt: z.string().nullable(),
       createdAt: z.string(),
       updatedAt: z.string(),
     }),

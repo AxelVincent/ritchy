@@ -1,75 +1,43 @@
 import { logger } from '@ritchy/logger'
-import { type Job, UnrecoverableError, Worker } from 'bullmq'
+import { Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
-import { scrapeWebsiteManager } from '../../../../services/enrichment/scraper/scrape_website_manager'
-import { bullmqRedisOptions } from '../../config'
-import { workerConfig } from '../../config'
+import { bullmqRedisOptions, workerConfig } from '../../config'
+import { getSandboxPath } from '../../utils/sandbox-path'
 import { queueName } from './queue'
+import type { ScraperJobData } from './sandbox'
 
-const scraperWorker = new Worker(
-  queueName,
-  async (job: Job) => {
-    const { url, enrichmentId, onlyMainContent, userPlaceId } = job.data
+const sandboxPath = getSandboxPath('jobs/scraper/sandbox')
 
-    try {
-      logger.info({
-        msg: 'Starting scraper job',
-        metadata: { jobId: job.id, url },
-        event: 'scraper_started',
-      })
-
-      const result = await scrapeWebsiteManager(
-        url,
-        enrichmentId,
-        onlyMainContent,
-        userPlaceId,
-      )
-
-      logger.info({
-        msg: 'Scraper job completed successfully',
-        metadata: { jobId: job.id },
-        event: 'scraper_completed',
-      })
-
-      return result
-    } catch (error) {
-      if (error instanceof UnrecoverableError) {
-        logger.error({
-          msg: 'Scraper job timed out',
-          metadata: {
-            jobId: job.id,
-            url,
-            error: error instanceof Error ? error.message : String(error),
-          },
-          event: 'scraper_timeout',
-        })
-      }
-      logger.error({
-        msg: 'Scraper job failed',
-        metadata: {
-          jobId: job.id,
-          url,
-          error: error instanceof Error ? error.message : String(error),
-        },
-        event: 'scraper_failed',
-      })
-
-      throw error
-    }
+/**
+ * Scraper worker with worker thread isolation.
+ *
+ * Most memory-intensive worker due to Cheerio/JSDOM usage.
+ * Uses useWorkerThreads for memory isolation - each job runs in a separate
+ * thread, preventing memory spikes from affecting other workers.
+ */
+const scraperWorker = new Worker<ScraperJobData>(queueName, sandboxPath, {
+  connection: bullmqRedisOptions,
+  useWorkerThreads: true,
+  limiter: {
+    max: 1000,
+    duration: 60000,
   },
-  {
-    connection: bullmqRedisOptions,
-    limiter: {
-      max: 1000,
-      duration: 60000,
-    },
+  concurrency: workerConfig.scraper.concurrency,
+  lockDuration: workerConfig.scraper.lockDuration,
+  lockRenewTime: workerConfig.scraper.renewalInterval,
+  stalledInterval: workerConfig.scraper.stalledInterval,
+  maxStalledCount: workerConfig.scraper.maxStalledCount,
+})
+
+logger.info({
+  msg: 'Scraper worker initialized',
+  event: 'worker_initialized',
+  metadata: {
+    queue: queueName,
+    useWorkerThreads: true,
     concurrency: workerConfig.scraper.concurrency,
-    lockDuration: workerConfig.scraper.lockDuration,
-    lockRenewTime: workerConfig.scraper.renewalInterval,
-    stalledInterval: workerConfig.scraper.stalledInterval,
-    maxStalledCount: workerConfig.scraper.maxStalledCount,
   },
-)
+})
 
 setupQueueMetrics(scraperWorker, 'scraper', 'website_scrape')
 

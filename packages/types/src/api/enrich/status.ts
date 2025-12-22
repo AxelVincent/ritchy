@@ -7,6 +7,15 @@ export type EnrichmentProgressStatus =
   | 'completed'
   | 'failed'
 
+export const CreditsInfoSchema = z.object({
+  creditsUsed: z.number(),
+  creditsBreakdown: z.object({
+    linkedin: z.number(),
+    emails: z.number(),
+    phones: z.number(),
+  }),
+})
+
 export const EnrichmentStatusDataSchema = z.object({
   status: z.enum(['idle', 'queued', 'processing', 'completed', 'failed']),
   step: z.string(),
@@ -14,6 +23,8 @@ export const EnrichmentStatusDataSchema = z.object({
   updatedAt: z.number(),
   error: z.string().optional(),
   jobId: z.string().optional(),
+  /** Credit info for contact enrichment (only present on completed status) */
+  credits: CreditsInfoSchema.optional(),
 })
 
 export const BatchEnrichmentStatusResponseSchema = z.record(

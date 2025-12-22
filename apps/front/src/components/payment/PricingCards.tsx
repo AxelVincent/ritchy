@@ -415,12 +415,20 @@ export const PricingCards = ({
                                 Lead import
                               </span>
                               <span className="text-sm font-medium text-blue-600">
-                                1 credits
+                                1 credit
                               </span>
                             </div>
                             <div className="flex justify-between space-x-2 items-center">
                               <span className="text-sm text-gray-700">
-                                Enrichment
+                                Company enrichment
+                              </span>
+                              <span className="text-sm font-medium text-blue-600">
+                                1 credit
+                              </span>
+                            </div>
+                            <div className="flex justify-between space-x-2 items-center">
+                              <span className="text-sm text-gray-700">
+                                Contact enrichment
                               </span>
                               <span className="text-sm font-medium text-blue-600">
                                 5 credits

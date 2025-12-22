@@ -1,6 +1,6 @@
 import FirecrawlApp, { type CrawlScrapeOptions } from '@mendable/firecrawl-js'
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import { FIRECRAWL_CONFIG } from '../../config/firecrawl'
 import {
   enqueueFirecrawlJob,
@@ -8,6 +8,7 @@ import {
   firecrawlQueueEvents,
 } from '../../internal/bullmq/jobs/firecrawl/queue'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -33,7 +34,7 @@ export const scrapeWithRetry = async (
     onlyMainContent: false,
   },
 ): Promise<ScrapeResult> => {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   try {

@@ -1,7 +1,8 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import { SLACK_CONFIG } from '../../config/slack'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -21,7 +22,7 @@ export const sendSlackNotification = ({
 }): void => {
   // Fire and forget
   void (async () => {
-    const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+    const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
     let httpStatusCode = '500'
 
     try {

@@ -63,3 +63,11 @@ export const emailResultEnum = pgEnum('email_result', [
 export const contactTypeEnum = pgEnum('contact_type', [
   ...ContactTypeEnum.options,
 ])
+
+export const enrichmentPhaseStatusEnum = pgEnum('enrichment_phase_status', [
+  'idle',
+  'queued',
+  'processing',
+  'completed',
+  'failed',
+])

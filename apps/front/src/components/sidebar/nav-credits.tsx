@@ -1,13 +1,18 @@
 'use client'
 
+import { CREDIT_COSTS } from '@/components/data-table/enrich/constants'
 import {
   Calendar,
   ChevronDown,
   ChevronRight,
   CreditCard,
   DownloadIcon,
+  Linkedin,
+  Mail,
+  Phone,
   Plus,
   Sparkles,
+  User,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -146,32 +151,72 @@ export function NavCredits() {
                 <Separator />
 
                 {/* Credit Usage Info */}
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-3 w-3 text-blue-600" />
-                        <span className="text-xs font-medium">Enrichment</span>
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="h-5 px-2 font-medium text-xs"
-                      >
-                        5 credits
-                      </Badge>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <DownloadIcon className="h-3.5 w-3.5 text-blue-500" />
+                      <span className="text-xs">Lead import</span>
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                      1 credit
+                    </span>
+                  </div>
 
-                    <div className="flex items-center justify-between p-2">
+                  <div className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+                      <span className="text-xs">Company</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      1 credit
+                    </span>
+                  </div>
+
+                  {/* Contact enrichment - pay per result */}
+                  <div className="py-1.5 px-2 rounded-md">
+                    <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <DownloadIcon className="h-3 w-3 text-blue-600" />
-                        <span className="text-xs font-medium">Lead import</span>
+                        <User className="h-3.5 w-3.5 text-blue-500" />
+                        <span className="text-xs font-medium">Contact</span>
                       </div>
-                      <Badge
-                        variant="secondary"
-                        className="h-5 px-2 font-medium text-xs"
-                      >
-                        1 credit
-                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        per result
+                      </span>
+                    </div>
+                    <div className="pl-5 space-y-0.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Linkedin className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            LinkedIn
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {CREDIT_COSTS.linkedin}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            Email
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {CREDIT_COSTS.email}/each
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            Phone
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {CREDIT_COSTS.phone}/each
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,0 +1,39 @@
+import { Queue } from 'bullmq'
+import { bullmqRedisOptions } from '../../config'
+
+export const queueName = 'enrichment-contact'
+
+export interface ContactEnrichmentJobData {
+  contactId: string
+  userPlaceId: string
+  userId: string
+  /** Credits reserved upfront, to be refunded/charged based on actual results */
+  reservedCredits: number
+}
+
+export const contactEnrichmentQueue = new Queue<ContactEnrichmentJobData>(
+  queueName,
+  {
+    connection: bullmqRedisOptions,
+    defaultJobOptions: {
+      attempts: 1,
+      removeOnComplete: {
+        age: 300, // 5 minutes
+        count: 100,
+      },
+      removeOnFail: {
+        age: 3600, // 1 hour
+        count: 100,
+      },
+    },
+  },
+)
+
+export const enqueueContactEnrichment = async (
+  data: ContactEnrichmentJobData,
+): Promise<string> => {
+  const job = await contactEnrichmentQueue.add(queueName, data, {
+    jobId: `contact-${data.contactId}-${Date.now()}`,
+  })
+  return job.id ?? ''
+}

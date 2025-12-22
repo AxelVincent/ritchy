@@ -79,14 +79,20 @@ export const CopyButton = React.memo(function CopyButton({
   )
 })
 
-// Lightweight wrapper for custom content (no actions, just container)
-export const SimpleCell = React.memo(function SimpleCell({
+/**
+ * Lightweight wrapper for custom content (no actions, just container)
+ * @internal Currently unused - SimpleArrayCell is used instead
+ */
+const _SimpleCell = React.memo(function SimpleCell({
   children,
 }: {
   children: React.ReactNode
 }) {
   return <div className="w-full h-full flex items-center px-2">{children}</div>
 })
+
+// Suppress unused variable warning - kept for potential future use
+void _SimpleCell
 
 export const SimpleArrayCell = React.memo(function SimpleArrayCell({
   items,

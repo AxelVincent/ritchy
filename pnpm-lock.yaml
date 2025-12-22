@@ -168,6 +168,9 @@ importers:
       '@types/turndown':
         specifier: 5.0.5
         version: 5.0.5
+      concurrently:
+        specifier: 9.1.2
+        version: 9.1.2
       drizzle-kit:
         specifier: 0.28.1
         version: 0.28.1
@@ -4575,6 +4578,11 @@ packages:
 
   concaveman@1.2.1:
     resolution: {integrity: sha512-PwZYKaM/ckQSa8peP5JpVr7IMJ4Nn/MHIaWUjP4be+KoZ7Botgs8seAZGpmaOM+UZXawcdYRao/px9ycrCihHw==}
+
+  concurrently@9.1.2:
+    resolution: {integrity: sha512-H9MWcoPsYddwbOGM6difjVwVZHl63nwMEwDJG/L7VGtuaJhb12h2caPG2tVPWs7emuYix252iGfqOyrz1GczTQ==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   concurrently@9.2.1:
     resolution: {integrity: sha512-fsfrO0MxV64Znoy8/l1vVIjjHa29SZyyqPgQBwhiDcaW8wJc2W3XWVOGx4M3oJBnv/zdUZIIp1gDeS98GzP8Ng==}
@@ -12329,6 +12337,16 @@ snapshots:
       rbush: 3.0.1
       robust-predicates: 2.0.4
       tinyqueue: 2.0.3
+
+  concurrently@9.1.2:
+    dependencies:
+      chalk: 4.1.2
+      lodash: 4.17.21
+      rxjs: 7.8.2
+      shell-quote: 1.8.3
+      supports-color: 8.1.1
+      tree-kill: 1.2.2
+      yargs: 17.7.2
 
   concurrently@9.2.1:
     dependencies:

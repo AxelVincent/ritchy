@@ -1,8 +1,9 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import type { DomainRegistration } from '@ritchy/types'
 import { enqueueWhoisJob } from '../../internal/bullmq/jobs/whois/queue'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -18,7 +19,7 @@ export const performWhoisLookup = async (
   domain: string,
   timeoutMs = 10000,
 ): Promise<DomainRegistration | null> => {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '200'
 
   // Skip social media domains

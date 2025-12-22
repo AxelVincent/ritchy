@@ -47,7 +47,7 @@ export const getWebsiteDescription = async (domain: string) => {
       WebDescriptionAssistantSchema,
     )
     const anthropic_result = await trackExternalApiCall(
-      'openai',
+      'gemini_2_5_flash',
       'get_website_description',
       () => anthropic_structuredOutput.invoke(prompt),
     )

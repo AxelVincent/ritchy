@@ -17,6 +17,7 @@ import {
   contactTypeEnum,
   emailQualityEnum,
   emailResultEnum,
+  enrichmentPhaseStatusEnum,
   phoneTypeEnum,
 } from './enum'
 import { place } from './place'
@@ -42,6 +43,8 @@ export const enrichment = pgTable(
     error: text('error'),
     isStale: boolean('is_stale').notNull().default(false),
     score: integer('score'),
+    companyEnrichedAt: timestamp('company_enriched_at'),
+    companyStatus: enrichmentPhaseStatusEnum('company_status').default('idle'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -236,6 +239,11 @@ export const enrichmentCompanyOfficer = pgTable('enrichment_company_officer', {
   city: text('city'),
   country: text('country'),
   country_code: text('country_code'),
+
+  // Enrichment tracking
+  enrichedAt: timestamp('enriched_at'),
+  enrichmentStatus:
+    enrichmentPhaseStatusEnum('enrichment_status').default('idle'),
 
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })

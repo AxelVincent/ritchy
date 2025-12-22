@@ -250,7 +250,7 @@ export const enrichGovernmentalData = async ({
           enrichmentId,
           companyData,
           bestMatch,
-          context,
+          context?.tx,
         )
 
         logger.info({

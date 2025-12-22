@@ -98,4 +98,18 @@ export const workerConfig = {
     stalledInterval: 30000,
     maxStalledCount: 2,
   },
+  enrichment_company: {
+    concurrency: 5, // Increased for 32vCPU server - I/O bound
+    lockDuration: 300000, // 5 minutes
+    renewalInterval: 60000,
+    stalledInterval: 120000,
+    maxStalledCount: 2,
+  },
+  enrichment_contact: {
+    concurrency: 50, // Increased for 32vCPU server - I/O bound
+    lockDuration: 300000, // 5 minutes
+    renewalInterval: 60000,
+    stalledInterval: 120000,
+    maxStalledCount: 2,
+  },
 }
