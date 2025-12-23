@@ -428,7 +428,7 @@ export const setOfficerEnrichmentStatus = async (
     })
 
     if (status === 'completed' || status === 'failed') {
-      resetSequence(officerId)
+      clearPendingUpdate(officerId)
     }
   } catch (error) {
     logger.error({
@@ -578,7 +578,7 @@ export const setContactEnrichmentStatus = async (
     })
 
     if (status === 'completed' || status === 'failed') {
-      resetSequence(contactId)
+      clearPendingUpdate(contactId)
     }
   } catch (error) {
     logger.error({
@@ -693,3 +693,98 @@ export const setEnrichmentStatus = setCompanyEnrichmentStatus
  * @deprecated Use getCompanyEnrichmentStatus instead
  */
 export const getEnrichmentStatus = getCompanyEnrichmentStatus
+
+// =============================================================================
+// Periodic Cleanup for Memory Management
+// =============================================================================
+
+const STALE_ENTRY_TTL_MS = 60 * 60 * 1000 // 1 hour
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+
+let cleanupIntervalId: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Clean up stale entries from in-memory maps.
+ * Entries older than STALE_ENTRY_TTL_MS are removed.
+ * This is a safety net for entries that weren't cleaned up on terminal states.
+ */
+export const cleanupStaleStatusEntries = (): void => {
+  const now = Date.now()
+  let cleanedCount = 0
+
+  for (const [entityId, lastUpdate] of lastUpdateTimeMap) {
+    if (now - lastUpdate > STALE_ENTRY_TTL_MS) {
+      clearPendingUpdate(entityId)
+      cleanedCount++
+    }
+  }
+
+  if (cleanedCount > 0) {
+    logger.info({
+      msg: `Cleaned ${cleanedCount} stale status manager entries`,
+      event: 'status_manager_stale_cleanup',
+      metadata: {
+        cleanedCount,
+        mapSizes: {
+          lastUpdateTimeMap: lastUpdateTimeMap.size,
+          pendingUpdatesMap: pendingUpdatesMap.size,
+          pendingTimeouts: pendingTimeouts.size,
+          lastProgressMap: lastProgressMap.size,
+        },
+      },
+    })
+  }
+}
+
+/**
+ * Start the periodic cleanup scheduler.
+ * Should be called when the worker process starts.
+ */
+export const startStatusManagerCleanup = (): void => {
+  if (cleanupIntervalId) return
+
+  cleanupIntervalId = setInterval(
+    cleanupStaleStatusEntries,
+    CLEANUP_INTERVAL_MS,
+  )
+
+  logger.info({
+    msg: 'Status manager cleanup scheduler started',
+    event: 'status_manager_cleanup_started',
+    metadata: {
+      intervalMs: CLEANUP_INTERVAL_MS,
+      staleTtlMs: STALE_ENTRY_TTL_MS,
+    },
+  })
+}
+
+/**
+ * Stop the periodic cleanup scheduler.
+ * Should be called during graceful shutdown.
+ */
+export const stopStatusManagerCleanup = (): void => {
+  if (cleanupIntervalId) {
+    clearInterval(cleanupIntervalId)
+    cleanupIntervalId = null
+
+    logger.info({
+      msg: 'Status manager cleanup scheduler stopped',
+      event: 'status_manager_cleanup_stopped',
+    })
+  }
+}
+
+/**
+ * Get current map sizes for monitoring/debugging.
+ */
+export const getStatusManagerMapSizes = (): {
+  lastUpdateTimeMap: number
+  pendingUpdatesMap: number
+  pendingTimeouts: number
+  lastProgressMap: number
+} => ({
+  lastUpdateTimeMap: lastUpdateTimeMap.size,
+  pendingUpdatesMap: pendingUpdatesMap.size,
+  pendingTimeouts: pendingTimeouts.size,
+  lastProgressMap: lastProgressMap.size,
+})

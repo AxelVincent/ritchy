@@ -23,11 +23,14 @@ export type PubSubChannel =
 
 // Sequence counters per entity for message ordering
 const sequenceCounters = new Map<string, number>()
+// Track last access time for cleanup
+const sequenceAccessTime = new Map<string, number>()
 
 const getNextSequence = (entityId: string): number => {
   const current = sequenceCounters.get(entityId) ?? 0
   const next = current + 1
   sequenceCounters.set(entityId, next)
+  sequenceAccessTime.set(entityId, Date.now())
   return next
 }
 
@@ -143,4 +146,85 @@ export const publishStatusUpdate = async (
  */
 export const resetSequence = (entityId: string): void => {
   sequenceCounters.delete(entityId)
+  sequenceAccessTime.delete(entityId)
 }
+
+// =============================================================================
+// Periodic Cleanup for Memory Management
+// =============================================================================
+
+const SEQUENCE_STALE_TTL_MS = 60 * 60 * 1000 // 1 hour
+const SEQUENCE_CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+
+let sequenceCleanupIntervalId: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Clean up stale sequence counters from in-memory map.
+ * Entries older than SEQUENCE_STALE_TTL_MS are removed.
+ */
+export const cleanupStaleSequences = (): void => {
+  const now = Date.now()
+  let cleanedCount = 0
+
+  for (const [entityId, accessTime] of sequenceAccessTime) {
+    if (now - accessTime > SEQUENCE_STALE_TTL_MS) {
+      sequenceCounters.delete(entityId)
+      sequenceAccessTime.delete(entityId)
+      cleanedCount++
+    }
+  }
+
+  if (cleanedCount > 0) {
+    logger.info({
+      msg: `Cleaned ${cleanedCount} stale sequence counters`,
+      event: 'sequence_counter_stale_cleanup',
+      metadata: {
+        cleanedCount,
+        remainingCount: sequenceCounters.size,
+      },
+    })
+  }
+}
+
+/**
+ * Start the periodic sequence cleanup scheduler.
+ * Should be called when the worker process starts.
+ */
+export const startSequenceCleanup = (): void => {
+  if (sequenceCleanupIntervalId) return
+
+  sequenceCleanupIntervalId = setInterval(
+    cleanupStaleSequences,
+    SEQUENCE_CLEANUP_INTERVAL_MS,
+  )
+
+  logger.info({
+    msg: 'Sequence cleanup scheduler started',
+    event: 'sequence_cleanup_started',
+    metadata: {
+      intervalMs: SEQUENCE_CLEANUP_INTERVAL_MS,
+      staleTtlMs: SEQUENCE_STALE_TTL_MS,
+    },
+  })
+}
+
+/**
+ * Stop the periodic sequence cleanup scheduler.
+ * Should be called during graceful shutdown.
+ */
+export const stopSequenceCleanup = (): void => {
+  if (sequenceCleanupIntervalId) {
+    clearInterval(sequenceCleanupIntervalId)
+    sequenceCleanupIntervalId = null
+
+    logger.info({
+      msg: 'Sequence cleanup scheduler stopped',
+      event: 'sequence_cleanup_stopped',
+    })
+  }
+}
+
+/**
+ * Get current sequence counter map size for monitoring.
+ */
+export const getSequenceCounterSize = (): number => sequenceCounters.size

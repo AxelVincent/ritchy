@@ -17,9 +17,23 @@ export const scraperQueue = new Queue(queueName, {
   },
 })
 
-const scraperQueueEvents = new QueueEvents(queueName, {
-  connection: bullmqRedisOptions,
-})
+/**
+ * Lazy-initialized QueueEvents instance.
+ * Created on first use to ensure proper initialization in worker threads.
+ * Each worker thread will create its own connection.
+ */
+let scraperQueueEvents: QueueEvents | null = null
+
+const getScraperQueueEvents = async (): Promise<QueueEvents> => {
+  if (!scraperQueueEvents) {
+    scraperQueueEvents = new QueueEvents(queueName, {
+      connection: bullmqRedisOptions,
+    })
+    // Wait for the connection to be ready
+    await scraperQueueEvents.waitUntilReady()
+  }
+  return scraperQueueEvents
+}
 
 export const enqueueScraperJob = async (
   url: string,
@@ -33,5 +47,6 @@ export const enqueueScraperJob = async (
     onlyMainContent,
     userPlaceId,
   })
-  return await job.waitUntilFinished(scraperQueueEvents)
+  const queueEvents = await getScraperQueueEvents()
+  return await job.waitUntilFinished(queueEvents)
 }

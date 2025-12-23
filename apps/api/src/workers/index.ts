@@ -2,7 +2,15 @@ import 'dotenv/config'
 
 import { logger } from '@ritchy/logger'
 import { WORKER_NAMES } from '../internal/bullmq/workers'
+import {
+  startSequenceCleanup,
+  stopSequenceCleanup,
+} from '../internal/redis/pubsub'
 import { ensureRegistryInitialized, getRegistry } from '../metrics/singleton'
+import {
+  startStatusManagerCleanup,
+  stopStatusManagerCleanup,
+} from '../services/enrichment/status_manager'
 
 /**
  * Dedicated worker process for ALL BullMQ jobs.
@@ -43,12 +51,25 @@ logger.info({
   },
 })
 
+// Start memory cleanup schedulers
+startStatusManagerCleanup()
+startSequenceCleanup()
+
+logger.info({
+  msg: 'Memory cleanup schedulers started',
+  event: 'worker_cleanup_schedulers_started',
+})
+
 // Graceful shutdown handlers
 const shutdown = async (signal: string) => {
   logger.info({
     msg: `Received ${signal}, shutting down workers`,
     event: 'worker_process_shutdown',
   })
+
+  // Stop memory cleanup schedulers
+  stopStatusManagerCleanup()
+  stopSequenceCleanup()
 
   // Final sync of aggregated metrics before shutdown
   const registry = getRegistry()

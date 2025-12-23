@@ -18,6 +18,10 @@ const sandboxPath = getSandboxPath('jobs/scraper/sandbox')
 const scraperWorker = new Worker<ScraperJobData>(queueName, sandboxPath, {
   connection: bullmqRedisOptions,
   useWorkerThreads: true,
+  // Prevent --expose-gc from being inherited by worker threads (not allowed in Node.js worker_threads)
+  workerThreadsOptions: {
+    execArgv: [],
+  },
   limiter: {
     max: 1000,
     duration: 60000,

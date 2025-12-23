@@ -62,7 +62,6 @@ export const companyEnrichmentService = async ({
   userId,
 }: CompanyEnrichmentParams): Promise<CompanyEnrichmentResult> => {
   const startTime = Date.now()
-  const memoryUsage = process.memoryUsage()
 
   logger.info({
     msg: 'Starting company enrichment service',
@@ -70,11 +69,6 @@ export const companyEnrichmentService = async ({
     metadata: {
       userPlaceId,
       enrichmentId,
-      memoryUsage: {
-        heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
-        heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
-        external: `${Math.round(memoryUsage.external / 1024 / 1024)}MB`,
-      },
     },
   })
 

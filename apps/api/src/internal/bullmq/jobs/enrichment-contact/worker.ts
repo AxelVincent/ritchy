@@ -16,6 +16,10 @@ const sandboxPath = getSandboxPath('jobs/enrichment-contact/sandbox')
 const worker = new Worker<ContactEnrichmentJobData>(queueName, sandboxPath, {
   connection: bullmqRedisOptions,
   useWorkerThreads: true,
+  // Prevent --expose-gc from being inherited by worker threads (not allowed in Node.js worker_threads)
+  workerThreadsOptions: {
+    execArgv: [],
+  },
   limiter: {
     max: 200,
     duration: 60000,

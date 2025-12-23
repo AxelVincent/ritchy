@@ -45,11 +45,25 @@ export const bulkEnrich = async (
         .where(eq(userPlace.id, userPlaceId))
         .limit(1)
 
-      if (!userPlaceRecord) continue
+      if (!userPlaceRecord) {
+        logger.debug({
+          msg: 'Skipping enrichment - userPlace not found',
+          event: 'bulk_enrichment_skip',
+          metadata: { userPlaceId, reason: 'userPlace_not_found' },
+        })
+        continue
+      }
 
       // Get place data
       const place = await getPlaceByUserPlaceId(userPlaceId)
-      if (!place) continue
+      if (!place) {
+        logger.debug({
+          msg: 'Skipping enrichment - place not found',
+          event: 'bulk_enrichment_skip',
+          metadata: { userPlaceId, reason: 'place_not_found' },
+        })
+        continue
+      }
 
       // Get or create enrichment record
       let [existingEnrichment] = await db
@@ -61,12 +75,34 @@ export const bulkEnrich = async (
         .where(eq(enrichmentTable.placeId, place.id))
         .limit(1)
 
+      logger.debug({
+        msg: 'Checking enrichment status',
+        event: 'bulk_enrichment_status_check',
+        metadata: {
+          userPlaceId,
+          placeId: place.id,
+          existingEnrichmentId: existingEnrichment?.id ?? null,
+          companyStatus: existingEnrichment?.companyStatus ?? null,
+        },
+      })
+
       // Skip if already enriched or in progress
       if (
         existingEnrichment?.companyStatus === 'completed' ||
         existingEnrichment?.companyStatus === 'queued' ||
         existingEnrichment?.companyStatus === 'processing'
       ) {
+        logger.debug({
+          msg: 'Skipping enrichment - already enriched or in progress',
+          event: 'bulk_enrichment_skip',
+          metadata: {
+            userPlaceId,
+            placeId: place.id,
+            enrichmentId: existingEnrichment.id,
+            companyStatus: existingEnrichment.companyStatus,
+            reason: 'status_not_eligible',
+          },
+        })
         continue
       }
 
@@ -96,11 +132,22 @@ export const bulkEnrich = async (
         0,
       )
 
-      await enqueueCompanyEnrichment({
+      const jobId = await enqueueCompanyEnrichment({
         userPlaceId,
         enrichmentId: existingEnrichment.id,
         placeId: place.id,
         userId,
+      })
+
+      logger.debug({
+        msg: 'Company enrichment job enqueued',
+        event: 'bulk_enrichment_job_enqueued',
+        metadata: {
+          userPlaceId,
+          placeId: place.id,
+          enrichmentId: existingEnrichment.id,
+          jobId,
+        },
       })
 
       enqueuedCount++
