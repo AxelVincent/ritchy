@@ -23,10 +23,14 @@ export const CreateSearchRequestBodySchema = z.object({
   placeName: z.string(),
   keyword: z.string(),
   model: SearchModelEnum,
+  autoEnrich: z.boolean().optional(),
 })
 
 export const CreateSearchResponseSchema = z.object({
   id: z.string().uuid(),
+  autoEnrichStarted: z.boolean().optional(),
+  enqueuedCount: z.number().optional(),
+  userPlaceIds: z.array(z.string().uuid()).optional(),
 })
 
 export const CreateSearchApiResponseSchema = z.union([

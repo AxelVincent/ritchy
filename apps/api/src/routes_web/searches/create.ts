@@ -4,10 +4,18 @@ import {
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
 } from '@ritchy/types'
+import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
-import { search } from '../../db/schema'
+import { enrichment as enrichmentTable, search } from '../../db/schema'
+import { enqueueCompanyEnrichment } from '../../internal/bullmq/jobs/enrichment-company/queue'
+import { COMPANY_CREDITS } from '../../services/enrichment/constants'
+import { setCompanyEnrichmentStatus } from '../../services/enrichment/status_manager'
+import { consumeCredits } from '../../services/payment/queries/consume_credits'
+import { getUserCredits } from '../../services/payment/queries/get_user_credits'
+import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
+import { populateSearchPlacesIfEmpty } from '../../services/searches/populate-search-places'
 
 export const createSearch = async (
   req: Request<
@@ -27,19 +35,45 @@ export const createSearch = async (
 
   try {
     const parsedBody = CreateSearchRequestBodySchema.parse(req.body)
+    const userId = req.auth.userId
 
     logger.info({
       msg: 'Search request validated',
       event: 'search_validation_passed',
       metadata: {
         requestedModel: parsedBody.model,
+        autoEnrich: parsedBody.autoEnrich,
       },
     })
+
+    // If autoEnrich, check credits upfront
+    if (parsedBody.autoEnrich) {
+      const expectedResults = parsedBody.model === 'BASIC' ? 60 : 240
+      const requiredCredits = expectedResults * COMPANY_CREDITS
+      const userCredits = await getUserCredits(userId)
+
+      if (userCredits < requiredCredits) {
+        logger.info({
+          msg: 'Insufficient credits for auto-enrich',
+          event: 'auto_enrich_insufficient_credits',
+          metadata: {
+            userId,
+            required: requiredCredits,
+            available: userCredits,
+          },
+        })
+        res.status(400).json({
+          error: 'INSUFFICIENT_CREDITS',
+          message: `Auto-enrich requires ${requiredCredits} credits, you have ${userCredits}`,
+        })
+        return
+      }
+    }
 
     const [result] = await db
       .insert(search)
       .values({
-        userId: req.auth.userId,
+        userId,
         placeName: parsedBody.placeName,
         keyword: parsedBody.keyword,
         model: parsedBody.model,
@@ -58,6 +92,121 @@ export const createSearch = async (
         rectangle: parsedBody.rectangle,
       },
     })
+
+    // If autoEnrich, populate places immediately and enqueue enrichment jobs
+    if (parsedBody.autoEnrich) {
+      const { userPlaceIds } = await populateSearchPlacesIfEmpty(
+        result.id,
+        userId,
+        {
+          model: parsedBody.model,
+          keyword: parsedBody.keyword,
+          rectangle: parsedBody.rectangle,
+        },
+      )
+
+      if (userPlaceIds.length > 0) {
+        // First pass: determine which places need enrichment
+        const placesToEnrich: Array<{
+          userPlaceId: string
+          placeId: string
+          enrichmentId: string
+        }> = []
+
+        for (const userPlaceId of userPlaceIds) {
+          const place = await getPlaceByUserPlaceId(userPlaceId)
+          if (!place) continue
+
+          // Check existing enrichment status
+          const [existingEnrichment] = await db
+            .select({
+              id: enrichmentTable.id,
+              companyStatus: enrichmentTable.companyStatus,
+            })
+            .from(enrichmentTable)
+            .where(eq(enrichmentTable.placeId, place.id))
+            .limit(1)
+
+          // Skip if already enriched or in progress
+          if (
+            existingEnrichment?.companyStatus === 'completed' ||
+            existingEnrichment?.companyStatus === 'queued' ||
+            existingEnrichment?.companyStatus === 'processing'
+          ) {
+            continue
+          }
+
+          // Create enrichment record if doesn't exist
+          let enrichmentId: string
+          if (!existingEnrichment) {
+            const [newEnrichment] = await db
+              .insert(enrichmentTable)
+              .values({
+                placeId: place.id,
+                companyStatus: 'queued',
+              })
+              .returning({ id: enrichmentTable.id })
+            enrichmentId = newEnrichment.id
+          } else {
+            // Update existing record to queued
+            await db
+              .update(enrichmentTable)
+              .set({ companyStatus: 'queued' })
+              .where(eq(enrichmentTable.id, existingEnrichment.id))
+            enrichmentId = existingEnrichment.id
+          }
+
+          placesToEnrich.push({
+            userPlaceId,
+            placeId: place.id,
+            enrichmentId,
+          })
+        }
+
+        // Only charge for places that will actually be enriched
+        if (placesToEnrich.length > 0) {
+          await consumeCredits(userId, placesToEnrich.length * COMPANY_CREDITS)
+
+          // Enqueue enrichment jobs
+          for (const { userPlaceId, placeId, enrichmentId } of placesToEnrich) {
+            await setCompanyEnrichmentStatus(
+              userPlaceId,
+              'queued',
+              'Queued for enrichment',
+              0,
+            )
+
+            await enqueueCompanyEnrichment({
+              userPlaceId,
+              enrichmentId,
+              placeId,
+              userId,
+            })
+          }
+        }
+
+        const alreadyEnrichedCount = userPlaceIds.length - placesToEnrich.length
+
+        logger.info({
+          msg: 'Auto-enrich jobs enqueued',
+          event: 'auto_enrich_enqueued',
+          metadata: {
+            searchId: result.id,
+            enqueuedCount: placesToEnrich.length,
+            alreadyEnrichedCount,
+            totalPlaces: userPlaceIds.length,
+          },
+        })
+
+        res.json({
+          id: result.id,
+          autoEnrichStarted: placesToEnrich.length > 0,
+          enqueuedCount: placesToEnrich.length,
+          userPlaceIds,
+        })
+        return
+      }
+    }
 
     res.json({
       id: result.id,

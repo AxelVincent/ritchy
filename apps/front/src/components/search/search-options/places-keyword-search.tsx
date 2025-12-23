@@ -8,11 +8,25 @@ import { useUserMe } from '@/api/queries/users/useUserMe'
 import { CalButton } from '@/components/common/CalButton'
 import { LocationAutocomplete as SearchLocationAutocomplete } from '@/components/search/location-autocomplete'
 import type { Location } from '@/components/search/search-map'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { Label } from '@/components/ui/label'
 import { isModelAvailable } from '@/lib/subscription'
 import type { CreateSearchRequestBody, GeocodeLocation } from '@ritchy/types'
 import { debounce } from 'lodash'
-import { Loader2, Search } from 'lucide-react'
+import {
+  Building2,
+  ChevronDown,
+  Globe,
+  Loader2,
+  Search,
+  Sparkles,
+  Users,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 interface PlacesKeywordSearchProps {
@@ -39,6 +53,7 @@ export const PlacesKeywordSearch = ({
   const navigate = useNavigate()
   const { data: me } = useUserMe()
   const [isSearching, setIsSearching] = useState(false)
+  const [autoEnrich, setAutoEnrich] = useState(false)
   const userPlan = me?.plan || 'FREE'
   const createSearchMutation = useCreateSearch()
 
@@ -122,6 +137,7 @@ export const PlacesKeywordSearch = ({
       placeName: placeName || '',
       keyword,
       model,
+      autoEnrich,
     }
 
     createSearchMutation.mutate(search, {
@@ -155,6 +171,7 @@ export const PlacesKeywordSearch = ({
     placeName,
     keyword,
     model,
+    autoEnrich,
     createSearchMutation,
     navigate,
     isSearching,
@@ -241,6 +258,68 @@ export const PlacesKeywordSearch = ({
           </Button>
         </div>
       </div>
+
+      {/* Auto-enrich Toggle */}
+      <Collapsible className="rounded-lg border bg-muted/30">
+        <div className="flex items-center space-x-3 p-3">
+          <Checkbox
+            id="auto-enrich"
+            checked={autoEnrich}
+            onCheckedChange={(checked) => setAutoEnrich(checked === true)}
+            disabled={!canSearch}
+          />
+          <div className="flex-1 space-y-0.5">
+            <Label
+              htmlFor="auto-enrich"
+              className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+              Auto-enrich results
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Up to {model === 'BASIC' ? '60' : '240'} credits
+            </p>
+            <p className="text-[11px] text-muted-foreground/70">
+              Already enriched places won't be charged
+            </p>
+          </div>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+              <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+              <span className="sr-only">Toggle details</span>
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <div className="px-3 pb-3 pt-0">
+            <div className="rounded-md bg-muted/50 p-2.5">
+              <p className="text-xs font-medium mb-2 text-muted-foreground">
+                Enrichment includes:
+              </p>
+              <ul className="space-y-1.5 text-xs">
+                <li className="flex items-center gap-2">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span>
+                    Legal company data (SIRET, creation date, status, company
+                    details)
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span>Decision-makers contacts</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span>
+                    Website analysis (description, services, socials, emails,
+                    technologies)
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Search Button */}
       <Button
