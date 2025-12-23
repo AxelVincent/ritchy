@@ -373,6 +373,73 @@ export const getBatchEnrichmentStatus = async (
 }
 
 /**
+ * Set company enrichment status for multiple entities in a single Redis pipeline.
+ * Used for bulk operations to avoid N+1 Redis calls.
+ *
+ * @param updates - Array of status updates to set
+ */
+export const setBatchCompanyEnrichmentStatus = async (
+  updates: Array<{
+    userPlaceId: string
+    status: EnrichmentProgressStatus
+    step: string
+    progress: number
+  }>,
+): Promise<void> => {
+  if (updates.length === 0) return
+
+  const now = Date.now()
+
+  try {
+    // Use Redis pipeline for atomic batch operation
+    const pipeline = redisClient.redis.pipeline()
+
+    for (const { userPlaceId, status, step, progress } of updates) {
+      const key = `${COMPANY_STATUS_KEY_PREFIX}:${userPlaceId}`
+      const statusData: EnrichmentStatusData = {
+        status,
+        step,
+        progress,
+        updatedAt: now,
+      }
+      pipeline.setex(key, STATUS_TTL, JSON.stringify(statusData))
+    }
+
+    await pipeline.exec()
+
+    // Publish status updates for WebSocket notifications
+    await Promise.all(
+      updates.map(({ userPlaceId, status, step, progress }) =>
+        publishStatusUpdate({
+          channel: PUBSUB_CHANNELS.COMPANY_STATUS,
+          userPlaceId,
+          status,
+          step,
+          progress,
+          updatedAt: now,
+        }),
+      ),
+    )
+
+    logger.debug({
+      msg: 'Batch company enrichment status updated',
+      event: 'batch_company_enrichment_status_updated',
+      metadata: { count: updates.length },
+    })
+  } catch (error) {
+    logger.error({
+      msg: 'Failed to set batch company enrichment status',
+      event: 'set_batch_company_enrichment_status_error',
+      metadata: {
+        count: updates.length,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+    throw error
+  }
+}
+
+/**
  * Clear enrichment status from Redis
  */
 export const clearEnrichmentStatus = async (

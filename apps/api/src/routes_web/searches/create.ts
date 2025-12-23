@@ -4,17 +4,19 @@ import {
   type CreateSearchRequestBody,
   CreateSearchRequestBodySchema,
 } from '@ritchy/types'
-import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../../db/db'
-import { enrichment as enrichmentTable, search } from '../../db/schema'
-import { enqueueCompanyEnrichment } from '../../internal/bullmq/jobs/enrichment-company/queue'
+import { search } from '../../db/schema'
+import { enqueueBulkCompanyEnrichment } from '../../internal/bullmq/jobs/enrichment-company/queue'
 import { COMPANY_CREDITS } from '../../services/enrichment/constants'
-import { setCompanyEnrichmentStatus } from '../../services/enrichment/status_manager'
+import { getEnrichmentsByPlaceIds } from '../../services/enrichment/queries/get_enrichments_by_place_ids'
+import { upsertEnrichmentsBatch } from '../../services/enrichment/queries/upsert_enrichments_batch'
+import { setBatchCompanyEnrichmentStatus } from '../../services/enrichment/status_manager'
 import { consumeCredits } from '../../services/payment/queries/consume_credits'
 import { getUserCredits } from '../../services/payment/queries/get_user_credits'
-import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
+import { refundCredits } from '../../services/payment/queries/refund_credits'
+import { getPlacesByUserPlaceIds } from '../../services/places/queries/get_places_by_user_place_ids'
 import { populateSearchPlacesIfEmpty } from '../../services/searches/populate-search-places'
 
 export const createSearch = async (
@@ -106,93 +108,106 @@ export const createSearch = async (
       )
 
       if (userPlaceIds.length > 0) {
-        // First pass: determine which places need enrichment
-        const placesToEnrich: Array<{
-          userPlaceId: string
-          placeId: string
-          enrichmentId: string
-        }> = []
+        // Step 1: Batch fetch all places
+        const places = await getPlacesByUserPlaceIds(userPlaceIds)
+        const userPlaceIdToPlaceId = new Map(
+          places.map((p) => [p.user_place_id, p.id]),
+        )
+
+        // Step 2: Get unique placeIds
+        const placeIds = [...new Set(places.map((p) => p.id))]
+
+        // Step 3: Batch fetch existing enrichments
+        const existingEnrichments = await getEnrichmentsByPlaceIds(placeIds)
+        const enrichmentByPlaceId = new Map(
+          existingEnrichments.map((e) => [e.placeId, e]),
+        )
+
+        // Step 4: Filter eligible places
+        const eligiblePlaces: Array<{ userPlaceId: string; placeId: string }> =
+          []
 
         for (const userPlaceId of userPlaceIds) {
-          const place = await getPlaceByUserPlaceId(userPlaceId)
-          if (!place) continue
+          const placeId = userPlaceIdToPlaceId.get(userPlaceId)
+          if (!placeId) continue
 
-          // Check existing enrichment status
-          const [existingEnrichment] = await db
-            .select({
-              id: enrichmentTable.id,
-              companyStatus: enrichmentTable.companyStatus,
-            })
-            .from(enrichmentTable)
-            .where(eq(enrichmentTable.placeId, place.id))
-            .limit(1)
-
-          // Skip if already enriched or in progress
+          const enrichment = enrichmentByPlaceId.get(placeId)
           if (
-            existingEnrichment?.companyStatus === 'completed' ||
-            existingEnrichment?.companyStatus === 'queued' ||
-            existingEnrichment?.companyStatus === 'processing'
+            enrichment?.companyStatus === 'completed' ||
+            enrichment?.companyStatus === 'queued' ||
+            enrichment?.companyStatus === 'processing'
           ) {
             continue
           }
 
-          // Create enrichment record if doesn't exist
-          let enrichmentId: string
-          if (!existingEnrichment) {
-            const [newEnrichment] = await db
-              .insert(enrichmentTable)
-              .values({
-                placeId: place.id,
-                companyStatus: 'queued',
-              })
-              .returning({ id: enrichmentTable.id })
-            enrichmentId = newEnrichment.id
-          } else {
-            // Update existing record to queued
-            await db
-              .update(enrichmentTable)
-              .set({ companyStatus: 'queued' })
-              .where(eq(enrichmentTable.id, existingEnrichment.id))
-            enrichmentId = existingEnrichment.id
-          }
-
-          placesToEnrich.push({
-            userPlaceId,
-            placeId: place.id,
-            enrichmentId,
-          })
+          eligiblePlaces.push({ userPlaceId, placeId })
         }
 
-        // Only charge for places that will actually be enriched
-        if (placesToEnrich.length > 0) {
-          await consumeCredits(userId, placesToEnrich.length * COMPANY_CREDITS)
+        if (eligiblePlaces.length > 0) {
+          const totalCredits = eligiblePlaces.length * COMPANY_CREDITS
 
-          // Enqueue enrichment jobs
-          for (const { userPlaceId, placeId, enrichmentId } of placesToEnrich) {
-            await setCompanyEnrichmentStatus(
-              userPlaceId,
-              'queued',
-              'Queued for enrichment',
-              0,
+          // Step 5: Consume credits (optimistic)
+          await consumeCredits(userId, totalCredits)
+
+          try {
+            // Step 6: Batch upsert enrichment records
+            const eligiblePlaceIds = eligiblePlaces.map((p) => p.placeId)
+            const upsertedEnrichments =
+              await upsertEnrichmentsBatch(eligiblePlaceIds)
+            const enrichmentIdByPlaceId = new Map(
+              upsertedEnrichments.map((e) => [e.placeId, e.id]),
             )
 
-            await enqueueCompanyEnrichment({
-              userPlaceId,
-              enrichmentId,
-              placeId,
-              userId,
+            // Step 7: Batch set Redis status
+            await setBatchCompanyEnrichmentStatus(
+              eligiblePlaces.map(({ userPlaceId }) => ({
+                userPlaceId,
+                status: 'queued',
+                step: 'Queued for enrichment',
+                progress: 0,
+              })),
+            )
+
+            // Step 8: Batch enqueue jobs
+            const jobData = eligiblePlaces
+              .map(({ userPlaceId, placeId }) => {
+                const enrichmentId = enrichmentIdByPlaceId.get(placeId)
+                if (!enrichmentId) return null
+                return {
+                  userPlaceId,
+                  enrichmentId,
+                  placeId,
+                  userId,
+                }
+              })
+              .filter((job): job is NonNullable<typeof job> => job !== null)
+
+            await enqueueBulkCompanyEnrichment(jobData)
+          } catch (error) {
+            // Compensate: refund credits on failure
+            logger.error({
+              msg: 'Failed to enqueue enrichment jobs, refunding credits',
+              event: 'auto_enrich_enqueue_failure',
+              metadata: {
+                userId,
+                creditsToRefund: totalCredits,
+                error: error instanceof Error ? error.message : String(error),
+              },
             })
+
+            await refundCredits(userId, totalCredits)
+            throw error
           }
         }
 
-        const alreadyEnrichedCount = userPlaceIds.length - placesToEnrich.length
+        const alreadyEnrichedCount = userPlaceIds.length - eligiblePlaces.length
 
         logger.info({
           msg: 'Auto-enrich jobs enqueued',
           event: 'auto_enrich_enqueued',
           metadata: {
             searchId: result.id,
-            enqueuedCount: placesToEnrich.length,
+            enqueuedCount: eligiblePlaces.length,
             alreadyEnrichedCount,
             totalPlaces: userPlaceIds.length,
           },
@@ -200,8 +215,8 @@ export const createSearch = async (
 
         res.json({
           id: result.id,
-          autoEnrichStarted: placesToEnrich.length > 0,
-          enqueuedCount: placesToEnrich.length,
+          autoEnrichStarted: eligiblePlaces.length > 0,
+          enqueuedCount: eligiblePlaces.length,
           userPlaceIds,
         })
         return

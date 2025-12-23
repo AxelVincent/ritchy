@@ -1,5 +1,6 @@
-import { Queue, QueueEvents } from 'bullmq'
+import { Queue } from 'bullmq'
 import { bullmqRedisOptions } from '../../config'
+import { pollJobResult } from '../../utils/poll-job-result'
 
 export const queueName = 'scraper'
 export const scraperQueue = new Queue(queueName, {
@@ -18,23 +19,12 @@ export const scraperQueue = new Queue(queueName, {
 })
 
 /**
- * Lazy-initialized QueueEvents instance.
- * Created on first use to ensure proper initialization in worker threads.
- * Each worker thread will create its own connection.
+ * Enqueue a scraper job and wait for it to complete using polling.
+ *
+ * Uses polling instead of QueueEvents.waitUntilFinished() to support
+ * being called from within BullMQ worker threads (useWorkerThreads: true).
+ * QueueEvents requires IPC channels that don't work in worker thread context.
  */
-let scraperQueueEvents: QueueEvents | null = null
-
-const getScraperQueueEvents = async (): Promise<QueueEvents> => {
-  if (!scraperQueueEvents) {
-    scraperQueueEvents = new QueueEvents(queueName, {
-      connection: bullmqRedisOptions,
-    })
-    // Wait for the connection to be ready
-    await scraperQueueEvents.waitUntilReady()
-  }
-  return scraperQueueEvents
-}
-
 export const enqueueScraperJob = async (
   url: string,
   enrichmentId: string,
@@ -47,6 +37,15 @@ export const enqueueScraperJob = async (
     onlyMainContent,
     userPlaceId,
   })
-  const queueEvents = await getScraperQueueEvents()
-  return await job.waitUntilFinished(queueEvents)
+
+  // Use polling instead of waitUntilFinished for worker thread compatibility
+  const jobId = job.id
+  if (!jobId) {
+    throw new Error('Failed to enqueue scraper job: no job ID returned')
+  }
+
+  return await pollJobResult(scraperQueue, jobId, {
+    interval: 200, // Poll every 200ms
+    timeout: 300000, // 5 minute timeout
+  })
 }

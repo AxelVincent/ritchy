@@ -20,9 +20,30 @@ import type { CompanyEnrichmentJobData } from './queue'
 export default async function (
   job: SandboxedJob<CompanyEnrichmentJobData>,
 ): Promise<{ success: boolean; enrichmentId: string }> {
+  console.log('[SANDBOX] Function called with job:', job.id)
+
   const { userPlaceId, enrichmentId, placeId, userId } = job.data
 
+  console.log('[SANDBOX] Extracted data:', {
+    userPlaceId,
+    enrichmentId,
+    placeId,
+    userId,
+  })
+
+  logger.info({
+    msg: 'Sandbox processor started',
+    event: 'company_enrichment_sandbox_start',
+    metadata: { jobId: job.id, userPlaceId, enrichmentId },
+  })
+
   try {
+    logger.debug({
+      msg: 'Setting initial status',
+      event: 'company_enrichment_sandbox_status',
+      metadata: { jobId: job.id },
+    })
+
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'processing',
@@ -30,9 +51,10 @@ export default async function (
       0,
     )
 
-    await job.updateProgress({
-      step: 'Starting company enrichment',
-      percent: 0,
+    logger.debug({
+      msg: 'Calling companyEnrichmentService',
+      event: 'company_enrichment_sandbox_service_call',
+      metadata: { jobId: job.id },
     })
 
     await companyEnrichmentService({
@@ -42,9 +64,10 @@ export default async function (
       userId,
     })
 
-    await job.updateProgress({
-      step: 'Company enrichment completed',
-      percent: 100,
+    logger.info({
+      msg: 'Sandbox processor completed',
+      event: 'company_enrichment_sandbox_complete',
+      metadata: { jobId: job.id, userPlaceId, enrichmentId },
     })
 
     return { success: true, enrichmentId }

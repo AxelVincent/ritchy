@@ -36,3 +36,28 @@ export const enqueueCompanyEnrichment = async (
   })
   return job.id ?? ''
 }
+
+/**
+ * Batch enqueue multiple company enrichment jobs using BullMQ's addBulk.
+ * This is an atomic operation - all jobs are added or none.
+ *
+ * @param jobs - Array of job data to enqueue
+ * @returns Array of job IDs for the enqueued jobs
+ */
+export const enqueueBulkCompanyEnrichment = async (
+  jobs: CompanyEnrichmentJobData[],
+): Promise<string[]> => {
+  if (jobs.length === 0) return []
+
+  const timestamp = Date.now()
+  const bulkJobs = jobs.map((data, index) => ({
+    name: queueName,
+    data,
+    opts: {
+      jobId: `company-${data.userPlaceId}-${timestamp}-${index}`,
+    },
+  }))
+
+  const addedJobs = await companyEnrichmentQueue.addBulk(bulkJobs)
+  return addedJobs.map((job) => job.id ?? '')
+}

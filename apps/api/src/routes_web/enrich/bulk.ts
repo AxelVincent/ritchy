@@ -3,16 +3,17 @@ import type {
   BulkEnrichmentRequestBody,
   BulkEnrichmentResponse,
 } from '@ritchy/types'
-import { eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
-import { db } from '../../db/db'
-import { enrichment as enrichmentTable, userPlace } from '../../db/schema'
-import { enqueueCompanyEnrichment } from '../../internal/bullmq/jobs/enrichment-company/queue'
-import { setCompanyEnrichmentStatus } from '../../services/enrichment/status_manager'
-import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
+import { enqueueBulkCompanyEnrichment } from '../../internal/bullmq/jobs/enrichment-company/queue'
+import { getEnrichmentsByPlaceIds } from '../../services/enrichment/queries/get_enrichments_by_place_ids'
+import { upsertEnrichmentsBatch } from '../../services/enrichment/queries/upsert_enrichments_batch'
+import { setBatchCompanyEnrichmentStatus } from '../../services/enrichment/status_manager'
+import { getPlacesByUserPlaceIds } from '../../services/places/queries/get_places_by_user_place_ids'
 
 /**
- * Bulk enrichment endpoint for processing multiple places
+ * Bulk enrichment endpoint for processing multiple places.
+ * Optimized with batch queries to avoid N+1 performance issues.
+ *
  * @param req Express request with bulk enrichment data
  * @param res Express response
  */
@@ -34,135 +35,128 @@ export const bulkEnrich = async (
       metadata: { userId, placeCount: userPlaceIds.length },
     })
 
-    let enqueuedCount = 0
-
-    // Add each place to the enrichment queue
-    for (const userPlaceId of userPlaceIds) {
-      // Verify user has access to this userPlace
-      const [userPlaceRecord] = await db
-        .select({ id: userPlace.id, place_id: userPlace.place_id })
-        .from(userPlace)
-        .where(eq(userPlace.id, userPlaceId))
-        .limit(1)
-
-      if (!userPlaceRecord) {
-        logger.debug({
-          msg: 'Skipping enrichment - userPlace not found',
-          event: 'bulk_enrichment_skip',
-          metadata: { userPlaceId, reason: 'userPlace_not_found' },
-        })
-        continue
-      }
-
-      // Get place data
-      const place = await getPlaceByUserPlaceId(userPlaceId)
-      if (!place) {
-        logger.debug({
-          msg: 'Skipping enrichment - place not found',
-          event: 'bulk_enrichment_skip',
-          metadata: { userPlaceId, reason: 'place_not_found' },
-        })
-        continue
-      }
-
-      // Get or create enrichment record
-      let [existingEnrichment] = await db
-        .select({
-          id: enrichmentTable.id,
-          companyStatus: enrichmentTable.companyStatus,
-        })
-        .from(enrichmentTable)
-        .where(eq(enrichmentTable.placeId, place.id))
-        .limit(1)
-
-      logger.debug({
-        msg: 'Checking enrichment status',
-        event: 'bulk_enrichment_status_check',
-        metadata: {
-          userPlaceId,
-          placeId: place.id,
-          existingEnrichmentId: existingEnrichment?.id ?? null,
-          companyStatus: existingEnrichment?.companyStatus ?? null,
-        },
+    if (userPlaceIds.length === 0) {
+      res.json({
+        success: true,
+        message: 'No places to enrich',
+        enqueuedCount: 0,
       })
+      return
+    }
 
-      // Skip if already enriched or in progress
+    // Step 1: Batch fetch places by userPlaceIds
+    const places = await getPlacesByUserPlaceIds(userPlaceIds)
+    const userPlaceIdToPlaceId = new Map(
+      places.map((p) => [p.user_place_id, p.id]),
+    )
+
+    if (places.length === 0) {
+      res.json({
+        success: true,
+        message: 'No places found',
+        enqueuedCount: 0,
+      })
+      return
+    }
+
+    // Step 2: Get unique placeIds
+    const placeIds = [...new Set(places.map((p) => p.id))]
+
+    // Step 3: Batch fetch existing enrichments
+    const existingEnrichments = await getEnrichmentsByPlaceIds(placeIds)
+    const enrichmentByPlaceId = new Map(
+      existingEnrichments.map((e) => [e.placeId, e]),
+    )
+
+    // Step 4: Filter eligible places (not already enriched/processing/queued)
+    const eligiblePlaces: Array<{ userPlaceId: string; placeId: string }> = []
+
+    for (const userPlaceId of userPlaceIds) {
+      const placeId = userPlaceIdToPlaceId.get(userPlaceId)
+      if (!placeId) continue
+
+      const enrichment = enrichmentByPlaceId.get(placeId)
       if (
-        existingEnrichment?.companyStatus === 'completed' ||
-        existingEnrichment?.companyStatus === 'queued' ||
-        existingEnrichment?.companyStatus === 'processing'
+        enrichment?.companyStatus === 'completed' ||
+        enrichment?.companyStatus === 'queued' ||
+        enrichment?.companyStatus === 'processing'
       ) {
         logger.debug({
           msg: 'Skipping enrichment - already enriched or in progress',
           event: 'bulk_enrichment_skip',
           metadata: {
             userPlaceId,
-            placeId: place.id,
-            enrichmentId: existingEnrichment.id,
-            companyStatus: existingEnrichment.companyStatus,
-            reason: 'status_not_eligible',
+            placeId,
+            companyStatus: enrichment.companyStatus,
           },
         })
         continue
       }
 
-      // Create enrichment record if doesn't exist
-      if (!existingEnrichment) {
-        const [newEnrichment] = await db
-          .insert(enrichmentTable)
-          .values({
-            placeId: place.id,
-            companyStatus: 'queued',
-          })
-          .returning({ id: enrichmentTable.id })
-
-        existingEnrichment = { id: newEnrichment.id, companyStatus: 'queued' }
-      } else {
-        // Update existing record to queued
-        await db
-          .update(enrichmentTable)
-          .set({ companyStatus: 'queued' })
-          .where(eq(enrichmentTable.id, existingEnrichment.id))
-      }
-
-      await setCompanyEnrichmentStatus(
-        userPlaceId,
-        'queued',
-        'Queued for enrichment',
-        0,
-      )
-
-      const jobId = await enqueueCompanyEnrichment({
-        userPlaceId,
-        enrichmentId: existingEnrichment.id,
-        placeId: place.id,
-        userId,
-      })
-
-      logger.debug({
-        msg: 'Company enrichment job enqueued',
-        event: 'bulk_enrichment_job_enqueued',
-        metadata: {
-          userPlaceId,
-          placeId: place.id,
-          enrichmentId: existingEnrichment.id,
-          jobId,
-        },
-      })
-
-      enqueuedCount++
+      eligiblePlaces.push({ userPlaceId, placeId })
     }
+
+    if (eligiblePlaces.length === 0) {
+      logger.info({
+        msg: 'No eligible places for enrichment',
+        event: 'bulk_enrichment_no_eligible',
+        metadata: { userId, totalRequested: userPlaceIds.length },
+      })
+      res.json({
+        success: true,
+        message: 'No places need enrichment',
+        enqueuedCount: 0,
+      })
+      return
+    }
+
+    // Step 5: Batch upsert enrichment records
+    const eligiblePlaceIds = eligiblePlaces.map((p) => p.placeId)
+    const upsertedEnrichments = await upsertEnrichmentsBatch(eligiblePlaceIds)
+    const enrichmentIdByPlaceId = new Map(
+      upsertedEnrichments.map((e) => [e.placeId, e.id]),
+    )
+
+    // Step 6: Batch set Redis status
+    await setBatchCompanyEnrichmentStatus(
+      eligiblePlaces.map(({ userPlaceId }) => ({
+        userPlaceId,
+        status: 'queued',
+        step: 'Queued for enrichment',
+        progress: 0,
+      })),
+    )
+
+    // Step 7: Batch enqueue jobs
+    const jobData = eligiblePlaces
+      .map(({ userPlaceId, placeId }) => {
+        const enrichmentId = enrichmentIdByPlaceId.get(placeId)
+        if (!enrichmentId) return null
+        return {
+          userPlaceId,
+          enrichmentId,
+          placeId,
+          userId,
+        }
+      })
+      .filter((job): job is NonNullable<typeof job> => job !== null)
+
+    const jobIds = await enqueueBulkCompanyEnrichment(jobData)
 
     logger.info({
       msg: 'Bulk enrichment jobs enqueued successfully',
       event: 'bulk_enrichment_enqueued',
-      metadata: { userId, enqueuedCount },
+      metadata: {
+        userId,
+        enqueuedCount: eligiblePlaces.length,
+        jobIds: jobIds.slice(0, 5), // Log first 5 job IDs for debugging
+      },
     })
 
     res.json({
       success: true,
-      message: `Successfully enqueued ${enqueuedCount} place(s) for enrichment`,
-      enqueuedCount,
+      message: `Successfully enqueued ${eligiblePlaces.length} place(s) for enrichment`,
+      enqueuedCount: eligiblePlaces.length,
     })
   } catch (error) {
     logger.error({

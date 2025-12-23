@@ -23,11 +23,14 @@ logger.debug({
  *
  * Uses useWorkerThreads for memory isolation - each job runs in a separate
  * thread, preventing memory leaks from affecting the main worker process.
+ *
+ * The scraper queue now uses polling instead of QueueEvents.waitUntilFinished()
+ * to support being called from within worker threads.
  */
 const worker = new Worker<CompanyEnrichmentJobData>(queueName, sandboxPath, {
   connection: bullmqRedisOptions,
   useWorkerThreads: true,
-  // Prevent --expose-gc from being inherited by worker threads (not allowed in Node.js worker_threads)
+  // Prevent --expose-gc from being inherited by worker threads
   workerThreadsOptions: {
     execArgv: [],
   },

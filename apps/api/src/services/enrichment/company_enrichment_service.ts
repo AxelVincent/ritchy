@@ -323,19 +323,33 @@ export const companyEnrichmentService = async ({
       18,
     )
 
-    const scrapeResult = await enrichmentTracker.trackSubprocess(
-      'scrape_homepage',
-      async () => {
-        return await enqueueScraperJob(
-          website,
-          enrichmentId,
-          false,
-          userPlaceId,
-        )
-      },
-    )
+    let scrapeResult: Awaited<ReturnType<typeof enqueueScraperJob>> | null =
+      null
+    let scrapeError: string | null = null
 
-    if (!scrapeResult || 'error' in scrapeResult) {
+    try {
+      scrapeResult = await enrichmentTracker.trackSubprocess(
+        'scrape_homepage',
+        async () => {
+          return await enqueueScraperJob(
+            website,
+            enrichmentId,
+            false,
+            userPlaceId,
+          )
+        },
+      )
+    } catch (error) {
+      scrapeError =
+        error instanceof Error ? error.message : 'Failed to scrape website'
+      logger.warn({
+        msg: 'Homepage scraping failed, will use fallback',
+        event: 'homepage_scrape_failed',
+        metadata: { website, userPlaceId, error: scrapeError },
+      })
+    }
+
+    if (!scrapeResult) {
       logger.error({
         msg: 'Failed to scrape website',
         event: 'failed_to_scrape_website',
@@ -390,10 +404,12 @@ export const companyEnrichmentService = async ({
         })
       })
 
+      const errorMessage = scrapeError || 'Failed to scrape website'
+
       await db
         .update(enrichmentTable)
         .set({
-          error: scrapeResult?.error?.message || 'Failed to scrape website',
+          error: errorMessage,
           success: false,
           companyStatus: 'failed',
           domainRegisteredAt: whoisData?.registrationDate
@@ -407,12 +423,10 @@ export const companyEnrichmentService = async ({
         'failed',
         'Website scraping failed',
         100,
-        scrapeResult?.error?.message || 'Failed to scrape website',
+        errorMessage,
       )
 
-      enrichmentTracker.markFailure(
-        new Error(scrapeResult?.error?.message || 'Failed to scrape website'),
-      )
+      enrichmentTracker.markFailure(new Error(errorMessage))
 
       return {
         success: false,
@@ -498,7 +512,7 @@ export const companyEnrichmentService = async ({
 
     const successfulSubpages = subpageResults.filter(
       (result): result is PromiseFulfilledResult<unknown> =>
-        result.status === 'fulfilled' && !('error' in (result.value as object)),
+        result.status === 'fulfilled' && result.value != null,
     ).length
 
     logger.info({
