@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup'
 export default defineConfig({
   entry: [
     'src/index.ts',
+    // Worker entry point
     'src/workers/index.ts',
     // Sandbox files for BullMQ worker threads (must be separate entries)
     'src/internal/bullmq/jobs/enrichment-company/sandbox.ts',

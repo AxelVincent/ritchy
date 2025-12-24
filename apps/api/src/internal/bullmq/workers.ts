@@ -1,62 +1,49 @@
 /**
  * BullMQ Workers Registry
  *
- * All workers run in a single process with worker threads enabled for true
- * thread isolation and memory management.
- *
- * Architecture:
- * - Each worker uses useWorkerThreads for isolation
- * - Jobs execute in separate threads, preventing memory leaks from affecting other workers
- * - Dev uses tsup --watch + node --watch for hot reloading with worker threads
- *
- * Import this file ONLY in the dedicated worker process (src/workers/index.ts).
+ * All workers run in a single process for simplicity.
+ * Memory management is handled within individual sandbox functions.
  */
 
-// Enrichment workers
+// Scraper worker (memory-intensive, uses worker threads)
+import './jobs/scraper/worker'
+
+// Enrichment workers (use worker threads)
 import './jobs/enrichment-company/worker'
 import './jobs/enrichment-contact/worker'
 
-// Scraping workers (memory-intensive)
-import './jobs/firecrawl/worker'
-import './jobs/brightdata/worker'
-import './jobs/scraper/worker'
-
 // External service workers
-import './jobs/million_verifier/worker'
-import './jobs/whois/worker'
-import './jobs/google/places/worker'
-import './jobs/pappers/worker'
-
-// Icypeas workers
-import './jobs/icypeas/email_search/worker'
-import './jobs/icypeas/profile_url_search/worker'
-import './jobs/icypeas/find_people/worker'
-import './jobs/icypeas/subscription_information/worker'
-
-// ContactOut workers
+import './jobs/brightdata/worker'
 import './jobs/contactout/people_search/worker'
-
-// Forager workers
+import './jobs/firecrawl/worker'
 import './jobs/forager/phone_lookup/worker'
 import './jobs/forager/user_information/worker'
+import './jobs/google/places/worker'
+import './jobs/icypeas/email_search/worker'
+import './jobs/icypeas/find_people/worker'
+import './jobs/icypeas/profile_url_search/worker'
+import './jobs/icypeas/subscription_information/worker'
+import './jobs/million_verifier/worker'
+import './jobs/pappers/worker'
+import './jobs/whois/worker'
 
 export const WORKER_NAMES = [
+  'scraper',
   'enrichment-company',
   'enrichment-contact',
-  'firecrawl',
   'brightdata',
-  'scraper',
-  'million-verifier',
-  'whois',
-  'google-places',
-  'pappers',
-  'icypeas-email-search',
-  'icypeas-profile-url-search',
-  'icypeas-find-people',
-  'icypeas-subscription-information',
   'contactout-people-search',
+  'firecrawl',
   'forager-phone-lookup',
   'forager-user-information',
+  'google-places',
+  'icypeas-email-search',
+  'icypeas-find-people',
+  'icypeas-profile-url-search',
+  'icypeas-subscription-information',
+  'million-verifier',
+  'pappers',
+  'whois',
 ] as const
 
 export type WorkerName = (typeof WORKER_NAMES)[number]

@@ -5,14 +5,8 @@ import type { SandboxedJob } from 'bullmq'
 import { UnrecoverableError } from 'bullmq'
 import { companyEnrichmentService } from '../../../../services/enrichment/company_enrichment_service'
 import { setCompanyEnrichmentStatus } from '../../../../services/enrichment/status_manager'
-import { workerConfig } from '../../config'
-import { createBatchExit } from '../../utils/batch-exit'
 import { extractErrorMessage } from '../../utils/extract-error-message'
 import type { CompanyEnrichmentJobData } from './queue'
-
-const batchExit = createBatchExit(
-  workerConfig.enrichment_company.batchExitCount,
-)
 
 /**
  * Sandboxed processor for company enrichment jobs.
@@ -22,6 +16,10 @@ const batchExit = createBatchExit(
  *
  * IMPORTANT: This module is self-contained. All imports are initialized
  * fresh in each worker thread.
+ *
+ * NOTE: Batch exit for memory cleanup is handled in worker.ts via the
+ * 'completed' event, NOT here. Calling process.exit() from within the
+ * sandbox races with BullMQ's result handling and causes job failures.
  */
 export default async function (
   job: SandboxedJob<CompanyEnrichmentJobData>,
@@ -44,7 +42,6 @@ export default async function (
       jobId: job.id,
       userPlaceId,
       enrichmentId,
-      jobCount: batchExit.getJobCount(),
     },
   })
 
@@ -104,7 +101,5 @@ export default async function (
     })
 
     throw new UnrecoverableError(errorMessage)
-  } finally {
-    batchExit.afterJob('company_enrichment_sandbox')
   }
 }

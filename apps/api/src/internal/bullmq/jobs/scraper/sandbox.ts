@@ -4,8 +4,6 @@ import { logger } from '@ritchy/logger'
 import type { SandboxedJob } from 'bullmq'
 import { UnrecoverableError } from 'bullmq'
 import { scrapeWebsiteManager } from '../../../../services/enrichment/scraper/scrape_website_manager'
-import { workerConfig } from '../../config'
-import { createBatchExit } from '../../utils/batch-exit'
 import { extractErrorMessage } from '../../utils/extract-error-message'
 
 export interface ScraperJobData {
@@ -15,13 +13,15 @@ export interface ScraperJobData {
   userPlaceId: string
 }
 
-const batchExit = createBatchExit(workerConfig.scraper.batchExitCount)
-
 /**
  * Sandboxed processor for scraper jobs.
  *
  * This is the most memory-intensive worker due to Cheerio/JSDOM usage.
  * Running in a separate thread isolates memory spikes from other workers.
+ *
+ * NOTE: Batch exit for memory cleanup is handled in worker.ts via the
+ * 'completed' event, NOT here. Calling process.exit() from within the
+ * sandbox races with BullMQ's result handling and causes job failures.
  */
 export default async function (job: SandboxedJob<ScraperJobData>) {
   const { url, enrichmentId, onlyMainContent, userPlaceId } = job.data
@@ -29,7 +29,7 @@ export default async function (job: SandboxedJob<ScraperJobData>) {
   try {
     logger.info({
       msg: 'Starting scraper job in sandbox',
-      metadata: { jobId: job.id, url, jobCount: batchExit.getJobCount() },
+      metadata: { jobId: job.id, url },
       event: 'scraper_sandbox_started',
     })
 
@@ -61,7 +61,5 @@ export default async function (job: SandboxedJob<ScraperJobData>) {
     })
 
     throw new UnrecoverableError(errorMessage)
-  } finally {
-    batchExit.afterJob('scraper_sandbox')
   }
 }

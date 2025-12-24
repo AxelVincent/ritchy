@@ -1,27 +1,31 @@
 import TurndownService from 'turndown'
 
-const turndownService = new TurndownService({
-  headingStyle: 'atx',
-  bulletListMarker: '-',
-  strongDelimiter: '**',
-  emDelimiter: '*',
-})
+/**
+ * Create a configured TurndownService instance with all rules.
+ * Rules are added once at creation time to avoid memory leaks.
+ */
+const createTurndownService = () => {
+  const service = new TurndownService({
+    headingStyle: 'atx',
+    bulletListMarker: '-',
+    strongDelimiter: '**',
+    emDelimiter: '*',
+  })
 
-export const htmlToMarkdown = (html: string) => {
   // Handle BR tags to preserve word boundaries
-  turndownService.addRule('brTags', {
+  service.addRule('brTags', {
     filter: 'br',
     replacement: () => ' ',
   })
 
   // Remove noise elements that don't add semantic value
-  turndownService.addRule('removeNoise', {
+  service.addRule('removeNoise', {
     filter: ['script', 'style', 'nav', 'header', 'footer', 'aside', 'meta'],
     replacement: () => '',
   })
 
   // Remove empty paragraphs and whitespace-only content
-  turndownService.addRule('removeEmpty', {
+  service.addRule('removeEmpty', {
     filter: (node) => {
       const isEmpty = !node.textContent?.trim()
       const isEmptyParagraph = node.nodeName === 'P' && isEmpty
@@ -31,13 +35,13 @@ export const htmlToMarkdown = (html: string) => {
   })
 
   // Flatten nested structures for better vectorization
-  turndownService.addRule('flattenDivs', {
+  service.addRule('flattenDivs', {
     filter: 'div',
     replacement: (content) => (content.trim() ? `${content}\n\n` : ''),
   })
 
   // Structured headers with consistent spacing
-  turndownService.addRule('structuredHeaders', {
+  service.addRule('structuredHeaders', {
     filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     replacement: (content, node) => {
       const level = Number(node.nodeName.charAt(1))
@@ -47,7 +51,7 @@ export const htmlToMarkdown = (html: string) => {
   })
 
   // Clean lists for better semantic understanding
-  turndownService.addRule('cleanLists', {
+  service.addRule('cleanLists', {
     filter: ['ul', 'ol'],
     replacement: (content) => {
       const cleanContent = content.trim()
@@ -56,7 +60,7 @@ export const htmlToMarkdown = (html: string) => {
   })
 
   // Preserve important semantic elements
-  turndownService.addRule('semanticElements', {
+  service.addRule('semanticElements', {
     filter: ['strong', 'em', 'b', 'i'],
     replacement: (content, node) => {
       if (!content.trim()) return ''
@@ -65,6 +69,11 @@ export const htmlToMarkdown = (html: string) => {
     },
   })
 
+  return service
+}
+
+export const htmlToMarkdown = (html: string) => {
+  const turndownService = createTurndownService()
   let markdown = turndownService.turndown(html)
 
   // Optimize for vectorization

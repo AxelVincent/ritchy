@@ -43,7 +43,7 @@ type Links = {
 }
 
 /**
- * Processes a single HTML chunk to extract contacts and links
+ * Processes a single HTML chunk to extract contacts and links.
  */
 const processHtmlChunk = (
   chunk: string,
@@ -67,7 +67,7 @@ const processHtmlChunk = (
     })
 
     // Extract contacts from visible text content in this chunk
-    const chunkText = $(chunk).text()
+    const chunkText = $('body').text()
     const { emails, phones } = extractContactsFromText(chunkText)
 
     // Add extracted emails and phones
@@ -248,7 +248,19 @@ export const scrapeWebsiteManager = async (
     logger.debug({
       msg: `[Scrape Website Manager] Inserting social media data for ${url}`,
       event: 'inserting_social_media_data',
-      metadata: { userPlaceId, enrichmentId, uniqueLinks, url },
+      metadata: {
+        userPlaceId,
+        enrichmentId,
+        url,
+        counts: {
+          emails: uniqueLinks.emails.size,
+          phones: uniqueLinks.phones.size,
+          instagram: uniqueLinks.socials.instagram.size,
+          facebook: uniqueLinks.socials.facebook.size,
+          linkedin: uniqueLinks.socials.linkedin.size,
+          internal: uniqueLinks.internal.size,
+        },
+      },
     })
 
     await db.transaction(async (tx) => {

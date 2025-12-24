@@ -45,6 +45,14 @@ logger.info({
 
 setupQueueMetrics(scraperWorker, 'scraper', 'website_scrape')
 
+scraperWorker.on('active', (job) => {
+  logger.info({
+    msg: 'Scraper job started',
+    event: 'scraper_active',
+    metadata: { jobId: job.id, url: job.data.url },
+  })
+})
+
 scraperWorker.on('completed', (job) => {
   logger.info({
     msg: 'Scraper job completed',
@@ -57,6 +65,22 @@ scraperWorker.on('failed', (job, err) => {
   logger.error({
     msg: 'Scraper job failed',
     event: 'scraper_error',
-    metadata: { jobId: job?.id, error: err.message },
+    metadata: { jobId: job?.id, error: err.message, stack: err.stack },
+  })
+})
+
+scraperWorker.on('error', (err) => {
+  logger.error({
+    msg: 'Scraper worker error',
+    event: 'scraper_worker_error',
+    metadata: { error: err.message, stack: err.stack },
+  })
+})
+
+scraperWorker.on('stalled', (jobId) => {
+  logger.warn({
+    msg: 'Scraper job stalled',
+    event: 'scraper_stalled',
+    metadata: { jobId },
   })
 })

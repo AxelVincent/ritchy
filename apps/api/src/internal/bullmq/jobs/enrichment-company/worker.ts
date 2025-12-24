@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs'
 import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
@@ -7,16 +6,6 @@ import { getSandboxPath } from '../../utils/sandbox-path'
 import { type CompanyEnrichmentJobData, queueName } from './queue'
 
 const sandboxPath = getSandboxPath('jobs/enrichment-company/sandbox')
-
-// Debug: Log sandbox path and check if file exists
-logger.debug({
-  msg: 'Company enrichment worker sandbox path',
-  event: 'worker_sandbox_path',
-  metadata: {
-    sandboxPath,
-    fileExists: existsSync(sandboxPath),
-  },
-})
 
 /**
  * Company enrichment worker with worker thread isolation.
