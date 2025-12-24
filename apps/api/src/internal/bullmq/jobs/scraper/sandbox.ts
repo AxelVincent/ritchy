@@ -4,6 +4,8 @@ import { logger } from '@ritchy/logger'
 import type { SandboxedJob } from 'bullmq'
 import { UnrecoverableError } from 'bullmq'
 import { scrapeWebsiteManager } from '../../../../services/enrichment/scraper/scrape_website_manager'
+import { workerConfig } from '../../config'
+import { createBatchExit } from '../../utils/batch-exit'
 import { extractErrorMessage } from '../../utils/extract-error-message'
 
 export interface ScraperJobData {
@@ -12,6 +14,8 @@ export interface ScraperJobData {
   onlyMainContent: boolean
   userPlaceId: string
 }
+
+const batchExit = createBatchExit(workerConfig.scraper.batchExitCount)
 
 /**
  * Sandboxed processor for scraper jobs.
@@ -25,7 +29,7 @@ export default async function (job: SandboxedJob<ScraperJobData>) {
   try {
     logger.info({
       msg: 'Starting scraper job in sandbox',
-      metadata: { jobId: job.id, url },
+      metadata: { jobId: job.id, url, jobCount: batchExit.getJobCount() },
       event: 'scraper_sandbox_started',
     })
 
@@ -57,5 +61,7 @@ export default async function (job: SandboxedJob<ScraperJobData>) {
     })
 
     throw new UnrecoverableError(errorMessage)
+  } finally {
+    batchExit.afterJob('scraper_sandbox')
   }
 }

@@ -5,8 +5,14 @@ import type { SandboxedJob } from 'bullmq'
 import { UnrecoverableError } from 'bullmq'
 import { companyEnrichmentService } from '../../../../services/enrichment/company_enrichment_service'
 import { setCompanyEnrichmentStatus } from '../../../../services/enrichment/status_manager'
+import { workerConfig } from '../../config'
+import { createBatchExit } from '../../utils/batch-exit'
 import { extractErrorMessage } from '../../utils/extract-error-message'
 import type { CompanyEnrichmentJobData } from './queue'
+
+const batchExit = createBatchExit(
+  workerConfig.enrichment_company.batchExitCount,
+)
 
 /**
  * Sandboxed processor for company enrichment jobs.
@@ -34,7 +40,12 @@ export default async function (
   logger.info({
     msg: 'Sandbox processor started',
     event: 'company_enrichment_sandbox_start',
-    metadata: { jobId: job.id, userPlaceId, enrichmentId },
+    metadata: {
+      jobId: job.id,
+      userPlaceId,
+      enrichmentId,
+      jobCount: batchExit.getJobCount(),
+    },
   })
 
   try {
@@ -93,5 +104,7 @@ export default async function (
     })
 
     throw new UnrecoverableError(errorMessage)
+  } finally {
+    batchExit.afterJob('company_enrichment_sandbox')
   }
 }
