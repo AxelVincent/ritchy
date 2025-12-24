@@ -455,7 +455,7 @@ export const companyEnrichmentService = async ({
 
     let crawlStrategy = links.internal
 
-    if (links.internal.length > 10) {
+    if (links.internal.length > 5) {
       const businessName = await getBusinessName(userPlaceId)
       crawlStrategy = await getCrawlStrategy(
         links.internal,
