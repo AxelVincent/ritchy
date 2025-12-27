@@ -167,6 +167,12 @@ export const scrapeWebsiteManager = async (
     },
     internal: new Set<string>(),
   }
+
+  // Use mutable variables for large strings so we can explicitly free memory
+  let html: string | null = null
+  let rawHtml: string | null = null
+  let markdown: string | null = null
+
   try {
     const time = Date.now()
     logger.debug({
@@ -175,14 +181,19 @@ export const scrapeWebsiteManager = async (
       metadata: { url, userPlaceId },
     })
 
-    const { html, rawHtml, markdown, metadata, success, error } =
-      await scrapeWithFallbacks(url, userPlaceId, {
-        formats: ['markdown', 'html', 'rawHtml'],
-        excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
-        country: 'US',
-        proxy: 'auto',
-        onlyMainContent,
-      })
+    const scrapeResult = await scrapeWithFallbacks(url, userPlaceId, {
+      formats: ['markdown', 'html', 'rawHtml'],
+      excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
+      country: 'US',
+      proxy: 'auto',
+      onlyMainContent,
+    })
+
+    // Extract to mutable variables
+    html = scrapeResult.html ?? null
+    rawHtml = scrapeResult.rawHtml ?? null
+    markdown = scrapeResult.markdown ?? null
+    const { metadata, success, error } = scrapeResult
 
     const MAX_HTML_SIZE = 5 * 1024 * 1024 // 5MB
     if (html && html.length > MAX_HTML_SIZE) {
@@ -244,6 +255,9 @@ export const scrapeWebsiteManager = async (
 
       processHtmlChunk(chunk, url, uniqueLinks)
     }
+
+    // MEMORY CLEANUP: Free html after chunking is complete (no longer needed)
+    html = null
 
     logger.debug({
       msg: `[Scrape Website Manager] Inserting social media data for ${url}`,
@@ -312,6 +326,9 @@ export const scrapeWebsiteManager = async (
     const mainDomain = getMainDomain(url)
     await websiteRagIndexingPipeline(mainDomain, url, markdown)
 
+    // MEMORY CLEANUP: Free markdown after RAG indexing (no longer needed)
+    markdown = null
+
     // Detect technologies (use rawHtml which contains scripts/meta tags)
     logger.debug({
       msg: `[Scrape Website Manager] Detecting technologies for ${url}`,
@@ -325,6 +342,9 @@ export const scrapeWebsiteManager = async (
     })
     if (rawHtml && rawHtml.length > 0) {
       const technologies = await detectTechnologies(rawHtml, url, enrichmentId)
+
+      // MEMORY CLEANUP: Free rawHtml after technology detection (no longer needed)
+      rawHtml = null
 
       // Store technologies in database
       if (technologies.length > 0) {
@@ -374,6 +394,9 @@ export const scrapeWebsiteManager = async (
           })
         }
       }
+    } else {
+      // MEMORY CLEANUP: Free rawHtml even if not used for tech detection
+      rawHtml = null
     }
 
     const responseTimeInSeconds = (Date.now() - time) / 1000

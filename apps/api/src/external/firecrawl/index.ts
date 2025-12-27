@@ -5,8 +5,8 @@ import { FIRECRAWL_CONFIG } from '../../config/firecrawl'
 import {
   enqueueFirecrawlJob,
   firecrawlQueue,
-  firecrawlQueueEvents,
 } from '../../internal/bullmq/jobs/firecrawl/queue'
+import { pollJobResult } from '../../internal/bullmq/utils/poll-job-result'
 import {
   createSimpleDurationTimer,
   externalApiDurationHistogram,
@@ -168,8 +168,16 @@ export const scrapeWithRetry = async (
           proxy: 'stealth',
         },
       })
-      const stealthScrapeResult =
-        await job.waitUntilFinished(firecrawlQueueEvents)
+
+      if (!job.id) {
+        throw new Error('Failed to create firecrawl job - no job ID returned')
+      }
+
+      // Use polling instead of QueueEvents to avoid memory leaks
+      const stealthScrapeResult = await pollJobResult(firecrawlQueue, job.id, {
+        interval: 200,
+        timeout: 300000, // 5 minutes
+      })
       if (!stealthScrapeResult.success) {
         httpStatusCode = '400'
         metricsTimer.stop({ service: 'firecrawl', endpoint: 'scrape' })

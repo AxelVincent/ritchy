@@ -1,10 +1,11 @@
 import TurndownService from 'turndown'
 
 /**
- * Create a configured TurndownService instance with all rules.
- * Rules are added once at creation time to avoid memory leaks.
+ * Singleton TurndownService instance with all rules configured.
+ * Using a singleton avoids creating new instances on each conversion,
+ * reducing GC pressure and memory usage.
  */
-const createTurndownService = () => {
+const turndownService = (() => {
   const service = new TurndownService({
     headingStyle: 'atx',
     bulletListMarker: '-',
@@ -70,10 +71,9 @@ const createTurndownService = () => {
   })
 
   return service
-}
+})()
 
 export const htmlToMarkdown = (html: string) => {
-  const turndownService = createTurndownService()
   let markdown = turndownService.turndown(html)
 
   // Optimize for vectorization

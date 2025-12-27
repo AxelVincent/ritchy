@@ -765,9 +765,9 @@ export const getEnrichmentStatus = getCompanyEnrichmentStatus
 // Periodic Cleanup for Memory Management
 // =============================================================================
 
-const STALE_ENTRY_TTL_MS = 15 * 60 * 1000 // 15 minutes (reduced from 1 hour)
-const CLEANUP_INTERVAL_MS = 2 * 60 * 1000 // 2 minutes (reduced from 5 minutes)
-const MAX_MAP_SIZE = 5000 // Maximum entries before forced cleanup
+const STALE_ENTRY_TTL_MS = 5 * 60 * 1000 // 5 minutes (reduced from 15 minutes)
+const CLEANUP_INTERVAL_MS = 60 * 1000 // 1 minute (reduced from 2 minutes)
+const MAX_MAP_SIZE = 2000 // Maximum entries before forced cleanup (reduced from 5000)
 
 let cleanupIntervalId: ReturnType<typeof setInterval> | null = null
 
