@@ -6,6 +6,7 @@ import {
   startSequenceCleanup,
   stopSequenceCleanup,
 } from '../internal/redis/pubsub'
+import { startQueueMonitor, stopQueueMonitor } from '../metrics/queue-monitor'
 import { ensureRegistryInitialized, getRegistry } from '../metrics/singleton'
 import {
   startStatusManagerCleanup,
@@ -55,8 +56,11 @@ logger.info({
 startStatusManagerCleanup()
 startSequenceCleanup()
 
+// Start queue metrics monitor (polls queue depths and memory every 15s)
+startQueueMonitor('worker')
+
 logger.info({
-  msg: 'Memory cleanup schedulers started',
+  msg: 'Memory cleanup schedulers and queue monitor started',
   event: 'worker_cleanup_schedulers_started',
 })
 
@@ -67,9 +71,10 @@ const shutdown = async (signal: string) => {
     event: 'worker_process_shutdown',
   })
 
-  // Stop memory cleanup schedulers
+  // Stop memory cleanup schedulers and queue monitor
   stopStatusManagerCleanup()
   stopSequenceCleanup()
+  await stopQueueMonitor()
 
   // Final sync of aggregated metrics before shutdown
   const registry = getRegistry()

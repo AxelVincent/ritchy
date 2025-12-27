@@ -5,6 +5,12 @@ import type { SandboxedJob } from 'bullmq'
 import { UnrecoverableError } from 'bullmq'
 import { scrapeWebsiteManager } from '../../../../services/enrichment/scraper/scrape_website_manager'
 import { extractErrorMessage } from '../../utils/extract-error-message'
+import { tryGarbageCollect } from '../../utils/gc'
+import {
+  getMemoryDelta,
+  getMemorySnapshot,
+  logMemorySnapshot,
+} from '../../utils/memory-tracker'
 
 export interface ScraperJobData {
   url: string
@@ -25,6 +31,7 @@ export interface ScraperJobData {
  */
 export default async function (job: SandboxedJob<ScraperJobData>) {
   const { url, enrichmentId, onlyMainContent, userPlaceId } = job.data
+  const beforeSnapshot = getMemorySnapshot()
 
   try {
     logger.info({
@@ -40,9 +47,26 @@ export default async function (job: SandboxedJob<ScraperJobData>) {
       userPlaceId,
     )
 
+    const afterSnapshot = getMemorySnapshot()
+    const delta = getMemoryDelta(beforeSnapshot, afterSnapshot)
+
+    // Log memory if heap grew more than 5MB
+    if (delta.heapUsed > 5 * 1024 * 1024) {
+      logMemorySnapshot(
+        'scraper_job_high_memory',
+        'scraper',
+        job.id,
+        afterSnapshot,
+        delta,
+      )
+    }
+
     logger.info({
       msg: 'Scraper job completed in sandbox',
-      metadata: { jobId: job.id },
+      metadata: {
+        jobId: job.id,
+        memoryDeltaMB: (delta.heapUsed / 1024 / 1024).toFixed(2),
+      },
       event: 'scraper_sandbox_completed',
     })
 
@@ -61,5 +85,8 @@ export default async function (job: SandboxedJob<ScraperJobData>) {
     })
 
     throw new UnrecoverableError(errorMessage)
+  } finally {
+    // Trigger garbage collection after each job to prevent memory buildup
+    tryGarbageCollect('scraper', job.id)
   }
 }

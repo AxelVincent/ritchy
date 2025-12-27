@@ -36,6 +36,12 @@ interface AggregatedMetrics {
   queueJobDuration: ReturnType<RedisAggregatedRegistry['createHistogram']>
   queueJobsFailed: ReturnType<RedisAggregatedRegistry['createCounter']>
   queueActiveJobs: ReturnType<RedisAggregatedRegistry['createGauge']>
+  queueWaitingJobs: ReturnType<RedisAggregatedRegistry['createGauge']>
+  queueDelayedJobs: ReturnType<RedisAggregatedRegistry['createGauge']>
+
+  // Process metrics
+  processMemoryBytes: ReturnType<RedisAggregatedRegistry['createGauge']>
+  processMemoryHeapUsedBytes: ReturnType<RedisAggregatedRegistry['createGauge']>
 }
 
 let _metrics: AggregatedMetrics | null = null
@@ -136,6 +142,32 @@ export const getMetrics = (): AggregatedMetrics => {
       'ritchy_queue_active_jobs',
       'Number of currently active jobs in queue',
       ['queue_name'],
+      'sum',
+    ),
+    queueWaitingJobs: _registry.createGauge(
+      'ritchy_queue_waiting_jobs',
+      'Number of jobs waiting to be processed',
+      ['queue_name'],
+      'max',
+    ),
+    queueDelayedJobs: _registry.createGauge(
+      'ritchy_queue_delayed_jobs',
+      'Number of delayed jobs in queue',
+      ['queue_name'],
+      'max',
+    ),
+
+    // Process metrics (worker memory tracking)
+    processMemoryBytes: _registry.createGauge(
+      'ritchy_process_memory_rss_bytes',
+      'Process resident set size in bytes',
+      ['process_type'],
+      'sum',
+    ),
+    processMemoryHeapUsedBytes: _registry.createGauge(
+      'ritchy_process_memory_heap_used_bytes',
+      'Process heap used in bytes',
+      ['process_type'],
       'sum',
     ),
   }

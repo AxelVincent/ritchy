@@ -765,10 +765,38 @@ export const getEnrichmentStatus = getCompanyEnrichmentStatus
 // Periodic Cleanup for Memory Management
 // =============================================================================
 
-const STALE_ENTRY_TTL_MS = 60 * 60 * 1000 // 1 hour
-const CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+const STALE_ENTRY_TTL_MS = 15 * 60 * 1000 // 15 minutes (reduced from 1 hour)
+const CLEANUP_INTERVAL_MS = 2 * 60 * 1000 // 2 minutes (reduced from 5 minutes)
+const MAX_MAP_SIZE = 5000 // Maximum entries before forced cleanup
 
 let cleanupIntervalId: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Force cleanup of oldest entries when maps exceed max size.
+ * This prevents unbounded memory growth under high load.
+ */
+const enforceMaxMapSize = (): void => {
+  if (lastUpdateTimeMap.size <= MAX_MAP_SIZE) return
+
+  // Sort by timestamp and remove oldest half
+  const entries = Array.from(lastUpdateTimeMap.entries())
+  entries.sort((a, b) => a[1] - b[1])
+  const toRemove = entries.slice(0, Math.floor(entries.length / 2))
+
+  for (const [entityId] of toRemove) {
+    clearPendingUpdate(entityId)
+  }
+
+  logger.warn({
+    msg: 'Status manager forced cleanup - max size exceeded',
+    event: 'status_manager_force_cleanup',
+    metadata: {
+      removedCount: toRemove.length,
+      remainingSize: lastUpdateTimeMap.size,
+      maxSize: MAX_MAP_SIZE,
+    },
+  })
+}
 
 /**
  * Clean up stale entries from in-memory maps.
@@ -785,6 +813,9 @@ export const cleanupStaleStatusEntries = (): void => {
       cleanedCount++
     }
   }
+
+  // Also enforce max size
+  enforceMaxMapSize()
 
   if (cleanedCount > 0) {
     logger.info({

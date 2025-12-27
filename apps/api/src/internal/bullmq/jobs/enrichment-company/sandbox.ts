@@ -6,6 +6,12 @@ import { UnrecoverableError } from 'bullmq'
 import { companyEnrichmentService } from '../../../../services/enrichment/company_enrichment_service'
 import { setCompanyEnrichmentStatus } from '../../../../services/enrichment/status_manager'
 import { extractErrorMessage } from '../../utils/extract-error-message'
+import { tryGarbageCollect } from '../../utils/gc'
+import {
+  getMemoryDelta,
+  getMemorySnapshot,
+  logMemorySnapshot,
+} from '../../utils/memory-tracker'
 import type { CompanyEnrichmentJobData } from './queue'
 
 /**
@@ -24,16 +30,8 @@ import type { CompanyEnrichmentJobData } from './queue'
 export default async function (
   job: SandboxedJob<CompanyEnrichmentJobData>,
 ): Promise<{ success: boolean; enrichmentId: string }> {
-  console.log('[SANDBOX] Function called with job:', job.id)
-
+  const beforeSnapshot = getMemorySnapshot()
   const { userPlaceId, enrichmentId, placeId, userId } = job.data
-
-  console.log('[SANDBOX] Extracted data:', {
-    userPlaceId,
-    enrichmentId,
-    placeId,
-    userId,
-  })
 
   logger.info({
     msg: 'Sandbox processor started',
@@ -72,10 +70,29 @@ export default async function (
       userId,
     })
 
+    const afterSnapshot = getMemorySnapshot()
+    const delta = getMemoryDelta(beforeSnapshot, afterSnapshot)
+
+    // Log memory if heap grew more than 5MB
+    if (delta.heapUsed > 5 * 1024 * 1024) {
+      logMemorySnapshot(
+        'enrichment_job_high_memory',
+        'enrichment-company',
+        job.id,
+        afterSnapshot,
+        delta,
+      )
+    }
+
     logger.info({
       msg: 'Sandbox processor completed',
       event: 'company_enrichment_sandbox_complete',
-      metadata: { jobId: job.id, userPlaceId, enrichmentId },
+      metadata: {
+        jobId: job.id,
+        userPlaceId,
+        enrichmentId,
+        memoryDeltaMB: (delta.heapUsed / 1024 / 1024).toFixed(2),
+      },
     })
 
     return { success: true, enrichmentId }
@@ -101,5 +118,8 @@ export default async function (
     })
 
     throw new UnrecoverableError(errorMessage)
+  } finally {
+    // Trigger garbage collection after each job to prevent memory buildup
+    tryGarbageCollect('enrichment-company', job.id)
   }
 }

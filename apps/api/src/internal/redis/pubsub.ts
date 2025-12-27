@@ -153,10 +153,39 @@ export const resetSequence = (entityId: string): void => {
 // Periodic Cleanup for Memory Management
 // =============================================================================
 
-const SEQUENCE_STALE_TTL_MS = 60 * 60 * 1000 // 1 hour
-const SEQUENCE_CLEANUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+const SEQUENCE_STALE_TTL_MS = 15 * 60 * 1000 // 15 minutes (reduced from 1 hour)
+const SEQUENCE_CLEANUP_INTERVAL_MS = 2 * 60 * 1000 // 2 minutes (reduced from 5 minutes)
+const MAX_SEQUENCE_ENTRIES = 10000 // Maximum entries before forced cleanup
 
 let sequenceCleanupIntervalId: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Force cleanup of oldest entries when maps exceed max size.
+ * This prevents unbounded memory growth under high load.
+ */
+const enforceMaxSequenceMapSize = (): void => {
+  if (sequenceCounters.size <= MAX_SEQUENCE_ENTRIES) return
+
+  // Sort by access time and remove oldest half
+  const entries = Array.from(sequenceAccessTime.entries())
+  entries.sort((a, b) => a[1] - b[1])
+  const toRemove = entries.slice(0, Math.floor(entries.length / 2))
+
+  for (const [entityId] of toRemove) {
+    sequenceCounters.delete(entityId)
+    sequenceAccessTime.delete(entityId)
+  }
+
+  logger.warn({
+    msg: 'Sequence counter forced cleanup - max size exceeded',
+    event: 'sequence_counter_force_cleanup',
+    metadata: {
+      removedCount: toRemove.length,
+      remainingSize: sequenceCounters.size,
+      maxSize: MAX_SEQUENCE_ENTRIES,
+    },
+  })
+}
 
 /**
  * Clean up stale sequence counters from in-memory map.
@@ -173,6 +202,9 @@ export const cleanupStaleSequences = (): void => {
       cleanedCount++
     }
   }
+
+  // Also enforce max size
+  enforceMaxSequenceMapSize()
 
   if (cleanedCount > 0) {
     logger.info({

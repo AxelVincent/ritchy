@@ -10,11 +10,11 @@
   "scripts": {
     "dev": "pnpm build && concurrently -n build,api,workers -c yellow,blue,green \"pnpm build:watch\" \"pnpm dev:api\" \"pnpm dev:workers\"",
     "dev:api": "node --watch dist/index.js",
-    "dev:workers": "node --watch dist/workers/index.js",
+    "dev:workers": "node --expose-gc --watch dist/workers/index.js",
     "build:watch": "tsup --watch",
     "start": "concurrently -n api,workers -c blue,green \"pnpm start:api\" \"pnpm start:workers\"",
     "start:api": "node dist/index.js",
-    "start:workers": "node dist/workers/index.js",
+    "start:workers": "node --expose-gc dist/workers/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "typecheck": "tsc --noEmit --project tsconfig.json",

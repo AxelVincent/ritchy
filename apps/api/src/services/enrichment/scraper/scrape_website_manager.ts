@@ -67,7 +67,7 @@ const processHtmlChunk = (
     })
 
     // Extract contacts from visible text content in this chunk
-    const chunkText = $('body').text()
+    const chunkText = $(chunk).text()
     const { emails, phones } = extractContactsFromText(chunkText)
 
     // Add extracted emails and phones

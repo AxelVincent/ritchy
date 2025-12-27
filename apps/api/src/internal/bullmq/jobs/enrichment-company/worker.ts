@@ -2,10 +2,12 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../config'
+import { createMemoryTracker } from '../../utils/memory-tracker'
 import { getSandboxPath } from '../../utils/sandbox-path'
 import { type CompanyEnrichmentJobData, queueName } from './queue'
 
 const sandboxPath = getSandboxPath('jobs/enrichment-company/sandbox')
+const memoryTracker = createMemoryTracker('enrichment-company-main')
 
 /**
  * Company enrichment worker with worker thread isolation.
@@ -47,6 +49,7 @@ logger.info({
 setupQueueMetrics(worker, 'enrichment', 'enrichment_company')
 
 worker.on('active', (job) => {
+  memoryTracker.beforeJob(job.id)
   logger.info({
     msg: 'Company enrichment job started',
     event: 'company_enrichment_active',
@@ -55,6 +58,7 @@ worker.on('active', (job) => {
 })
 
 worker.on('completed', (job) => {
+  memoryTracker.afterJob(job.id)
   logger.info({
     msg: 'Company enrichment job completed',
     event: 'company_enrichment_success',

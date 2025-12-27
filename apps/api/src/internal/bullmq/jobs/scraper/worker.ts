@@ -2,11 +2,13 @@ import { logger } from '@ritchy/logger'
 import { Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
 import { bullmqRedisOptions, workerConfig } from '../../config'
+import { createMemoryTracker } from '../../utils/memory-tracker'
 import { getSandboxPath } from '../../utils/sandbox-path'
 import { queueName } from './queue'
 import type { ScraperJobData } from './sandbox'
 
 const sandboxPath = getSandboxPath('jobs/scraper/sandbox')
+const memoryTracker = createMemoryTracker('scraper-main')
 
 /**
  * Scraper worker with worker thread isolation.
@@ -46,6 +48,7 @@ logger.info({
 setupQueueMetrics(scraperWorker, 'scraper', 'website_scrape')
 
 scraperWorker.on('active', (job) => {
+  memoryTracker.beforeJob(job.id)
   logger.info({
     msg: 'Scraper job started',
     event: 'scraper_active',
@@ -54,6 +57,7 @@ scraperWorker.on('active', (job) => {
 })
 
 scraperWorker.on('completed', (job) => {
+  memoryTracker.afterJob(job.id)
   logger.info({
     msg: 'Scraper job completed',
     event: 'scraper_success',

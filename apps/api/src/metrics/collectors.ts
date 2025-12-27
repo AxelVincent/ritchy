@@ -94,6 +94,30 @@ export const queueActiveJobsGauge = {
     getMetrics().queueActiveJobs.set(value, labels),
 }
 
+export const queueWaitingJobsGauge = {
+  set: (value: number, labels: Record<string, string>) =>
+    getMetrics().queueWaitingJobs.set(value, labels),
+}
+
+export const queueDelayedJobsGauge = {
+  set: (value: number, labels: Record<string, string>) =>
+    getMetrics().queueDelayedJobs.set(value, labels),
+}
+
+// ============================================
+// PROCESS MEMORY METRICS (aggregated across processes)
+// ============================================
+
+export const processMemoryGauge = {
+  set: (value: number, labels: Record<string, string>) =>
+    getMetrics().processMemoryBytes.set(value, labels),
+}
+
+export const processHeapUsedGauge = {
+  set: (value: number, labels: Record<string, string>) =>
+    getMetrics().processMemoryHeapUsedBytes.set(value, labels),
+}
+
 // ============================================
 // EXTERNAL API METRICS (aggregated across processes)
 // Proxies to the auto-initializing singleton
