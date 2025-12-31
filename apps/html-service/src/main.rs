@@ -14,10 +14,12 @@ use url::Url;
 
 mod config;
 mod error;
-mod middleware as app_middleware;
 mod models;
 mod processing;
 mod routes;
+
+#[path = "middleware/mod.rs"]
+mod app_middleware;
 
 /// Initialize tracing with JSON format and optional Loki integration
 /// Mirrors the Node.js pino-loki setup with the same labels
