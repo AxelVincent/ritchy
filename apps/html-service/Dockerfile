@@ -9,11 +9,9 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy manifest
-COPY Cargo.toml ./
-
-# Copy source code
-COPY src ./src
+# Copy only the html-service files (from monorepo root context)
+COPY apps/html-service/Cargo.toml ./
+COPY apps/html-service/src ./src
 
 # Build the application (generates Cargo.lock)
 RUN cargo build --release

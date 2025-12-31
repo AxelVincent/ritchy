@@ -101,8 +101,8 @@ services:
 
   rust-html-service:
     build:
-      context: ./apps/html-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/html-service/Dockerfile
     ports:
       - "3001:3001"
     environment:
