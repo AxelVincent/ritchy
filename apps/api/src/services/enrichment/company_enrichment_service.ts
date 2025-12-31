@@ -474,11 +474,19 @@ export const companyEnrichmentService = async ({
     let completedPages = 0
     const totalPages = crawlStrategy.length
 
-    const subpageResults = await enrichmentTracker.trackSubprocess(
-      'scrape_subpages',
-      async () => {
-        return await Promise.allSettled(
-          crawlStrategy.map(async (url: string) => {
+    // Process subpages in batches to prevent memory accumulation
+    // Unbounded Promise.allSettled() was causing all results to be held in memory simultaneously
+    const SUBPAGE_BATCH_SIZE = 5
+    const subpageResults: PromiseSettledResult<
+      Awaited<ReturnType<typeof enqueueScraperJob>>
+    >[] = []
+
+    await enrichmentTracker.trackSubprocess('scrape_subpages', async () => {
+      for (let i = 0; i < crawlStrategy.length; i += SUBPAGE_BATCH_SIZE) {
+        const batch = crawlStrategy.slice(i, i + SUBPAGE_BATCH_SIZE)
+
+        const batchResults = await Promise.allSettled(
+          batch.map(async (url: string) => {
             const result = await enqueueScraperJob(
               url,
               enrichmentId,
@@ -507,8 +515,10 @@ export const companyEnrichmentService = async ({
             return result
           }),
         )
-      },
-    )
+
+        subpageResults.push(...batchResults)
+      }
+    })
 
     const successfulSubpages = subpageResults.filter(
       (result): result is PromiseFulfilledResult<unknown> =>

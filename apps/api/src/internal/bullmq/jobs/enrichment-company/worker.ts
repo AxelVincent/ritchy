@@ -1,47 +1,96 @@
 import { logger } from '@ritchy/logger'
-import { Worker } from 'bullmq'
+import { UnrecoverableError, Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
+import { companyEnrichmentService } from '../../../../services/enrichment/company_enrichment_service'
+import { setCompanyEnrichmentStatus } from '../../../../services/enrichment/status_manager'
 import { bullmqRedisOptions, workerConfig } from '../../config'
-import { createMemoryTracker } from '../../utils/memory-tracker'
-import { getSandboxPath } from '../../utils/sandbox-path'
+import { extractErrorMessage } from '../../utils/extract-error-message'
 import { type CompanyEnrichmentJobData, queueName } from './queue'
 
-const sandboxPath = getSandboxPath('jobs/enrichment-company/sandbox')
-const memoryTracker = createMemoryTracker('enrichment-company-main')
+const worker = new Worker<CompanyEnrichmentJobData>(
+  queueName,
+  async (job) => {
+    const { userPlaceId, enrichmentId, placeId, userId } = job.data
 
-/**
- * Company enrichment worker with worker thread isolation.
- *
- * Uses useWorkerThreads for memory isolation - each job runs in a separate
- * thread, preventing memory leaks from affecting the main worker process.
- *
- * The scraper queue now uses polling instead of QueueEvents.waitUntilFinished()
- * to support being called from within worker threads.
- */
-const worker = new Worker<CompanyEnrichmentJobData>(queueName, sandboxPath, {
-  connection: bullmqRedisOptions,
-  useWorkerThreads: true,
-  // Prevent --expose-gc from being inherited by worker threads
-  workerThreadsOptions: {
-    execArgv: [],
+    logger.info({
+      msg: 'Company enrichment job started',
+      event: 'company_enrichment_start',
+      metadata: {
+        jobId: job.id,
+        userPlaceId,
+        enrichmentId,
+      },
+    })
+
+    try {
+      await setCompanyEnrichmentStatus(
+        userPlaceId,
+        'processing',
+        'Starting company enrichment',
+        0,
+      )
+
+      await companyEnrichmentService({
+        userPlaceId,
+        enrichmentId,
+        placeId,
+        userId,
+      })
+
+      logger.info({
+        msg: 'Company enrichment job completed',
+        event: 'company_enrichment_complete',
+        metadata: {
+          jobId: job.id,
+          userPlaceId,
+          enrichmentId,
+        },
+      })
+
+      return { success: true, enrichmentId }
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error)
+
+      await setCompanyEnrichmentStatus(
+        userPlaceId,
+        'failed',
+        errorMessage,
+        100,
+        errorMessage,
+      )
+
+      logger.error({
+        msg: 'Company enrichment job failed',
+        event: 'company_enrichment_error',
+        metadata: {
+          jobId: job.id,
+          userPlaceId,
+          error: errorMessage,
+        },
+      })
+
+      throw new UnrecoverableError(errorMessage)
+    }
   },
-  limiter: {
-    max: 100,
-    duration: 60000,
+  {
+    connection: bullmqRedisOptions,
+    limiter: {
+      max: 100,
+      duration: 60000,
+    },
+    concurrency: workerConfig.enrichment_company.concurrency,
+    lockDuration: workerConfig.enrichment_company.lockDuration,
+    lockRenewTime: workerConfig.enrichment_company.renewalInterval,
+    stalledInterval: workerConfig.enrichment_company.stalledInterval,
+    maxStalledCount: workerConfig.enrichment_company.maxStalledCount,
   },
-  concurrency: workerConfig.enrichment_company.concurrency,
-  lockDuration: workerConfig.enrichment_company.lockDuration,
-  lockRenewTime: workerConfig.enrichment_company.renewalInterval,
-  stalledInterval: workerConfig.enrichment_company.stalledInterval,
-  maxStalledCount: workerConfig.enrichment_company.maxStalledCount,
-})
+)
 
 logger.info({
   msg: 'Company enrichment worker initialized',
   event: 'worker_initialized',
   metadata: {
     queue: queueName,
-    useWorkerThreads: true,
     concurrency: workerConfig.enrichment_company.concurrency,
   },
 })
@@ -49,7 +98,6 @@ logger.info({
 setupQueueMetrics(worker, 'enrichment', 'enrichment_company')
 
 worker.on('active', (job) => {
-  memoryTracker.beforeJob(job.id)
   logger.info({
     msg: 'Company enrichment job started',
     event: 'company_enrichment_active',
@@ -58,7 +106,6 @@ worker.on('active', (job) => {
 })
 
 worker.on('completed', (job) => {
-  memoryTracker.afterJob(job.id)
   logger.info({
     msg: 'Company enrichment job completed',
     event: 'company_enrichment_success',

@@ -27,15 +27,22 @@ import {
   startQueueCleanupScheduler,
   stopQueueCleanupScheduler,
 } from './internal/bullmq/cleanup'
-// Import BullMQ queues only (for queue dashboard and job enqueueing)
-// Workers run in a separate process via: pnpm dev:workers / pnpm start:workers
+// Import BullMQ queues and workers
 import { bullmqQueues } from './internal/bullmq/queues'
+import './internal/bullmq/workers'
 
 import { AdaptivePollingConsumer } from './internal/redis/polling-consumer'
+import {
+  startSequenceCleanup,
+  stopSequenceCleanup,
+} from './internal/redis/pubsub'
+import { startQueueMonitor, stopQueueMonitor } from './metrics/queue-monitor'
 import websocketHealthRoutes from './routes/websocket-health'
 import {
   emitStatusUpdateToWebSocket,
   setEnrichmentNamespace,
+  startStatusManagerCleanup,
+  stopStatusManagerCleanup,
 } from './services/enrichment/status_manager'
 import { setupEnrichmentNamespace } from './websocket/enrichment-namespace'
 // Import WebSocket server setup
@@ -409,6 +416,11 @@ redisHealthMonitor.start(1000 * 60 * 15) // Check every 15 minutes
 // Start BullMQ queue cleanup scheduler
 startQueueCleanupScheduler()
 
+// Start memory cleanup schedulers and queue monitor
+startStatusManagerCleanup()
+startSequenceCleanup()
+startQueueMonitor('api')
+
 // Then start the server
 const PORT = Number.parseInt(process.env.PORT || '3030', 10)
 
@@ -486,6 +498,11 @@ const gracefulShutdown = async (signal: string) => {
 
   // Stop BullMQ queue cleanup scheduler
   stopQueueCleanupScheduler()
+
+  // Stop memory cleanup schedulers and queue monitor
+  stopStatusManagerCleanup()
+  stopSequenceCleanup()
+  await stopQueueMonitor()
 
   process.exit(0)
 }

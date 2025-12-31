@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": ["src/**", "Cargo.toml", "Cargo.lock"],
+      "outputs": ["target/release/ritchy-html-service"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": [],
+      "inputs": ["src/**", "Cargo.toml"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": [],
+      "inputs": ["src/**", "tests/**", "Cargo.toml"],
+      "outputs": []
+    }
+  }
+}

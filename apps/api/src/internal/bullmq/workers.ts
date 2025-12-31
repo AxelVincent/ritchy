@@ -1,14 +1,11 @@
 /**
  * BullMQ Workers Registry
  *
- * All workers run in a single process for simplicity.
- * Memory management is handled within individual sandbox functions.
+ * All workers run in a single process with inline processors.
  */
 
-// Scraper worker (memory-intensive, uses worker threads)
+// Core enrichment workers
 import './jobs/scraper/worker'
-
-// Enrichment workers (use worker threads)
 import './jobs/enrichment-company/worker'
 import './jobs/enrichment-contact/worker'
 

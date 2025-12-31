@@ -1,42 +1,86 @@
 import { logger } from '@ritchy/logger'
-import { Worker } from 'bullmq'
+import { UnrecoverableError, Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
+import { contactEnrichmentService } from '../../../../services/enrichment/contact_enrichment_service'
+import { setContactEnrichmentStatus } from '../../../../services/enrichment/status_manager'
 import { bullmqRedisOptions, workerConfig } from '../../config'
-import { getSandboxPath } from '../../utils/sandbox-path'
+import { extractErrorMessage } from '../../utils/extract-error-message'
 import { type ContactEnrichmentJobData, queueName } from './queue'
 
-const sandboxPath = getSandboxPath('jobs/enrichment-contact/sandbox')
+const worker = new Worker<ContactEnrichmentJobData>(
+  queueName,
+  async (job) => {
+    const { contactId, userPlaceId, userId, reservedCredits } = job.data
 
-/**
- * Contact enrichment worker with worker thread isolation.
- *
- * Uses useWorkerThreads for memory isolation - each job runs in a separate
- * thread, preventing memory leaks from affecting the main worker process.
- */
-const worker = new Worker<ContactEnrichmentJobData>(queueName, sandboxPath, {
-  connection: bullmqRedisOptions,
-  useWorkerThreads: true,
-  // Prevent --expose-gc from being inherited by worker threads (not allowed in Node.js worker_threads)
-  workerThreadsOptions: {
-    execArgv: [],
+    try {
+      await setContactEnrichmentStatus(
+        contactId,
+        'processing',
+        'Starting contact enrichment',
+        0,
+      )
+
+      await job.updateProgress({
+        step: 'Starting contact enrichment',
+        percent: 0,
+      })
+
+      await contactEnrichmentService({
+        contactId,
+        userPlaceId,
+        userId,
+        reservedCredits,
+      })
+
+      await job.updateProgress({
+        step: 'Contact enrichment completed',
+        percent: 100,
+      })
+
+      return { success: true, contactId }
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error)
+
+      await setContactEnrichmentStatus(
+        contactId,
+        'failed',
+        errorMessage,
+        100,
+        errorMessage,
+      )
+
+      logger.error({
+        msg: 'Contact enrichment job failed',
+        event: 'contact_enrichment_error',
+        metadata: {
+          jobId: job.id,
+          contactId,
+          error: errorMessage,
+        },
+      })
+
+      throw new UnrecoverableError(errorMessage)
+    }
   },
-  limiter: {
-    max: 200,
-    duration: 60000,
+  {
+    connection: bullmqRedisOptions,
+    limiter: {
+      max: 200,
+      duration: 60000,
+    },
+    concurrency: workerConfig.enrichment_contact.concurrency,
+    lockDuration: workerConfig.enrichment_contact.lockDuration,
+    lockRenewTime: workerConfig.enrichment_contact.renewalInterval,
+    stalledInterval: workerConfig.enrichment_contact.stalledInterval,
+    maxStalledCount: workerConfig.enrichment_contact.maxStalledCount,
   },
-  concurrency: workerConfig.enrichment_contact.concurrency,
-  lockDuration: workerConfig.enrichment_contact.lockDuration,
-  lockRenewTime: workerConfig.enrichment_contact.renewalInterval,
-  stalledInterval: workerConfig.enrichment_contact.stalledInterval,
-  maxStalledCount: workerConfig.enrichment_contact.maxStalledCount,
-})
+)
 
 logger.info({
   msg: 'Contact enrichment worker initialized',
   event: 'worker_initialized',
   metadata: {
     queue: queueName,
-    useWorkerThreads: true,
     concurrency: workerConfig.enrichment_contact.concurrency,
   },
 })

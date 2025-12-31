@@ -99,6 +99,27 @@ services:
       - prometheus
       - loki
 
+  rust-html-service:
+    build:
+      context: ./apps/html-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - RUST_LOG=info
+      - MAX_HTML_SIZE_MB=10
+      - LOKI_HOST=http://loki:3100
+      - NODE_ENV=development
+    depends_on:
+      - loki
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   qdrant_data:
