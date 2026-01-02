@@ -23,6 +23,18 @@ export const processHtmlWithRust = async (
   request: ProcessHtmlRequest,
 ): Promise<ProcessHtmlResult> => {
   const startTime = Date.now()
+  const serviceUrl = `${RUST_HTML_SERVICE_CONFIG.URL}/process`
+
+  logger.info({
+    msg: '[Rust HTML Service] Starting request',
+    event: 'rust_html_service_request_start',
+    metadata: {
+      serviceUrl,
+      targetUrl: request.url,
+      htmlSize: request.html.length,
+      timeoutMs: RUST_HTML_SERVICE_CONFIG.TIMEOUT_MS,
+    },
+  })
 
   try {
     const controller = new AbortController()
@@ -31,7 +43,7 @@ export const processHtmlWithRust = async (
       RUST_HTML_SERVICE_CONFIG.TIMEOUT_MS,
     )
 
-    const response = await fetch(`${RUST_HTML_SERVICE_CONFIG.URL}/process`, {
+    const response = await fetch(serviceUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -42,6 +54,18 @@ export const processHtmlWithRust = async (
     })
 
     clearTimeout(timeoutId)
+
+    logger.info({
+      msg: '[Rust HTML Service] Response received',
+      event: 'rust_html_service_response_received',
+      metadata: {
+        serviceUrl,
+        targetUrl: request.url,
+        status: response.status,
+        statusText: response.statusText,
+        processingTimeMs: Date.now() - startTime,
+      },
+    })
 
     const result: ProcessHtmlResult = await response.json()
 
@@ -74,19 +98,32 @@ export const processHtmlWithRust = async (
 
     return result
   } catch (error) {
+    const isAbortError = error instanceof Error && error.name === 'AbortError'
     const errorMessage = error instanceof Error ? error.message : String(error)
-    const isTimeout =
-      error instanceof Error && error.name === 'AbortError'
-        ? 'Request timed out'
-        : errorMessage
+    const errorName = error instanceof Error ? error.name : 'Unknown'
+    const errorWithCause = error as Error & { cause?: unknown }
+    const errorCause = errorWithCause.cause
+      ? JSON.stringify(
+          errorWithCause.cause,
+          Object.getOwnPropertyNames(errorWithCause.cause as object),
+        )
+      : undefined
+
+    const displayError = isAbortError
+      ? `Request timed out after ${RUST_HTML_SERVICE_CONFIG.TIMEOUT_MS}ms`
+      : errorMessage
 
     logger.error({
       msg: '[Rust HTML Service] Request failed',
       event: 'rust_html_service_request_failed',
       metadata: {
-        url: request.url,
-        error: isTimeout,
+        serviceUrl,
+        targetUrl: request.url,
+        error: displayError,
+        errorName,
+        errorCause,
         processingTimeMs: Date.now() - startTime,
+        configuredTimeoutMs: RUST_HTML_SERVICE_CONFIG.TIMEOUT_MS,
       },
     })
 
@@ -94,7 +131,7 @@ export const processHtmlWithRust = async (
       success: false,
       error: {
         code: 'RUST_SERVICE_ERROR',
-        message: isTimeout,
+        message: displayError,
       },
     }
   }
