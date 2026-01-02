@@ -34,7 +34,6 @@ export const insertEnrichmentCompany = async (
   enrichmentId: string,
   companyData: InternationalCompanyResponse,
   bestMatch: CompanyMatchResult,
-  context?: EnrichmentContext,
   tx?: PostgresJsDatabase<typeof schema>,
 ): Promise<void> => {
   try {
@@ -87,13 +86,6 @@ export const insertEnrichmentCompany = async (
 
       return companyId
     })
-
-    // Enrich officers with emails AFTER transaction commits
-    // This ensures external API calls don't hold database locks
-    const place = await getPlaceByEnrichmentId(enrichmentId)
-    if (companyData.officers?.length && place && place.website) {
-      await enrichCompanyOfficers(companyId, context, tx)
-    }
 
     logger.info({
       msg: 'Enrichment company data inserted successfully',

@@ -1,10 +1,11 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { search, searchPlace } from '../../db/schema'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -30,7 +31,7 @@ const isInCache = (place: PlaceWithEnrichedAt): boolean => {
 export async function getPlaceDetailsOptimized(
   place: PlaceWithEnrichedAt,
 ): Promise<PlaceDetailsOptimized> {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   if (place.is_deleted) {

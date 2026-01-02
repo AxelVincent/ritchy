@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import type { PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 
@@ -11,6 +11,7 @@ import { place as placeTable } from '../../db/schema'
 import type * as schema from '../../db/schema'
 import { enqueuePlaceDetailsJob } from '../../internal/bullmq/jobs/google/places/queue'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -40,7 +41,7 @@ function getAge(updatedAt: string): number {
 export async function fetchPlaceDetails(
   googlePlaceId: string,
 ): Promise<PreferredPlace> {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   const url = new URL(

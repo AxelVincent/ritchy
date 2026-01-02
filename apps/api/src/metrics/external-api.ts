@@ -1,26 +1,27 @@
-import { startDurationTimer } from '@ritchy/metrics'
-import {
-  externalApiDurationHistogram,
-  externalApiRequestsCounter,
-} from './collectors'
+import { getMetrics } from './singleton'
 
 /**
- * Wrapper to track external API call metrics
+ * Wrapper to track external API call metrics.
+ * Uses auto-initializing singleton - works in API, workers, and sandboxes.
  */
 export const trackExternalApiCall = async <T>(
   service: string,
   endpoint: string,
   apiFn: () => Promise<T>,
 ): Promise<T> => {
-  const timer = startDurationTimer(externalApiDurationHistogram)
+  const metrics = getMetrics()
+  const startTime = process.hrtime()
   let statusCode = 'unknown'
 
   try {
     const result = await apiFn()
     statusCode = '200' // Assuming success if no error
 
-    timer.stop({ service, endpoint })
-    externalApiRequestsCounter.inc({
+    const [seconds, nanoseconds] = process.hrtime(startTime)
+    const durationSeconds = seconds + nanoseconds / 1e9
+
+    metrics.externalApiDuration.observe(durationSeconds, { service, endpoint })
+    metrics.externalApiRequests.inc({
       service,
       endpoint,
       status_code: statusCode,
@@ -35,8 +36,11 @@ export const trackExternalApiCall = async <T>(
       statusCode = '500'
     }
 
-    timer.stop({ service, endpoint })
-    externalApiRequestsCounter.inc({
+    const [seconds, nanoseconds] = process.hrtime(startTime)
+    const durationSeconds = seconds + nanoseconds / 1e9
+
+    metrics.externalApiDuration.observe(durationSeconds, { service, endpoint })
+    metrics.externalApiRequests.inc({
       service,
       endpoint,
       status_code: statusCode,

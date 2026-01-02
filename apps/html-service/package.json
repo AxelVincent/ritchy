@@ -1,0 +1,19 @@
+{
+  "name": "@ritchy/html-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "High-performance Rust HTML processing service",
+  "scripts": {
+    "build": ". $HOME/.cargo/env && cargo build --release",
+    "dev": ". $HOME/.cargo/env && RUST_LOG=info cargo watch -x run",
+    "test": ". $HOME/.cargo/env && cargo test",
+    "typecheck": ". $HOME/.cargo/env && cargo check",
+    "clean": ". $HOME/.cargo/env && cargo clean",
+    "format": ". $HOME/.cargo/env && cargo fmt --check",
+    "format:fix": ". $HOME/.cargo/env && cargo fmt",
+    "check": ". $HOME/.cargo/env && cargo clippy",
+    "check:fix": ". $HOME/.cargo/env && cargo clippy --fix --allow-dirty",
+    "docker:build": "docker build -t ritchy-html-service .",
+    "docker:run": "docker run -p 3001:3001 ritchy-html-service"
+  }
+}

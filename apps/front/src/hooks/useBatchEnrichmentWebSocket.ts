@@ -5,7 +5,7 @@ import type {
   EnrichmentWebSocketClientEvents,
   EnrichmentWebSocketServerEvents,
 } from '@ritchy/types'
-import { useEffect, useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import type { Socket } from 'socket.io-client'
 
 export type { WebSocketStatus }
@@ -29,6 +29,7 @@ interface UseBatchEnrichmentWebSocketReturn {
  * - Uses source-based subscription merging
  * - Multiple components can subscribe independently
  * - Cleanup on unmount removes this component's subscriptions
+ * - Subscribes once on page load, not on every scroll
  *
  * @param userPlaceIds - Array of userPlace IDs to subscribe to (current page)
  * @param enabled - Whether subscriptions should be active (default: true)
@@ -42,23 +43,45 @@ export const useBatchEnrichmentWebSocket = (
   // Generate a unique source key for this hook instance
   const sourceKey = useId()
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: using join for stable comparison
+  // Track last subscribed IDs to prevent re-subscribing on every render
+  const lastSubscribedIdsRef = useRef<string | null>(null)
+  // Keep refs to latest callbacks to avoid dependency on their identity
+  const subscribeRef = useRef(subscribe)
+  const unsubscribeRef = useRef(unsubscribe)
+
+  // Update refs when callbacks change
+  subscribeRef.current = subscribe
+  unsubscribeRef.current = unsubscribe
+
+  // Create stable ID string for comparison
+  const idsKey = userPlaceIds.join(',')
+
   useEffect(() => {
     if (!enabled) {
-      debugLog('[WS Batch] Subscriptions disabled')
-      unsubscribe(sourceKey)
+      if (lastSubscribedIdsRef.current !== null) {
+        debugLog('[WS Batch] Subscriptions disabled')
+        unsubscribeRef.current(sourceKey)
+        lastSubscribedIdsRef.current = null
+      }
+      return
+    }
+
+    // Only subscribe if IDs actually changed
+    if (lastSubscribedIdsRef.current === idsKey) {
       return
     }
 
     debugLog('[WS Batch] Subscribing to:', userPlaceIds.length, 'places')
-    subscribe(sourceKey, userPlaceIds)
+    subscribeRef.current(sourceKey, userPlaceIds)
+    lastSubscribedIdsRef.current = idsKey
 
     // Cleanup on unmount - remove this source's subscriptions
     return () => {
       debugLog('[WS Batch] Cleanup - unsubscribing source:', sourceKey)
-      unsubscribe(sourceKey)
+      unsubscribeRef.current(sourceKey)
+      lastSubscribedIdsRef.current = null
     }
-  }, [userPlaceIds.join(','), enabled, subscribe, unsubscribe, sourceKey])
+  }, [idsKey, enabled, sourceKey, userPlaceIds])
 
   return {
     socket,

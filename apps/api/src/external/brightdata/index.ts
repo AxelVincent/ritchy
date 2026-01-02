@@ -1,9 +1,5 @@
 import { logger } from '@ritchy/logger'
-import {
-  brightdataQueue,
-  brightdataQueueEvents,
-  enqueueBrightdataJob,
-} from '../../internal/bullmq/jobs/brightdata/queue'
+import { enqueueBrightdataJob } from '../../internal/bullmq/jobs/brightdata/queue'
 import type { BrightdataWebUnlockerResponse } from './web_unlocker'
 
 export const scrapeWithBrightdata = async (

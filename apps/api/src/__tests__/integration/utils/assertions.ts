@@ -44,10 +44,8 @@ export const assertAllMatch = <T>(
   expect(array.every(predicate), description).toBe(true)
 }
 
-export const assertContainsName = (
-  items: Array<{ name: string }>,
-  name: string,
-) => {
+/** @internal Test utility - keep unexported unless needed */
+const assertContainsName = (items: Array<{ name: string }>, name: string) => {
   if (!items.some((i) => i.name === name)) {
     console.error(
       `❌ Should contain item named "${name}"\n` +
@@ -59,6 +57,9 @@ export const assertContainsName = (
     `Should contain item named "${name}"`,
   ).toBe(true)
 }
+
+// Suppress unused variable warning - kept for potential future use in tests
+void assertContainsName
 
 export const assertSortedBy = <T>(
   items: T[],

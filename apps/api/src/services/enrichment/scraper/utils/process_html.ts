@@ -17,6 +17,8 @@ export type ProcessedHtml = {
  */
 export const processHtml = (html: string, url?: string): ProcessedHtml => {
   let dom: JSDOM | null = null
+  let $: cheerio.CheerioAPI | null = null
+
   const maxHtmlSize = 1.5 * 1024 * 1024 // 1.5MB
   if (html.length > maxHtmlSize) {
     logger.error({
@@ -28,7 +30,7 @@ export const processHtml = (html: string, url?: string): ProcessedHtml => {
   }
 
   try {
-    const $ = cheerio.load(html)
+    $ = cheerio.load(html)
 
     // Remove unwanted elements FIRST (while class attributes still exist)
     $(
@@ -91,12 +93,11 @@ export const processHtml = (html: string, url?: string): ProcessedHtml => {
     })
     throw error
   } finally {
+    // Explicit cleanup to help garbage collection
     if (dom?.window) {
       dom.window.close()
+      dom = null
     }
-
-    if (global.gc) {
-      global.gc()
-    }
+    $ = null
   }
 }

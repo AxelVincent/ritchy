@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="generator" content="Shopify">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Boutique Example">
+    <meta property="fb:app_id" content="123456789">
+    <meta name="twitter:card" content="summary_large_image">
+    <title>Boutique Example - E-commerce</title>
+    <script src="https://cdn.shopify.com/shopify.js"></script>
+    <script src="//www.googletagmanager.com/gtag/js"></script>
+    <script src="/assets/app.js"></script>
+    <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body class="home-page" id="main-content" data-page="home" onclick="trackClick()">
+    <header>
+        <nav class="main-nav">
+            <a href="/">Accueil</a>
+            <a href="/produits">Produits</a>
+            <a href="/a-propos">À propos</a>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h1>Bienvenue sur notre boutique</h1>
+            <p>Découvrez nos <em>produits exceptionnels</em> et notre service <strong>de qualité</strong>.</p>
+        </section>
+
+        <section>
+            <h2>Nos catégories</h2>
+            <div class="categories">
+                <div class="category">
+                    <h3>Électronique</h3>
+                    <p>Smartphones, tablettes, ordinateurs et plus encore.</p>
+                    <a href="/categorie/electronique">Voir les produits</a>
+                </div>
+                <div class="category">
+                    <h3>Mode</h3>
+                    <p>Vêtements, chaussures et accessoires tendance.</p>
+                    <a href="/categorie/mode">Voir les produits</a>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Contactez-nous</h2>
+            <p>Par email : <a href="mailto:contact@boutique-example.fr">contact@boutique-example.fr</a></p>
+            <p>Par email : support@boutique-example.fr</p>
+            <p>Par téléphone : 01 23 45 67 89</p>
+            <p>Mobile : +33 6 98 76 54 32</p>
+
+            <form action="/contact" method="post">
+                <input type="email" name="email" placeholder="Votre email">
+                <textarea name="message"></textarea>
+                <button type="submit">Envoyer</button>
+            </form>
+        </section>
+
+        <section>
+            <h2>Suivez-nous sur les réseaux</h2>
+            <ul class="social-links">
+                <li><a href="https://www.instagram.com/boutiqueexample">Instagram @boutiqueexample</a></li>
+                <li><a href="https://www.instagram.com/reel/ABC123">Notre dernier reel</a></li>
+                <li><a href="https://www.facebook.com/boutiqueexample">Facebook</a></li>
+                <li><a href="https://www.facebook.com/posts/123456">Dernier post</a></li>
+                <li><a href="https://www.linkedin.com/company/boutique-example">LinkedIn Entreprise</a></li>
+                <li><a href="https://www.linkedin.com/in/jean-dupont">Jean Dupont - Fondateur</a></li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Documents</h2>
+            <a href="/documents/catalogue.pdf">Télécharger le catalogue (PDF)</a>
+            <a href="/images/logo.png">Logo HD</a>
+        </section>
+
+        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video"></iframe>
+        <iframe src="https://calendly.com/boutique-example/rendez-vous" title="Booking"></iframe>
+    </main>
+
+    <aside>
+        <h3>Newsletter</h3>
+        <p>Inscrivez-vous : newsletter@boutique-example.fr</p>
+    </aside>
+
+    <footer>
+        <p>© 2024 Boutique Example - Tous droits réservés</p>
+        <p>Email légal : legal@boutique-example.fr</p>
+    </footer>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Boutique Example"
+    }
+    </script>
+
+    <script>
+        (function() {
+            var script = document.createElement('script');
+            script.src = "https://cdn.tracking.com/tracker.js";
+            document.head.appendChild(script);
+        })();
+    </script>
+</body>
+</html>

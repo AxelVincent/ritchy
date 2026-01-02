@@ -17,11 +17,11 @@ export const icypeasFindPeopleQueue = new Queue(queueName, {
     },
     removeOnComplete: {
       age: 300, // 5 minutes
-      count: 100,
+      count: 20, // Reduced from 100 to limit memory usage
     },
     removeOnFail: {
       age: 3600, // 1 hour
-      count: 100,
+      count: 20, // Reduced from 100 to limit memory usage
     },
   },
 })

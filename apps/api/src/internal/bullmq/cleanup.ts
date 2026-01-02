@@ -6,7 +6,8 @@ const COMPLETED_JOB_MAX_AGE_MS = 5 * 60 * 1000 // 5 minutes
 const FAILED_JOB_MAX_AGE_MS = 60 * 60 * 1000 // 1 hour
 const MAX_JOBS_TO_CLEAN = 1000
 
-export const cleanupAllQueues = async (): Promise<void> => {
+/** @internal Called by the scheduler - not exported */
+const cleanupAllQueues = async (): Promise<void> => {
   const results = await Promise.allSettled(
     bullmqQueues.map(async ({ queue, displayName }) => {
       const completedCleaned = await queue.clean(

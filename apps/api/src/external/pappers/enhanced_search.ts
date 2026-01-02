@@ -1,9 +1,10 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import { z } from 'zod'
 import type { Place } from '../../db/schema'
 import { enqueuePappersSearchJob } from '../../internal/bullmq/jobs/pappers/queue'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -29,7 +30,7 @@ const paginatedSearch = async (
   maxPages = 5,
   resultsThreshold = 50,
 ) => {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '200'
 
   logger.info({

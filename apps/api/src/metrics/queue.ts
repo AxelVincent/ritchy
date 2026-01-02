@@ -1,6 +1,6 @@
-import { startDurationTimer } from '@ritchy/metrics'
-import type { Job, Worker } from 'bullmq'
+import type { Worker } from 'bullmq'
 import {
+  createSimpleDurationTimer,
   queueActiveJobsGauge,
   queueJobDurationHistogram,
   queueJobsFailedCounter,
@@ -89,6 +89,8 @@ export const setupQueueMetrics = (
  * @param jobType - Type of job being processed
  * @returns Timer object with stop() method
  *
+ * @internal Currently unused - setupQueueMetrics handles tracking via events
+ *
  * @example
  * ```typescript
  * const worker = new Worker(queueName, async (job) => {
@@ -104,8 +106,8 @@ export const setupQueueMetrics = (
  * })
  * ```
  */
-export const trackJobDuration = (queueName: string, jobType: string) => {
-  const timer = startDurationTimer(queueJobDurationHistogram)
+const _trackJobDuration = (queueName: string, jobType: string) => {
+  const timer = createSimpleDurationTimer(queueJobDurationHistogram)
 
   return {
     stop: () => {
@@ -113,3 +115,6 @@ export const trackJobDuration = (queueName: string, jobType: string) => {
     },
   }
 }
+
+// Suppress unused variable warning - documented utility kept for potential future use
+void _trackJobDuration

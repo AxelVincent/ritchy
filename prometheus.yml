@@ -8,7 +8,9 @@ scrape_configs:
   # Application metrics (prom-client)
   - job_name: 'ritchy-api'
     static_configs:
-      - targets: ['api.railway.internal']
+      # Use host.docker.internal for local development (macOS/Windows)
+      # Use api.railway.internal for production on Railway
+      - targets: ['host.docker.internal:3030']
     metrics_path: '/metrics'
     scrape_interval: 10s
     basic_auth:

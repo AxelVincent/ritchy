@@ -9,6 +9,10 @@ const envSchema = z.object({
   SCRAPER_CONCURRENCY: z.string(),
   BRIGHTDATA_CONCURRENCY: z.string(),
   ENRICHMENT_UNIT_CONCURRENCY: z.string(),
+  ENRICHMENT_COMPANY_CONCURRENCY: z.string(),
+  ENRICHMENT_CONTACT_CONCURRENCY: z.string(),
+  SCRAPER_BATCH_EXIT_COUNT: z.string(),
+  ENRICHMENT_COMPANY_BATCH_EXIT_COUNT: z.string(),
 })
 
 const env = envSchema.parse(process.env)
@@ -50,6 +54,7 @@ export const workerConfig = {
     maxStalledCount: 2,
   },
   scraper: {
+    batchExitCount: Number.parseInt(env.SCRAPER_BATCH_EXIT_COUNT),
     concurrency: Number.parseInt(env.SCRAPER_CONCURRENCY),
     lockDuration: 360000,
     renewalInterval: 120000,
@@ -96,6 +101,21 @@ export const workerConfig = {
     lockDuration: 60000,
     renewalInterval: 30000,
     stalledInterval: 30000,
+    maxStalledCount: 2,
+  },
+  enrichment_company: {
+    batchExitCount: Number.parseInt(env.ENRICHMENT_COMPANY_BATCH_EXIT_COUNT),
+    concurrency: Number.parseInt(env.ENRICHMENT_COMPANY_CONCURRENCY),
+    lockDuration: 300000, // 5 minutes
+    renewalInterval: 60000,
+    stalledInterval: 120000,
+    maxStalledCount: 2,
+  },
+  enrichment_contact: {
+    concurrency: Number.parseInt(env.ENRICHMENT_CONTACT_CONCURRENCY),
+    lockDuration: 300000, // 5 minutes
+    renewalInterval: 60000,
+    stalledInterval: 120000,
     maxStalledCount: 2,
   },
 }

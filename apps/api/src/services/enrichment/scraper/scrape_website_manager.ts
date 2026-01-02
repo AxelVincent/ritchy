@@ -4,7 +4,9 @@ import * as cheerio from 'cheerio'
 import type { FirecrawlDocumentMetadata } from '@mendable/firecrawl-js'
 import { db } from '../../../db/db'
 import { enrichmentTechnology } from '../../../db/schema/enrichment'
+import { createVectorStore } from '../../../external/langchain/utils/vector_store'
 import { websiteRagIndexingPipeline } from '../../../external/langchain/website_rag_indexing_pipeline'
+import { processHtmlWithRust } from '../../../external/rust-html-service/client'
 import { insertEnrichmentFacebookBatch } from '../queries/insert_enrichment_facebook_batch'
 import { insertEnrichmentInstagramBatch } from '../queries/insert_enrichment_instagram_batch'
 import { insertEnrichmentLinkedinBatch } from '../queries/insert_enrichment_linkedin_batch'
@@ -33,6 +35,13 @@ import {
 import { resolveUrl } from './utils/resolve_url'
 import { verifyAndInsertEnrichmentEmail } from './verify_and_insert_enrichment_email'
 
+/**
+ * Feature flag to enable the Rust HTML service for processing.
+ * When enabled, HTML processing (link/contact extraction, markdown conversion)
+ * is offloaded to the high-performance Rust microservice.
+ */
+const USE_RUST_HTML_SERVICE = process.env.USE_RUST_HTML_SERVICE === 'true'
+
 type ScrapeResult = {
   links: Links
   metadata: FirecrawlDocumentMetadata
@@ -42,22 +51,24 @@ type Links = {
   internal: string[]
 }
 
+type UniqueLinks = {
+  emails: Set<string>
+  phones: Set<string>
+  socials: {
+    instagram: Set<NormalizedInstagram>
+    facebook: Set<NormalizedFacebook>
+    linkedin: Set<NormalizedLinkedin>
+  }
+  internal: Set<string>
+}
+
 /**
- * Processes a single HTML chunk to extract contacts and links
+ * Processes a single HTML chunk to extract contacts and links using Node.js/Cheerio.
  */
 const processHtmlChunk = (
   chunk: string,
   url: string,
-  uniqueLinks: {
-    emails: Set<string>
-    phones: Set<string>
-    socials: {
-      instagram: Set<NormalizedInstagram>
-      facebook: Set<NormalizedFacebook>
-      linkedin: Set<NormalizedLinkedin>
-    }
-    internal: Set<string>
-  },
+  uniqueLinks: UniqueLinks,
 ) => {
   try {
     const $ = cheerio.load(chunk, {
@@ -150,14 +161,108 @@ const processHtmlChunk = (
   }
 }
 
-export const scrapeWebsiteManager = async (
+/**
+ * Process HTML using the Rust HTML service.
+ * Returns the extracted data and markdown, or null if the service fails.
+ */
+const processWithRustService = async (
+  html: string,
+  rawHtml: string | null,
   url: string,
   enrichmentId: string,
-  onlyMainContent: boolean,
   userPlaceId: string,
-): Promise<ScrapeResult> => {
-  // Modify the uniqueLinks structure
-  const uniqueLinks = {
+): Promise<{
+  markdown: string
+  uniqueLinks: UniqueLinks
+} | null> => {
+  try {
+    const result = await processHtmlWithRust({
+      html,
+      rawHtml: rawHtml ?? undefined,
+      url,
+      options: {
+        convertToMarkdown: true,
+        extractContacts: true,
+        extractLinks: true,
+        extractScripts: true,
+      },
+    })
+
+    if (!result.success) {
+      logger.warn({
+        msg: '[Scrape Website Manager] Rust service returned error, falling back to Node.js',
+        event: 'rust_service_error_fallback',
+        metadata: {
+          url,
+          userPlaceId,
+          enrichmentId,
+          error: result.error,
+        },
+      })
+      return null
+    }
+
+    // Rust service already handles normalization and deduplication
+    // Convert arrays to Sets for compatibility with the rest of the code
+    const uniqueLinks: UniqueLinks = {
+      emails: new Set(result.data.contacts.emails),
+      phones: new Set(result.data.contacts.phones),
+      socials: {
+        instagram: new Set(result.data.links.social.instagram),
+        facebook: new Set(result.data.links.social.facebook),
+        linkedin: new Set(result.data.links.social.linkedin),
+      },
+      internal: new Set(result.data.links.internal),
+    }
+
+    logger.info({
+      msg: '[Scrape Website Manager] Processed with Rust service',
+      event: 'rust_service_processing_complete',
+      metadata: {
+        url,
+        userPlaceId,
+        enrichmentId,
+        processingTimeMs: result.metadata.processingTimeMs,
+        counts: {
+          emails: uniqueLinks.emails.size,
+          phones: uniqueLinks.phones.size,
+          instagram: uniqueLinks.socials.instagram.size,
+          facebook: uniqueLinks.socials.facebook.size,
+          linkedin: uniqueLinks.socials.linkedin.size,
+          internal: uniqueLinks.internal.size,
+        },
+      },
+    })
+
+    return {
+      markdown: result.data.markdown,
+      uniqueLinks,
+    }
+  } catch (error) {
+    logger.warn({
+      msg: '[Scrape Website Manager] Rust service request failed, falling back to Node.js',
+      event: 'rust_service_request_failed_fallback',
+      metadata: {
+        url,
+        userPlaceId,
+        enrichmentId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    })
+    return null
+  }
+}
+
+/**
+ * Process HTML using Node.js/Cheerio (original implementation).
+ */
+const processWithNodeJs = (
+  html: string,
+  url: string,
+  enrichmentId: string,
+  userPlaceId: string,
+): UniqueLinks => {
+  const uniqueLinks: UniqueLinks = {
     emails: new Set<string>(),
     phones: new Set<string>(),
     socials: {
@@ -167,22 +272,76 @@ export const scrapeWebsiteManager = async (
     },
     internal: new Set<string>(),
   }
+
+  // Use chunking instead of processing the full HTML document
+  const CHUNK_SIZE = 64 * 1024 // 64KB chunks
+  const chunks = createHtmlChunks(html, CHUNK_SIZE)
+
+  logger.debug({
+    msg: `[Scrape Website Manager] Processing ${chunks.length} HTML chunks for ${url}`,
+    event: 'processing_html_chunks',
+    metadata: {
+      url,
+      userPlaceId,
+      enrichmentId,
+      chunkCount: chunks.length,
+      totalSize: html.length,
+    },
+  })
+
+  // Process each chunk
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i]
+    logger.debug({
+      msg: `[Scrape Website Manager] Processing chunk ${i + 1}/${chunks.length} for ${url}`,
+      event: 'processing_chunk',
+      metadata: {
+        url,
+        userPlaceId,
+        enrichmentId,
+        chunkIndex: i,
+        chunkSize: chunk.length,
+      },
+    })
+
+    processHtmlChunk(chunk, url, uniqueLinks)
+  }
+
+  return uniqueLinks
+}
+
+export const scrapeWebsiteManager = async (
+  url: string,
+  enrichmentId: string,
+  onlyMainContent: boolean,
+  userPlaceId: string,
+): Promise<ScrapeResult> => {
+  // Use mutable variables for large strings so we can explicitly free memory
+  let html: string | null = null
+  let rawHtml: string | null = null
+  let markdown: string | null = null
+
   try {
     const time = Date.now()
     logger.debug({
       msg: `[Scrape Website Manager] Scraping ${url}`,
       event: 'scraping_website',
-      metadata: { url, userPlaceId },
+      metadata: { url, userPlaceId, useRustService: USE_RUST_HTML_SERVICE },
     })
 
-    const { html, rawHtml, markdown, metadata, success, error } =
-      await scrapeWithFallbacks(url, userPlaceId, {
-        formats: ['markdown', 'html', 'rawHtml'],
-        excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
-        country: 'US',
-        proxy: 'auto',
-        onlyMainContent,
-      })
+    const scrapeResult = await scrapeWithFallbacks(url, userPlaceId, {
+      formats: ['markdown', 'html', 'rawHtml'],
+      excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
+      country: 'US',
+      proxy: 'auto',
+      onlyMainContent,
+    })
+
+    // Extract to mutable variables
+    html = scrapeResult.html ?? null
+    rawHtml = scrapeResult.rawHtml ?? null
+    markdown = scrapeResult.markdown ?? null
+    const { metadata, success, error } = scrapeResult
 
     const MAX_HTML_SIZE = 5 * 1024 * 1024 // 5MB
     if (html && html.length > MAX_HTML_SIZE) {
@@ -211,44 +370,53 @@ export const scrapeWebsiteManager = async (
       throw new Error('No response returned from scrape')
     }
 
-    // Use chunking instead of processing the full HTML document
-    const CHUNK_SIZE = 64 * 1024 // 64KB chunks
-    const chunks = createHtmlChunks(html, CHUNK_SIZE)
+    // Process HTML - use Rust service if enabled, otherwise fall back to Node.js
+    let uniqueLinks: UniqueLinks
+    let finalMarkdown: string = markdown
 
-    logger.debug({
-      msg: `[Scrape Website Manager] Processing ${chunks.length} HTML chunks for ${url}`,
-      event: 'processing_html_chunks',
-      metadata: {
+    if (USE_RUST_HTML_SERVICE) {
+      const rustResult = await processWithRustService(
+        html,
+        rawHtml,
         url,
-        userPlaceId,
         enrichmentId,
-        chunkCount: chunks.length,
-        totalSize: html.length,
-      },
-    })
+        userPlaceId,
+      )
 
-    // Process each chunk
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i]
-      logger.debug({
-        msg: `[Scrape Website Manager] Processing chunk ${i + 1}/${chunks.length} for ${url}`,
-        event: 'processing_chunk',
-        metadata: {
-          url,
-          userPlaceId,
-          enrichmentId,
-          chunkIndex: i,
-          chunkSize: chunk.length,
-        },
-      })
-
-      processHtmlChunk(chunk, url, uniqueLinks)
+      if (rustResult) {
+        uniqueLinks = rustResult.uniqueLinks
+        finalMarkdown = rustResult.markdown
+        // MEMORY CLEANUP: Free html after Rust processing
+        html = null
+      } else {
+        // Fallback to Node.js processing
+        uniqueLinks = processWithNodeJs(html, url, enrichmentId, userPlaceId)
+        // MEMORY CLEANUP: Free html after Node.js chunking
+        html = null
+      }
+    } else {
+      // Use Node.js processing
+      uniqueLinks = processWithNodeJs(html, url, enrichmentId, userPlaceId)
+      // MEMORY CLEANUP: Free html after chunking is complete
+      html = null
     }
 
     logger.debug({
       msg: `[Scrape Website Manager] Inserting social media data for ${url}`,
       event: 'inserting_social_media_data',
-      metadata: { userPlaceId, enrichmentId, uniqueLinks, url },
+      metadata: {
+        userPlaceId,
+        enrichmentId,
+        url,
+        counts: {
+          emails: uniqueLinks.emails.size,
+          phones: uniqueLinks.phones.size,
+          instagram: uniqueLinks.socials.instagram.size,
+          facebook: uniqueLinks.socials.facebook.size,
+          linkedin: uniqueLinks.socials.linkedin.size,
+          internal: uniqueLinks.internal.size,
+        },
+      },
     })
 
     await db.transaction(async (tx) => {
@@ -298,7 +466,18 @@ export const scrapeWebsiteManager = async (
     uniqueLinks.internal.clear()
 
     const mainDomain = getMainDomain(url)
-    await websiteRagIndexingPipeline(mainDomain, url, markdown)
+
+    // Create per-job vectorStore to prevent memory accumulation from embeddings cache
+    const vectorStore = await createVectorStore()
+    await websiteRagIndexingPipeline(
+      vectorStore,
+      mainDomain,
+      url,
+      finalMarkdown,
+    )
+
+    // MEMORY CLEANUP: Free markdown after RAG indexing (no longer needed)
+    markdown = null
 
     // Detect technologies (use rawHtml which contains scripts/meta tags)
     logger.debug({
@@ -313,6 +492,9 @@ export const scrapeWebsiteManager = async (
     })
     if (rawHtml && rawHtml.length > 0) {
       const technologies = await detectTechnologies(rawHtml, url, enrichmentId)
+
+      // MEMORY CLEANUP: Free rawHtml after technology detection (no longer needed)
+      rawHtml = null
 
       // Store technologies in database
       if (technologies.length > 0) {
@@ -362,6 +544,9 @@ export const scrapeWebsiteManager = async (
           })
         }
       }
+    } else {
+      // MEMORY CLEANUP: Free rawHtml even if not used for tech detection
+      rawHtml = null
     }
 
     const responseTimeInSeconds = (Date.now() - time) / 1000

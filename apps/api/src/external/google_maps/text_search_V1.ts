@@ -3,13 +3,14 @@ import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { place } from '../../db/schema/place'
 import { enqueueTextSearchJob } from '../../internal/bullmq/jobs/google/places/queue'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -27,7 +28,7 @@ import { mapToPlaceDetails } from './utils/mapper'
 export async function fetchSinglePage(
   formattedRequest: GooglePlacesTextSearchRequestBody,
 ): Promise<GooglePlacesTextSearchResponse> {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   const url = new URL(`${GOOGLE_MAPS_CONFIG.PLACES_URL}/places:searchText`)
@@ -123,7 +124,7 @@ export async function fetchSinglePage(
 export async function postTextSearchV1(
   requestBody: PlacesSearchRequestBody,
 ): Promise<Omit<PlaceBase, 'id'>[]> {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   const httpStatusCode = '200'
 
   const ratio = 1

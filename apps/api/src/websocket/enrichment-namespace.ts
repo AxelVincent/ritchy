@@ -16,26 +16,16 @@ import { authenticationMiddleware } from './server'
 /**
  * Set up the enrichment namespace for real-time status updates
  * Handles subscription management and broadcasting enrichment progress
- *
- * Simplified architecture (v2):
- * - Single batch-subscribe event replaces individual subscribe/unsubscribe
- * - Server leaves all previous rooms and joins new ones atomically
- * - Reduces WebSocket events from 2N to 1 per page change
- * - Eliminates race conditions from rapid subscribe/unsubscribe cycles
  */
 export const setupEnrichmentNamespace = (io: SocketIOServer) => {
-  // Create /enrichment namespace with type-safe events
   const enrichmentNs: Namespace<
     EnrichmentWebSocketClientEvents,
     EnrichmentWebSocketServerEvents
   > = io.of('/enrichment')
 
-  // Apply authentication middleware to enrichment namespace
-  // This ensures socket.data.userId is populated before subscription events
   enrichmentNs.use(authenticationMiddleware)
 
   enrichmentNs.on('connection', (socket) => {
-    // Increment connection gauge
     websocketConnectionsGauge.inc({ namespace: 'enrichment' })
 
     logger.info({
@@ -47,13 +37,8 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
     /**
      * Batch subscribe to enrichment status updates
      * Replaces all current subscriptions with the new set
-     * - Leaves all previous enrichment rooms
-     * - Validates and verifies ownership in batch
-     * - Joins new rooms
-     * - Sends batch status update
      */
     socket.on('batch-subscribe', async (userPlaceIds: unknown) => {
-      // Track inbound message
       websocketMessagesCounter.inc({
         namespace: 'enrichment',
         event_type: 'batch-subscribe',
@@ -61,16 +46,17 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
       })
 
       try {
-        // Validate input array
         const validatedIds = BatchSubscribeEventSchema.parse(userPlaceIds)
 
-        // Leave all current enrichment rooms
+        // Leave all current enrichment rooms IN PARALLEL
         const currentRooms = Array.from(socket.rooms)
-        for (const room of currentRooms) {
-          if (room.startsWith('enrichment:') && room !== socket.id) {
-            await socket.leave(room)
-          }
-        }
+        await Promise.all(
+          currentRooms
+            .filter(
+              (room) => room.startsWith('enrichment:') && room !== socket.id,
+            )
+            .map((room) => socket.leave(room)),
+        )
 
         // Handle empty subscription (unsubscribe from all)
         if (validatedIds.length === 0) {
@@ -80,24 +66,21 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
             metadata: { socketId: socket.id, userId: socket.data.userId },
           })
 
-          // Send empty batch status
           socket.emit('batch-status-update', {})
           websocketMessagesCounter.inc({
             namespace: 'enrichment',
             event_type: 'batch-status-update',
             direction: 'outbound',
           })
-
           return
         }
 
-        // Verify ownership in batch (single Redis MGET + potential DB query)
+        // Verify ownership in batch
         const ownedIds = await verifyOwnershipBatch(
           validatedIds,
           socket.data.userId,
         )
 
-        // Log unauthorized attempts (but don't fail the whole batch)
         const unauthorizedCount = validatedIds.length - ownedIds.length
         if (unauthorizedCount > 0) {
           logger.warn({
@@ -113,16 +96,17 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
           })
         }
 
-        // Join rooms for all owned places
-        for (const userPlaceId of ownedIds) {
-          const room = `enrichment:${userPlaceId}`
-          await socket.join(room)
-        }
+        // Join all rooms IN PARALLEL
+        await Promise.all(
+          ownedIds.flatMap((userPlaceId) => [
+            socket.join(`enrichment:${userPlaceId}`),
+            socket.join(`enrichment:company:${userPlaceId}`),
+          ]),
+        )
 
         // Get current status for all owned IDs in batch
         const statuses = await getBatchEnrichmentStatus(ownedIds)
 
-        // Send batch status update
         socket.emit('batch-status-update', statuses)
         websocketMessagesCounter.inc({
           namespace: 'enrichment',
@@ -163,14 +147,9 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
       }
     })
 
-    /**
-     * Handle disconnection - cleanup subscriptions
-     */
     socket.on('disconnect', (reason) => {
-      // Decrement connection gauge
       websocketConnectionsGauge.dec({ namespace: 'enrichment' })
 
-      // Socket.IO automatically removes socket from all rooms on disconnect
       logger.info({
         msg: 'Client disconnected from enrichment namespace',
         event: 'enrichment_websocket_disconnect',
@@ -183,9 +162,6 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
       })
     })
 
-    /**
-     * Handle errors
-     */
     socket.on('error', (error) => {
       logger.error({
         msg: 'WebSocket error in enrichment namespace',
@@ -200,7 +176,7 @@ export const setupEnrichmentNamespace = (io: SocketIOServer) => {
   })
 
   logger.info({
-    msg: 'Enrichment WebSocket namespace initialized (v2 - simplified)',
+    msg: 'Enrichment WebSocket namespace initialized',
     event: 'enrichment_websocket_namespace_initialized',
   })
 

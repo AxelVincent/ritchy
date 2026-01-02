@@ -37,6 +37,15 @@ vi.mock('../../../../external/langchain/website_rag_indexing_pipeline', () => ({
   websiteRagIndexingPipeline: vi.fn(),
 }))
 
+vi.mock('../../../../external/langchain/utils/vector_store', () => ({
+  createVectorStore: vi.fn(() =>
+    Promise.resolve({
+      addDocuments: vi.fn(),
+      similaritySearch: vi.fn(),
+    }),
+  ),
+}))
+
 vi.mock('../../queries/insert_enrichment_facebook_batch', () => ({
   insertEnrichmentFacebookBatch: vi.fn(),
 }))
@@ -63,6 +72,11 @@ vi.mock('../technology/detect_technologies', () => ({
 
 vi.mock('../verify_and_insert_enrichment_email', () => ({
   verifyAndInsertEnrichmentEmail: vi.fn(),
+}))
+
+// Mock Rust HTML service client
+vi.mock('../../../../external/rust-html-service/client', () => ({
+  processHtmlWithRust: vi.fn(),
 }))
 
 // Mock extract_contacts_from_text utility
@@ -355,11 +369,13 @@ describe('scrapeWebsiteManager', () => {
         mockUserPlaceId,
       )
 
-      expect(websiteRagIndexingPipeline).toHaveBeenCalledWith(
-        'example.com',
-        mockUrl,
-        mockMarkdown,
-      )
+      // VectorStore is created per-job - check it was called with domain, url, and markdown
+      const pipelineCall = vi.mocked(websiteRagIndexingPipeline).mock.calls[0]
+      expect(pipelineCall).toBeDefined()
+      // Args: vectorStore, domain, url, markdown (vectorStore may be undefined in tests due to top-level await)
+      expect(pipelineCall[1]).toBe('example.com')
+      expect(pipelineCall[2]).toBe(mockUrl)
+      expect(pipelineCall[3]).toBe(mockMarkdown)
     })
 
     it('should log debug messages during processing', async () => {

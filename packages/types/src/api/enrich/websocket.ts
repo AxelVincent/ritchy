@@ -11,6 +11,19 @@ export type WebSocketErrorCode =
   | 'RATE_LIMIT'
 
 /**
+ * Credit breakdown for contact enrichment
+ * Sent with completed status updates
+ */
+export interface CreditsInfo {
+  creditsUsed: number
+  creditsBreakdown: {
+    linkedin: number
+    emails: number
+    phones: number
+  }
+}
+
+/**
  * Zod schemas for WebSocket event validation
  */
 export const BatchSubscribeEventSchema = z.array(z.string().uuid())
@@ -27,6 +40,7 @@ export const StatusUpdateEventSchema = z.object({
   step: z.string(),
   progress: z.number().min(0).max(100),
   updatedAt: z.number(),
+  sequence: z.number(),
   error: z.string().optional(),
   jobId: z.string().optional(),
 })
@@ -38,46 +52,52 @@ export type BatchStatusUpdate = Record<string, EnrichmentStatusResponse>
 
 /**
  * Type-safe WebSocket event definitions for enrichment namespace
- * Use with Socket.IO's typed event system
- *
- * Simplified architecture (v2):
- * - Single batch-subscribe event replaces individual subscribe/unsubscribe
- * - Server leaves all previous rooms and joins new ones in a single operation
- * - batch-status-update provides initial status for all subscribed IDs
- *
- * @example Backend
- * ```typescript
- * import type { EnrichmentWebSocketEvents } from '@ritchy/types'
- * const enrichmentNs: Namespace<EnrichmentWebSocketEvents> = io.of('/enrichment')
- * ```
- *
- * @example Frontend
- * ```typescript
- * import type { Socket } from 'socket.io-client'
- * import type { EnrichmentWebSocketEvents } from '@ritchy/types'
- * const socket: Socket<EnrichmentWebSocketServerEvents, EnrichmentWebSocketClientEvents> = io(...)
- * ```
  */
 export interface EnrichmentWebSocketServerEvents {
-  // Server → Client events
-  'status-update': (
+  // Company enrichment status update
+  'company-status-update': (
     data: {
       userPlaceId: string
+      sequence: number
     } & EnrichmentStatusResponse,
   ) => void
 
   // Batch status update sent after batch-subscribe
   'batch-status-update': (data: BatchStatusUpdate) => void
 
+  // Contact enrichment status update
+  'contact-status-update': (data: {
+    contactId: string
+    sequence: number
+    status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed'
+    progress: number
+    step: string
+    error?: string
+    updatedAt: number
+    /** Credit info - only present on completed status */
+    credits?: CreditsInfo
+  }) => void
+
+  // Officer enrichment status update
+  'officer-status-update': (data: {
+    officerId: string
+    sequence: number
+    status: 'idle' | 'queued' | 'processing' | 'completed' | 'failed'
+    progress: number
+    step: string
+    error?: string
+    updatedAt: number
+  }) => void
+
   error: (error: {
     message: string
     code: WebSocketErrorCode
     userPlaceId?: string
+    contactId?: string
   }) => void
 }
 
 export interface EnrichmentWebSocketClientEvents {
-  // Client → Server events
   // Replaces all current subscriptions with the new set
   'batch-subscribe': (userPlaceIds: string[]) => void
 }

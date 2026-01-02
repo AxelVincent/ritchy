@@ -34,10 +34,14 @@ export const db = drizzle(queryConnection, {
   schema,
 })
 
-export const publicDb = drizzle({
+/** @internal Public database connection for external access - kept for potential future use */
+const _publicDb = drizzle({
   connection: {
     url: DRIZZLE_CONFIG.PUBLIC_URL,
     max: 1,
   },
   schema,
 })
+
+// Suppress unused variable warning - kept for potential future use
+void _publicDb

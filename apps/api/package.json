@@ -9,6 +9,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build:watch": "tsup --watch",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "typecheck": "tsc --noEmit --project tsconfig.json",
@@ -18,7 +20,6 @@
     "check:fix": "biome check --write ./src",
     "build": "tsup",
     "build:clean": "rm -rf dist && pnpm build",
-    "start": "NODE_ENV=production node dist/index.js",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
@@ -72,6 +73,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
+    "concurrently": "9.1.2",
     "@ritchy/types": "workspace:*",
     "@types/connect-timeout": "0.0.39",
     "@types/express": "5.0.1",

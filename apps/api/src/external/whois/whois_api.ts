@@ -1,8 +1,9 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import type { DomainRegistration } from '@ritchy/types'
 import { WHOIS_CONFIG } from '../../config/whois'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -21,7 +22,7 @@ export const performWhoisLookup = async (
   domain: string,
   timeoutMs = 10000,
 ): Promise<DomainRegistration | null> => {
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   try {

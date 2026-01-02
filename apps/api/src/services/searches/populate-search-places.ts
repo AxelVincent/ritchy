@@ -12,17 +12,22 @@ export interface SearchConfig {
   rectangle: Rectangle
 }
 
+export interface PopulateSearchResult {
+  populated: boolean
+  userPlaceIds: string[]
+}
+
 /**
  * Populates search places if the search has no associated places.
  * Fetches from Google Maps API, creates places, user_places, and search_places.
  *
- * @returns true if places were populated, false if places already existed
+ * @returns object with populated flag and userPlaceIds array
  */
 export const populateSearchPlacesIfEmpty = async (
   searchId: string,
   userId: string,
   searchConfig: SearchConfig,
-): Promise<boolean> => {
+): Promise<PopulateSearchResult> => {
   // Check if search already has places
   const existingPlaces = await db
     .select()
@@ -31,7 +36,7 @@ export const populateSearchPlacesIfEmpty = async (
     .limit(1)
 
   if (existingPlaces.length > 0) {
-    return false
+    return { populated: false, userPlaceIds: [] }
   }
 
   logger.info({
@@ -58,7 +63,7 @@ export const populateSearchPlacesIfEmpty = async (
       event: 'no_places_from_google',
       metadata: { searchId, userId },
     })
-    return false
+    return { populated: false, userPlaceIds: [] }
   }
 
   // Insert places (upsert on conflict)
@@ -133,5 +138,5 @@ export const populateSearchPlacesIfEmpty = async (
     metadata: { searchId, placeCount: reorderedUserPlaceIds.length },
   })
 
-  return true
+  return { populated: true, userPlaceIds: reorderedUserPlaceIds }
 }

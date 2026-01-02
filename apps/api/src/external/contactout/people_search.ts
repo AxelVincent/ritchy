@@ -1,8 +1,9 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import z from 'zod'
 import { CONTACTOUT_CONFIG } from '../../config/contactout'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -228,7 +229,7 @@ export const peopleSearch = async (
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 45000)
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   try {

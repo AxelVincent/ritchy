@@ -95,6 +95,8 @@ export const getPlacesContacts = async (
           updatedAt: social.updatedAt.toISOString(),
         })),
         linkedinUrl: contact.linkedin?.profile_url ?? null,
+        enrichmentStatus: contact.contact.enrichmentStatus ?? 'idle',
+        enrichedAt: contact.contact.enrichedAt?.toISOString() ?? null,
         createdAt: contact.contact.createdAt.toISOString(),
         updatedAt: contact.contact.updatedAt.toISOString(),
       })),

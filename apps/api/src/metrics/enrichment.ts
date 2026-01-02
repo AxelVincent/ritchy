@@ -1,5 +1,5 @@
-import { startDurationTimer } from '@ritchy/metrics'
 import {
+  createSimpleDurationTimer,
   enrichmentDurationHistogram,
   enrichmentErrorsCounter,
   enrichmentRequestsCounter,
@@ -10,6 +10,8 @@ import {
  * Enrichment sub-processes that can be tracked
  *
  * These represent the granular operations within an enrichment flow:
+ *
+ * Company enrichment subprocesses:
  * - overall: Complete enrichment operation (cached or not)
  * - scrape_homepage: Initial homepage scraping
  * - scrape_subpages: Additional pages scraping
@@ -21,9 +23,15 @@ import {
  * - email_verification: Email validation via Million Verifier
  * - populate_contacts: Contact generation
  * - calculate_score: Enrichment quality scoring
+ *
+ * Contact enrichment subprocesses:
+ * - linkedin_waterfall: LinkedIn profile discovery
+ * - email_waterfall: Email address discovery
+ * - phone_waterfall: Phone number discovery
  */
 export type EnrichmentSubprocess =
   | 'overall'
+  // Company subprocesses
   | 'scrape_homepage'
   | 'scrape_subpages'
   | 'technology_detection'
@@ -34,6 +42,10 @@ export type EnrichmentSubprocess =
   | 'email_verification'
   | 'populate_contacts'
   | 'calculate_score'
+  // Contact subprocesses
+  | 'linkedin_waterfall'
+  | 'email_waterfall'
+  | 'phone_waterfall'
 
 /**
  * Start tracking an enrichment operation with granular sub-process monitoring
@@ -44,7 +56,7 @@ export type EnrichmentSubprocess =
  * - Error type tracking
  * - Active enrichment gauge management
  *
- * @param enrichmentType - Type of enrichment ('website', 'governmental', 'social_media')
+ * @param enrichmentType - Type of enrichment ('company', 'contact', 'governmental', 'social_media')
  * @param cached - Whether this enrichment is using cached data
  * @returns Enrichment tracker with methods for recording metrics
  *
@@ -75,13 +87,13 @@ export type EnrichmentSubprocess =
  * ```
  */
 export const startEnrichmentTracking = (
-  enrichmentType: 'website' | 'governmental' | 'social_media',
+  enrichmentType: 'company' | 'contact' | 'governmental' | 'social_media',
   cached = false,
 ) => {
   const cachedLabel = cached ? 'true' : 'false'
 
   // Overall enrichment duration timer
-  const overallTimer = startDurationTimer(enrichmentDurationHistogram)
+  const overallTimer = createSimpleDurationTimer(enrichmentDurationHistogram)
 
   // Increment active enrichments (processing status)
   enrichmentStatusGauge.inc({ status: 'processing' })
@@ -110,7 +122,7 @@ export const startEnrichmentTracking = (
       subprocess: EnrichmentSubprocess,
       fn: () => Promise<T>,
     ): Promise<T> => {
-      const timer = startDurationTimer(enrichmentDurationHistogram)
+      const timer = createSimpleDurationTimer(enrichmentDurationHistogram)
 
       try {
         const result = await fn()
@@ -152,7 +164,7 @@ export const startEnrichmentTracking = (
      * ```
      */
     startSubprocess: (subprocess: EnrichmentSubprocess) => {
-      const timer = startDurationTimer(enrichmentDurationHistogram)
+      const timer = createSimpleDurationTimer(enrichmentDurationHistogram)
 
       return {
         stop: () => {

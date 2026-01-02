@@ -1,7 +1,8 @@
 import { logger } from '@ritchy/logger'
-import { startDurationTimer } from '@ritchy/metrics'
+
 import { BRIGHTDATA_CONFIG } from '../../config/brightdata'
 import {
+  createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
@@ -45,7 +46,7 @@ export const webUnblocker = async (
 ): Promise<BrightdataWebUnlockerResponse> => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 45000)
-  const metricsTimer = startDurationTimer(externalApiDurationHistogram)
+  const metricsTimer = createSimpleDurationTimer(externalApiDurationHistogram)
   let httpStatusCode = '500'
 
   try {

@@ -2,6 +2,7 @@ import { type InferSelectModel, sql } from 'drizzle-orm'
 import {
   boolean,
   index,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -16,6 +17,7 @@ import {
   contactTypeEnum,
   emailQualityEnum,
   emailResultEnum,
+  enrichmentPhaseStatusEnum,
   socialPlatformEnum,
 } from './enum'
 import { userPlace } from './place'
@@ -35,6 +37,10 @@ export const contact = pgTable(
     firstName: text('first_name'),
     lastName: text('last_name'),
     isPrimary: boolean('is_primary').notNull().default(false),
+    enrichedAt: timestamp('enriched_at'),
+    enrichmentStatus:
+      enrichmentPhaseStatusEnum('enrichment_status').default('idle'),
+    linkedinUrl: text('linkedin_url'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -133,3 +139,25 @@ export const contactPhone = pgTable(
     index('idx_contact_phone_contact_id').on(table.contactId),
   ],
 )
+
+export const contactLinkedin = pgTable(
+  'contact_linkedin',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    contactId: uuid('contact_id')
+      .notNull()
+      .references(() => contact.id, { onDelete: 'cascade' }),
+    profileUrl: text('profile_url').notNull(),
+    confidence: integer('confidence').notNull(),
+    reasoning: text('reasoning'),
+    source: text('source').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique().on(table.contactId, table.profileUrl),
+    index('idx_contact_linkedin_contact_id').on(table.contactId),
+  ],
+)
+
+export type ContactLinkedin = typeof contactLinkedin.$inferSelect
