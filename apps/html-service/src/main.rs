@@ -85,7 +85,23 @@ async fn main() {
     // Load .env file if present (silently ignore if not found)
     let _ = dotenvy::dotenv();
 
+    // Log early startup before config parsing (in case config fails)
+    eprintln!(
+        "[html-service] Starting up... PORT={:?}, HTML_SERVICE_API_KEY={}",
+        std::env::var("PORT").ok(),
+        if std::env::var("HTML_SERVICE_API_KEY").is_ok() {
+            "set"
+        } else {
+            "NOT SET"
+        }
+    );
+
     let config = config::Config::from_env();
+
+    eprintln!(
+        "[html-service] Config loaded successfully. port={}, environment={}",
+        config.port, config.environment
+    );
 
     // Initialize tracing with JSON format and optional Loki integration
     init_tracing(&config);
@@ -124,6 +140,21 @@ async fn main() {
         "Starting Ritchy HTML Service"
     );
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    eprintln!("[html-service] Binding to {}...", addr);
+
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(l) => {
+            eprintln!("[html-service] Successfully bound to {}", addr);
+            tracing::info!(address = %addr, "Server listening");
+            l
+        }
+        Err(e) => {
+            eprintln!("[html-service] Failed to bind to {}: {}", addr, e);
+            tracing::error!(address = %addr, error = %e, "Failed to bind");
+            panic!("Failed to bind to {}: {}", addr, e);
+        }
+    };
+
+    eprintln!("[html-service] Starting to accept connections...");
     axum::serve(listener, app).await.unwrap();
 }
