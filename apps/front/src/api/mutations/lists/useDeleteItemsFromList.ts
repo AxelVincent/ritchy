@@ -1,3 +1,6 @@
+import { userPlaceFilterOptionsKeys } from '@/api/queries/user-places/useUserPlaceFilterOptions'
+import { userPlaceMarkersKeys } from '@/api/queries/user-places/useUserPlaceMarkers'
+import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   DeleteItemsFromListApiResponse,
@@ -14,15 +17,14 @@ export const useDeleteItemsFromList = () => {
   >('/lists/:id/items', {
     method: 'DELETE',
     getEndpoint: ({ id }) => `/lists/${id}/items`,
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['lists'],
         exact: true,
       })
-      queryClient.invalidateQueries({
-        queryKey: ['listContent', id],
-        exact: true,
-      })
+      queryClient.invalidateQueries({ queryKey: userPlacesKeys.all })
+      queryClient.invalidateQueries({ queryKey: userPlaceMarkersKeys.all })
+      queryClient.invalidateQueries({ queryKey: userPlaceFilterOptionsKeys.all })
     },
   })
 }

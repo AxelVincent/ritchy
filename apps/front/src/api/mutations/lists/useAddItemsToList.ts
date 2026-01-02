@@ -12,13 +12,9 @@ export const useAddItemsToList = () => {
     '/lists/:id/items',
     {
       getEndpoint: ({ id }) => `/lists/${id}/items`,
-      onSuccess: (_, { id }) => {
+      onSuccess: () => {
         queryClient.invalidateQueries({
           queryKey: ['lists'],
-          exact: true,
-        })
-        queryClient.invalidateQueries({
-          queryKey: ['listContent', id],
           exact: true,
         })
         queryClient.invalidateQueries({
