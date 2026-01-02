@@ -131,7 +131,11 @@ async fn main() {
         // Limit request body to configured max size (default 10MB)
         .layer(RequestBodyLimitLayer::new(config.max_html_size_bytes));
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], config.port));
+    // Bind to IPv6 [::] which also accepts IPv4 connections on dual-stack systems
+    // Railway internal networking uses IPv6, so we must listen on IPv6
+    let addr: SocketAddr = format!("[::]:{}", config.port)
+        .parse()
+        .expect("Failed to parse socket address");
     tracing::info!(
         port = config.port,
         max_html_size_mb = config.max_html_size_bytes / 1024 / 1024,
