@@ -24,7 +24,9 @@ export const useDeleteItemsFromList = () => {
       })
       queryClient.invalidateQueries({ queryKey: userPlacesKeys.all })
       queryClient.invalidateQueries({ queryKey: userPlaceMarkersKeys.all })
-      queryClient.invalidateQueries({ queryKey: userPlaceFilterOptionsKeys.all })
+      queryClient.invalidateQueries({
+        queryKey: userPlaceFilterOptionsKeys.all,
+      })
     },
   })
 }

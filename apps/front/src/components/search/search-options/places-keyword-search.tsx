@@ -200,8 +200,11 @@ export const PlacesKeywordSearch = ({
       {/* Search Term */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-muted-foreground">
-          Keyword
+          Business type
         </Label>
+        <p className="text-xs text-muted-foreground">
+          What kind of companies are you looking for?
+        </p>
         <Input
           value={keyword?.replace('+', ' ')}
           onChange={(e) => updateSearchParams({ keyword: e.target.value })}
@@ -221,8 +224,11 @@ export const PlacesKeywordSearch = ({
       {/* Location */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-muted-foreground">
-          Location (optional)
+          Location
         </Label>
+        <p className="text-xs text-muted-foreground">
+          Type a location or select an area on the map
+        </p>
         <SearchLocationAutocomplete
           onLocationSelect={handleLocationSelect}
           initialAddress={placeName?.replace(/\+/g, ' ')}
@@ -233,7 +239,7 @@ export const PlacesKeywordSearch = ({
       {/* Model Selection - Compact */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-muted-foreground">
-          Search power
+          Number of companies
         </Label>
         <div className="flex gap-2">
           <Button
@@ -242,7 +248,7 @@ export const PlacesKeywordSearch = ({
             onClick={() => handleModelChange('BASIC')}
             className="flex-1"
           >
-            60 results
+            Up to 60 companies
           </Button>
           <Button
             variant={model === 'ENHANCED' ? 'default' : 'outline'}
@@ -251,7 +257,7 @@ export const PlacesKeywordSearch = ({
             className="flex-1"
             disabled={!isModelAvailable(userPlan, 'ENHANCED')}
           >
-            240 results
+            Up to 240 companies
             {!isModelAvailable(userPlan, 'ENHANCED') && (
               <span className="text-xs ml-1">↑</span>
             )}
@@ -274,13 +280,13 @@ export const PlacesKeywordSearch = ({
               className="text-sm font-medium cursor-pointer flex items-center gap-1.5"
             >
               <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-              Auto-enrich results
+              Enrich
             </Label>
             <p className="text-xs text-muted-foreground">
               Up to {model === 'BASIC' ? '60' : '240'} credits
             </p>
             <p className="text-[11px] text-muted-foreground/70">
-              Already enriched places won't be charged
+              Already enriched companies won't be charged
             </p>
           </div>
           <CollapsibleTrigger asChild>
@@ -294,28 +300,29 @@ export const PlacesKeywordSearch = ({
           <div className="px-3 pb-3 pt-0">
             <div className="rounded-md bg-muted/50 p-2.5">
               <p className="text-xs font-medium mb-2 text-muted-foreground">
-                Enrichment includes:
+                What you'll get
               </p>
               <ul className="space-y-1.5 text-xs">
                 <li className="flex items-center gap-2">
                   <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <span>
-                    Legal company data (SIRET, creation date, status, company
-                    details)
+                    Legal company data (creation date, workforce, etc)
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span>Decision-makers contacts</span>
+                  <span>Decision-makers when available</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <span>
-                    Website analysis (description, services, socials, emails,
-                    technologies)
+                    Company website data (description, services, socials, etc)
                   </span>
                 </li>
               </ul>
+              <p className="text-xs text-muted-foreground mt-2">
+                All results are ready to use
+              </p>
             </div>
           </div>
         </CollapsibleContent>
@@ -332,7 +339,7 @@ export const PlacesKeywordSearch = ({
         ) : (
           <Search className="h-4 w-4 mr-2" />
         )}
-        {isSearching ? 'Searching...' : 'Search'}
+        {isSearching ? 'Finding companies...' : 'Find companies'}
       </Button>
 
       {/* Upgrade CTA - Compact */}

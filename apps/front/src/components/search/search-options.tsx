@@ -61,7 +61,7 @@ export const SearchOptions = ({
             className="flex-1"
           >
             <Search className="h-4 w-4 mr-2" />
-            Keyword Search
+            Find companies
           </Button>
           <Button
             variant={searchMode === 'unique' ? 'default' : 'outline'}
@@ -70,13 +70,13 @@ export const SearchOptions = ({
             className="flex-1"
           >
             <MapPin className="h-4 w-4 mr-2" />
-            Unique Search
+            Find a company
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2 text-center">
           {searchMode === 'keyword'
-            ? 'Search for multiple places with keywords'
-            : 'Find and add a specific place directly'}
+            ? 'Find companies by business type'
+            : 'Search for a specific company'}
         </p>
       </div>
     )

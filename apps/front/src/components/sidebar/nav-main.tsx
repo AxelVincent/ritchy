@@ -27,19 +27,19 @@ export function NavMain() {
       <SidebarMenuItem>
         <SidebarMenuButton
           asChild
-          tooltip="My Places"
+          tooltip="My Companies"
           isActive={leadsMatch?.pathname === '/leads'}
         >
           <Link to="/leads">
             <Building2 className="text-muted-foreground text-sm" />
-            <p className="pl-2 font-medium">My Places</p>
+            <p className="pl-2 font-medium">My Companies</p>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
         <SidebarMenuButton
           asChild
-          tooltip="Explore places"
+          tooltip="Explore Companies"
           isActive={searchMatch?.pathname === '/search/'}
         >
           <Link
@@ -49,7 +49,7 @@ export function NavMain() {
             }}
           >
             <Search className="text-muted-foreground text-sm" />
-            <p className="pl-2 font-medium">Explore places</p>
+            <p className="pl-2 font-medium">Explore Companies</p>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
