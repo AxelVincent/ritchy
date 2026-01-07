@@ -48,8 +48,14 @@ export const filterRulesToApiFilters = (
         if (!rule.value) continue
 
         // Map text operators to API format
-        // For Phase 1, we only support ILIKE (contains)
+        // For Phase 1, we support ILIKE (contains) and semantic_match
         switch (rule.property) {
+          case 'semanticQuery':
+            // Semantic search uses the value directly
+            if (rule.operator === 'semantic_match') {
+              filters.semanticQuery = rule.value
+            }
+            break
           case 'name':
             filters.name = rule.value
             break
@@ -329,10 +335,22 @@ export const useFilterState = ({ search, navigate }: UseFilterStateOptions) => {
   // Extract listIds for query scope
   const listIds = useMemo(() => extractListIdsFromRules(rules), [rules])
 
+  // Check if semantic search filter is active
+  const hasSemanticFilter = useMemo(
+    () =>
+      rules.some((r) => r.property === 'semanticQuery' && r.type === 'text'),
+    [rules],
+  )
+
   // Determine default sort based on view type:
+  // - Semantic search active: default to relevance
   // - Search view (searchId present): default to createdAt (enrichment score order)
   // - Other views (lists, all places): default to lastInteractionAt
-  const defaultSortBy = search.searchId ? 'createdAt' : 'lastInteractionAt'
+  const defaultSortBy = hasSemanticFilter
+    ? 'relevance'
+    : search.searchId
+      ? 'createdAt'
+      : 'lastInteractionAt'
 
   // Pagination params
   const pagination = useMemo(
@@ -443,6 +461,9 @@ export const useFilterState = ({ search, navigate }: UseFilterStateOptions) => {
     setPage,
     setPageSize,
     handleSortingChange,
+
+    // State flags
+    hasSemanticFilter, // True when semantic search filter is active
 
     // Legacy: searchId from URL (for historical search scoping)
     searchId: search.searchId,

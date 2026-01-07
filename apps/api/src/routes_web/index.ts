@@ -1,6 +1,7 @@
 import express, { type Router } from 'express'
 import contactsRouter from './contacts'
 import enrichRouter from './enrich'
+import filtersRouter from './filters'
 import listsRouter from './lists'
 import paymentsRouter from './payments'
 import placesRouter from './places'
@@ -33,5 +34,8 @@ router.use('/payments', paymentsRouter)
 
 // Users routes
 router.use('/users', usersRouter)
+
+// Filters routes (AI filter generation)
+router.use('/filters', filtersRouter)
 
 export default router

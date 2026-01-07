@@ -8,11 +8,12 @@ import type {
 } from '@ritchy/types'
 
 // Human-readable labels for text operators
-// NOTE: Backend currently only supports 'contains' (ILIKE).
+// NOTE: Backend currently only supports 'contains' (ILIKE) and 'semantic_match'.
 // Other operators are defined in types but not yet implemented server-side.
 // Only expose supported operators to avoid UX confusion.
 export const TEXT_OPERATOR_LABELS: Partial<Record<TextOperator, string>> = {
   contains: 'contains',
+  semantic_match: 'matches',
 }
 
 // Full operator labels (for future use when backend supports all operators)
@@ -25,6 +26,7 @@ export const TEXT_OPERATOR_LABELS_FULL: Record<TextOperator, string> = {
   ends_with: 'ends with',
   is_empty: 'is empty',
   is_not_empty: 'is not empty',
+  semantic_match: 'matches',
 }
 
 // Human-readable labels for number operators
@@ -126,7 +128,16 @@ export const getOperatorsForType = (type: FilterPropertyType): string[] => {
 }
 
 // Get default operator for a property type
-export const getDefaultOperator = (type: FilterPropertyType): string => {
+// propertyId is optional and used for special cases like semanticQuery
+export const getDefaultOperator = (
+  type: FilterPropertyType,
+  propertyId?: string,
+): string => {
+  // Special case: semantic search uses semantic_match operator
+  if (propertyId === 'semanticQuery') {
+    return 'semantic_match'
+  }
+
   switch (type) {
     case 'text':
       return 'contains'
@@ -141,6 +152,20 @@ export const getDefaultOperator = (type: FilterPropertyType): string => {
     default:
       return 'is'
   }
+}
+
+// Get available operators for a property
+// Some properties have specific operators (e.g., semanticQuery only uses semantic_match)
+export const getOperatorsForProperty = (
+  type: FilterPropertyType,
+  propertyId?: string,
+): string[] => {
+  // Special case: semantic search only uses semantic_match
+  if (propertyId === 'semanticQuery') {
+    return ['semantic_match']
+  }
+
+  return getOperatorsForType(type)
 }
 
 // Check if an operator requires a value

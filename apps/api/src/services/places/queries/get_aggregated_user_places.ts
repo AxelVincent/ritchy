@@ -62,6 +62,7 @@ export interface AggregatedUserPlace extends Place {
 
   // Enrichment fields
   short_description: Enrichment['shortDescription']
+  domain: Enrichment['domain']
   domain_registered_at: Enrichment['domainRegisteredAt']
   enriched_at: UserPlace['enriched_at']
   last_interaction_at: UserPlace['last_interaction_at']
@@ -342,6 +343,7 @@ const getAggregatedUserPlacesInternal = async (
       COALESCE(contacts_data.contact_facebooks, '[]'::jsonb) as contact_facebooks,
       -- Enrichment fields
       e.short_description,
+      e.domain,
       e.domain_registered_at,
       e.success,
       -- Company enrichment fields
@@ -586,6 +588,7 @@ const getAggregatedUserPlacesInternal = async (
         : null,
       domainRegisteredAt: row.domain_registered_at,
       shortDescription: row.short_description,
+      enrichmentDomain: row.domain ?? null,
       contactEmails: (row.contact_emails ?? []).map((email) => ({
         id: email.id,
         email: email.email,

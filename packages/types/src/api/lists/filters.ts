@@ -75,6 +75,12 @@ export const ListContentFiltersSchema = z.object({
   domainRegisteredAtTo: z.string().optional(),
   lastInteractionAtFrom: z.string().optional(),
   lastInteractionAtTo: z.string().optional(),
+
+  // Semantic search filter (RAG-based website content matching)
+  // semanticQuery: natural language query to match against indexed website content
+  // semanticThreshold: minimum cosine similarity (-1 to 1, higher = more strict). Default 0.4 in semantic_search_domains.ts
+  semanticQuery: z.string().optional(),
+  semanticThreshold: z.coerce.number().min(-1).max(1).optional(),
 })
 
 export type ListContentFilters = z.infer<typeof ListContentFiltersSchema>
