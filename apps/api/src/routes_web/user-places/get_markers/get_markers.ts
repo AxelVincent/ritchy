@@ -4,11 +4,20 @@ import { type SQL, and, eq, sql } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { db } from '../../../db/db'
 import { list, search } from '../../../db/schema'
+import { semanticSearchDomains } from '../../../services/places/queries/semantic_search_domains'
 import { buildPlaceFilterConditions } from '../../../utils/filters/place-filters'
 import {
   UserPlacesQuerySchema,
   extractFilterParams,
 } from '../../../utils/filters/query-schema'
+
+interface MarkerRow {
+  id: string
+  name: string
+  status: string | null
+  location: { latitude: number; longitude: number }
+  domain?: string | null
+}
 
 export const getUserPlaceMarkers = async (
   req: Request,
@@ -69,15 +78,19 @@ export const getUserPlaceMarkers = async (
     // Extract filter params using shared utility
     const filters = extractFilterParams(query)
 
-    // Build filter conditions
+    // Separate semantic filter from SQL filters
+    const { semanticQuery, semanticThreshold, ...sqlFilters } = filters
+
+    // Build filter conditions for SQL-based filters only
     const filterConditions =
-      Object.keys(filters).length > 0
-        ? buildPlaceFilterConditions(filters)
+      Object.keys(sqlFilters).length > 0
+        ? buildPlaceFilterConditions(sqlFilters)
         : sql`TRUE`
 
     // Determine query based on scope
     const isAllPlacesMode = !listId && !searchId
 
+    // Build markers query - include domain for semantic filtering
     let markersQuery: SQL<unknown>
 
     if (isAllPlacesMode) {
@@ -87,7 +100,8 @@ export const getUserPlaceMarkers = async (
           up.id,
           p.name,
           sts.status,
-          p.location
+          p.location,
+          e.domain
         FROM "user_place" up
         JOIN "place" p ON p.id = up.place_id
         LEFT JOIN "status" sts ON sts.user_place_id = up.id
@@ -106,7 +120,8 @@ export const getUserPlaceMarkers = async (
           up.id,
           p.name,
           sts.status,
-          p.location
+          p.location,
+          e.domain
         FROM "list" l
         JOIN "list_place" lp ON lp.list_id = l.id
         JOIN "user_place" up ON up.id = lp.user_place_id
@@ -128,7 +143,8 @@ export const getUserPlaceMarkers = async (
           up.id,
           p.name,
           sts.status,
-          p.location
+          p.location,
+          e.domain
         FROM "search" s
         JOIN "search_place" sp ON sp.search_id = s.id
         JOIN "user_place" up ON up.id = sp.user_place_id
@@ -145,12 +161,35 @@ export const getUserPlaceMarkers = async (
       `
     }
 
-    const result = (await db.execute(markersQuery)) as unknown as Array<{
-      id: string
-      name: string
-      status: string | null
-      location: { latitude: number; longitude: number }
-    }>
+    let result = (await db.execute(markersQuery)) as unknown as MarkerRow[]
+
+    // Apply semantic filter if present
+    if (semanticQuery) {
+      // Extract unique domains from markers
+      const domains = [
+        ...new Set(result.map((r) => r.domain).filter(Boolean)),
+      ] as string[]
+
+      if (domains.length > 0) {
+        // Run semantic search on domains
+        const semanticResults = await semanticSearchDomains({
+          query: semanticQuery,
+          domains,
+          threshold: semanticThreshold,
+        })
+
+        // Create set of matching domains
+        const matchingDomains = new Set(semanticResults.map((r) => r.domain))
+
+        // Filter markers to only those with matching domains
+        result = result.filter(
+          (row) => row.domain && matchingDomains.has(row.domain),
+        )
+      } else {
+        // No domains to search - return empty
+        result = []
+      }
+    }
 
     res.json({
       markers: result.map((row) => ({

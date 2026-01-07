@@ -12,18 +12,11 @@ export const useAddItemFromGeocode = () => {
     AddItemFromGeocodeApiResponse,
     AddItemFromGeocodeRequestBody
   >('/lists/add-item-from-geocode', {
-    onSuccess: (_, { listId }) => {
-      // Invalidate lists query to refresh item counts
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['lists'],
         exact: true,
       })
-      // Invalidate the specific list content
-      queryClient.invalidateQueries({
-        queryKey: ['listContent', listId],
-        exact: true,
-      })
-      // Invalidate search content to refresh any search results
       queryClient.invalidateQueries({
         queryKey: ['searchContent'],
       })

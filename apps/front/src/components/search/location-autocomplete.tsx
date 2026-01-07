@@ -129,13 +129,13 @@ export function LocationAutocomplete({
         <div className="flex items-center gap-2 p-2">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
-            Searching locations...
+            Searching companies...
           </span>
         </div>
       ) : (
         predictions.length > 0 && (
           <div className="space-y-1">
-            <p className="text-sm font-medium">Locations</p>
+            <p className="text-sm font-medium">Companies</p>
 
             {predictions.map((location) => (
               <div

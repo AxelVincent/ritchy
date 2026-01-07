@@ -22,6 +22,7 @@ import {
 import type { FilterRule, ListFilterOptions } from '@ritchy/types'
 import { Filter, Loader2, Plus, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AIFilterSearchBar } from './AIFilterSearchBar'
 import { FilterPill } from './FilterPill'
 import { FilterRuleEditor } from './FilterRuleEditor'
 import { FilterRulePopover } from './FilterRulePopover'
@@ -186,7 +187,7 @@ export const FilterBar = ({
     const property = getFilterableProperty(propertyId)
     if (!property) return
 
-    const defaultOperator = getDefaultOperator(property.type)
+    const defaultOperator = getDefaultOperator(property.type, propertyId)
 
     // Create pending rule to edit in the popover
     const newRule: FilterRule = {
@@ -595,6 +596,13 @@ export const FilterBar = ({
           )}
         </PopoverContent>
       </Popover>
+
+      {/* AI Filter button */}
+      <AIFilterSearchBar
+        existingRules={rules}
+        onApplyFilters={onRulesChange}
+        filterOptions={filterOptions}
+      />
 
       {/* Clear all button (only show if there are filters) */}
       {rules.length > 0 && (

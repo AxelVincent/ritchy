@@ -10,6 +10,12 @@ export const anthropic_haiku = new ChatAnthropic({
   apiKey: LLM_CONFIG.ANTHROPIC_API_KEY,
 })
 
+export const anthropic_sonnet = new ChatAnthropic({
+  model: 'claude-sonnet-4-20250514',
+  temperature: 0,
+  apiKey: LLM_CONFIG.ANTHROPIC_API_KEY,
+})
+
 /** @internal OpenAI GPT-4o-mini - currently unused, kept for potential future use */
 const _openai_gpt_4o_mini = new ChatOpenAI({
   model: 'gpt-4o-mini',

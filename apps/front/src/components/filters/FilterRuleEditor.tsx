@@ -26,11 +26,11 @@ import { cn } from '@/lib/utils'
 import type { FilterRule, NumberOperator } from '@ritchy/types'
 import { format, subMonths, subYears } from 'date-fns'
 import { CalendarIcon, ChevronsUpDown, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getFilterableProperty } from './filterableProperties'
 import {
   getOperatorLabels,
-  getOperatorsForType,
+  getOperatorsForProperty,
   operatorRequiresValue,
 } from './operatorLabels'
 
@@ -56,8 +56,9 @@ export const FilterRuleEditor = ({
 }: FilterRuleEditorProps) => {
   const property = getFilterableProperty(rule.property)
   const operatorLabels = getOperatorLabels(rule.type)
-  const operators = getOperatorsForType(rule.type)
+  const operators = getOperatorsForProperty(rule.type, rule.property)
   const requiresValue = operatorRequiresValue(rule.operator)
+  const isSemanticSearch = rule.property === 'semanticQuery'
 
   // Handle operator change
   const handleOperatorChange = (newOperator: string) => {
@@ -73,10 +74,18 @@ export const FilterRuleEditor = ({
 
     switch (rule.type) {
       case 'text':
-        return (
+        return isSemanticSearch ? (
+          <DebouncedTextValueInput
+            value={rule.value ?? ''}
+            onChange={(value) => onUpdate({ ...rule, value })}
+            placeholder='e.g. "italian restaurant", "yoga studio"...'
+            debounceMs={500}
+          />
+        ) : (
           <TextValueInput
             value={rule.value ?? ''}
             onChange={(value) => onUpdate({ ...rule, value })}
+            placeholder="Enter value..."
           />
         )
 
@@ -172,18 +181,67 @@ export const FilterRuleEditor = ({
 interface TextValueInputProps {
   value: string
   onChange: (value: string) => void
+  placeholder?: string
 }
 
-const TextValueInput = ({ value, onChange }: TextValueInputProps) => (
+const TextValueInput = ({
+  value,
+  onChange,
+  placeholder = 'Enter value...',
+}: TextValueInputProps) => (
   <Input
     type="text"
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    placeholder="Enter value..."
+    placeholder={placeholder}
     className="h-8"
     autoFocus
   />
 )
+
+interface DebouncedTextValueInputProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  debounceMs?: number
+}
+
+const DebouncedTextValueInput = ({
+  value,
+  onChange,
+  placeholder = 'Enter value...',
+  debounceMs = 500,
+}: DebouncedTextValueInputProps) => {
+  const [localValue, setLocalValue] = useState(value)
+
+  // Sync local value when external value changes
+  useEffect(() => {
+    setLocalValue(value)
+  }, [value])
+
+  // Debounce the onChange callback
+  useEffect(() => {
+    // Don't trigger on initial mount or if values are the same
+    if (localValue === value) return
+
+    const timer = setTimeout(() => {
+      onChange(localValue)
+    }, debounceMs)
+
+    return () => clearTimeout(timer)
+  }, [localValue, debounceMs, onChange, value])
+
+  return (
+    <Input
+      type="text"
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      placeholder={placeholder}
+      className="h-8"
+      autoFocus
+    />
+  )
+}
 
 interface NumberValueInputProps {
   value?: number

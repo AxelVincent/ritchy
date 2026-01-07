@@ -19,6 +19,14 @@ export const WORKFORCE_RANGE_OPTIONS = [
 
 // All filterable properties configuration
 export const FILTERABLE_PROPERTIES: FilterableProperty[] = [
+  // Semantic search filter - AI-powered website content search
+  {
+    id: 'semanticQuery',
+    label: 'Website Content',
+    type: 'text',
+    icon: 'search',
+  },
+
   // Lists filter - allows filtering across multiple lists
   {
     id: 'listIds',

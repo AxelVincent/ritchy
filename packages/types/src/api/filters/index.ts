@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Re-export AI filter types
+export * from './ai-filter'
+
 // ============================================
 // OPERATOR DEFINITIONS
 // ============================================
@@ -14,6 +17,7 @@ export const TextOperatorSchema = z.enum([
   'ends_with',
   'is_empty',
   'is_not_empty',
+  'semantic_match', // Semantic search operator for RAG-based content matching
 ])
 
 // Number operators
@@ -311,6 +315,7 @@ export const deserializeFiltersFromParams = (
         'ends_with',
         'is_empty',
         'is_not_empty',
+        'semantic_match',
       ].includes(operator) &&
       !['is_any_of', 'is_none_of', 'is_all_of'].includes(operator)
     ) {

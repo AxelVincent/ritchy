@@ -68,12 +68,9 @@ impl IntoResponse for AppError {
                 msg.clone(),
                 None,
             ),
-            AppError::Unauthorized(msg) => (
-                StatusCode::UNAUTHORIZED,
-                "UNAUTHORIZED",
-                msg.clone(),
-                None,
-            ),
+            AppError::Unauthorized(msg) => {
+                (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", msg.clone(), None)
+            }
         };
 
         let body = Json(ErrorResponse {

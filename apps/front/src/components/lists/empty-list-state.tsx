@@ -22,7 +22,7 @@ export const EmptyListState = ({ listId }: EmptyListStateProps) => {
       <Button
         onClick={() => navigate({ to: '/search', search: { mode: 'keyword' } })}
       >
-        Explore places
+        Explore Companies
       </Button>
     </div>
   )

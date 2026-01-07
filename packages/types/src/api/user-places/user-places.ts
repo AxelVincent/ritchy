@@ -70,6 +70,10 @@ export const FilterQueryParamsSchema = z.object({
   dateOfCreationTo: z.string().optional(),
   domainRegisteredAtFrom: z.string().optional(),
   domainRegisteredAtTo: z.string().optional(),
+
+  // Semantic search filter (RAG-based website content matching)
+  semanticQuery: z.string().optional(),
+  semanticThreshold: z.coerce.number().min(0).max(1).optional(),
 })
 
 // GET /user-places - main endpoint query params (full query schema with pagination)
@@ -147,6 +151,7 @@ export const USER_PLACES_SORT_COLUMNS = [
   'primaryType',
   'website',
   'searchPlaceCreatedAt', // Internal: used for search views to preserve enrichment score
+  'relevance', // Semantic search relevance score
 ] as const
 
 export type UserPlacesSortColumn = (typeof USER_PLACES_SORT_COLUMNS)[number]
@@ -234,6 +239,9 @@ export const extractFilterParams = (
     dateOfCreationTo: query.dateOfCreationTo,
     domainRegisteredAtFrom: query.domainRegisteredAtFrom,
     domainRegisteredAtTo: query.domainRegisteredAtTo,
+    // Semantic search
+    semanticQuery: query.semanticQuery,
+    semanticThreshold: query.semanticThreshold,
   }
 
   // Remove undefined values

@@ -290,6 +290,8 @@ export const PlaceSchema = PlaceSchemaBase.extend({
     .transform((val) => (typeof val === 'string' ? new Date(val) : val))
     .nullable(),
   shortDescription: z.string().nullable(),
+  enrichmentDomain: z.string().nullable().optional(), // Domain from enrichment, used for semantic search
+  semanticRelevanceScore: z.number().min(0).max(1).optional(), // Relevance score from semantic search
   contactEmails: z.array(EmailSchema).optional(),
   contactPhones: z.array(PhoneSchema).optional(),
   contactLinkedins: z.array(SocialMediaSchema).optional(),

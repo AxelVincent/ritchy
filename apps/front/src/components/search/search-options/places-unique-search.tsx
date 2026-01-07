@@ -134,7 +134,7 @@ export const PlacesUniqueSearch = ({
   return (
     <div className="space-y-3">
       <Label className="text-sm font-medium text-muted-foreground">
-        Find a specific place
+        Find a specific company
       </Label>
       <SearchLocationAutocomplete
         onLocationSelect={handleLocationSelect}
