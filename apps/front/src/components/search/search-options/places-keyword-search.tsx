@@ -53,7 +53,7 @@ export const PlacesKeywordSearch = ({
   const navigate = useNavigate()
   const { data: me } = useUserMe()
   const [isSearching, setIsSearching] = useState(false)
-  const [autoEnrich, setAutoEnrich] = useState(false)
+  const [autoEnrich, setAutoEnrich] = useState(true)
   const userPlan = me?.plan || 'FREE'
   const createSearchMutation = useCreateSearch()
 

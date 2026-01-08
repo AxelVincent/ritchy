@@ -1,10 +1,10 @@
+import type { EnrichmentContext } from '../../../shared/status/status_builder'
+import type { OfficerRecord } from '../../../shared/utils/validate_officer'
 import type {
   ActivityData,
   CompanyContextData,
   PlaceContextData,
 } from '../../queries/get_officers_enrichment_context'
-import type { EnrichmentContext } from '../../../shared/status/status_builder'
-import type { OfficerRecord } from '../../../shared/utils/validate_officer'
 import { runLinkedInWaterfall } from './run_linkedin_waterfall'
 
 export interface LinkedInWaterfallContext extends Partial<EnrichmentContext> {

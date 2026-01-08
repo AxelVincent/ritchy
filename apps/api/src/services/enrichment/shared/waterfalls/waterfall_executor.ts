@@ -161,7 +161,11 @@ export const executeWaterfall = async <TContext, TResult>(
         if (shouldAccept) {
           // Persist result if persistor provided
           if (config.persistResult) {
-            await config.persistResult(result.data, providerConfig.name, context)
+            await config.persistResult(
+              result.data,
+              providerConfig.name,
+              context,
+            )
           }
 
           const confidence = config.getConfidence?.(result.data)
@@ -202,7 +206,7 @@ export const executeWaterfall = async <TContext, TResult>(
           error: {
             type: 'no_results',
             provider: providerConfig.name,
-            message: `Result did not meet acceptance criteria`,
+            message: 'Result did not meet acceptance criteria',
             isRetryable: false,
             context: { confidence, threshold: config.confidenceThreshold },
           },
