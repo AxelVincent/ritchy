@@ -1,8 +1,8 @@
 import { logger } from '@ritchy/logger'
 import { UnrecoverableError, Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
-import { companyEnrichmentService } from '../../../../services/enrichment/company_enrichment_service'
-import { setCompanyEnrichmentStatus } from '../../../../services/enrichment/status_manager'
+import { companyEnrichmentService } from '../../../../services/enrichment/company/service'
+import { setCompanyEnrichmentStatus } from '../../../../services/enrichment/shared/status/status_manager'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 import { extractErrorMessage } from '../../utils/extract-error-message'
 import { type CompanyEnrichmentJobData, queueName } from './queue'
@@ -10,7 +10,7 @@ import { type CompanyEnrichmentJobData, queueName } from './queue'
 const worker = new Worker<CompanyEnrichmentJobData>(
   queueName,
   async (job) => {
-    const { userPlaceId, enrichmentId, placeId, userId } = job.data
+    const { userPlaceId, enrichmentId, placeId, userId, aiSearchId } = job.data
 
     logger.info({
       msg: 'Company enrichment job started',
@@ -19,6 +19,7 @@ const worker = new Worker<CompanyEnrichmentJobData>(
         jobId: job.id,
         userPlaceId,
         enrichmentId,
+        aiSearchId,
       },
     })
 
@@ -30,7 +31,8 @@ const worker = new Worker<CompanyEnrichmentJobData>(
         0,
       )
 
-      await companyEnrichmentService({
+      // Service returns rich data for external API use
+      const result = await companyEnrichmentService({
         userPlaceId,
         enrichmentId,
         placeId,
@@ -44,10 +46,18 @@ const worker = new Worker<CompanyEnrichmentJobData>(
           jobId: job.id,
           userPlaceId,
           enrichmentId,
+          aiSearchId,
+          alreadyEnriched: result.alreadyEnriched,
+          hasData: !!result.data,
         },
       })
 
-      return { success: true, enrichmentId }
+      return {
+        success: result.success,
+        enrichmentId,
+        alreadyEnriched: result.alreadyEnriched,
+        data: result.data,
+      }
     } catch (error) {
       const errorMessage = extractErrorMessage(error)
 
@@ -65,6 +75,7 @@ const worker = new Worker<CompanyEnrichmentJobData>(
         metadata: {
           jobId: job.id,
           userPlaceId,
+          aiSearchId,
           error: errorMessage,
         },
       })

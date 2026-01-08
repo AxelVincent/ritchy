@@ -1,8 +1,8 @@
 import { logger } from '@ritchy/logger'
 import { UnrecoverableError, Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
-import { contactEnrichmentService } from '../../../../services/enrichment/contact_enrichment_service'
-import { setContactEnrichmentStatus } from '../../../../services/enrichment/status_manager'
+import { contactEnrichmentService } from '../../../../services/enrichment/contact/service'
+import { setContactEnrichmentStatus } from '../../../../services/enrichment/shared/status/status_manager'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 import { extractErrorMessage } from '../../utils/extract-error-message'
 import { type ContactEnrichmentJobData, queueName } from './queue'
@@ -10,7 +10,7 @@ import { type ContactEnrichmentJobData, queueName } from './queue'
 const worker = new Worker<ContactEnrichmentJobData>(
   queueName,
   async (job) => {
-    const { contactId, userPlaceId, userId, reservedCredits } = job.data
+    const { contactId, userPlaceId, userId } = job.data
 
     try {
       await setContactEnrichmentStatus(
@@ -25,11 +25,11 @@ const worker = new Worker<ContactEnrichmentJobData>(
         percent: 0,
       })
 
-      await contactEnrichmentService({
+      // Service returns rich data for external API use
+      const result = await contactEnrichmentService({
         contactId,
         userPlaceId,
         userId,
-        reservedCredits,
       })
 
       await job.updateProgress({
@@ -37,7 +37,12 @@ const worker = new Worker<ContactEnrichmentJobData>(
         percent: 100,
       })
 
-      return { success: true, contactId }
+      return {
+        success: result.success,
+        contactId,
+        alreadyEnriched: result.alreadyEnriched,
+        data: result.data,
+      }
     } catch (error) {
       const errorMessage = extractErrorMessage(error)
 

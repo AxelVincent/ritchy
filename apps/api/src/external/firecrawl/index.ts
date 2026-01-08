@@ -12,7 +12,7 @@ import {
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
-import type { ScrapeResult } from '../../services/enrichment/scraper/scrape_with_fallbacks'
+import type { ScrapeResult } from '../../services/enrichment/company/scraper/scrape_with_fallbacks'
 
 let firecrawlClient: FirecrawlApp | null = null
 

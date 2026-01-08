@@ -7,7 +7,7 @@ import {
   type EnrichmentProgressStatus,
   setEnrichmentNamespace,
   setEnrichmentStatus,
-} from '../status_manager'
+} from '../shared/status/status_manager'
 
 // Mock additional dependencies
 vi.mock('../../../internal/redis/redis', () => ({

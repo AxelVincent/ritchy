@@ -2,7 +2,7 @@ import { logger } from '@ritchy/logger'
 import { and, eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { contact } from '../../db/schema'
-import { getEnrichmentIdByUserPlaceId } from '../enrichment/queries/get_enrichment_id_by_user_place_id'
+import { getEnrichmentIdByUserPlaceId } from '../enrichment/shared/queries/get_enrichment_id_by_user_place_id'
 import { populateContactFromEnrichment } from './populate_contact_from_enrichment'
 import { getOrCreatePrimaryContact } from './queries/insert_primary_contact'
 

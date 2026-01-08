@@ -7,7 +7,7 @@ import {
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
-import { isSocialMediaUrl } from '../../services/enrichment/utils/is_social_media_url'
+import { isSocialMediaUrl } from '../../services/enrichment/shared/utils/is_social_media_url'
 
 /**
  * Performs WHOIS lookup using external API

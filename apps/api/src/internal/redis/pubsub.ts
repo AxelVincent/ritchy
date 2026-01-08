@@ -16,6 +16,7 @@ export const PUBSUB_CHANNELS = {
   COMPANY_STATUS: 'enrichment:pubsub:company-status',
   OFFICER_STATUS: 'enrichment:pubsub:officer-status',
   CONTACT_STATUS: 'enrichment:pubsub:contact-status',
+  AI_SEARCH_STATUS: 'ai-search:pubsub:status',
 } as const
 
 export type PubSubChannel =
@@ -79,23 +80,97 @@ export interface ContactStatusMessage {
   credits?: CreditsInfo
 }
 
+// AI Search status message types
+export interface AISearchProgressMessage {
+  channel: typeof PUBSUB_CHANNELS.AI_SEARCH_STATUS
+  type: 'progress'
+  searchId: string
+  current: number
+  total: number
+  sequence: number
+  updatedAt: number
+}
+
+export interface AISearchMatchMessage {
+  channel: typeof PUBSUB_CHANNELS.AI_SEARCH_STATUS
+  type: 'match'
+  searchId: string
+  place: Record<string, unknown>
+  sequence: number
+  updatedAt: number
+}
+
+export interface AISearchCompleteMessage {
+  channel: typeof PUBSUB_CHANNELS.AI_SEARCH_STATUS
+  type: 'complete'
+  searchId: string
+  summary: {
+    totalEvaluated: number
+    totalMatches: number
+    creditsUsed: number
+  }
+  sequence: number
+  updatedAt: number
+}
+
+export interface AISearchErrorMessage {
+  channel: typeof PUBSUB_CHANNELS.AI_SEARCH_STATUS
+  type: 'error'
+  searchId: string
+  error: string
+  sequence: number
+  updatedAt: number
+}
+
+export type AISearchMessage =
+  | AISearchProgressMessage
+  | AISearchMatchMessage
+  | AISearchCompleteMessage
+  | AISearchErrorMessage
+
 export type PubSubMessage =
   | CompanyStatusMessage
   | OfficerStatusMessage
   | ContactStatusMessage
+  | AISearchMessage
 
 // Message types without sequence (for input)
 export type CompanyStatusInput = Omit<CompanyStatusMessage, 'sequence'>
 export type OfficerStatusInput = Omit<OfficerStatusMessage, 'sequence'>
 export type ContactStatusInput = Omit<ContactStatusMessage, 'sequence'>
+
+// AI Search input types - explicit to preserve discriminated union
+export type AISearchProgressInput = Omit<AISearchProgressMessage, 'sequence'>
+export type AISearchMatchInput = Omit<AISearchMatchMessage, 'sequence'>
+export type AISearchCompleteInput = Omit<AISearchCompleteMessage, 'sequence'>
+export type AISearchErrorInput = Omit<AISearchErrorMessage, 'sequence'>
+
+export type AISearchMessageInput =
+  | AISearchProgressInput
+  | AISearchMatchInput
+  | AISearchCompleteInput
+  | AISearchErrorInput
+
 export type PubSubMessageInput =
   | CompanyStatusInput
   | OfficerStatusInput
   | ContactStatusInput
+  | AISearchMessageInput
 
 // Redis list key for status updates queue
 const STATUS_QUEUE_KEY = 'enrichment:status:queue'
 const STATUS_QUEUE_TTL = 60 * 60 // 1 hour TTL for queue
+
+/**
+ * Get entity ID from a message for sequence tracking
+ */
+const getEntityIdFromMessage = (message: PubSubMessageInput): string => {
+  if ('userPlaceId' in message) return message.userPlaceId
+  if ('contactId' in message) return message.contactId
+  if ('officerId' in message) return message.officerId
+  if ('searchId' in message) return message.searchId
+  throw new Error('Unable to determine entity ID from message')
+}
 
 /**
  * Publish a status update message with automatic sequence number
@@ -104,12 +179,7 @@ const STATUS_QUEUE_TTL = 60 * 60 // 1 hour TTL for queue
 export const publishStatusUpdate = async (
   message: PubSubMessageInput,
 ): Promise<void> => {
-  const entityId =
-    'userPlaceId' in message
-      ? message.userPlaceId
-      : 'contactId' in message
-        ? message.contactId
-        : message.officerId
+  const entityId = getEntityIdFromMessage(message)
 
   const messageWithSeq = {
     ...message,

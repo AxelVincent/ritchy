@@ -1,7 +1,7 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { logger } from '@ritchy/logger'
 import { z } from 'zod'
-import { getMainDomain } from '../../../services/enrichment/scraper/utils/get_main_domain'
+import { getMainDomain } from '../../../services/enrichment/company/scraper/utils/get_main_domain'
 import { anthropic_haiku } from '../../langchain/llms'
 import { vectorStore } from '../../langchain/utils/vector_store'
 import { getWebsiteVectors } from './get_website_vectors'

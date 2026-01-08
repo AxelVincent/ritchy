@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import { UnrecoverableError, Worker } from 'bullmq'
 import { setupQueueMetrics } from '../../../../metrics/queue'
-import { scrapeWebsiteManager } from '../../../../services/enrichment/scraper/scrape_website_manager'
+import { scrapeWebsiteManager } from '../../../../services/enrichment/company/scraper/scrape_website_manager'
 import { bullmqRedisOptions, workerConfig } from '../../config'
 import { extractErrorMessage } from '../../utils/extract-error-message'
 import { queueName } from './queue'

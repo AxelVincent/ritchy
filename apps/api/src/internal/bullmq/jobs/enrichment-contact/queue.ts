@@ -7,8 +7,6 @@ export interface ContactEnrichmentJobData {
   contactId: string
   userPlaceId: string
   userId: string
-  /** Credits reserved upfront, to be refunded/charged based on actual results */
-  reservedCredits: number
 }
 
 export const contactEnrichmentQueue = new Queue<ContactEnrichmentJobData>(
