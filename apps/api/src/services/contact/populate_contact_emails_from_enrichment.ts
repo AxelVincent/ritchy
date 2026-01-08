@@ -1,7 +1,7 @@
 import { logger } from '@ritchy/logger'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
-import { getEnrichmentEmails } from '../enrichment/queries/get_enrichment_emails'
+import { getEnrichmentEmails } from '../enrichment/shared/queries/get_enrichment_emails'
 import { insertContactEmails } from './queries/insert_contact_emails'
 
 export const populateContactEmailsFromEnrichment = async (

@@ -1,8 +1,8 @@
 import { logger } from '@ritchy/logger'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../../db/db'
-import { processSocialMediaDomain } from '../process_social_media_domain'
-import { isSocialMediaUrl } from '../utils/is_social_media_url'
+import { isSocialMediaUrl } from '../shared/utils/is_social_media_url'
+import { processSocialMediaDomain } from '../shared/utils/process_social_media_domain'
 
 vi.mock('../../../db/db', () => ({
   db: {
@@ -15,7 +15,7 @@ vi.mock('../../../db/db', () => ({
 }))
 
 vi.mock('@ritchy/logger')
-vi.mock('../utils/is_social_media_url')
+vi.mock('../shared/utils/is_social_media_url')
 
 describe('processSocialMediaDomain', () => {
   beforeEach(() => {

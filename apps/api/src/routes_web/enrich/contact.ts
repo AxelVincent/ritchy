@@ -5,10 +5,9 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { contact } from '../../db/schema'
 import { enqueueContactEnrichment } from '../../internal/bullmq/jobs/enrichment-contact/queue'
-import { MAX_CONTACT_CREDITS } from '../../services/enrichment/constants'
-import { getContactWithAccess } from '../../services/enrichment/queries/get_contact_with_access'
-import { setContactEnrichmentStatus } from '../../services/enrichment/status_manager'
-import { consumeCredits } from '../../services/payment/queries/consume_credits'
+import { getContactWithAccess } from '../../services/enrichment/contact/queries/get_contact_with_access'
+import { MAX_CONTACT_CREDITS } from '../../services/enrichment/shared/config/constants'
+import { setContactEnrichmentStatus } from '../../services/enrichment/shared/status/status_manager'
 
 const EnrichContactBodySchema = z.object({
   contactId: z.string().uuid(),
@@ -18,7 +17,6 @@ export interface EnrichContactResponse {
   success: boolean
   message: string
   contactId?: string
-  alreadyEnriched?: boolean
   credits: number
 }
 
@@ -35,6 +33,9 @@ export interface EnrichContactResponse {
  *
  * We reserve MAX_CONTACT_CREDITS (5.5) upfront and refund/charge
  * the difference based on actual results.
+ *
+ * This route is simplified - it validates and enqueues.
+ * The service layer handles idempotency (returns cached data if already enriched).
  *
  * POST /enrich/contact
  * Body: { contactId: string }
@@ -69,34 +70,7 @@ export const enrichContact = async (
       return
     }
 
-    // Check if already enriched
-    if (contactData.enrichmentStatus === 'completed') {
-      res.json({
-        success: true,
-        message: 'Contact already enriched',
-        contactId,
-        alreadyEnriched: true,
-        credits: 0,
-      })
-      return
-    }
-
-    // Check if already in progress
-    if (
-      contactData.enrichmentStatus === 'queued' ||
-      contactData.enrichmentStatus === 'processing'
-    ) {
-      res.json({
-        success: true,
-        message: 'Contact enrichment already in progress',
-        contactId,
-        alreadyEnriched: false,
-        credits: 0,
-      })
-      return
-    }
-
-    // Check if company enrichment is done (new multi-worker status OR legacy success)
+    // Check if company enrichment is done (required for contact enrichment)
     const isCompanyEnriched =
       contactData.companyStatus === 'completed' ||
       contactData.legacySuccess === true
@@ -109,23 +83,20 @@ export const enrichContact = async (
       return
     }
 
-    // Reserve credits upfront (will be refunded/charged based on results)
-    await consumeCredits(userId, MAX_CONTACT_CREDITS)
-
     // Update contact status to queued
     await db
       .update(contact)
       .set({ enrichmentStatus: 'queued' })
       .where(eq(contact.id, contactId))
 
-    // Update status and queue
+    // Update status and enqueue
     await setContactEnrichmentStatus(contactId, 'queued', 'Waiting to start', 0)
 
+    // Enqueue job - service handles idempotency
     await enqueueContactEnrichment({
       contactId,
       userPlaceId: contactData.userPlaceId,
       userId,
-      reservedCredits: MAX_CONTACT_CREDITS,
     })
 
     logger.info({
@@ -142,7 +113,6 @@ export const enrichContact = async (
       success: true,
       message: 'Contact enrichment queued',
       contactId,
-      alreadyEnriched: false,
       credits: MAX_CONTACT_CREDITS,
     })
   } catch (error) {

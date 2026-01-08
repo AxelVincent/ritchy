@@ -11,7 +11,7 @@ import {
   getCompanyEnrichmentStatus,
   getContactEnrichmentStatus,
   getEnrichmentStatus,
-} from '../../services/enrichment/status_manager'
+} from '../../services/enrichment/shared/status/status_manager'
 
 const StatusParamsSchema = z.object({
   userPlaceId: z.string().uuid(),

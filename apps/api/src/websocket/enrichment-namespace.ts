@@ -9,7 +9,7 @@ import {
   websocketConnectionsGauge,
   websocketMessagesCounter,
 } from '../metrics/collectors'
-import { getBatchEnrichmentStatus } from '../services/enrichment/status_manager'
+import { getBatchEnrichmentStatus } from '../services/enrichment/shared/status/status_manager'
 import { verifyOwnershipBatch } from './ownership-cache'
 import { authenticationMiddleware } from './server'
 

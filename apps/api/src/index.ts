@@ -43,7 +43,7 @@ import {
   setEnrichmentNamespace,
   startStatusManagerCleanup,
   stopStatusManagerCleanup,
-} from './services/enrichment/status_manager'
+} from './services/enrichment/shared/status/status_manager'
 import { setupEnrichmentNamespace } from './websocket/enrichment-namespace'
 // Import WebSocket server setup
 import { createWebSocketServer } from './websocket/server'
@@ -65,7 +65,7 @@ const server = createServer(app)
 const io = createWebSocketServer(server)
 const enrichmentNs = setupEnrichmentNamespace(io)
 
-// Make enrichment namespace accessible to status manager
+// Make namespaces accessible to status managers
 setEnrichmentNamespace(enrichmentNs)
 
 // Create adaptive polling consumer for worker status updates

@@ -3,11 +3,11 @@ import { logger } from '@ritchy/logger'
 import type { Namespace, Socket } from 'socket.io'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db/db'
-import { getEnrichmentStatus } from '../../services/enrichment/status_manager'
+import { getEnrichmentStatus } from '../../services/enrichment/shared/status/status_manager'
 
 // Mock additional dependencies
 vi.mock('../../db/db')
-vi.mock('../../services/enrichment/status_manager')
+vi.mock('../../services/enrichment/shared/status/status_manager')
 
 describe('WebSocket Subscription Authorization', () => {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

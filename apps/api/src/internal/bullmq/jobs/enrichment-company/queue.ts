@@ -8,6 +8,8 @@ export interface CompanyEnrichmentJobData {
   enrichmentId: string
   placeId: string
   userId: string
+  /** Optional AI search ID - if present, filters will be evaluated after enrichment */
+  aiSearchId?: string
 }
 
 export const companyEnrichmentQueue = new Queue<CompanyEnrichmentJobData>(

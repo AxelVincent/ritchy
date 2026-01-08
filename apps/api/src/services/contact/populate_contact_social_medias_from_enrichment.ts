@@ -1,9 +1,9 @@
 import { logger } from '@ritchy/logger'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
-import { getEnrichmentFacebooks } from '../enrichment/queries/get_enrichment_facebooks'
-import { getEnrichmentInstagrams } from '../enrichment/queries/get_enrichment_instagrams'
-import { getEnrichmentLinkedins } from '../enrichment/queries/get_enrichment_linkedins'
+import { getEnrichmentFacebooks } from '../enrichment/shared/queries/get_enrichment_facebooks'
+import { getEnrichmentInstagrams } from '../enrichment/shared/queries/get_enrichment_instagrams'
+import { getEnrichmentLinkedins } from '../enrichment/shared/queries/get_enrichment_linkedins'
 import { insertContactSocialMedia } from './queries/insert_contact_social_media'
 
 export const populateContactSocialMediasFromEnrichment = async (

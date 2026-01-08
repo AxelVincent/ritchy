@@ -4,7 +4,7 @@ import type {
   GetPlacesEnrichmentParams,
 } from '@ritchy/types'
 import type { Request, Response } from 'express'
-import { getEnrichmentByUserPlaceId } from '../../../services/enrichment/queries/get_enrichment_by_user_place_id'
+import { getEnrichmentByUserPlaceId } from '../../../services/enrichment/shared/queries/get_enrichment_by_user_place_id'
 
 export const getPlacesEnrichment = async (
   req: Request<GetPlacesEnrichmentParams>,

@@ -1,4 +1,6 @@
 export * from './bulk'
+export * from './company-enrichment'
+export * from './contact-enrichment'
 export * from './enrich'
 export * from './status'
 export * from './websocket'

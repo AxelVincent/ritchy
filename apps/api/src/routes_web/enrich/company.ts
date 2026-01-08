@@ -5,9 +5,8 @@ import { z } from 'zod'
 import { db } from '../../db/db'
 import { enrichment as enrichmentTable, userPlace } from '../../db/schema'
 import { enqueueCompanyEnrichment } from '../../internal/bullmq/jobs/enrichment-company/queue'
-import { COMPANY_CREDITS } from '../../services/enrichment/constants'
-import { setCompanyEnrichmentStatus } from '../../services/enrichment/status_manager'
-import { consumeCredits } from '../../services/payment/queries/consume_credits'
+import { COMPANY_CREDITS } from '../../services/enrichment/shared/config/constants'
+import { setCompanyEnrichmentStatus } from '../../services/enrichment/shared/status/status_manager'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 
 const EnrichCompanyBodySchema = z.object({
@@ -18,7 +17,6 @@ export interface EnrichCompanyResponse {
   success: boolean
   message: string
   enrichmentId?: string
-  alreadyEnriched?: boolean
   credits: number
 }
 
@@ -27,6 +25,9 @@ export interface EnrichCompanyResponse {
  *
  * Enqueues a company for enrichment (website scraping, company data, officers list).
  * Costs 1 credit.
+ *
+ * This route is simplified - it validates, creates enrichment record, and enqueues.
+ * The service layer handles idempotency (returns cached data if already enriched).
  *
  * POST /enrich/company
  * Body: { userPlaceId: string }
@@ -80,38 +81,10 @@ export const enrichCompany = async (
     let [existingEnrichment] = await db
       .select({
         id: enrichmentTable.id,
-        companyStatus: enrichmentTable.companyStatus,
       })
       .from(enrichmentTable)
       .where(eq(enrichmentTable.placeId, place.id))
       .limit(1)
-
-    // Check if already enriched
-    if (existingEnrichment?.companyStatus === 'completed') {
-      res.json({
-        success: true,
-        message: 'Company already enriched',
-        enrichmentId: existingEnrichment.id,
-        alreadyEnriched: true,
-        credits: 0,
-      })
-      return
-    }
-
-    // Check if already in progress
-    if (
-      existingEnrichment?.companyStatus === 'queued' ||
-      existingEnrichment?.companyStatus === 'processing'
-    ) {
-      res.json({
-        success: true,
-        message: 'Company enrichment already in progress',
-        enrichmentId: existingEnrichment.id,
-        alreadyEnriched: false,
-        credits: 0,
-      })
-      return
-    }
 
     // Create enrichment record if doesn't exist
     if (!existingEnrichment) {
@@ -123,7 +96,7 @@ export const enrichCompany = async (
         })
         .returning({ id: enrichmentTable.id })
 
-      existingEnrichment = { id: newEnrichment.id, companyStatus: 'queued' }
+      existingEnrichment = { id: newEnrichment.id }
     } else {
       // Update existing record to queued
       await db
@@ -131,9 +104,6 @@ export const enrichCompany = async (
         .set({ companyStatus: 'queued' })
         .where(eq(enrichmentTable.id, existingEnrichment.id))
     }
-
-    // Consume credits
-    await consumeCredits(userId, COMPANY_CREDITS)
 
     // Update status and queue
     await setCompanyEnrichmentStatus(
@@ -143,6 +113,7 @@ export const enrichCompany = async (
       0,
     )
 
+    // Enqueue job - service handles idempotency
     await enqueueCompanyEnrichment({
       userPlaceId,
       enrichmentId: existingEnrichment.id,
@@ -164,7 +135,6 @@ export const enrichCompany = async (
       success: true,
       message: 'Company enrichment queued',
       enrichmentId: existingEnrichment.id,
-      alreadyEnriched: false,
       credits: COMPANY_CREDITS,
     })
   } catch (error) {

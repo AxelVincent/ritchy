@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { logger } from '@ritchy/logger'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type * as schema from '../../db/schema'
-import { getEnrichmentPhones } from '../enrichment/queries/get_enrichment_phones'
+import { getEnrichmentPhones } from '../enrichment/shared/queries/get_enrichment_phones'
 import { getPlaceByUserPlaceId } from '../places/queries/get_place_by_user_place_id'
 import { insertContactPhones } from './queries/insert_contact_phones'
 
