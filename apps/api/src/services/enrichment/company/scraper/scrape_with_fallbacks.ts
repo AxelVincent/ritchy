@@ -2,6 +2,7 @@ import type { CrawlScrapeOptions as FirecrawlOptions } from '@mendable/firecrawl
 import { logger } from '@ritchy/logger'
 import { scrapeWithRetry } from '../../../../external/firecrawl'
 import { brightdataScraper } from './brightdata_scraper'
+import { firecrawlSemaphore } from './semaphore'
 
 export type ScrapeResult = {
   success: boolean
@@ -16,172 +17,88 @@ export type ScrapeResult = {
   markdown?: string
 }
 
-type CommonOptions = {
+type ScrapeOptions = {
   formats: string[]
   excludeTags: string[]
   onlyMainContent: boolean
   proxy?: string
-  country?: string
 }
 
-// Traffic split configuration
-const FIRECRAWL_TRAFFIC_PERCENTAGE = 0.5 // 50% of traffic to Firecrawl
-
-/**
- * Determines which scraper to use as primary based on a 50/50 traffic split
- * Uses a deterministic hash of the URL to ensure consistent routing for the same URL
- */
-const getPrimaryScraper = (url: string): 'firecrawl' | 'brightdata' => {
-  // Create a simple hash of the URL for consistent routing
-  let hash = 0
-  for (let i = 0; i < url.length; i++) {
-    const char = url.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32-bit integer
-  }
-
-  // Use absolute value and modulo to get a value between 0 and 1
-  const normalizedHash = Math.abs(hash) / 2147483647 // Max 32-bit int
-
-  return normalizedHash < FIRECRAWL_TRAFFIC_PERCENTAGE
-    ? 'firecrawl'
-    : 'brightdata'
-}
-
-const scrapeWithFirecrawlPrimary = async (
+const scrapeWithFirecrawl = async (
   url: string,
   userPlaceId: string,
-  options: CommonOptions,
-): Promise<ScrapeResult> => {
+  options: ScrapeOptions,
+): Promise<ScrapeResult | null> => {
+  const { acquired, release, current, max } =
+    await firecrawlSemaphore.tryAcquire()
+
+  if (!acquired) {
+    logger.debug({
+      msg: `[Scraper] Firecrawl at capacity (${current}/${max}) for ${url}`,
+      event: 'firecrawl_at_capacity',
+      metadata: { url, userPlaceId, current, max },
+    })
+    return null
+  }
+
   logger.debug({
-    msg: `[Scrape Manager] Attempting Firecrawl scraper for ${url}`,
-    event: 'firecrawl_scrape_attempt',
-    metadata: { url, userPlaceId },
+    msg: `[Scraper] Firecrawl slot acquired (${current}/${max}) for ${url}`,
+    event: 'firecrawl_slot_acquired',
+    metadata: { url, userPlaceId, current, max },
   })
 
-  const { country, ...commonOptions } = options
-
   try {
-    const firecrawlResult = await scrapeWithRetry(url, {
-      ...commonOptions,
-    } as FirecrawlOptions)
+    const result = await scrapeWithRetry(url, options as FirecrawlOptions)
 
-    if (firecrawlResult.success) {
+    if (result.success) {
       logger.debug({
-        msg: `[Scrape Manager] Firecrawl scraper succeeded for ${url}`,
+        msg: `[Scraper] Firecrawl succeeded for ${url}`,
         event: 'firecrawl_scrape_success',
         metadata: { url, userPlaceId },
       })
-      return firecrawlResult
+      return result
     }
 
-    // Fallback to Brightdata if Firecrawl returns failure
     logger.debug({
-      msg: `[Scrape Manager] Firecrawl scraper failed for ${url}, falling back to Brightdata`,
-      event: 'firecrawl_scrape_fallback',
-      metadata: { url, userPlaceId, firecrawlError: firecrawlResult.error },
+      msg: `[Scraper] Firecrawl failed for ${url}`,
+      event: 'firecrawl_scrape_failed',
+      metadata: { url, userPlaceId, error: result.error },
     })
+    return null
   } catch (error) {
-    // Fallback to Brightdata if Firecrawl throws an exception (e.g., SSL errors)
     logger.debug({
-      msg: `[Scrape Manager] Firecrawl scraper threw error for ${url}, falling back to Brightdata`,
-      event: 'firecrawl_scrape_exception_fallback',
+      msg: `[Scraper] Firecrawl error for ${url}`,
+      event: 'firecrawl_scrape_error',
       metadata: {
         url,
         userPlaceId,
         error: error instanceof Error ? error.message : String(error),
       },
     })
+    return null
+  } finally {
+    await release()
   }
-
-  const brightdataResult = await brightdataScraper(url)
-
-  logger.debug({
-    msg: `[Scrape Manager] Brightdata fallback result for ${url}`,
-    event: 'brightdata_fallback_result',
-    metadata: { url, userPlaceId },
-  })
-
-  return brightdataResult
-}
-
-const scrapeWithBrightdataPrimary = async (
-  url: string,
-  userPlaceId: string,
-  options: CommonOptions,
-): Promise<ScrapeResult> => {
-  logger.debug({
-    msg: `[Scrape Manager] Attempting Brightdata scraper for ${url}`,
-    event: 'brightdata_scrape_attempt',
-    metadata: { url, userPlaceId },
-  })
-
-  const { country, ...commonOptions } = options
-
-  try {
-    const brightdataResult = await brightdataScraper(url)
-
-    if (brightdataResult.success) {
-      logger.debug({
-        msg: `[Scrape Manager] Brightdata scraper succeeded for ${url}`,
-        event: 'brightdata_scrape_success',
-        metadata: { url, userPlaceId },
-      })
-      return brightdataResult
-    }
-
-    // Fallback to Firecrawl if Brightdata returns failure
-    logger.debug({
-      msg: `[Scrape Manager] Brightdata scraper failed for ${url}, falling back to Firecrawl`,
-      event: 'brightdata_scrape_fallback',
-      metadata: { url, userPlaceId, brightdataError: brightdataResult.error },
-    })
-  } catch (error) {
-    // Fallback to Firecrawl if Brightdata throws an exception
-    logger.debug({
-      msg: `[Scrape Manager] Brightdata scraper threw error for ${url}, falling back to Firecrawl`,
-      event: 'brightdata_scrape_exception_fallback',
-      metadata: {
-        url,
-        userPlaceId,
-        error: error instanceof Error ? error.message : String(error),
-      },
-    })
-  }
-
-  const firecrawlResult = await scrapeWithRetry(url, {
-    ...commonOptions,
-  } as FirecrawlOptions)
-
-  logger.debug({
-    msg: `[Scrape Manager] Firecrawl fallback result for ${url}`,
-    event: 'firecrawl_fallback_result',
-    metadata: { url, userPlaceId },
-  })
-
-  return firecrawlResult
 }
 
 export const scrapeWithFallbacks = async (
   url: string,
   userPlaceId: string,
-  options: CommonOptions,
+  options: ScrapeOptions,
 ): Promise<ScrapeResult> => {
-  const primaryScraper = getPrimaryScraper(url)
+  // Try Firecrawl first (returns null if at capacity or failed)
+  const firecrawlResult = await scrapeWithFirecrawl(url, userPlaceId, options)
 
+  if (firecrawlResult) {
+    return firecrawlResult
+  }
+
+  // Fallback to Brightdata
   logger.debug({
-    msg: `[Scrape Manager] Primary scraper chosen for ${url}: ${primaryScraper}`,
-    event: 'primary_scraper_decision',
-    metadata: { url, userPlaceId, primaryScraper },
+    msg: `[Scraper] Using Brightdata for ${url}`,
+    event: 'brightdata_scrape_attempt',
+    metadata: { url, userPlaceId },
   })
 
-  switch (primaryScraper) {
-    case 'firecrawl':
-      return await scrapeWithFirecrawlPrimary(url, userPlaceId, options)
-    case 'brightdata':
-      return await scrapeWithBrightdataPrimary(url, userPlaceId, options)
-    default:
-      // Fallback to Brightdata if unknown scraper type
-      return await scrapeWithBrightdataPrimary(url, userPlaceId, options)
-  }
+  return brightdataScraper(url)
 }

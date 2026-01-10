@@ -332,7 +332,6 @@ export const scrapeWebsiteManager = async (
     const scrapeResult = await scrapeWithFallbacks(url, userPlaceId, {
       formats: ['markdown', 'html', 'rawHtml'],
       excludeTags: ['img', 'script', 'style', 'link', 'meta', 'noscript'],
-      country: 'US',
       proxy: 'auto',
       onlyMainContent,
     })
