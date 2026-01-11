@@ -1,11 +1,11 @@
 import { Badge } from '@/components/ui/badge'
+import type { SocialMedia, SocialMediaPlatform } from '@api/shared'
 import {
   faFacebook,
   faInstagram,
   faLinkedin,
 } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { SocialMedia, SocialMediaPlatform } from '@ritchy/types'
 import { Star } from 'lucide-react'
 import React from 'react'
 import { CopyCell } from './ColumnCells'

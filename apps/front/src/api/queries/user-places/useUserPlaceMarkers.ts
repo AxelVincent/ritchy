@@ -1,9 +1,7 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type {
-  ContentFilters,
-  GetUserPlaceMarkersApiResponse,
-} from '@ritchy/types'
-import { buildQueryString } from '@ritchy/types'
+import type { GetUserPlaceMarkersApiResponse } from '@api/routes_web/user-places/markers/contract'
+import type { ContentFilters } from '@api/shared'
+import { buildQueryString } from '@api/shared'
 
 export const userPlaceMarkersKeys = {
   all: ['userPlaceMarkers'] as const,

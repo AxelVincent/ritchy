@@ -1,5 +1,6 @@
 import { useSingleEnrichment } from '@/api/mutations/enrichment/useSingleEnrichment'
-import type { ApiErrorResponse, BulkEnrichmentApiResponse } from '@ritchy/types'
+import type { BulkEnrichmentApiResponse } from '@api/routes_web/enrich/bulk/contract'
+import type { ApiErrorResponse } from '@api/shared'
 import type { UseMutationResult } from '@tanstack/react-query'
 import { type ReactNode, createContext, useContext } from 'react'
 

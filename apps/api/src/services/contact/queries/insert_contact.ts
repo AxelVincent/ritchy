@@ -1,10 +1,10 @@
 import { logger } from '@ritchy/logger'
-import type { ContactType } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../db/db'
 import { contact } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
+import type { ContactType } from '../../../shared'
 
 export const insertContact = async (
   data: {

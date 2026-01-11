@@ -1,5 +1,5 @@
-import { SOCIAL_MEDIA_DOMAINS } from '@ritchy/types'
 import { describe, expect, test } from 'vitest'
+import { SOCIAL_MEDIA_DOMAINS } from '../../../../../shared'
 import { isSocialMediaUrl } from '../is_social_media_url'
 
 describe('isSocialMediaUrl', () => {

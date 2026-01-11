@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/sheet'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { cn } from '@/lib/utils'
-import type { FilterRule, GeneratedFilter } from '@ritchy/types'
+import type { FilterRule, GeneratedFilter } from '@api/shared'
 import { Check, ChevronDown, Pencil, Search, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getFilterableProperty } from './filterableProperties'

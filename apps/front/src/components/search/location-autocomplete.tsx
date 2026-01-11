@@ -2,7 +2,7 @@ import { usePlaceAutocomplete } from '@/api/mutations/places/autocomplete/usePla
 import { usePlaceGeocode } from '@/api/queries/places/usePlaceGeocode'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import type { AutocompletePrediction, GeocodeLocation } from '@ritchy/types'
+import type { AutocompletePrediction, GeocodeLocation } from '@api/shared'
 import { debounce } from 'lodash'
 import { Loader2, MapPin, Store } from 'lucide-react'
 import * as React from 'react'

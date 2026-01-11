@@ -1,5 +1,5 @@
-import type { DomainRegistration } from '@ritchy/types'
 import { Queue, QueueEvents } from 'bullmq'
+import type { DomainRegistration } from '../../../../shared'
 import { bullmqRedisOptions } from '../../config'
 
 export const queueName = 'whois'

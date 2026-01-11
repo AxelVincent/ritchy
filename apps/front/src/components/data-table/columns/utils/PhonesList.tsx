@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import type { Phone } from '@ritchy/types'
+import type { Phone } from '@api/shared'
 import { Phone as PhoneIcon, Star } from 'lucide-react'
 import { CopyCell } from './ColumnCells'
 

@@ -2,7 +2,7 @@ import { useApiMutation } from '@/hooks/useApi'
 import type {
   AutocompleteApiResponse,
   AutocompleteRequestBody,
-} from '@ritchy/types'
+} from '@api/routes_web/places/autocomplete/contract'
 
 export const usePlaceAutocomplete = () => {
   return useApiMutation<AutocompleteApiResponse, AutocompleteRequestBody>(

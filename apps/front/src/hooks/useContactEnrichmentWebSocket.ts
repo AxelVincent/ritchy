@@ -1,5 +1,5 @@
 import type { WebSocketStatus } from '@/contexts/WebSocketContext'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 
 export type { WebSocketStatus }
 

@@ -4,7 +4,7 @@ import { useApiMutation } from '@/hooks/useApi'
 import type {
   CreateContactApiResponse,
   CreateContactRequest,
-} from '@ritchy/types'
+} from '@api/routes_web/contacts/create/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useCreateContact = () => {

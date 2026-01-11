@@ -1,8 +1,8 @@
 import { logger } from '@ritchy/logger'
-import type { Status, StatusType } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { status as statusTable, userPlace } from '../../../db/schema'
+import type { Status, StatusType } from '../../../shared'
 import { updateLastInteraction } from '../utils/update_last_interaction'
 
 export const upsertStatus = async (

@@ -4,7 +4,7 @@ import { useApiMutation } from '@/hooks/useApi'
 import type {
   DeleteContactEmailApiResponse,
   DeleteContactEmailRequest,
-} from '@ritchy/types'
+} from '@api/routes_web/contacts/delete-email/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useDeleteContactEmail = () => {

@@ -2,7 +2,7 @@ import { useApiMutation } from '@/hooks/useApi'
 import type {
   DeleteListApiResponse,
   DeleteListRequestParams,
-} from '@ritchy/types'
+} from '@api/routes_web/lists/delete/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useDeleteList = () => {

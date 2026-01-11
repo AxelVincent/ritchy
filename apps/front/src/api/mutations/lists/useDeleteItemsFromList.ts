@@ -3,17 +3,18 @@ import { userPlaceMarkersKeys } from '@/api/queries/user-places/useUserPlaceMark
 import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
-  DeleteItemsFromListApiResponse,
-  DeleteItemsFromListRequest,
-} from '@ritchy/types'
+  DeleteItemsApiResponse,
+  DeleteItemsRequestBody,
+  DeleteItemsRequestParams,
+} from '@api/routes_web/lists/delete-items/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useDeleteItemsFromList = () => {
   const queryClient = useQueryClient()
 
   return useApiMutation<
-    DeleteItemsFromListApiResponse,
-    DeleteItemsFromListRequest
+    DeleteItemsApiResponse,
+    DeleteItemsRequestBody & DeleteItemsRequestParams
   >('/lists/:id/items', {
     method: 'DELETE',
     getEndpoint: ({ id }) => `/lists/${id}/items`,

@@ -29,9 +29,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import type { Email, Phone, PhoneTypeEnum, SocialMedia } from '@api/shared'
 import { faLinkedin } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { Email, Phone, PhoneTypeEnum, SocialMedia } from '@ritchy/types'
 import {
   Building2,
   ChevronDown,

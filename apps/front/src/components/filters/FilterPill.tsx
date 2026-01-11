@@ -4,7 +4,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import type { FilterRule } from '@ritchy/types'
+import type { FilterRule } from '@api/shared'
 import { X } from 'lucide-react'
 import { memo } from 'react'
 import { getFilterableProperty } from './filterableProperties'

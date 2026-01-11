@@ -1,15 +1,15 @@
 import { logger } from '@ritchy/logger'
-import {
-  BatchSubscribeEventSchema,
-  type EnrichmentWebSocketClientEvents,
-  type EnrichmentWebSocketServerEvents,
-} from '@ritchy/types'
 import type { Namespace, Server as SocketIOServer } from 'socket.io'
 import {
   websocketConnectionsGauge,
   websocketMessagesCounter,
 } from '../metrics/collectors'
 import { getBatchEnrichmentStatus } from '../services/enrichment/shared/status/status_manager'
+import {
+  BatchSubscribeEventSchema,
+  type EnrichmentWebSocketClientEvents,
+  type EnrichmentWebSocketServerEvents,
+} from '../shared'
 import { verifyOwnershipBatch } from './ownership-cache'
 import { authenticationMiddleware } from './server'
 

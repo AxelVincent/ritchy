@@ -12,7 +12,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { getDomainFromUrl } from '@/lib/utils/url-utils'
-import type { Place } from '@ritchy/types'
+import type { Place } from '@api/shared'
 import {
   ChevronDown,
   ChevronUp,

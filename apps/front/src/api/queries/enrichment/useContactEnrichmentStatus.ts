@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { placeContactsKeys } from '../places/contacts/usePlaceContacts'

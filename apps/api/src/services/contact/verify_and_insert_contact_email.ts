@@ -1,11 +1,11 @@
 import { logger } from '@ritchy/logger'
-import type { Email } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import type * as schema from '../../db/schema'
 import { contactEmail } from '../../db/schema/contact'
 import { verifyEmailForSaving } from '../../external/million_verifier/email_verification'
+import type { Email } from '../../shared'
 import { insertContactEmail } from './queries/insert_contact_email'
 
 export const verifyAndInsertContactEmail = async (

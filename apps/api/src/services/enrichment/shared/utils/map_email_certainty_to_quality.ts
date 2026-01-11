@@ -1,4 +1,4 @@
-import type { EmailQualityEnum } from '@ritchy/types'
+import type { EmailQualityEnum } from '../../../../shared'
 
 type EmailQualityType = (typeof EmailQualityEnum.options)[number]
 

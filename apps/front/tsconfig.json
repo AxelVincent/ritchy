@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@ritchy/*": ["../../packages/*/src"]
+      "@ritchy/*": ["../../packages/*/src"],
+      "@api/*": ["../../apps/api/src/*"]
     }
   },
   "include": ["src"],

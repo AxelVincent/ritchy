@@ -1,14 +1,14 @@
 import { placeKeys } from '@/api/queries/places/usePlace'
 import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation, webApiClient } from '@/hooks/useApi'
-import { useAuth } from '@clerk/clerk-react'
+import type { GetPlaceApiResponse } from '@api/routes_web/places/get/contract'
 import type {
-  AddNoteApiResponse,
-  AddNoteRequest,
-  GetPlaceApiResponse,
-  GetUserPlacesApiResponse,
+  CreateNoteApiResponse,
+  CreateNoteBody,
   Note,
-} from '@ritchy/types'
+} from '@api/routes_web/places/notes/create-note/contract'
+import type { GetUserPlacesApiResponse } from '@api/routes_web/user-places/get/contract'
+import { useAuth } from '@clerk/clerk-react'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useAddPlaceNote = () => {
@@ -16,8 +16,8 @@ export const useAddPlaceNote = () => {
   const { getToken } = useAuth()
 
   return useApiMutation<
-    AddNoteApiResponse,
-    AddNoteRequest & { listId: string | null }
+    CreateNoteApiResponse,
+    CreateNoteBody & { userPlaceId: string; listId: string | null }
   >('/places/:userPlaceId/notes', {
     getEndpoint: ({ userPlaceId }) => `/places/${userPlaceId}/notes`,
     getBody: ({ note }) => ({ note }),

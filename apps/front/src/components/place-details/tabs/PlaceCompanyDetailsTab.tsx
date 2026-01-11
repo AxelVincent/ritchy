@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { Financial, Place } from '@ritchy/types'
+import type { Financial, Place } from '@api/shared'
 import {
   Building,
   Calendar,

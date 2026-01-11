@@ -4,7 +4,7 @@ import { NoteItem } from '@/components/notes/NoteItem'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import type { Note } from '@ritchy/types'
+import type { Note } from '@api/shared'
 import { ArrowUpCircle, Loader2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 

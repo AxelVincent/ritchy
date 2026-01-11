@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { GetPlaceApiResponse } from '@ritchy/types'
+import type { GetPlaceApiResponse } from '@api/routes_web/places/get/contract'
 
 export const placeKeys = {
   all: ['place'] as const,

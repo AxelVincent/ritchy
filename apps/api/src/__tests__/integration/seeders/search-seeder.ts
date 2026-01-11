@@ -1,5 +1,5 @@
-import type { SearchModel } from '@ritchy/types'
 import { search, searchPlace } from '../../../db/schema'
+import type { SearchModel } from '../../../shared'
 import { getTestDb } from '../setup/test-database'
 import { cleanupManager } from '../utils/cleanup-manager'
 

@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { PaginationMeta } from '@ritchy/types'
+import type { PaginationMeta } from '@api/shared'
 import {
   ChevronLeft,
   ChevronRight,

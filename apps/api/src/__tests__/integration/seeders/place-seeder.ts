@@ -1,5 +1,5 @@
-import type { PriceLevelEnum } from '@ritchy/types'
 import { place, status, userPlace } from '../../../db/schema'
+import type { PriceLevelEnum } from '../../../shared'
 import { getTestDb } from '../setup/test-database'
 import { cleanupManager } from '../utils/cleanup-manager'
 

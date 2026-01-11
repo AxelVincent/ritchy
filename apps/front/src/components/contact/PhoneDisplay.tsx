@@ -26,8 +26,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import type { Phone } from '@ritchy/types'
-import { PhoneTypeEnum } from '@ritchy/types'
+import type { Phone } from '@api/shared'
+import { PhoneTypeEnum } from '@api/shared'
 import {
   AlertCircle,
   AlertTriangle,

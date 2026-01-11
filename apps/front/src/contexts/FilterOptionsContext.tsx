@@ -1,4 +1,4 @@
-import type { ListFilterOptions } from '@ritchy/types'
+import type { ListFilterOptions } from '@api/shared'
 import { createContext, useContext } from 'react'
 
 /**

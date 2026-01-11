@@ -2,7 +2,7 @@ import {
   createEmptyFeatureCollection,
   markersToGeoJSON,
 } from '@/components/map-display/utils/markerTransforms'
-import type { UserPlaceMarker } from '@ritchy/types'
+import type { UserPlaceMarker } from '@api/shared'
 import type { GeoJSONSource, Map as MapboxMap } from 'mapbox-gl'
 import mapboxgl from 'mapbox-gl'
 import { useEffect, useRef, useState } from 'react'

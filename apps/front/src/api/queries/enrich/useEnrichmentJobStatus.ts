@@ -1,5 +1,5 @@
 import { webApiClient } from '@/hooks/useApi'
-import type { EnrichmentJobStatusApiResponse } from '@ritchy/types'
+import type { EnrichmentJobStatusApiResponse } from '@api/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { userKeys } from '../users/useUserMe'
 

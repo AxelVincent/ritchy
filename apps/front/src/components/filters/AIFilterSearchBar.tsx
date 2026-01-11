@@ -11,7 +11,7 @@ import type {
   FilterRule,
   GeneratedFilter,
   ListFilterOptions,
-} from '@ritchy/types'
+} from '@api/shared'
 import { Loader2, Sparkles, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { AIFilterPreviewModal } from './AIFilterPreviewModal'

@@ -1,4 +1,4 @@
-import type { Email } from '@ritchy/types'
+import type { Email } from '@api/shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from '@storybook/test'
 import { EmailDisplay } from './EmailDisplay'

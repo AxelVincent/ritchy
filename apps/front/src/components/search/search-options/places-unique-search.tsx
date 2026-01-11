@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import type { GeocodeLocation, List } from '@ritchy/types'
+import type { GeocodeLocation, List } from '@api/shared'
 import { useNavigate } from '@tanstack/react-router'
 import { MapPin, Plus, Store } from 'lucide-react'
 import { useCallback, useState } from 'react'

@@ -5,7 +5,7 @@ import { UnifiedContactCard } from '@/components/contact/UnifiedContactCard'
 import { EnrichmentAwareEmptyState } from '@/components/enrichment'
 import { Button } from '@/components/ui/button'
 import { useContactMutations } from '@/hooks/useContactMutations'
-import type { Email, Phone, Place, SocialMedia } from '@ritchy/types'
+import type { Email, Phone, Place, SocialMedia } from '@api/shared'
 import { UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 

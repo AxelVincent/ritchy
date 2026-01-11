@@ -1,4 +1,4 @@
-import { type FilterableProperty, PLACE_STATUSES } from '@ritchy/types'
+import { type FilterableProperty, PLACE_STATUSES } from '@api/shared'
 
 // Status options (derived from shared constants)
 export const STATUS_OPTIONS = PLACE_STATUSES.map((status) => ({

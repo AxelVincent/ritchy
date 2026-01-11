@@ -1,10 +1,11 @@
-import {
-  GetReviewsApiResponseSchema,
-  GetReviewsParamsSchema,
-} from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../../middleware/zodValidation'
-import { getPlaceReviews } from './get'
+
+// Import contracts
+import { GetReviewsApiResponseSchema, GetReviewsParamsSchema } from './contract'
+
+// Import handlers
+import { getReviewsHandler } from './reviews'
 
 const reviewsRouter: Router = express.Router({ mergeParams: true })
 
@@ -14,7 +15,7 @@ reviewsRouter.get(
     paramsSchema: GetReviewsParamsSchema,
     responseSchema: GetReviewsApiResponseSchema,
   }),
-  getPlaceReviews,
+  getReviewsHandler,
 )
 
 export default reviewsRouter

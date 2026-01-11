@@ -2,7 +2,7 @@ import { usePlaceReviewsQuery } from '@/api/queries/places/reviews/usePlaceRevie
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import type { Place } from '@ritchy/types'
+import type { Place } from '@api/shared'
 import { Info, Loader2, StarIcon } from 'lucide-react'
 import { Languages } from 'lucide-react'
 import { useState } from 'react'

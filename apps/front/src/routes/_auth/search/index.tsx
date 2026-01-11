@@ -8,7 +8,8 @@ import { useSidebar } from '@/components/ui/sidebar'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { toast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
-import type { CreateSearchRequestBody, GeocodeLocation } from '@ritchy/types'
+import type { GeocodeLocation } from '@api/routes_web/places/geocode/contract'
+import type { CreateSearchRequest } from '@api/routes_web/searches/create/contract'
 import { Menu } from 'lucide-react'
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -133,7 +134,7 @@ function RouteComponent() {
       return
     }
 
-    const search: CreateSearchRequestBody = {
+    const search: CreateSearchRequest = {
       rectangle: {
         northEast: {
           latitude: northEastLat,

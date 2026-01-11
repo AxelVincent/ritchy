@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/collapsible'
 import { Label } from '@/components/ui/label'
 import { isModelAvailable } from '@/lib/subscription'
-import type { CreateSearchRequestBody, GeocodeLocation } from '@ritchy/types'
+import type { GeocodeLocation } from '@api/routes_web/places/geocode/contract'
+import type { CreateSearchRequest } from '@api/routes_web/searches/create/contract'
 import { debounce } from 'lodash'
 import {
   Building2,
@@ -123,7 +124,7 @@ export const PlacesKeywordSearch = ({
       return
     }
 
-    const search: CreateSearchRequestBody = {
+    const search: CreateSearchRequest = {
       rectangle: {
         northEast: {
           latitude: northEastLat,

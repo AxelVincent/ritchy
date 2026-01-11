@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import type { Email } from '@ritchy/types'
+import type { Email } from '@api/shared'
 import { Mail, Star } from 'lucide-react'
 import { CopyCell } from './ColumnCells'
 

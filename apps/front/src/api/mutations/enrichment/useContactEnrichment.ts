@@ -1,16 +1,9 @@
 import { useApiMutation } from '@/hooks/useApi'
 import { isValidUUID } from '@/lib/validation'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichContactResponse } from '@api/routes_web/enrich/contact/contract'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { contactEnrichmentStatusKeys } from '../../queries/enrichment/useContactEnrichmentStatus'
-
-interface ContactEnrichmentResponse {
-  success: boolean
-  message: string
-  contactId?: string
-  alreadyEnriched?: boolean
-  credits: number
-}
 
 /**
  * Mutation hook for contact enrichment (Phase 2 of multi-worker architecture)
@@ -22,7 +15,7 @@ interface ContactEnrichmentResponse {
 export const useContactEnrichment = () => {
   const queryClient = useQueryClient()
 
-  return useApiMutation<ContactEnrichmentResponse, { contactId: string }>(
+  return useApiMutation<EnrichContactResponse, { contactId: string }>(
     '/enrich/contact',
     {
       method: 'POST',

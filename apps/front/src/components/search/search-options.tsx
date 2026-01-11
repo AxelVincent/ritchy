@@ -4,7 +4,7 @@ import { MapPin, Search } from 'lucide-react'
 import { useRef } from 'react'
 
 import type { Location } from '@/components/search/search-map'
-import type { GeocodeLocation } from '@ritchy/types'
+import type { GeocodeLocation } from '@api/shared'
 import { PlacesKeywordSearch } from './search-options/places-keyword-search'
 import { PlacesUniqueSearch } from './search-options/places-unique-search'
 

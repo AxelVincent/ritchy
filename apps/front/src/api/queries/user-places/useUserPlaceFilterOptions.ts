@@ -1,8 +1,6 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type {
-  ContentFilters,
-  GetUserPlaceFilterOptionsApiResponse,
-} from '@ritchy/types'
+import type { GetUserPlaceFilterOptionsApiResponse } from '@api/routes_web/user-places/filter-options/contract'
+import type { ContentFilters } from '@api/shared'
 
 export const userPlaceFilterOptionsKeys = {
   all: ['userPlaceFilterOptions'] as const,

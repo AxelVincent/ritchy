@@ -1,34 +1,54 @@
+import express, { type Router } from 'express'
+import { validateRequest } from '../../middleware/zodValidation'
+
+// Import contracts
+import {
+  AddContactEmailApiResponseSchema,
+  AddContactEmailRequestSchema,
+} from './add-email/contract'
+import {
+  AddContactPhoneApiResponseSchema,
+  AddContactPhoneRequestSchema,
+} from './add-phone/contract'
 import {
   CreateContactApiResponseSchema,
   CreateContactRequestSchema,
-  DeleteContactApiResponseSchema,
+} from './create/contract'
+import {
   DeleteContactEmailApiResponseSchema,
   DeleteContactEmailRequestSchema,
+} from './delete-email/contract'
+import {
   DeleteContactPhoneApiResponseSchema,
   DeleteContactPhoneRequestSchema,
+} from './delete-phone/contract'
+import {
+  DeleteContactApiResponseSchema,
   DeleteContactRequestSchema,
-  PostContactEmailApiResponseSchema,
-  PostContactEmailRequestSchema,
-  PostContactPhoneApiResponseSchema,
-  PostContactPhoneRequestSchema,
-  UpdateContactApiResponseSchema,
+} from './delete/contract'
+import {
   UpdateContactEmailApiResponseSchema,
   UpdateContactEmailRequestSchema,
+} from './update-email/contract'
+import {
   UpdateContactPhoneApiResponseSchema,
   UpdateContactPhoneRequestSchema,
+} from './update-phone/contract'
+import {
+  UpdateContactApiResponseSchema,
   UpdateContactRequestSchema,
-} from '@ritchy/types'
-import express, { type Router } from 'express'
-import { validateRequest } from '../../middleware/zodValidation'
-import { postContactEmail } from './add_contact_email'
-import { postContactPhone } from './add_contact_phone'
-import { createContactHandler } from './create_contact'
-import { deleteContactHandler } from './delete_contact'
-import { deleteContactEmailHandler } from './delete_contact_email'
-import { deleteContactPhoneHandler } from './delete_contact_phone'
-import { updateContactHandler } from './update_contact'
-import { updateContactEmailHandler } from './update_contact_email'
-import { updateContactPhoneHandler } from './update_contact_phone'
+} from './update/contract'
+
+// Import handlers
+import { addContactEmailHandler } from './add-email/add-email'
+import { addContactPhoneHandler } from './add-phone/add-phone'
+import { createContactHandler } from './create/create'
+import { deleteContactEmailHandler } from './delete-email/delete-email'
+import { deleteContactPhoneHandler } from './delete-phone/delete-phone'
+import { deleteContactHandler } from './delete/delete'
+import { updateContactEmailHandler } from './update-email/update-email'
+import { updateContactPhoneHandler } from './update-phone/update-phone'
+import { updateContactHandler } from './update/update'
 
 const contactsRouter: Router = express.Router()
 
@@ -36,10 +56,10 @@ const contactsRouter: Router = express.Router()
 contactsRouter.post(
   '/email',
   validateRequest({
-    bodySchema: PostContactEmailRequestSchema,
-    responseSchema: PostContactEmailApiResponseSchema,
+    bodySchema: AddContactEmailRequestSchema,
+    responseSchema: AddContactEmailApiResponseSchema,
   }),
-  postContactEmail,
+  addContactEmailHandler,
 )
 
 contactsRouter.patch(
@@ -64,10 +84,10 @@ contactsRouter.delete(
 contactsRouter.post(
   '/phone',
   validateRequest({
-    bodySchema: PostContactPhoneRequestSchema,
-    responseSchema: PostContactPhoneApiResponseSchema,
+    bodySchema: AddContactPhoneRequestSchema,
+    responseSchema: AddContactPhoneApiResponseSchema,
   }),
-  postContactPhone,
+  addContactPhoneHandler,
 )
 
 contactsRouter.patch(

@@ -1,10 +1,7 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type {
-  ContentFilters,
-  GetUserPlacesApiResponse,
-  PaginationParams,
-} from '@ritchy/types'
-import { buildQueryString } from '@ritchy/types'
+import type { GetUserPlacesApiResponse } from '@api/routes_web/user-places/get/contract'
+import type { ContentFilters, PaginationParams } from '@api/shared'
+import { buildQueryString } from '@api/shared'
 
 export const userPlacesKeys = {
   all: ['userPlaces'] as const,

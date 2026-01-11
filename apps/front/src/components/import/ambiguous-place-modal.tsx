@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import type { AutocompletePrediction } from '@ritchy/types'
+import type { AutocompletePrediction } from '@api/shared'
 import { debounce } from 'lodash'
 import { Loader2, MapPin, Store } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'

@@ -1,10 +1,10 @@
 import { logger } from '@ritchy/logger'
-import type { EmailQuality, EmailResult } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../../../db/db'
 import { contactEmail } from '../../../../../db/schema'
 import type * as schema from '../../../../../db/schema'
 import { enqueueIcypeasEmailSearchJob } from '../../../../../internal/bullmq/jobs/icypeas/email_search/queue'
+import type { EmailQuality, EmailResult } from '../../../../../shared'
 import { getMainDomain } from '../../../company/scraper/utils/get_main_domain'
 import {
   EMAIL_PROVIDERS,

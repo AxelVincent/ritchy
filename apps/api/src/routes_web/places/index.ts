@@ -1,21 +1,31 @@
+import express, { type Router } from 'express'
+import { validateRequest } from '../../middleware/zodValidation'
+
+// Import contracts
 import {
   AutocompleteApiResponseSchema,
   AutocompleteRequestBodySchema,
+} from './autocomplete/contract'
+import {
   GeocodeApiResponseSchema,
   GeocodeRequestParamsSchema,
+} from './geocode/contract'
+import {
   GetPlaceApiResponseSchema,
   GetPlaceRequestParamsSchema,
-} from '@ritchy/types'
-import express, { type Router } from 'express'
-import { validateRequest } from '../../middleware/zodValidation'
+} from './get/contract'
+
+// Import handlers
+import { autocompleteHandler } from './autocomplete/autocomplete'
+import { geocodeHandler } from './geocode/geocode'
+import { getPlaceHandler } from './get/get'
+
+// Import nested routers
 import contactsRouter from './contacts'
-import enrichmentRouter from './enrichments'
-import { getGeocode } from './get_geocode'
-import { getPlace } from './get_place'
+import enrichmentRouter from './enrichment'
 import notesRouter from './notes'
-import { postAutocomplete } from './post_autocomplete'
 import reviewsRouter from './reviews'
-import statusRouter from './status'
+import statusRouter from './update-status'
 
 const placesRouter: Router = express.Router({ mergeParams: true })
 
@@ -26,7 +36,7 @@ placesRouter.post(
     bodySchema: AutocompleteRequestBodySchema,
     responseSchema: AutocompleteApiResponseSchema,
   }),
-  postAutocomplete,
+  autocompleteHandler,
 )
 
 // Specific parameterized routes before catch-all
@@ -36,7 +46,7 @@ placesRouter.get(
     paramsSchema: GeocodeRequestParamsSchema,
     responseSchema: GeocodeApiResponseSchema,
   }),
-  getGeocode,
+  geocodeHandler,
 )
 
 // Nested routers with specific paths
@@ -57,7 +67,7 @@ placesRouter.get(
     paramsSchema: GetPlaceRequestParamsSchema,
     responseSchema: GetPlaceApiResponseSchema,
   }),
-  getPlace,
+  getPlaceHandler,
 )
 
 export default placesRouter

@@ -1,4 +1,5 @@
 import express, { type Router } from 'express'
+import apiKeysRouter from './api_keys'
 import contactsRouter from './contacts'
 import enrichRouter from './enrich'
 import filtersRouter from './filters'
@@ -37,5 +38,8 @@ router.use('/users', usersRouter)
 
 // Filters routes (AI filter generation)
 router.use('/filters', filtersRouter)
+
+// API keys management routes
+router.use('/api-keys', apiKeysRouter)
 
 export default router

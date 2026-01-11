@@ -1,0 +1,109 @@
+import { logger } from '@ritchy/logger'
+import { eq } from 'drizzle-orm'
+import type { Request, Response } from 'express'
+import { db } from '../../../db/db'
+import { contact } from '../../../db/schema'
+import { enqueueContactEnrichment } from '../../../internal/bullmq/jobs/enrichment-contact/queue'
+import { getContactWithAccess } from '../../../services/enrichment/contact/queries/get_contact_with_access'
+import { MAX_CONTACT_CREDITS } from '../../../services/enrichment/shared/config/constants'
+import { setContactEnrichmentStatus } from '../../../services/enrichment/shared/status/status_manager'
+import {
+  EnrichContactRequestSchema,
+  type EnrichContactResponse,
+} from './contract'
+
+export const enrichContactHandler = async (
+  req: Request<
+    Record<string, never>,
+    EnrichContactResponse,
+    { contactId: string }
+  >,
+  res: Response<EnrichContactResponse>,
+): Promise<void> => {
+  try {
+    const { contactId } = EnrichContactRequestSchema.parse(req.body)
+    const userId = req.auth.userId
+
+    logger.info({
+      msg: 'Processing contact enrichment request',
+      event: 'contact_enrichment_request',
+      metadata: { userId, contactId },
+    })
+
+    // Get contact and verify user has access
+    const contactData = await getContactWithAccess(contactId, userId)
+
+    if (!contactData) {
+      res.status(404).json({
+        success: false,
+        message: 'Contact not found or access denied',
+        credits: 0,
+      })
+      return
+    }
+
+    // Check if company enrichment is done (required for contact enrichment)
+    const isCompanyEnriched =
+      contactData.companyStatus === 'completed' ||
+      contactData.legacySuccess === true
+    if (!isCompanyEnriched) {
+      res.status(400).json({
+        success: false,
+        message: 'Company enrichment must be completed first',
+        credits: 0,
+      })
+      return
+    }
+
+    // Update contact status to queued
+    await db
+      .update(contact)
+      .set({ enrichmentStatus: 'queued' })
+      .where(eq(contact.id, contactId))
+
+    // Update status and enqueue
+    await setContactEnrichmentStatus(contactId, 'queued', 'Waiting to start', 0)
+
+    // Enqueue job - service handles idempotency
+    await enqueueContactEnrichment({
+      contactId,
+      userPlaceId: contactData.userPlaceId,
+      userId,
+    })
+
+    logger.info({
+      msg: 'Contact enrichment job enqueued',
+      event: 'contact_enrichment_enqueued',
+      metadata: {
+        userId,
+        contactId,
+        userPlaceId: contactData.userPlaceId,
+      },
+    })
+
+    res.json({
+      success: true,
+      message: 'Contact enrichment queued',
+      contactId,
+      credits: MAX_CONTACT_CREDITS,
+    })
+  } catch (error) {
+    logger.error({
+      msg: 'Contact enrichment request failed',
+      event: 'contact_enrichment_error',
+      metadata: {
+        error: error instanceof Error ? error.message : String(error),
+        userId: req.auth.userId,
+      },
+    })
+
+    res.status(500).json({
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to enqueue contact enrichment',
+      credits: 0,
+    })
+  }
+}

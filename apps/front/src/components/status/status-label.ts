@@ -1,4 +1,4 @@
-import type { StatusType } from '@ritchy/types'
+import type { StatusType } from '@api/shared'
 
 /**
  * Converts a status code to a human-readable label

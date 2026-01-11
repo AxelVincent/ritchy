@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import {
   AddressComponentSchema,
   LocationSchema,
@@ -6,8 +7,7 @@ import {
   PriceLevelEnum,
   PriceRangeSchema,
   ReviewSchema,
-} from '@ritchy/types'
-import { z } from 'zod'
+} from '../../shared'
 
 const LocalizedTextSchema = z.object({
   text: z.string(),

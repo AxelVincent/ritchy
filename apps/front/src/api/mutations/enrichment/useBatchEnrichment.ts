@@ -1,14 +1,14 @@
 import { useApiMutation } from '@/hooks/useApi'
 import type {
-  BatchEnrichmentRequestBody,
-  BatchEnrichmentResponseApiResponse,
-} from '@ritchy/types'
+  BulkEnrichmentApiResponse,
+  BulkEnrichmentRequest,
+} from '@api/routes_web/enrich/bulk/contract'
 
 export const useBatchEnrichment = () => {
-  return useApiMutation<
-    BatchEnrichmentResponseApiResponse,
-    BatchEnrichmentRequestBody
-  >('/enrich/batch', {
-    method: 'POST',
-  })
+  return useApiMutation<BulkEnrichmentApiResponse, BulkEnrichmentRequest>(
+    '/enrich/batch',
+    {
+      method: 'POST',
+    },
+  )
 }

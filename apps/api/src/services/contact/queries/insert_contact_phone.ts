@@ -1,8 +1,8 @@
-import type { Phone } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../db/db'
 import { contactPhone, type phoneTypeEnum } from '../../../db/schema'
 import type * as schema from '../../../db/schema'
+import type { Phone } from '../../../shared'
 
 type PhoneType = (typeof phoneTypeEnum.enumValues)[number]
 

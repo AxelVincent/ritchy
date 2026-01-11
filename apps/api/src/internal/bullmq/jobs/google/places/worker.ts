@@ -1,6 +1,4 @@
 import { logger } from '@ritchy/logger'
-import type { GeocodeRequestParams } from '@ritchy/types'
-import type { AutocompleteRequestBody } from '@ritchy/types'
 import { Worker } from 'bullmq'
 import { postAutocompleteV1 } from '../../../../../external/google_maps/autocomplete_V1'
 import { getGeocodeV1 } from '../../../../../external/google_maps/geocode_V1'
@@ -8,6 +6,10 @@ import { fetchPlaceDetails } from '../../../../../external/google_maps/place_det
 import { fetchSinglePage } from '../../../../../external/google_maps/text_search_V1'
 import type { GooglePlacesTextSearchRequestBody } from '../../../../../external/google_maps/types'
 import { setupQueueMetrics } from '../../../../../metrics/queue'
+import type {
+  AutocompleteRequestBody,
+  GeocodeRequestParams,
+} from '../../../../../shared'
 import { bullmqRedisOptions } from '../../../config'
 
 // Define job types for type safety

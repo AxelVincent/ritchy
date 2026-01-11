@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { useMemo } from 'react'
 
-import type { OpeningHours } from '@ritchy/types'
+import type { OpeningHours } from '@api/shared'
 
 interface OpeningHoursProps {
   openingHours: OpeningHours

@@ -1,8 +1,20 @@
 import express, { type Router } from 'express'
-import { getMe } from './get_me'
+import { validateRequest } from '../../middleware/zodValidation'
 
-const router: Router = express.Router()
+// Import contracts
+import { UserMeApiResponseSchema } from './get-me/contract'
 
-router.get('/me', getMe)
+// Import handlers
+import { getMeHandler } from './get-me/get-me'
 
-export default router
+const usersRouter: Router = express.Router()
+
+usersRouter.get(
+  '/me',
+  validateRequest({
+    responseSchema: UserMeApiResponseSchema,
+  }),
+  getMeHandler,
+)
+
+export default usersRouter

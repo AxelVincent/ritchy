@@ -6,7 +6,6 @@ import { userKeys } from '@/api/queries/users/useUserMe'
 import { webApiClient } from '@/hooks/useApi'
 import { debugLog } from '@/lib/utils/debug-logging'
 import { LRUCache } from '@/lib/utils/lru-cache'
-import { useAuth } from '@clerk/clerk-react'
 import type {
   BatchEnrichmentStatusResponse,
   BatchStatusUpdate,
@@ -15,7 +14,8 @@ import type {
   EnrichmentWebSocketServerEvents,
   GetPlaceApiResponse,
   GetUserPlacesApiResponse,
-} from '@ritchy/types'
+} from '@api/shared'
+import { useAuth } from '@clerk/clerk-react'
 import { type QueryClient, useQueryClient } from '@tanstack/react-query'
 import {
   type ReactNode,

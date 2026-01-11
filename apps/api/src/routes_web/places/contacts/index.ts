@@ -1,20 +1,24 @@
-import {
-  GetPlacesContactsApiResponseSchema,
-  GetPlacesContactsParamsSchema,
-} from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../../middleware/zodValidation'
-import { getPlacesContacts } from './get'
+
+// Import contracts
+import {
+  GetContactsApiResponseSchema,
+  GetContactsParamsSchema,
+} from './contract'
+
+// Import handlers
+import { getContactsHandler } from './contacts'
 
 const contactsRouter: Router = express.Router({ mergeParams: true })
 
 contactsRouter.get(
   '/',
   validateRequest({
-    paramsSchema: GetPlacesContactsParamsSchema,
-    responseSchema: GetPlacesContactsApiResponseSchema,
+    paramsSchema: GetContactsParamsSchema,
+    responseSchema: GetContactsApiResponseSchema,
   }),
-  getPlacesContacts,
+  getContactsHandler,
 )
 
 export default contactsRouter

@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import type { PlaceContact, SearchResult } from '@ritchy/types'
+import type { PlaceContact, SearchResult } from '@api/shared'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClickableCell } from './utils/ClickableCell'
 import { CopyButton } from './utils/ColumnCells'

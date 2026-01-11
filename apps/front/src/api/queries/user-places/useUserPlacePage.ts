@@ -3,8 +3,8 @@ import type {
   ContentFilters,
   GetUserPlacePageApiResponse,
   PaginationParams,
-} from '@ritchy/types'
-import { buildQueryString } from '@ritchy/types'
+} from '@api/shared'
+import { buildQueryString } from '@api/shared'
 
 export const userPlacePageKeys = {
   all: ['userPlacePage'] as const,

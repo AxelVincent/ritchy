@@ -1,4 +1,4 @@
-import type { ContactEnrichmentData } from '@ritchy/types'
+import type { ContactEnrichmentData } from '../../../../shared'
 import { getEnrichmentCompanyOfficerEmails } from './get_enrichment_company_officer_emails'
 import { getEnrichmentCompanyOfficerLinkedin } from './get_enrichment_company_officer_linkedin'
 import { getEnrichmentCompanyOfficerPhones } from './get_enrichment_company_officer_phones'

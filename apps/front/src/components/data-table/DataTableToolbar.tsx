@@ -14,7 +14,7 @@ import type {
   PaginationMeta,
   SearchResult,
   SortOrder,
-} from '@ritchy/types'
+} from '@api/shared'
 import type { Table } from '@tanstack/react-table'
 import { Download, Loader2, X } from 'lucide-react'
 import { useState } from 'react'

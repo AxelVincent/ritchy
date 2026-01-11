@@ -4,7 +4,7 @@ import { debugLog } from '@/lib/utils/debug-logging'
 import type {
   EnrichmentWebSocketClientEvents,
   EnrichmentWebSocketServerEvents,
-} from '@ritchy/types'
+} from '@api/shared'
 import { useEffect, useId } from 'react'
 import type { Socket } from 'socket.io-client'
 

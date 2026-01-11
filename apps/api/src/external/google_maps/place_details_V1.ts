@@ -1,8 +1,8 @@
 import 'dotenv/config'
 import { logger } from '@ritchy/logger'
 
-import type { PlaceBase } from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
+import type { PlaceBase } from '../../shared'
 
 import { eq, sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'

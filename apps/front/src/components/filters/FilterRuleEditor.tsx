@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import type { FilterRule, NumberOperator } from '@ritchy/types'
+import type { FilterRule, NumberOperator } from '@api/shared'
 import { format, subMonths, subYears } from 'date-fns'
 import { CalendarIcon, ChevronsUpDown, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'

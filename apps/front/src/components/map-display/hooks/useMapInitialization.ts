@@ -1,6 +1,6 @@
 import { useIsMobile } from '@/hooks/use-mobile'
+import type { Place } from '@api/shared'
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder'
-import type { Place } from '@ritchy/types'
 import mapboxgl, { type IControl } from 'mapbox-gl'
 import { useEffect, useRef } from 'react'
 import type { MapSettings } from '../types'

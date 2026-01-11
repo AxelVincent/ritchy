@@ -1,4 +1,4 @@
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { Clock, Loader2, XCircle } from 'lucide-react'
 import type { ReactNode } from 'react'
 

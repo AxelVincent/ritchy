@@ -1,10 +1,10 @@
 import { useApiQuery } from '@/hooks/useApi'
 import {
-  type ApiErrorResponse,
   type UserMeApiResponse,
   type UserMeData,
   UserMeDataSchema,
-} from '@ritchy/types'
+} from '@api/routes_web/users/get-me/contract'
+import type { ApiErrorResponse } from '@api/shared'
 
 export const userKeys = {
   all: ['users'] as const,

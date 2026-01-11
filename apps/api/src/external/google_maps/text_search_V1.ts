@@ -4,7 +4,6 @@ import { divideRectangleIntoFour } from '../../utils/geo_utils'
 
 import { logger } from '@ritchy/logger'
 
-import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { place } from '../../db/schema/place'
@@ -14,6 +13,7 @@ import {
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
+import type { PlaceBase, PlacesSearchRequestBody } from '../../shared'
 import { sanitizeApiData } from '../../utils/sanitize_api_data'
 import {
   type GooglePlacesTextSearchRequestBody,

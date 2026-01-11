@@ -1,4 +1,4 @@
-import type { SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@api/shared'
 import type { z } from 'zod'
 
 interface ExportOptions<T> {
