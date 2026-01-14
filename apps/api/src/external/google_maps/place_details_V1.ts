@@ -4,7 +4,7 @@ import { logger } from '@ritchy/logger'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import type { PlaceBase } from '../../shared'
 
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../db/db'
 import { place as placeTable } from '../../db/schema'
@@ -26,6 +26,7 @@ import {
 } from './types'
 import { calculateOpenNow } from './utils/calculateOpenNow'
 import { mapToPlaceDetails } from './utils/mapper'
+import { upsertGooglePlace } from './utils/upsert_place'
 
 /**
  * Gets cache age in seconds
@@ -235,158 +236,7 @@ export async function getPlaceDetailsV1(
       metadata: { data: JSON.stringify(data) },
     })
 
-    const [updatedPlace] = await db
-      .insert(placeTable)
-      .values({
-        source: 'google' as const,
-        source_id: validatedData.id,
-        source_url: validatedData.googleMapsUri,
-        website: validatedData.websiteUri,
-        name: validatedData.displayName?.text,
-        location: validatedData.location,
-        types: validatedData.types,
-        primary_type: validatedData.primaryType,
-        price_level: validatedData.priceLevel,
-        price_range: validatedData.priceRange,
-        rating: validatedData.rating,
-        rating_count: validatedData.userRatingCount,
-        phone: validatedData.internationalPhoneNumber,
-        utc_offset_minutes: validatedData.utcOffsetMinutes,
-        opening_hours: validatedData.regularOpeningHours,
-        formatted_address: validatedData.formattedAddress,
-        short_formatted_address: validatedData.shortFormattedAddress,
-        country:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('country'),
-          )?.longText || '',
-        locality:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('locality'),
-          )?.longText || '',
-        sublocality:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('sublocality'),
-          )?.longText || '',
-        postal_code:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('postal_code'),
-          )?.longText || '',
-        postal_code_suffix:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('postal_code_suffix'),
-          )?.longText || '',
-        plus_code:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('plus_code'),
-          )?.longText || '',
-        street:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('route'),
-          )?.longText || '',
-        street_number:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('street_number'),
-          )?.longText || '',
-        neighborhood:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('neighborhood'),
-          )?.longText || '',
-        administrative_area_level_1:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('administrative_area_level_1'),
-          )?.longText || '',
-        administrative_area_level_2:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('administrative_area_level_2'),
-          )?.longText || '',
-        administrative_area_level_3:
-          validatedData.addressComponents?.find((component) =>
-            component.types?.includes('administrative_area_level_3'),
-          )?.longText || '',
-        reviews:
-          validatedData.reviews?.map((review) => ({
-            name: review.name,
-            rating: review.rating,
-            text: review.text,
-            originalText: review.originalText,
-            authorAttribution: review.authorAttribution,
-            publishTime: review.publishTime,
-            googleMapsUri: review.googleMapsUri,
-          })) || [],
-      })
-      .returning({
-        id: placeTable.id,
-        source: placeTable.source,
-        source_id: placeTable.source_id,
-        source_url: placeTable.source_url,
-        website: placeTable.website,
-        name: placeTable.name,
-        location: placeTable.location,
-        types: placeTable.types,
-        primary_type: placeTable.primary_type,
-        price_level: placeTable.price_level,
-        price_range: placeTable.price_range,
-        rating: placeTable.rating,
-        rating_count: placeTable.rating_count,
-        phone: placeTable.phone,
-        utc_offset_minutes: placeTable.utc_offset_minutes,
-        opening_hours: placeTable.opening_hours,
-        formatted_address: placeTable.formatted_address,
-        short_formatted_address: placeTable.short_formatted_address,
-        country: placeTable.country,
-        locality: placeTable.locality,
-        sublocality: placeTable.sublocality,
-        postal_code: placeTable.postal_code,
-        postal_code_suffix: placeTable.postal_code_suffix,
-        plus_code: placeTable.plus_code,
-        street: placeTable.street,
-        street_number: placeTable.street_number,
-        neighborhood: placeTable.neighborhood,
-        administrative_area_level_1: placeTable.administrative_area_level_1,
-        administrative_area_level_2: placeTable.administrative_area_level_2,
-        administrative_area_level_3: placeTable.administrative_area_level_3,
-        is_deleted: placeTable.is_deleted,
-        reviews: placeTable.reviews,
-        created_at: placeTable.created_at,
-        updated_at: placeTable.updated_at,
-      })
-      .onConflictDoUpdate({
-        target: placeTable.source_id,
-        set: {
-          source: sql`excluded.source`,
-          source_id: sql`excluded.source_id`,
-          source_url: sql`excluded.source_url`,
-          website: sql`excluded.website`,
-          name: sql`excluded.name`,
-          location: sql`excluded.location`,
-          types: sql`excluded.types`,
-          primary_type: sql`excluded.primary_type`,
-          price_level: sql`excluded.price_level`,
-          price_range: sql`excluded.price_range`,
-          rating: sql`excluded.rating`,
-          rating_count: sql`excluded.rating_count`,
-          phone: sql`excluded.phone`,
-          utc_offset_minutes: sql`excluded.utc_offset_minutes`,
-          opening_hours: sql`excluded.opening_hours`,
-          formatted_address: sql`excluded.formatted_address`,
-          short_formatted_address: sql`excluded.short_formatted_address`,
-          country: sql`excluded.country`,
-          locality: sql`excluded.locality`,
-          sublocality: sql`excluded.sublocality`,
-          postal_code: sql`excluded.postal_code`,
-          postal_code_suffix: sql`excluded.postal_code_suffix`,
-          plus_code: sql`excluded.plus_code`,
-          street: sql`excluded.street`,
-          street_number: sql`excluded.street_number`,
-          neighborhood: sql`excluded.neighborhood`,
-          administrative_area_level_1: sql`excluded.administrative_area_level_1`,
-          administrative_area_level_2: sql`excluded.administrative_area_level_2`,
-          administrative_area_level_3: sql`excluded.administrative_area_level_3`,
-          reviews: sql`excluded.reviews`,
-          updated_at: sql`excluded.updated_at`,
-          is_deleted: sql`excluded.is_deleted`,
-        },
-      })
+    const updatedPlace = await upsertGooglePlace(validatedData)
 
     // Map the data for the response
     const result = mapToPlaceDetails(updatedPlace)

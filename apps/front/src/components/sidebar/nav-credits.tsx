@@ -9,6 +9,7 @@ import {
   DownloadIcon,
   Linkedin,
   Mail,
+  MessageCircle,
   Phone,
   Plus,
   Sparkles,
@@ -233,6 +234,20 @@ export function NavCredits() {
                     </div>
                   </>
                 )}
+
+                {/* WhatsApp Support */}
+                <Separator />
+                <a
+                  href="https://wa.me/33554547066"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors group"
+                >
+                  <MessageCircle className="h-3.5 w-3.5 text-[#25D366] group-hover:text-[#20bd5a]" />
+                  <span className="text-xs text-muted-foreground group-hover:text-foreground">
+                    WhatsApp Support
+                  </span>
+                </a>
               </div>
             </CardContent>
           </Card>

@@ -12,11 +12,11 @@ import { createApiClient } from '../lib/api/createApiClient'
 
 // Create a single API client instance per base URL
 export const internalApiClient = createApiClient({
-  baseUrl: `${import.meta.env.VITE_API_BASE_URL}/web`,
+  baseUrl: `${import.meta.env.VITE_RITCHY_INTERNAL_BASE_URL}`,
 })
 
 export const publicApiClient = createApiClient({
-  baseUrl: `${import.meta.env.VITE_API_BASE_URL}/api`,
+  baseUrl: `${import.meta.env.VITE_RITCHY_API_BASE_URL}/api`,
 })
 
 // Alias for backwards compatibility

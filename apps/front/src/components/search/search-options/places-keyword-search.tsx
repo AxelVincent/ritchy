@@ -273,7 +273,6 @@ export const PlacesKeywordSearch = ({
             id="auto-enrich"
             checked={autoEnrich}
             onCheckedChange={(checked) => setAutoEnrich(checked === true)}
-            disabled={!canSearch}
           />
           <div className="flex-1 space-y-0.5">
             <Label

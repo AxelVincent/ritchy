@@ -18,8 +18,8 @@ export const AddItemsRequestParamsSchema = z.object({
 // Response schema (success)
 export const AddItemsResponseSchema = z.object({
   success: z.boolean(),
-  duplicates: z.array(z.number()),
-  added: z.array(z.number()),
+  duplicates: z.array(z.string()),
+  added: z.array(z.string()),
 })
 
 // API response (success | error)

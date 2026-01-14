@@ -69,19 +69,9 @@ export const getFullCompanyEnrichmentData = async (
     enrichmentId: enrichment.id,
     placeId: placeData.id,
 
-    // Place data (from Google Places)
-    place: {
-      googlePlaceId: placeData.source_id,
-      name: placeData.name,
-      formattedAddress: placeData.formatted_address,
-      website: placeData.website,
-      phone: placeData.phone,
-      rating: placeData.rating,
-      ratingCount: placeData.rating_count,
-      types: placeData.types,
-      primaryType: placeData.primary_type,
-      location: placeData.location,
-    },
+    // Complete Google Place data - direct passthrough from stored JSONB
+    googlePlace:
+      placeData.google_place_data as CompanyEnrichmentData['googlePlace'],
 
     // Website data
     domain: enrichment.domain,

@@ -71,3 +71,9 @@ export const enrichmentPhaseStatusEnum = pgEnum('enrichment_phase_status', [
   'completed',
   'failed',
 ])
+
+export const businessStatusEnum = pgEnum('business_status', [
+  'OPERATIONAL',
+  'CLOSED_TEMPORARILY',
+  'CLOSED_PERMANENTLY',
+])

@@ -12,7 +12,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { pgTable, uuid } from 'drizzle-orm/pg-core'
-import { placeSourceEnum, priceLevelEnum } from './enum'
+import { businessStatusEnum, placeSourceEnum, priceLevelEnum } from './enum'
 import { user } from './user'
 
 export const place = pgTable(
@@ -30,6 +30,7 @@ export const place = pgTable(
     }>(),
     types: text('types').array(),
     primary_type: text('primary_type'),
+    business_status: businessStatusEnum('business_status'),
     price_level: priceLevelEnum('price_level'),
     price_range: jsonb('price_range').$type<{
       startPrice?: {
@@ -108,6 +109,16 @@ export const place = pgTable(
           googleMapsUri: string
         }[]
       >(),
+    google_maps_links: jsonb('google_maps_links').$type<{
+      directionsUri?: string
+      placeUri?: string
+      writeAReviewUri?: string
+      reviewsUri?: string
+      photosUri?: string
+    }>(),
+    editorial_summary: text('editorial_summary'),
+    // Complete Google Place data stored as JSONB for full API passthrough
+    google_place_data: jsonb('google_place_data'),
     is_deleted: boolean('is_deleted').notNull().default(false),
     created_at: timestamp('created_at').notNull().defaultNow(),
     updated_at: timestamp('updated_at').notNull().defaultNow(),

@@ -84,8 +84,8 @@ export const addItemsHandler = async (
 
     res.json({
       success: true,
-      duplicates: duplicatePlaceIds.map(Number),
-      added: newPlaceIds.map(Number),
+      duplicates: duplicatePlaceIds,
+      added: newPlaceIds,
     })
     logger.info({
       msg: 'Items added to list',

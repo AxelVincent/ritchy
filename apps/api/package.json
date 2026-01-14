@@ -74,7 +74,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@ritchy/types": "workspace:*",
     "@types/connect-timeout": "0.0.39",
     "@types/express": "5.0.1",
     "@types/express-session": "1.18.1",

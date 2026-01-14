@@ -10,6 +10,7 @@ import {
   Youtube,
 } from 'lucide-react'
 import { z } from 'zod'
+import { PreferredPlaceSchema } from '../external/google_maps/types'
 import { ApiErrorResponseSchema } from './common'
 import { SocialMediaPlatformEnum } from './enums'
 import { UrlSchema } from './schemas'
@@ -83,23 +84,8 @@ export const CompanyEnrichmentDataSchema = z.object({
   enrichmentId: z.string().uuid(),
   placeId: z.string().uuid(),
 
-  place: z.object({
-    googlePlaceId: z.string(),
-    name: z.string().nullable(),
-    formattedAddress: z.string().nullable(),
-    website: z.string().nullable(),
-    phone: z.string().nullable(),
-    rating: z.number().nullable(),
-    ratingCount: z.number().nullable(),
-    types: z.array(z.string()).nullable(),
-    primaryType: z.string().nullable(),
-    location: z
-      .object({
-        latitude: z.number(),
-        longitude: z.number(),
-      })
-      .nullable(),
-  }),
+  // Complete Google Place data - uses the full PreferredPlaceSchema
+  googlePlace: PreferredPlaceSchema.nullable(),
 
   domain: z.string().nullable(),
   title: z.string().nullable(),
