@@ -186,11 +186,7 @@ export const getUserPlaces = async (
       }
 
       // Populate search places if empty (fetches from Google Maps)
-      await populateSearchPlacesIfEmpty(searchId, userId, {
-        model: searchResult[0].model,
-        keyword: searchResult[0].keyword,
-        rectangle: searchResult[0].rectangle,
-      })
+      await populateSearchPlacesIfEmpty(searchId, userId)
 
       context = {
         type: 'search',

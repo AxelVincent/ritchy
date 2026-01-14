@@ -9,6 +9,23 @@ export const SearchModelEnum = z.enum([
   'EXPERT',
 ])
 
+// Search limit configuration
+export const SEARCH_LIMIT = {
+  MIN: 1,
+  MAX: 240,
+  DEFAULT: 60,
+} as const
+
+// Derive minimum required model from a given limit
+export const getMinimumRequiredModel = (
+  limit: number,
+): z.infer<typeof SearchModelEnum> => {
+  if (limit <= 60) return 'BASIC'
+  if (limit <= 240) return 'ENHANCED'
+  if (limit <= 960) return 'ADVANCED'
+  return 'EXPERT'
+}
+
 // Request schema
 export const CreateSearchRequestSchema = z.object({
   rectangle: RectangleSchema,
@@ -16,6 +33,12 @@ export const CreateSearchRequestSchema = z.object({
   keyword: z.string(),
   model: SearchModelEnum,
   autoEnrich: z.boolean().optional(),
+  limit: z
+    .number()
+    .int()
+    .min(SEARCH_LIMIT.MIN)
+    .max(SEARCH_LIMIT.MAX)
+    .optional(),
 })
 
 // Response schema (success)

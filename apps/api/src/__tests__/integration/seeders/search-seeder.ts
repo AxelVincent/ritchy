@@ -7,6 +7,7 @@ export interface SearchData {
   keyword: string
   placeName?: string
   model?: SearchModel
+  limit?: number
   rectangle?: {
     northEast: { latitude: number; longitude: number }
     southWest: { latitude: number; longitude: number }
@@ -32,12 +33,17 @@ export const seedSearch = async (
   const searchId = crypto.randomUUID()
   const model = data.model ?? 'BASIC'
 
+  // Default limit based on model if not provided
+  const defaultLimit = model === 'BASIC' ? 60 : model === 'ENHANCED' ? 240 : 60
+  const limit = data.limit ?? defaultLimit
+
   await db.insert(search).values({
     id: searchId,
     userId: userId,
     placeName: data.placeName ?? 'Test Location',
     keyword: data.keyword,
     model: model,
+    limit: limit,
     rectangle: data.rectangle ?? DEFAULT_RECTANGLE,
   })
 

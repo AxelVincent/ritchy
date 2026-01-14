@@ -1,16 +1,9 @@
 import { logger } from '@ritchy/logger'
 import { eq, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
-import { place, searchPlace, userPlace } from '../../db/schema'
+import { place, search, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
-import type { Rectangle, SearchModel } from '../../shared'
 import { reorderByEnrichmentScore } from '../places/utils/reorder_by_enrichment_score'
-
-export interface SearchConfig {
-  model: SearchModel
-  keyword: string
-  rectangle: Rectangle
-}
 
 export interface PopulateSearchResult {
   populated: boolean
@@ -19,6 +12,7 @@ export interface PopulateSearchResult {
 
 /**
  * Populates search places if the search has no associated places.
+ * Reads search config (model, keyword, rectangle, limit) from the database.
  * Fetches from Google Maps API, creates places, user_places, and search_places.
  *
  * @returns object with populated flag and userPlaceIds array
@@ -26,7 +20,6 @@ export interface PopulateSearchResult {
 export const populateSearchPlacesIfEmpty = async (
   searchId: string,
   userId: string,
-  searchConfig: SearchConfig,
 ): Promise<PopulateSearchResult> => {
   // Check if search already has places
   const existingPlaces = await db
@@ -39,6 +32,29 @@ export const populateSearchPlacesIfEmpty = async (
     return { populated: false, userPlaceIds: [] }
   }
 
+  // Read search config from database (single source of truth)
+  const searchResult = await db
+    .select({
+      model: search.model,
+      keyword: search.keyword,
+      rectangle: search.rectangle,
+      limit: search.limit,
+    })
+    .from(search)
+    .where(eq(search.id, searchId))
+    .limit(1)
+
+  if (searchResult.length === 0) {
+    logger.error({
+      msg: 'Search not found for population',
+      event: 'search_not_found',
+      metadata: { searchId, userId },
+    })
+    return { populated: false, userPlaceIds: [] }
+  }
+
+  const searchConfig = searchResult[0]
+
   logger.info({
     msg: 'No cached search results, fetching from Google Maps and caching',
     event: 'populating_search_places',
@@ -47,6 +63,7 @@ export const populateSearchPlacesIfEmpty = async (
       userId,
       model: searchConfig.model,
       keyword: searchConfig.keyword,
+      limit: searchConfig.limit,
     },
   })
 
@@ -66,11 +83,25 @@ export const populateSearchPlacesIfEmpty = async (
     return { populated: false, userPlaceIds: [] }
   }
 
+  // Trim results to the stored limit
+  const trimmedResults = freshResults.slice(0, searchConfig.limit)
+
+  logger.info({
+    msg: 'Results trimmed to limit',
+    event: 'search_results_trimmed',
+    metadata: {
+      searchId,
+      originalCount: freshResults.length,
+      limit: searchConfig.limit,
+      trimmedCount: trimmedResults.length,
+    },
+  })
+
   // Insert places (upsert on conflict)
   const places = await db
     .insert(place)
     .values(
-      freshResults.map((p) => ({
+      trimmedResults.map((p) => ({
         source: 'google' as const,
         source_id: p.sourceId,
       })),

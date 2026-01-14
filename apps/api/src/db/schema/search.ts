@@ -1,4 +1,4 @@
-import { index, text, timestamp } from 'drizzle-orm/pg-core'
+import { index, integer, text, timestamp } from 'drizzle-orm/pg-core'
 import { jsonb, pgTable, uuid } from 'drizzle-orm/pg-core'
 import { searchModelEnum } from './enum'
 import { place, userPlace } from './place'
@@ -14,6 +14,7 @@ export const search = pgTable(
     placeName: text('place_name').notNull(),
     keyword: text('keyword').notNull(),
     model: searchModelEnum('model').notNull(),
+    limit: integer('limit').notNull(),
     rectangle: jsonb('rectangle').notNull().$type<{
       northEast: { latitude: number; longitude: number }
       southWest: { latitude: number; longitude: number }

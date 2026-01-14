@@ -14,7 +14,11 @@ import { refundCredits } from '../../../services/payment/queries/refund_credits'
 import { getPlacesByUserPlaceIds } from '../../../services/places/queries/get_places_by_user_place_ids'
 import { populateSearchPlacesIfEmpty } from '../../../services/searches/populate-search-places'
 import type { CreateSearchApiResponse, CreateSearchRequest } from './contract'
-import { CreateSearchRequestSchema } from './contract'
+import {
+  CreateSearchRequestSchema,
+  SEARCH_LIMIT,
+  getMinimumRequiredModel,
+} from './contract'
 
 export const createSearchHandler = async (
   req: Request<
@@ -45,10 +49,17 @@ export const createSearchHandler = async (
       },
     })
 
-    // If autoEnrich, check credits upfront
+    // Determine the effective limit and model
+    // If limit is provided, use it; otherwise fall back to model-based defaults
+    const effectiveLimit =
+      parsedBody.limit ?? (parsedBody.model === 'BASIC' ? 60 : 240)
+
+    // Derive the optimal model based on the limit
+    const effectiveModel = getMinimumRequiredModel(effectiveLimit)
+
+    // If autoEnrich, check credits upfront using the exact limit
     if (parsedBody.autoEnrich) {
-      const expectedResults = parsedBody.model === 'BASIC' ? 60 : 240
-      const requiredCredits = expectedResults * COMPANY_CREDITS
+      const requiredCredits = effectiveLimit * COMPANY_CREDITS
       const userCredits = await getUserCredits(userId)
 
       if (userCredits < requiredCredits) {
@@ -59,6 +70,7 @@ export const createSearchHandler = async (
             userId,
             required: requiredCredits,
             available: userCredits,
+            limit: effectiveLimit,
           },
         })
         res.status(400).json({
@@ -75,7 +87,8 @@ export const createSearchHandler = async (
         userId,
         placeName: parsedBody.placeName,
         keyword: parsedBody.keyword,
-        model: parsedBody.model,
+        model: effectiveModel,
+        limit: effectiveLimit,
         rectangle: parsedBody.rectangle,
       })
       .returning({
@@ -97,11 +110,6 @@ export const createSearchHandler = async (
       const { userPlaceIds } = await populateSearchPlacesIfEmpty(
         result.id,
         userId,
-        {
-          model: parsedBody.model,
-          keyword: parsedBody.keyword,
-          rectangle: parsedBody.rectangle,
-        },
       )
 
       if (userPlaceIds.length > 0) {

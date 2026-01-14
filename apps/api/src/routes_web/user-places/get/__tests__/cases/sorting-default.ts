@@ -40,6 +40,7 @@ export const searchViewSortsBySearchPlaceCreatedAtByDefault = async () => {
     placeName: 'Test Location',
     keyword: 'test companies',
     model: 'BASIC',
+    limit: 60,
     rectangle: {
       northEast: { latitude: 48.9, longitude: 2.5 },
       southWest: { latitude: 48.8, longitude: 2.2 },
@@ -126,6 +127,7 @@ export const searchViewPreservesEnrichmentScoreOrder = async () => {
     placeName: 'Test Location',
     keyword: 'test companies',
     model: 'BASIC',
+    limit: 60,
     rectangle: {
       northEast: { latitude: 48.9, longitude: 2.5 },
       southWest: { latitude: 48.8, longitude: 2.2 },
@@ -288,6 +290,7 @@ export const searchViewWithExplicitCreatedAtDescStillUsesSearchPlaceCreatedAt =
       placeName: 'Test Location',
       keyword: 'test companies',
       model: 'BASIC',
+      limit: 60,
       rectangle: {
         northEast: { latitude: 48.9, longitude: 2.5 },
         southWest: { latitude: 48.8, longitude: 2.2 },
@@ -370,6 +373,7 @@ export const searchViewWithCreatedAtAscUsesSearchPlaceCreatedAt = async () => {
     placeName: 'Test Location',
     keyword: 'test companies',
     model: 'BASIC',
+    limit: 60,
     rectangle: {
       northEast: { latitude: 48.9, longitude: 2.5 },
       southWest: { latitude: 48.8, longitude: 2.2 },
