@@ -1,12 +1,12 @@
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   CreateCheckoutSessionApiResponse,
-  CreateCheckoutSessionRequestBody,
-} from '@ritchy/types'
+  CreateCheckoutSessionRequest,
+} from '@api/routes_web/payments/create-checkout-session/contract'
 
 export const useCreateCheckoutSession = () => {
   return useApiMutation<
     CreateCheckoutSessionApiResponse,
-    CreateCheckoutSessionRequestBody
+    CreateCheckoutSessionRequest
   >('/payments/create-checkout-session')
 }

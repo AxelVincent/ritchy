@@ -1,4 +1,4 @@
-import { SOCIAL_MEDIA_CONFIG } from '@ritchy/types'
+import { SOCIAL_MEDIA_CONFIG } from '../../../shared'
 
 export const extractSocialPlatformFromUrl = (url: string): string => {
   try {

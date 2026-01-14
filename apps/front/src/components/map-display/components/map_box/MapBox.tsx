@@ -1,6 +1,6 @@
 import './styles.css'
 import { useTheme } from '@/providers/theme-provider'
-import type { UserPlaceMarker } from '@ritchy/types'
+import type { UserPlaceMarker } from '@api/shared'
 import type { FC } from 'react'
 import { useMemo, useRef } from 'react'
 import { useMapMarkers } from './hooks/useMapMarkers'

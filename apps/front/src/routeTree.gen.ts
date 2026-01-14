@@ -15,6 +15,8 @@ import { Route as AuthPricingRouteImport } from './routes/_auth/pricing'
 import { Route as AuthLeadsRouteImport } from './routes/_auth/leads'
 import { Route as AuthImportRouteImport } from './routes/_auth/import'
 import { Route as AuthCheckoutRouteImport } from './routes/_auth/checkout'
+import { Route as AuthApiPlaygroundRouteImport } from './routes/_auth/api-playground'
+import { Route as AuthApiKeysRouteImport } from './routes/_auth/api-keys'
 import { Route as AuthSearchIndexRouteImport } from './routes/_auth/search/index'
 import { Route as AuthSearchSearchIdRouteImport } from './routes/_auth/search/$searchId'
 import { Route as AuthListsListIdRouteImport } from './routes/_auth/lists/$listId'
@@ -48,6 +50,16 @@ const AuthCheckoutRoute = AuthCheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthApiPlaygroundRoute = AuthApiPlaygroundRouteImport.update({
+  id: '/api-playground',
+  path: '/api-playground',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthApiKeysRoute = AuthApiKeysRouteImport.update({
+  id: '/api-keys',
+  path: '/api-keys',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthSearchIndexRoute = AuthSearchIndexRouteImport.update({
   id: '/search/',
   path: '/search/',
@@ -66,6 +78,8 @@ const AuthListsListIdRoute = AuthListsListIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api-keys': typeof AuthApiKeysRoute
+  '/api-playground': typeof AuthApiPlaygroundRoute
   '/checkout': typeof AuthCheckoutRoute
   '/import': typeof AuthImportRoute
   '/leads': typeof AuthLeadsRoute
@@ -76,6 +90,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api-keys': typeof AuthApiKeysRoute
+  '/api-playground': typeof AuthApiPlaygroundRoute
   '/checkout': typeof AuthCheckoutRoute
   '/import': typeof AuthImportRoute
   '/leads': typeof AuthLeadsRoute
@@ -88,6 +104,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
+  '/_auth/api-keys': typeof AuthApiKeysRoute
+  '/_auth/api-playground': typeof AuthApiPlaygroundRoute
   '/_auth/checkout': typeof AuthCheckoutRoute
   '/_auth/import': typeof AuthImportRoute
   '/_auth/leads': typeof AuthLeadsRoute
@@ -100,6 +118,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/api-keys'
+    | '/api-playground'
     | '/checkout'
     | '/import'
     | '/leads'
@@ -110,6 +130,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/api-keys'
+    | '/api-playground'
     | '/checkout'
     | '/import'
     | '/leads'
@@ -121,6 +143,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_auth'
+    | '/_auth/api-keys'
+    | '/_auth/api-playground'
     | '/_auth/checkout'
     | '/_auth/import'
     | '/_auth/leads'
@@ -179,6 +203,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCheckoutRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/api-playground': {
+      id: '/_auth/api-playground'
+      path: '/api-playground'
+      fullPath: '/api-playground'
+      preLoaderRoute: typeof AuthApiPlaygroundRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/api-keys': {
+      id: '/_auth/api-keys'
+      path: '/api-keys'
+      fullPath: '/api-keys'
+      preLoaderRoute: typeof AuthApiKeysRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/search/': {
       id: '/_auth/search/'
       path: '/search'
@@ -204,6 +242,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthRouteChildren {
+  AuthApiKeysRoute: typeof AuthApiKeysRoute
+  AuthApiPlaygroundRoute: typeof AuthApiPlaygroundRoute
   AuthCheckoutRoute: typeof AuthCheckoutRoute
   AuthImportRoute: typeof AuthImportRoute
   AuthLeadsRoute: typeof AuthLeadsRoute
@@ -214,6 +254,8 @@ interface AuthRouteChildren {
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthApiKeysRoute: AuthApiKeysRoute,
+  AuthApiPlaygroundRoute: AuthApiPlaygroundRoute,
   AuthCheckoutRoute: AuthCheckoutRoute,
   AuthImportRoute: AuthImportRoute,
   AuthLeadsRoute: AuthLeadsRoute,

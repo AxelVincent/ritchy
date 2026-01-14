@@ -1,6 +1,5 @@
 import { logger } from '@ritchy/logger'
 
-import { EmailQualityEnum } from '@ritchy/types'
 import { z } from 'zod'
 import { enqueueMillionVerifierJob } from '../../internal/bullmq/jobs/million_verifier/queue'
 import { redisClient } from '../../internal/redis/redis'
@@ -9,6 +8,7 @@ import {
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
+import { EmailQualityEnum } from '../../shared'
 import { sendSlackNotification } from '../slack/slack'
 
 export const MillionVerifierResponseSchema = z.object({

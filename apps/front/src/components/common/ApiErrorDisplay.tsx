@@ -1,4 +1,4 @@
-import type { ApiErrorResponse } from '@ritchy/types'
+import type { ApiErrorResponse } from '@api/shared'
 
 interface ApiErrorDisplayProps {
   error: ApiErrorResponse | unknown

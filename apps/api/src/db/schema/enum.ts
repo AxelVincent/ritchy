@@ -1,3 +1,4 @@
+import { pgEnum } from 'drizzle-orm/pg-core'
 import {
   ContactTypeEnum,
   EmailQualityEnum,
@@ -7,8 +8,7 @@ import {
   PriceLevelEnum,
   SearchModelEnum,
   SocialMediaPlatformEnum,
-} from '@ritchy/types'
-import { pgEnum } from 'drizzle-orm/pg-core'
+} from '../../shared'
 
 export const socialPlatformEnum = pgEnum(
   'social_platform',
@@ -70,4 +70,10 @@ export const enrichmentPhaseStatusEnum = pgEnum('enrichment_phase_status', [
   'processing',
   'completed',
   'failed',
+])
+
+export const businessStatusEnum = pgEnum('business_status', [
+  'OPERATIONAL',
+  'CLOSED_TEMPORARILY',
+  'CLOSED_PERMANENTLY',
 ])

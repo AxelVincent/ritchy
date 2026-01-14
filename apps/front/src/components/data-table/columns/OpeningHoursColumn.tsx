@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { formatUtcOffset } from '@/lib/formatUtcOffset'
 import { cn } from '@/lib/utils'
-import type { SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@api/shared'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClickableCell } from './utils/ClickableCell'
 import { HeaderWrapper } from './utils/HeaderWrapper'

@@ -1,11 +1,36 @@
 import express, { type Router } from 'express'
-import { createSearch } from './create'
-import { getSearches } from './get_all'
+import { validateRequest } from '../../middleware/zodValidation'
+
+// Import contracts
+import {
+  CreateSearchApiResponseSchema,
+  CreateSearchRequestSchema,
+} from './create/contract'
+import { GetSearchesApiResponseSchema } from './get-all/contract'
+
+// Import handlers
+import { createSearchHandler } from './create/create'
+import { getSearchesHandler } from './get-all/get-all'
 
 const searchesRouter: Router = express.Router()
 
-searchesRouter.get('/', getSearches)
-searchesRouter.post('/', createSearch)
+searchesRouter.get(
+  '/',
+  validateRequest({
+    responseSchema: GetSearchesApiResponseSchema,
+  }),
+  getSearchesHandler,
+)
+
+searchesRouter.post(
+  '/',
+  validateRequest({
+    bodySchema: CreateSearchRequestSchema,
+    responseSchema: CreateSearchApiResponseSchema,
+  }),
+  createSearchHandler,
+)
+
 // GET /:id removed - use GET /user-places?searchId=:id instead
 
 export default searchesRouter

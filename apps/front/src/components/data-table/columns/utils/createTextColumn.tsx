@@ -1,5 +1,5 @@
 import type { PlaceTabValue } from '@/components/map-display/store/useMapStore'
-import type { SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@api/shared'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClickableCell } from './ClickableCell'
 import { CopyCell } from './ColumnCells'

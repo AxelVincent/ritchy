@@ -1,5 +1,5 @@
-import type { ListContentFilters, SortOrder } from '@ritchy/types'
 import { type SQL, sql } from 'drizzle-orm'
+import type { ListContentFilters, SortOrder } from '../../shared'
 
 /**
  * Build SQL WHERE conditions from ListContentFilters

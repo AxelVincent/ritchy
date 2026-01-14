@@ -1,7 +1,7 @@
-import type { SearchModel } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import { subscription } from '../../../db/schema'
+import type { SearchModel } from '../../../shared'
 
 export const getUserSearchModel = async (
   userId: string,

@@ -1,9 +1,5 @@
 import { logger } from '@ritchy/logger'
 
-import type {
-  AutocompletePrediction,
-  AutocompleteRequestBody,
-} from '@ritchy/types'
 import { z } from 'zod'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import {
@@ -11,6 +7,10 @@ import {
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
+import type {
+  AutocompletePrediction,
+  AutocompleteRequestBody,
+} from '../../shared'
 
 // Schema for Google's specific response format
 // Note: Google returns an empty object {} when no results are found, so suggestions must be optional

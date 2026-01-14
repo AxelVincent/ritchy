@@ -24,7 +24,7 @@ import type {
   Place,
   SortOrder,
   UserPlaceMarker,
-} from '@ritchy/types'
+} from '@api/shared'
 import type { SortingState } from '@tanstack/react-table'
 import { useEffect, useMemo, useState } from 'react'
 import { columns } from '../../components/data-table/Columns'

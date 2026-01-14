@@ -1,4 +1,4 @@
-import type { EnrichmentStatusData } from '@ritchy/types'
+import type { EnrichmentStatusData } from '@api/shared'
 import type { ReactNode } from 'react'
 import { EnrichmentCellIndicator } from './EnrichmentCellIndicator'
 

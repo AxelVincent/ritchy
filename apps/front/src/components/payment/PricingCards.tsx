@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { toast } from '@/hooks/use-toast'
-import type { Plan } from '@ritchy/types'
+import type { Plan } from '@api/shared'
 import { Link } from '@tanstack/react-router'
 import {
   ArrowRightIcon,

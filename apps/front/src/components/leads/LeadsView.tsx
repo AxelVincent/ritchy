@@ -13,7 +13,7 @@ import type {
   ListFilterOptions,
   PaginationParams,
   Place,
-} from '@ritchy/types'
+} from '@api/shared'
 import type { SortingState } from '@tanstack/react-table'
 import { useCallback, useEffect, useRef, useState } from 'react'
 

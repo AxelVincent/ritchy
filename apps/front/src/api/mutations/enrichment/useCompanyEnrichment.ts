@@ -2,16 +2,9 @@ import { activeEnrichmentsKeys } from '@/api/queries/enrichment/useActiveEnrichm
 import { enrichmentStatusKeys } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { useApiMutation } from '@/hooks/useApi'
 import { isValidUUID } from '@/lib/validation'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichCompanyResponse } from '@api/routes_web/enrich/company/contract'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { useQueryClient } from '@tanstack/react-query'
-
-interface CompanyEnrichmentResponse {
-  success: boolean
-  message: string
-  enrichmentId?: string
-  alreadyEnriched?: boolean
-  credits: number
-}
 
 /**
  * Mutation hook for company enrichment (Phase 1 of multi-worker architecture)
@@ -23,7 +16,7 @@ interface CompanyEnrichmentResponse {
 export const useCompanyEnrichment = () => {
   const queryClient = useQueryClient()
 
-  return useApiMutation<CompanyEnrichmentResponse, { userPlaceId: string }>(
+  return useApiMutation<EnrichCompanyResponse, { userPlaceId: string }>(
     '/enrich/company',
     {
       method: 'POST',

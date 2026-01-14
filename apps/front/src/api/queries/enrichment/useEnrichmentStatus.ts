@@ -1,6 +1,6 @@
 import { useApiQuery } from '@/hooks/useApi'
 import { useEnrichmentWebSocket } from '@/hooks/useEnrichmentWebSocket'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const enrichmentStatusKeys = {

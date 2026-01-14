@@ -1,6 +1,6 @@
+import type { ApiErrorResponse } from '@api/shared'
+import { ApiErrorResponseSchema } from '@api/shared'
 import { useAuth } from '@clerk/clerk-react'
-import type { ApiErrorResponse } from '@ritchy/types'
-import { ApiErrorResponseSchema } from '@ritchy/types'
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -11,9 +11,16 @@ import type { z } from 'zod'
 import { createApiClient } from '../lib/api/createApiClient'
 
 // Create a single API client instance per base URL
-export const webApiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_WEB_BASE_URL || '/api/web',
+export const internalApiClient = createApiClient({
+  baseUrl: `${import.meta.env.VITE_RITCHY_INTERNAL_BASE_URL}`,
 })
+
+export const publicApiClient = createApiClient({
+  baseUrl: `${import.meta.env.VITE_RITCHY_API_BASE_URL}/api`,
+})
+
+// Alias for backwards compatibility
+export const webApiClient = internalApiClient
 
 export function useApiQuery<
   TQueryFnData,
@@ -81,7 +88,7 @@ export function useApiQuery<
     queryFn: async ({ signal }) => {
       try {
         const token = requireAuth ? await getToken() : null
-        return await webApiClient.fetchWithAuth<TQueryFnData>(
+        return await internalApiClient.fetchWithAuth<TQueryFnData>(
           endpoint,
           {
             signal,
@@ -147,7 +154,7 @@ export function useApiMutation<
       const token = requireAuth ? await getToken() : null
       const endpoint = getEndpoint ? getEndpoint(variables) : endpointTemplate
       const body = getBody ? getBody(variables) : variables
-      return webApiClient.fetchWithAuth<TData>(
+      return internalApiClient.fetchWithAuth<TData>(
         endpoint,
         {
           method,

@@ -2,17 +2,17 @@ import { placeContactsKeys } from '@/api/queries/places/contacts/usePlaceContact
 import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
-  PostContactPhoneApiResponse,
-  PostContactPhoneRequest,
-} from '@ritchy/types'
+  AddContactPhoneApiResponse,
+  AddContactPhoneRequest,
+} from '@api/routes_web/contacts/add-phone/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const usePostContactPhone = () => {
   const queryClient = useQueryClient()
 
   return useApiMutation<
-    PostContactPhoneApiResponse,
-    PostContactPhoneRequest & { placeId: string }
+    AddContactPhoneApiResponse,
+    AddContactPhoneRequest & { placeId: string }
   >('/contacts/phone', {
     method: 'POST',
     onSettled: (_, __, { placeId }) => {

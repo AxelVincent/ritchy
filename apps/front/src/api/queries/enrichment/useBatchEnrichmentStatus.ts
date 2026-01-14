@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { BatchEnrichmentStatusResponse } from '@ritchy/types'
+import type { BatchStatusResponse } from '@api/routes_web/enrich/status-batch/contract'
 import { useMemo } from 'react'
 
 export const batchEnrichmentStatusKeys = {
@@ -38,7 +38,7 @@ export const useBatchEnrichmentStatus = (
     [sortedIds.join(',')],
   )
 
-  const query = useApiQuery<BatchEnrichmentStatusResponse>(
+  const query = useApiQuery<BatchStatusResponse>(
     `/enrich/status?${queryString}`,
     batchEnrichmentStatusKeys.batch(sortedIds),
     {

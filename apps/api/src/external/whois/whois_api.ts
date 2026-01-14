@@ -1,12 +1,12 @@
 import { logger } from '@ritchy/logger'
 
-import type { DomainRegistration } from '@ritchy/types'
 import { WHOIS_CONFIG } from '../../config/whois'
 import {
   createSimpleDurationTimer,
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
+import type { DomainRegistration } from '../../shared'
 import {
   isWhoisApiError,
   validateWhoisApiResponse,

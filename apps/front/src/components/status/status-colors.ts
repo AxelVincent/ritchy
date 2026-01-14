@@ -1,4 +1,4 @@
-import type { StatusType } from '@ritchy/types'
+import type { StatusType } from '@api/shared'
 
 export const getStatusColor = (
   status: StatusType,

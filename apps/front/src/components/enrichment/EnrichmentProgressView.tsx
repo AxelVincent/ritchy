@@ -1,5 +1,5 @@
 import { Progress } from '@/components/ui/progress'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { Clock, Loader2 } from 'lucide-react'
 
 interface EnrichmentProgressViewProps {

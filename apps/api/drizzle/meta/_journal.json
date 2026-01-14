@@ -645,6 +645,48 @@
       "when": 1766110330176,
       "tag": "0091_closed_ricochet",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1768066787559,
+      "tag": "0092_dizzy_warpath",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1768069956520,
+      "tag": "0093_lively_toad_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1768070479093,
+      "tag": "0094_nifty_diamondback",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1768217174653,
+      "tag": "0095_fantastic_goliath",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1768241487088,
+      "tag": "0096_wakeful_wolfsbane",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1768243590034,
+      "tag": "0097_goofy_felicia_hardy",
+      "breakpoints": true
     }
   ]
 }

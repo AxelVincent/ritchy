@@ -1,0 +1,45 @@
+import { logger } from '@ritchy/logger'
+import { desc, eq } from 'drizzle-orm'
+import type { Request, Response } from 'express'
+import { db } from '../../../db/db'
+import { search } from '../../../db/schema'
+import type { GetSearchesApiResponse } from './contract'
+
+export const getSearchesHandler = async (
+  req: Request,
+  res: Response<GetSearchesApiResponse>,
+): Promise<void> => {
+  try {
+    const userId = req.auth.userId
+
+    const result = await db
+      .select()
+      .from(search)
+      .where(eq(search.userId, userId))
+      .orderBy(desc(search.createdAt))
+
+    res.json({
+      searches: result.map((search) => ({
+        id: search.id,
+        model: search.model,
+        keyword: search.keyword,
+        rectangle: search.rectangle,
+        locationFormatted: search.placeName,
+        createdAt: search.createdAt,
+        updatedAt: search.updatedAt,
+      })),
+    })
+    return
+  } catch (error) {
+    logger.error({
+      msg: 'Get searches error',
+      event: 'get_searches_error',
+      metadata: { error },
+    })
+    res.status(500).json({
+      error: 'Failed to get searches',
+      message: 'Failed to get searches',
+    })
+    return
+  }
+}

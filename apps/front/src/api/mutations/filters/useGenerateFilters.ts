@@ -2,7 +2,7 @@ import { useApiMutation } from '@/hooks/useApi'
 import type {
   GenerateFiltersApiResponse,
   GenerateFiltersRequest,
-} from '@ritchy/types'
+} from '@api/routes_web/filters/generate/contract'
 
 /**
  * Mutation hook for generating structured filters from natural language query.

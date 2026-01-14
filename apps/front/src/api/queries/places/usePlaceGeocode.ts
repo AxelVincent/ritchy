@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { GeocodeApiResponse } from '@ritchy/types'
+import type { GeocodeApiResponse } from '@api/routes_web/places/geocode/contract'
 
 const geocodeKeys = {
   all: ['geocode'] as const,

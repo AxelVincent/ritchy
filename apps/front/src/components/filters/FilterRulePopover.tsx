@@ -3,7 +3,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import type { FilterRule } from '@ritchy/types'
+import type { FilterRule } from '@api/shared'
 import { FilterPill } from './FilterPill'
 import { FilterRuleEditor } from './FilterRuleEditor'
 

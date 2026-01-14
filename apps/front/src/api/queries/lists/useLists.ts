@@ -1,12 +1,12 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { Lists } from '@ritchy/types'
+import type { ListsResponse } from '@api/routes_web/lists/list/contract'
 
 const listsKeys = {
   all: ['lists'] as const,
 }
 
 export const useListsQuery = () => {
-  return useApiQuery<Lists>('/lists', listsKeys.all, {
+  return useApiQuery<ListsResponse>('/lists', listsKeys.all, {
     // Default options can be added here if needed
   })
 }

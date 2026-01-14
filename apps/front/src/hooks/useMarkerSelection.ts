@@ -1,5 +1,5 @@
 import { useFetchUserPlaceItemPage } from '@/api/queries/user-places/useFetchItemPage'
-import type { ContentFilters, PaginationParams, Place } from '@ritchy/types'
+import type { ContentFilters, PaginationParams, Place } from '@api/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseMarkerSelectionOptions {

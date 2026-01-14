@@ -2,7 +2,7 @@ import { useMapInitialization } from '@/components/map-display/hooks/useMapIniti
 import { MAP_SETTINGS } from '@/components/map-display/types'
 
 import { debounce } from '@/lib/debounce'
-import type { GeocodeLocation } from '@ritchy/types'
+import type { GeocodeLocation } from '@api/shared'
 import mapboxgl from 'mapbox-gl'
 import { type FC, useCallback, useEffect, useRef } from 'react'
 

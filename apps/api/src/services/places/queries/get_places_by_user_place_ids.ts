@@ -21,6 +21,7 @@ export const getPlacesByUserPlaceIds = async (
       location: place.location,
       types: place.types,
       primary_type: place.primary_type,
+      business_status: place.business_status,
       price_level: place.price_level,
       price_range: place.price_range,
       rating: place.rating,
@@ -48,6 +49,9 @@ export const getPlacesByUserPlaceIds = async (
       user_place_id: userPlace.id,
       enriched_at: userPlace.enriched_at,
       reviews: place.reviews,
+      google_maps_links: place.google_maps_links,
+      editorial_summary: place.editorial_summary,
+      google_place_data: place.google_place_data,
     })
     .from(place)
     .innerJoin(userPlace, eq(place.id, userPlace.place_id))

@@ -1,13 +1,13 @@
 import { AddItemsToListDialog } from '@/components/lists/add-items-to-list-dialog'
 import { getStatusLabel } from '@/components/status/status-label'
 import { cn } from '@/lib/utils'
+import type { SearchResult, StatusType } from '@api/shared'
 import {
   faFacebook,
   faInstagram,
   faLinkedin,
 } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { SearchResult, StatusType } from '@ritchy/types'
 import {
   Building2,
   Globe,

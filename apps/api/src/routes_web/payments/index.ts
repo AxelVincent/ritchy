@@ -1,13 +1,36 @@
 import express, { type Router } from 'express'
-import { createCheckoutSession } from './create_checkout_session'
-import { createPortalSession } from './create_portal_session'
+import { validateRequest } from '../../middleware/zodValidation'
 
-const router: Router = express.Router()
+// Import contracts
+import {
+  CreateCheckoutSessionApiResponseSchema,
+  CreateCheckoutSessionRequestSchema,
+} from './create-checkout-session/contract'
+import { CreatePortalSessionApiResponseSchema } from './create-portal-session/contract'
+
+// Import handlers
+import { createCheckoutSessionHandler } from './create-checkout-session/create-checkout-session'
+import { createPortalSessionHandler } from './create-portal-session/create-portal-session'
+
+const paymentsRouter: Router = express.Router()
 
 // Checkout
-router.post('/create-checkout-session', createCheckoutSession)
+paymentsRouter.post(
+  '/create-checkout-session',
+  validateRequest({
+    bodySchema: CreateCheckoutSessionRequestSchema,
+    responseSchema: CreateCheckoutSessionApiResponseSchema,
+  }),
+  createCheckoutSessionHandler,
+)
 
 // Portal
-router.post('/create-portal-session', createPortalSession)
+paymentsRouter.post(
+  '/create-portal-session',
+  validateRequest({
+    responseSchema: CreatePortalSessionApiResponseSchema,
+  }),
+  createPortalSessionHandler,
+)
 
-export default router
+export default paymentsRouter

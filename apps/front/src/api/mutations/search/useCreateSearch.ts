@@ -1,14 +1,14 @@
 import { useApiMutation } from '@/hooks/useApi'
 import type {
   CreateSearchApiResponse,
-  CreateSearchRequestBody,
-} from '@ritchy/types'
+  CreateSearchRequest,
+} from '@api/routes_web/searches/create/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useCreateSearch = () => {
   const queryClient = useQueryClient()
 
-  return useApiMutation<CreateSearchApiResponse, CreateSearchRequestBody>(
+  return useApiMutation<CreateSearchApiResponse, CreateSearchRequest>(
     '/searches',
     {
       onSuccess: () => {

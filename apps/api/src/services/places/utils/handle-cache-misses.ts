@@ -1,5 +1,5 @@
 import { logger } from '@ritchy/logger'
-import type { Place as PlaceApi } from '@ritchy/types'
+import type { Place as PlaceApi } from '../../../shared'
 import { refreshPlaces } from '../refresh_places'
 
 export interface CacheMissHandlerOptions {

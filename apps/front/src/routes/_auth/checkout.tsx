@@ -1,6 +1,6 @@
 import { useCreateCheckoutSession } from '@/api/mutations/payments/useCreateCheckoutSession'
 import { getValidPromos } from '@/components/payment/promos'
-import type { Plan } from '@ritchy/types'
+import type { Plan } from '@api/shared'
 import {
   EmbeddedCheckout,
   EmbeddedCheckoutProvider,

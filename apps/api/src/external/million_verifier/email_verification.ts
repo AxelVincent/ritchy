@@ -1,6 +1,6 @@
 import { logger } from '@ritchy/logger'
-import type { EmailQuality, EmailResult } from '@ritchy/types'
 import { verifyWithMillionVerifier } from '.'
+import type { EmailQuality, EmailResult } from '../../shared'
 
 export interface EmailVerificationResult {
   email: string

@@ -2,17 +2,17 @@ import { placeContactsKeys } from '@/api/queries/places/contacts/usePlaceContact
 import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
-  PostContactEmailApiResponse,
-  PostContactEmailRequest,
-} from '@ritchy/types'
+  AddContactEmailApiResponse,
+  AddContactEmailRequest,
+} from '@api/routes_web/contacts/add-email/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const usePostContactEmail = () => {
   const queryClient = useQueryClient()
 
   return useApiMutation<
-    PostContactEmailApiResponse,
-    PostContactEmailRequest & { placeId: string }
+    AddContactEmailApiResponse,
+    AddContactEmailRequest & { placeId: string }
   >('/contacts/email', {
     method: 'POST',
     onSettled: (_, __, { placeId }) => {

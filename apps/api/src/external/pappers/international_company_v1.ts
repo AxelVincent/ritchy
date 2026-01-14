@@ -1,6 +1,5 @@
 import { logger } from '@ritchy/logger'
 
-import { ContactTypeEnum } from '@ritchy/types'
 import z from 'zod'
 import { PAPPERS_CONFIG } from '../../config/pappers'
 import {
@@ -8,6 +7,7 @@ import {
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
+import { ContactTypeEnum } from '../../shared'
 
 export const PAPPERS_COUNTRY_CODES = z.enum([
   'UK',

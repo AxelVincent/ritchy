@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/tooltip'
 import { useEnrichmentMutation } from '@/contexts/EnrichmentMutationContext'
 import { cn } from '@/lib/utils'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { Clock, Loader2, Sparkles, XCircle } from 'lucide-react'
 import { memo, useCallback, useMemo, useState } from 'react'
 

@@ -1,4 +1,4 @@
-import type { SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@api/shared'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
   administrativeAreaLevel1Column,

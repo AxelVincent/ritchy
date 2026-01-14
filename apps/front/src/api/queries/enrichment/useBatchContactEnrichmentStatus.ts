@@ -1,8 +1,6 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { BatchContactStatusResponse } from '@api/routes_web/enrich/contact-status-batch/contract'
 import { contactEnrichmentStatusKeys } from './useContactEnrichmentStatus'
-
-type BatchContactStatusResponse = Record<string, EnrichmentStatusResponse>
 
 /**
  * Hook to get batch contact enrichment status

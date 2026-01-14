@@ -1,5 +1,5 @@
-import type { PlaceBase } from '@ritchy/types'
 import type { Place } from '../../../db/schema/place'
+import type { PlaceBase } from '../../../shared'
 import type { GooglePlacesTextSearchResponse, PreferredPlace } from './../types'
 
 const objectMapper = (

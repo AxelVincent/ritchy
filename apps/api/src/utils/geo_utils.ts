@@ -1,6 +1,6 @@
-import type { Coordinate, Rectangle } from '@ritchy/types'
 import { point, polygon, transformScale } from '@turf/turf'
 import { destination } from '@turf/turf'
+import type { Coordinate, Rectangle } from '../shared'
 
 export const getLargestSquareFromCoordinates = (
   center: Coordinate,

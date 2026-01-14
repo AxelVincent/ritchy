@@ -4,6 +4,6 @@ export {
   FilterQueryParamsSchema,
   extractPaginationParams,
   extractFilterParams,
-} from '@ritchy/types'
+} from '../../shared'
 
-export type { UserPlacesQuery, FilterQueryParams } from '@ritchy/types'
+export type { UserPlacesQuery, FilterQueryParams } from '../../shared'

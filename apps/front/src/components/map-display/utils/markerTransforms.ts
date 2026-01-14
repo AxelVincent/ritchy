@@ -1,5 +1,5 @@
 import { getStatusColor } from '@/components/status/status-colors'
-import type { StatusType, UserPlaceMarker } from '@ritchy/types'
+import type { StatusType, UserPlaceMarker } from '@api/shared'
 import { MARKER_COLORS } from '../components/map_box/constants/markers'
 
 interface GeoJSONPoint {

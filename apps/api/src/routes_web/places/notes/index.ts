@@ -1,58 +1,70 @@
-import {
-  AddNoteApiResponseSchema,
-  AddNoteBodySchema,
-  DeleteNoteApiResponseSchema,
-  NoteParamsSchema,
-  NotesApiResponseSchema,
-  NotesParamsSchema,
-  UpdateNoteApiResponseSchema,
-  UpdateNoteBodySchema,
-} from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../../middleware/zodValidation'
-import { addPlaceNote } from './create'
-import { deletePlaceNote } from './delete'
-import { getPlaceNotes } from './list'
-import { updatePlaceNote } from './update'
+
+// Import contracts
+import {
+  CreateNoteApiResponseSchema,
+  CreateNoteBodySchema,
+  CreateNoteParamsSchema,
+} from './create-note/contract'
+import {
+  DeleteNoteApiResponseSchema,
+  DeleteNoteParamsSchema,
+} from './delete-note/contract'
+import {
+  ListNotesApiResponseSchema,
+  ListNotesParamsSchema,
+} from './list-notes/contract'
+import {
+  UpdateNoteApiResponseSchema,
+  UpdateNoteBodySchema,
+  UpdateNoteParamsSchema,
+} from './update-note/contract'
+
+// Import handlers
+import { createNoteHandler } from './create-note/create-note'
+import { deleteNoteHandler } from './delete-note/delete-note'
+import { listNotesHandler } from './list-notes/list-notes'
+import { updateNoteHandler } from './update-note/update-note'
 
 const notesRouter: Router = express.Router({ mergeParams: true })
 
 notesRouter.get(
   '/',
   validateRequest({
-    paramsSchema: NotesParamsSchema,
-    responseSchema: NotesApiResponseSchema,
+    paramsSchema: ListNotesParamsSchema,
+    responseSchema: ListNotesApiResponseSchema,
   }),
-  getPlaceNotes,
+  listNotesHandler,
 )
 
 notesRouter.post(
   '/',
   validateRequest({
-    paramsSchema: NotesParamsSchema,
-    bodySchema: AddNoteBodySchema,
-    responseSchema: AddNoteApiResponseSchema,
+    paramsSchema: CreateNoteParamsSchema,
+    bodySchema: CreateNoteBodySchema,
+    responseSchema: CreateNoteApiResponseSchema,
   }),
-  addPlaceNote,
+  createNoteHandler,
 )
 
 notesRouter.patch(
   '/:noteId',
   validateRequest({
-    paramsSchema: NoteParamsSchema,
+    paramsSchema: UpdateNoteParamsSchema,
     bodySchema: UpdateNoteBodySchema,
     responseSchema: UpdateNoteApiResponseSchema,
   }),
-  updatePlaceNote,
+  updateNoteHandler,
 )
 
 notesRouter.delete(
   '/:noteId',
   validateRequest({
-    paramsSchema: NoteParamsSchema,
+    paramsSchema: DeleteNoteParamsSchema,
     responseSchema: DeleteNoteApiResponseSchema,
   }),
-  deletePlaceNote,
+  deleteNoteHandler,
 )
 
 export default notesRouter

@@ -7,7 +7,7 @@ import { usePostContactPhone } from '@/api/mutations/contacts/usePostContactPhon
 import { useUpdateContact } from '@/api/mutations/contacts/useUpdateContact'
 import { useUpdateContactEmail } from '@/api/mutations/contacts/useUpdateContactEmail'
 import { useUpdateContactPhone } from '@/api/mutations/contacts/useUpdateContactPhone'
-import type { ContactType, PhoneTypeEnum } from '@ritchy/types'
+import type { ContactType, PhoneTypeEnum } from '@api/shared'
 import { toast } from 'sonner'
 
 export const useContactMutations = (placeId: string) => {

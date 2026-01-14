@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { StatusType } from '@ritchy/types'
+import type { StatusType } from '@api/shared'
 import { Badge } from '../ui/badge'
 import { getStatusColor } from './status-colors'
 import { getStatusLabel } from './status-label'

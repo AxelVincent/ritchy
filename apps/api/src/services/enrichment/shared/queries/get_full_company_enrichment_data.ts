@@ -1,4 +1,3 @@
-import type { CompanyEnrichmentData } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../../db/db'
 import {
@@ -8,6 +7,7 @@ import {
   place,
   userPlace,
 } from '../../../../db/schema'
+import type { CompanyEnrichmentData } from '../../../../shared'
 import { getEnrichmentCompanyOfficers } from '../../contact/queries/get_enrichment_company_officers'
 import { getEnrichmentEmails } from './get_enrichment_emails'
 import { getEnrichmentFacebooks } from './get_enrichment_facebooks'
@@ -23,12 +23,12 @@ import { getEnrichmentTechnologies } from './get_enrichment_technologies'
 export const getFullCompanyEnrichmentData = async (
   userPlaceId: string,
 ): Promise<CompanyEnrichmentData | null> => {
-  // Get base enrichment with company data
+  // Get base enrichment with company and place data
   const [enrichmentData] = await db
     .select({
       enrichment: enrichmentTable,
       company: enrichmentCompany,
-      placeId: place.id,
+      place: place,
     })
     .from(enrichmentTable)
     .innerJoin(place, eq(enrichmentTable.placeId, place.id))
@@ -44,7 +44,7 @@ export const getFullCompanyEnrichmentData = async (
     return null
   }
 
-  const { enrichment, company, placeId } = enrichmentData
+  const { enrichment, company, place: placeData } = enrichmentData
 
   // Parallel fetch all related data
   const [
@@ -67,7 +67,11 @@ export const getFullCompanyEnrichmentData = async (
 
   return {
     enrichmentId: enrichment.id,
-    placeId,
+    placeId: placeData.id,
+
+    // Complete Google Place data - direct passthrough from stored JSONB
+    googlePlace:
+      placeData.google_place_data as CompanyEnrichmentData['googlePlace'],
 
     // Website data
     domain: enrichment.domain,

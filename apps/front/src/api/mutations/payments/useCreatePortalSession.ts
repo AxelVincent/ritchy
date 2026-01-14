@@ -1,5 +1,5 @@
 import { useApiMutation } from '@/hooks/useApi'
-import type { CreatePortalSessionApiResponse } from '@ritchy/types'
+import type { CreatePortalSessionApiResponse } from '@api/routes_web/payments/create-portal-session/contract'
 
 export const useCreatePortalSession = () => {
   return useApiMutation<

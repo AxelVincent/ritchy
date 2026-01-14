@@ -1,9 +1,9 @@
 import { logger } from '@ritchy/logger'
-import type { Rectangle, SearchModel } from '@ritchy/types'
 import { eq, sql } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { place, searchPlace, userPlace } from '../../db/schema'
 import { postTextSearchV1 } from '../../external/google_maps/text_search_V1'
+import type { Rectangle, SearchModel } from '../../shared'
 import { reorderByEnrichmentScore } from '../places/utils/reorder_by_enrichment_score'
 
 export interface SearchConfig {

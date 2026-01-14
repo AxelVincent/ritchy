@@ -1,6 +1,5 @@
 import { logger } from '@ritchy/logger'
 
-import type { DomainRegistration } from '@ritchy/types'
 import { enqueueWhoisJob } from '../../internal/bullmq/jobs/whois/queue'
 import {
   createSimpleDurationTimer,
@@ -8,6 +7,7 @@ import {
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
 import { isSocialMediaUrl } from '../../services/enrichment/shared/utils/is_social_media_url'
+import type { DomainRegistration } from '../../shared'
 
 /**
  * Performs WHOIS lookup using external API

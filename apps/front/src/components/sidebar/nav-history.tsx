@@ -9,7 +9,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
-import type { Search } from '@ritchy/types'
+import type { Search } from '@api/shared'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   History,

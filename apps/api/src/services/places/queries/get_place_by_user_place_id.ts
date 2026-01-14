@@ -21,6 +21,7 @@ export const getPlaceByUserPlaceId = async (
       location: placeTable.location,
       types: placeTable.types,
       primary_type: placeTable.primary_type,
+      business_status: placeTable.business_status,
       price_level: placeTable.price_level,
       price_range: placeTable.price_range,
       rating: placeTable.rating,
@@ -48,6 +49,9 @@ export const getPlaceByUserPlaceId = async (
       user_place_id: userPlace.id,
       enriched_at: userPlace.enriched_at,
       reviews: placeTable.reviews,
+      google_maps_links: placeTable.google_maps_links,
+      editorial_summary: placeTable.editorial_summary,
+      google_place_data: placeTable.google_place_data,
     })
     .from(placeTable)
     .innerJoin(userPlace, eq(placeTable.id, userPlace.place_id))

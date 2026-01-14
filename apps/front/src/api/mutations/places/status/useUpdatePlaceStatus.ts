@@ -2,13 +2,14 @@ import { placeKeys } from '@/api/queries/places/usePlace'
 import { userPlaceMarkersKeys } from '@/api/queries/user-places/useUserPlaceMarkers'
 import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation, webApiClient } from '@/hooks/useApi'
-import { useAuth } from '@clerk/clerk-react'
+import type { GetPlaceApiResponse } from '@api/routes_web/places/get/contract'
 import type {
-  GetPlaceApiResponse,
-  GetUserPlacesApiResponse,
   UpdateStatusApiResponse,
-  UpdateStatusRequest,
-} from '@ritchy/types'
+  UpdateStatusBody,
+  UpdateStatusParams,
+} from '@api/routes_web/places/update-status/contract'
+import type { GetUserPlacesApiResponse } from '@api/routes_web/user-places/get/contract'
+import { useAuth } from '@clerk/clerk-react'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useUpdatePlaceStatus = () => {
@@ -17,7 +18,7 @@ export const useUpdatePlaceStatus = () => {
 
   return useApiMutation<
     UpdateStatusApiResponse,
-    UpdateStatusRequest & { listId: string | null }
+    UpdateStatusBody & UpdateStatusParams & { listId: string | null }
   >('/places/:userPlaceId/status', {
     method: 'PUT',
     getEndpoint: ({ userPlaceId }) => `/places/${userPlaceId}/status`,

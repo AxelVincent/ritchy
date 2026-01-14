@@ -1,4 +1,4 @@
-import type { Email } from '@ritchy/types'
+import type { Email } from '@api/shared'
 import { EmailQualityBadge } from '../common/EmailQualityBadge'
 
 export const QualityBadge = (email: Email) => {

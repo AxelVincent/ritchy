@@ -1,14 +1,15 @@
-import type { GeocodeRequestParams, GeocodeResult } from '@ritchy/types'
-import type {
-  AutocompletePrediction,
-  AutocompleteRequestBody,
-} from '@ritchy/types'
 import { Queue, QueueEvents } from 'bullmq'
 import type {
   GooglePlacesTextSearchRequestBody,
   GooglePlacesTextSearchResponse,
   PreferredPlace,
 } from '../../../../../external/google_maps/types'
+import type {
+  AutocompletePrediction,
+  AutocompleteRequestBody,
+  GeocodeRequestParams,
+  GeocodeResult,
+} from '../../../../../shared'
 import { bullmqRedisOptions } from '../../../config'
 
 const queueName = 'google-places-api'

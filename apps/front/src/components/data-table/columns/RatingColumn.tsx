@@ -1,4 +1,4 @@
-import type { SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@api/shared'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Star } from 'lucide-react'
 import { ClickableCell } from './utils/ClickableCell'

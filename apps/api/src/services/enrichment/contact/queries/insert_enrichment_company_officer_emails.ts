@@ -1,8 +1,8 @@
-import type { EmailQualityEnum, EmailResultEnum } from '@ritchy/types'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { db } from '../../../../db/db'
 import type * as schema from '../../../../db/schema'
 import { enrichmentCompanyOfficerEmail } from '../../../../db/schema/enrichment'
+import type { EmailQualityEnum, EmailResultEnum } from '../../../../shared'
 
 type EmailQualityType = (typeof EmailQualityEnum.options)[number]
 type EmailResultType = (typeof EmailResultEnum.options)[number]

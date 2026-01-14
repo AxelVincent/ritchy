@@ -1,6 +1,5 @@
 import { logger } from '@ritchy/logger'
 
-import type { PlaceBase, PlacesSearchRequestBody } from '@ritchy/types'
 import { eq } from 'drizzle-orm'
 import { db } from '../../db/db'
 import { search, searchPlace } from '../../db/schema'
@@ -11,6 +10,7 @@ import {
 } from '../../metrics/collectors'
 import { getPlaceByUserPlaceId } from '../../services/places/queries/get_place_by_user_place_id'
 import type { PlaceWithEnrichedAt } from '../../services/places/queries/get_places_by_user_place_ids'
+import type { PlaceBase, PlacesSearchRequestBody } from '../../shared'
 import { getPlaceDetailsV1 } from './place_details_V1'
 import { postTextSearchV1 } from './text_search_V1'
 import { mapToPlaceDetails } from './utils/mapper'

@@ -4,15 +4,15 @@ import { useApiMutation } from '@/hooks/useApi'
 import { validateUUIDs } from '@/lib/validation'
 import type {
   BulkEnrichmentApiResponse,
-  BulkEnrichmentRequestBody,
-  EnrichmentStatusResponse,
-} from '@ritchy/types'
+  BulkEnrichmentRequest,
+} from '@api/routes_web/enrich/bulk/contract'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useBulkEnrichment = () => {
   const queryClient = useQueryClient()
 
-  return useApiMutation<BulkEnrichmentApiResponse, BulkEnrichmentRequestBody>(
+  return useApiMutation<BulkEnrichmentApiResponse, BulkEnrichmentRequest>(
     '/enrich/bulk',
     {
       method: 'POST',

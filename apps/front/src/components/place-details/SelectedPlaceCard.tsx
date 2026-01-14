@@ -7,9 +7,9 @@ import { StatusDropdown } from '@/components/status/status-dropdown'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { Place } from '@api/shared'
 import { faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import type { Place } from '@ritchy/types'
 import { ExternalLink, X } from 'lucide-react'
 import { PlaceCompanyDetailsTab } from './tabs/PlaceCompanyDetailsTab'
 import { PlaceContactTab } from './tabs/PlaceContactTab'
@@ -151,34 +151,34 @@ export const SelectedPlaceCard = ({
           className="flex flex-col h-full"
         >
           <TabsList
-            className="p-0 flex flex-wrap h-auto min-h-[45px] shrink-0 items-center bg-transparent"
+            className="flex flex-wrap min-h-[45px] shrink-0"
             aria-label="Place details"
           >
             <TabsTrigger
               value="details"
               aria-label="Informations"
-              className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+              className="flex-1 min-w-[120px]"
             >
               Informations
             </TabsTrigger>
             <TabsTrigger
               value="company_details"
               aria-label="company_details"
-              className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+              className="flex-1 min-w-[120px]"
             >
               Company Details
             </TabsTrigger>
             <TabsTrigger
               value="contacts"
               aria-label="Contacts"
-              className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+              className="flex-1 min-w-[120px]"
             >
               Contacts
             </TabsTrigger>
             <TabsTrigger
               value="notes"
               aria-label="Notes"
-              className="flex-1 min-w-[120px] relative py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground data-[state=active]:text-foreground data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-primary focus-visible:ring-0 !shadow-none"
+              className="flex-1 min-w-[120px]"
             >
               Notes
             </TabsTrigger>

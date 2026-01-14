@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
-import type { SearchResult } from '@ritchy/types'
+import type { SearchResult } from '@api/shared'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { HelpCircle } from 'lucide-react'

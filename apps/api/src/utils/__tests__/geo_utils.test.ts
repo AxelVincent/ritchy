@@ -1,6 +1,6 @@
-import type { Rectangle } from '@ritchy/types'
 import { center, featureCollection, point } from '@turf/turf'
 import { describe, expect, it } from 'vitest'
+import type { Rectangle } from '../../shared'
 import {
   divideRectangleIntoFour,
   getLargestSquareFromCoordinates,

@@ -20,6 +20,7 @@ import { metricsRegistry } from './metrics/registry'
 import { ensureRegistryInitialized, getRegistry } from './metrics/singleton'
 import { basicAuth } from './middleware/basic_auth'
 import { addRequestMetadata } from './middleware/request_metadata'
+import apiRoutes from './routes_api'
 import webRoutes from './routes_web'
 import webhookRoutes from './webhook'
 
@@ -349,6 +350,9 @@ app.get('/metrics', async (req, res) => {
 
 // Web routes
 app.use('/web', isAuthenticated, webRoutes)
+
+// Public API routes (API key auth, no Clerk)
+app.use('/api', apiRoutes)
 
 // Webhook route
 app.use('/webhook', webhookRoutes)

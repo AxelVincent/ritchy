@@ -1,5 +1,4 @@
 import { logger } from '@ritchy/logger'
-import type { CompanyEnrichmentResponse } from '@ritchy/types'
 import { UnrecoverableError } from 'bullmq'
 import { eq } from 'drizzle-orm'
 import { db } from '../../../db/db'
@@ -12,6 +11,7 @@ import { performWhoisLookup } from '../../../external/whois/who_is_lookup'
 import { enqueueScraperJob } from '../../../internal/bullmq/jobs/scraper/queue'
 import { extractErrorMessage } from '../../../internal/bullmq/utils/extract-error-message'
 import { startEnrichmentTracking } from '../../../metrics/enrichment'
+import type { CompanyEnrichmentResponse } from '../../../shared'
 import { populateContactFromEnrichment } from '../../contact/populate_contact_from_enrichment'
 import {
   INSUFFICIENT_CREDITS_ERROR,

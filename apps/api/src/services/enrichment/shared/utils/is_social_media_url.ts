@@ -1,4 +1,4 @@
-import { SOCIAL_MEDIA_DOMAINS } from '@ritchy/types'
+import { SOCIAL_MEDIA_DOMAINS } from '../../../../shared'
 
 export const isSocialMediaUrl = (domain: string): boolean => {
   try {

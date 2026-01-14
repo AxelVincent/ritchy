@@ -1,5 +1,5 @@
-import type { EmailQualityEnum, EmailResultEnum } from '@ritchy/types'
 import { db } from '../../../../db/db'
+import type { EmailQualityEnum, EmailResultEnum } from '../../../../shared'
 
 import { enrichmentEmail } from '../../../../db/schema/enrichment'
 

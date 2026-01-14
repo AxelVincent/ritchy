@@ -1,6 +1,6 @@
 import { getEstimatedProgress, getStepLabel } from '@/lib/enrichment-steps'
 import { cn } from '@/lib/utils'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { CheckCircle, Loader2, XCircle } from 'lucide-react'
 
 interface EnrichmentProgressProps {

@@ -10,7 +10,7 @@ import type {
   PaginationMeta,
   SearchResult,
   SortOrder,
-} from '@ritchy/types'
+} from '@api/shared'
 import {
   type ColumnDef,
   type SortingState,

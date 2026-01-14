@@ -2,10 +2,8 @@ import { activeEnrichmentsKeys } from '@/api/queries/enrichment/useActiveEnrichm
 import { enrichmentStatusKeys } from '@/api/queries/enrichment/useEnrichmentStatus'
 import { useApiMutation } from '@/hooks/useApi'
 import { isValidUUID } from '@/lib/validation'
-import type {
-  BulkEnrichmentApiResponse,
-  EnrichmentStatusResponse,
-} from '@ritchy/types'
+import type { BulkEnrichmentApiResponse } from '@api/routes_web/enrich/bulk/contract'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useSingleEnrichment = () => {

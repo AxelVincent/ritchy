@@ -5,7 +5,7 @@ import type {
   MultiSelectOperator,
   NumberOperator,
   TextOperator,
-} from '@ritchy/types'
+} from '@api/shared'
 
 // Human-readable labels for text operators
 // NOTE: Backend currently only supports 'contains' (ILIKE) and 'semantic_match'.

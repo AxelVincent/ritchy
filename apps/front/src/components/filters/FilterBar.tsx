@@ -19,7 +19,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import type { FilterRule, ListFilterOptions } from '@ritchy/types'
+import type { FilterRule, ListFilterOptions } from '@api/shared'
 import { Filter, Loader2, Plus, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AIFilterSearchBar } from './AIFilterSearchBar'

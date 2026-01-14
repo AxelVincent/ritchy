@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { NotesApiResponse } from '@ritchy/types'
+import type { ListNotesApiResponse } from '@api/routes_web/places/notes/list-notes/contract'
 
 const notesKeys = {
   all: ['notes'] as const,
@@ -7,7 +7,7 @@ const notesKeys = {
 }
 
 export const usePlaceNotesQuery = (userPlaceId: string) => {
-  return useApiQuery<NotesApiResponse>(
+  return useApiQuery<ListNotesApiResponse>(
     `/places/${userPlaceId}/notes`,
     notesKeys.place(userPlaceId),
   )

@@ -4,7 +4,7 @@ import { useApiMutation } from '@/hooks/useApi'
 import type {
   UpdateContactEmailApiResponse,
   UpdateContactEmailRequest,
-} from '@ritchy/types'
+} from '@api/routes_web/contacts/update-email/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 export const useUpdateContactEmail = () => {

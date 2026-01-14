@@ -1,5 +1,5 @@
 import { debugLog } from '@/lib/utils/debug-logging'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 import { enrichmentStatusKeys } from './useEnrichmentStatus'

@@ -1,5 +1,4 @@
 import { logger } from '@ritchy/logger'
-import type { Place } from '@ritchy/types'
 import { and, eq } from 'drizzle-orm'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
@@ -8,10 +7,9 @@ import { list, search } from '../../../db/schema'
 import { getAggregatedUserPlaces } from '../../../services/places/queries/get_aggregated_user_places'
 import { handleCacheMisses } from '../../../services/places/utils/handle-cache-misses'
 import { populateSearchPlacesIfEmpty } from '../../../services/searches/populate-search-places'
-import {
-  UserPlacesQuerySchema,
-  extractFilterParams,
-} from '../../../utils/filters/query-schema'
+import type { Place } from '../../../shared'
+import { extractFilterParams } from '../../../utils/filters/query-schema'
+import { ExportUserPlacesQuerySchema } from './contract'
 
 // Helper to safely format date values (handles Date objects and strings)
 const formatDate = (value: Date | string | null | undefined): string => {
@@ -253,8 +251,8 @@ export const exportUserPlaces = async (
   })
 
   try {
-    // Parse query parameters using shared schema
-    const queryResult = UserPlacesQuerySchema.safeParse(req.query)
+    // Parse query parameters using local schema
+    const queryResult = ExportUserPlacesQuerySchema.safeParse(req.query)
     if (!queryResult.success) {
       logger.info({
         msg: 'Invalid query parameters',

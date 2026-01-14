@@ -1,3 +1,3 @@
-import { isModelAvailable } from '@ritchy/types'
+import { isModelAvailable } from '@api/shared'
 
 export { isModelAvailable }

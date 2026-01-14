@@ -1,4 +1,4 @@
-import type { UserPlaceMarker } from '@ritchy/types'
+import type { UserPlaceMarker } from '@api/shared'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 export interface UseTableSelectionProps {

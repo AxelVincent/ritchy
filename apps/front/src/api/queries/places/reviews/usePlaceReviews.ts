@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { GetReviewsApiResponse } from '@ritchy/types'
+import type { GetReviewsApiResponse } from '@api/routes_web/places/reviews/contract'
 
 const reviewsKeys = {
   place: (userPlaceId: string) => ['reviews', 'place', userPlaceId] as const,

@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import type { Note } from '@ritchy/types'
+import type { Note } from '@api/shared'
 import { formatDistanceToNow } from 'date-fns'
 import { Check, Loader2, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'

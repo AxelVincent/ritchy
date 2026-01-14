@@ -2,11 +2,11 @@ import type {
   FilterRule,
   ListContentFilters,
   PaginationParams,
-} from '@ritchy/types'
+} from '@api/shared'
 import {
   deserializeFiltersFromParams,
   serializeFiltersToParams,
-} from '@ritchy/types'
+} from '@api/shared'
 import type { SortingState } from '@tanstack/react-table'
 import { useCallback, useMemo } from 'react'
 

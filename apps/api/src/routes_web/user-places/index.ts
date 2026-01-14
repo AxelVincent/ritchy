@@ -1,16 +1,18 @@
-import {
-  GetUserPlaceFilterOptionsApiResponseSchema,
-  GetUserPlaceMarkersApiResponseSchema,
-  GetUserPlacePageApiResponseSchema,
-  GetUserPlacesApiResponseSchema,
-} from '@ritchy/types'
 import express, { type Router } from 'express'
 import { validateRequest } from '../../middleware/zodValidation'
+
+import { GetUserPlaceFilterOptionsApiResponseSchema } from './filter-options/contract'
+import { GetUserPlacePageApiResponseSchema } from './get-item-page/contract'
+// Import contracts
+import { GetUserPlacesApiResponseSchema } from './get/contract'
+import { GetUserPlaceMarkersApiResponseSchema } from './markers/contract'
+
 import { exportUserPlaces } from './export/export_csv'
-import { getUserPlaceFilterOptions } from './get_filter_options/get_filter_options'
-import { getItemPage } from './get_item_page'
-import { getUserPlaceMarkers } from './get_markers/get_markers'
-import { getUserPlaces } from './get_user_places/get_user_places'
+import { getUserPlaceFilterOptions } from './filter-options/get-filter-options'
+import { getItemPage } from './get-item-page/get-item-page'
+// Import handlers
+import { getUserPlaces } from './get/get-user-places'
+import { getUserPlaceMarkers } from './markers/get-markers'
 
 const userPlacesRouter: Router = express.Router()
 

@@ -1,4 +1,4 @@
-import type { OpeningHours } from '@ritchy/types'
+import type { OpeningHours } from '../../../shared'
 
 /**
  * Calculates whether a place is currently open based on its opening hours

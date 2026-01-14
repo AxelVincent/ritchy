@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { useSidebar } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
-import type { PaginationMeta } from '@ritchy/types'
+import type { PaginationMeta } from '@api/shared'
 import {
   ChevronLeft,
   ChevronRight,

@@ -1,4 +1,4 @@
-import type { PaginationMeta, PaginationParams } from '@ritchy/types'
+import type { PaginationMeta, PaginationParams } from '../shared'
 
 /**
  * Calculate pagination metadata from params and total item count

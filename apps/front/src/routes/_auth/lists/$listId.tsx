@@ -1,4 +1,4 @@
-import { serializeFiltersToParams } from '@ritchy/types'
+import { serializeFiltersToParams } from '@api/shared'
 import { Navigate, createFileRoute } from '@tanstack/react-router'
 
 /**

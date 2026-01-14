@@ -1,4 +1,4 @@
-import type { AutocompletePrediction } from '@ritchy/types'
+import type { AutocompletePrediction } from '@api/shared'
 
 export type RowStatus =
   | 'pending' // Not yet processed

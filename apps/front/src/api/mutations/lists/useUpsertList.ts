@@ -1,26 +1,26 @@
 import { userPlacesKeys } from '@/api/queries/user-places/useUserPlaces'
 import { useApiMutation } from '@/hooks/useApi'
 import type {
-  GetUserPlacesApiResponse,
-  Lists,
-  UpsertListRequest,
-  UpsertListResponse,
-} from '@ritchy/types'
+  CreateListRequest,
+  CreateListResponse,
+} from '@api/routes_web/lists/create/contract'
+import type { ListsResponse } from '@api/routes_web/lists/list/contract'
+import type { GetUserPlacesApiResponse } from '@api/routes_web/user-places/get/contract'
 import { useQueryClient } from '@tanstack/react-query'
 
 type Context = {
-  previousLists: Lists | undefined
+  previousLists: ListsResponse | undefined
 }
 
 export const useUpsertList = () => {
   const queryClient = useQueryClient()
 
-  return useApiMutation<UpsertListResponse, UpsertListRequest>('/lists', {
+  return useApiMutation<CreateListResponse, CreateListRequest>('/lists', {
     onMutate: async (newList) => {
       await queryClient.cancelQueries({ queryKey: ['lists'] })
-      const previousLists = queryClient.getQueryData<Lists>(['lists'])
+      const previousLists = queryClient.getQueryData<ListsResponse>(['lists'])
 
-      queryClient.setQueryData<Lists>(['lists'], (old) => {
+      queryClient.setQueryData<ListsResponse>(['lists'], (old) => {
         if (!old) return old
         const updatedLists = old.map((list) =>
           list.id === newList.id ? { ...list, ...newList } : list,

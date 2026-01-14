@@ -1,6 +1,6 @@
 import { Badge, type BadgeProps } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import type { EnrichmentStatusResponse } from '@ritchy/types'
+import type { EnrichmentStatusResponse } from '@api/routes_web/enrich/shared'
 import {
   CheckCircle2,
   CircleDashed,

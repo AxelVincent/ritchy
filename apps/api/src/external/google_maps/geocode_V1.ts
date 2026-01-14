@@ -1,10 +1,5 @@
 import { logger } from '@ritchy/logger'
 
-import type {
-  GeocodeRequestParams,
-  GeocodeResult,
-  Rectangle,
-} from '@ritchy/types'
 import { GOOGLE_MAPS_CONFIG } from '../../config/google_maps'
 import { REDIS_KEYS } from '../../internal/redis/keys'
 import { redisClient } from '../../internal/redis/redis'
@@ -13,6 +8,11 @@ import {
   externalApiDurationHistogram,
   externalApiRequestsCounter,
 } from '../../metrics/collectors'
+import type {
+  GeocodeRequestParams,
+  GeocodeResult,
+  Rectangle,
+} from '../../shared'
 
 export interface GeocodeLocationResult {
   bounds: Rectangle

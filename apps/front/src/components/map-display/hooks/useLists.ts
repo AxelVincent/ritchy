@@ -5,7 +5,7 @@ import { useListsQuery } from '@/api/queries/lists/useLists'
 import type {
   AddItemsToListRequest,
   DeleteItemsFromListRequest,
-} from '@ritchy/types'
+} from '@api/shared'
 
 interface UpsertListParams {
   name: string

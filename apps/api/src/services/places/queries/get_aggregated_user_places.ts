@@ -1,13 +1,3 @@
-import {
-  type EnrichedStatus,
-  type ListContentFilters,
-  type PaginationParams,
-  type Place as PlaceApi,
-  type PlaceListAssociation,
-  type SortOrder,
-  USER_PLACES_DEFAULT_SORT,
-  getEffectiveSortColumn,
-} from '@ritchy/types'
 import { type InferSelectModel, sql } from 'drizzle-orm'
 import { db } from '../../../db/db'
 import type {
@@ -20,6 +10,16 @@ import type {
   status,
   userPlace,
 } from '../../../db/schema'
+import {
+  type EnrichedStatus,
+  type ListContentFilters,
+  type PaginationParams,
+  type Place as PlaceApi,
+  type PlaceListAssociation,
+  type SortOrder,
+  USER_PLACES_DEFAULT_SORT,
+  getEffectiveSortColumn,
+} from '../../../shared'
 import {
   buildPlaceFilterConditions,
   buildSortClause,

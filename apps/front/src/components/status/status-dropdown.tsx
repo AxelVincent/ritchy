@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { StatusType } from '@ritchy/types'
+import type { StatusType } from '@api/shared'
 import { ChevronDown } from 'lucide-react'
 import posthog from 'posthog-js'
 import { useEffect, useState } from 'react'

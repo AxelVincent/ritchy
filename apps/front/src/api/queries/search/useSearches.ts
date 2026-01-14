@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { GetSearchesResponse } from '@ritchy/types'
+import type { GetSearchesResponse } from '@api/routes_web/searches/get-all/contract'
 
 const searchesKeys = {
   all: ['searches'] as const,

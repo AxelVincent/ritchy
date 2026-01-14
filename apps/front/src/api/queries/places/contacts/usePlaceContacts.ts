@@ -1,5 +1,5 @@
 import { useApiQuery } from '@/hooks/useApi'
-import type { GetPlacesContactsApiResponse } from '@ritchy/types/src/api/places/contacts/get'
+import type { GetContactsApiResponse } from '@api/routes_web/places/contacts/contract'
 
 export const placeContactsKeys = {
   all: ['placeContacts'] as const,
@@ -8,7 +8,7 @@ export const placeContactsKeys = {
 }
 
 export const usePlaceContactsQuery = (userPlaceId: string) => {
-  return useApiQuery<GetPlacesContactsApiResponse>(
+  return useApiQuery<GetContactsApiResponse>(
     `/places/${userPlaceId}/contacts`,
     placeContactsKeys.place(userPlaceId),
   )
