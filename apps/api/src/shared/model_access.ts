@@ -1,7 +1,5 @@
-import type {
-  Plan,
-  SearchModel,
-} from '../routes_web/payments/create-checkout-session/contract'
+import type { Plan, SearchModel } from './enums'
+import { getPlanSearchModel } from './plans'
 
 // Define search model hierarchy (higher number = more advanced)
 const SEARCH_MODEL_HIERARCHY: Record<SearchModel, number> = {
@@ -9,14 +7,6 @@ const SEARCH_MODEL_HIERARCHY: Record<SearchModel, number> = {
   ENHANCED: 1,
   ADVANCED: 2,
   EXPERT: 3,
-} as const
-
-// Define plan to search model mapping
-const PLAN_TO_SEARCH_MODEL: Record<Plan, SearchModel> = {
-  FREE: 'BASIC',
-  ESSENTIALS: 'ENHANCED',
-  PRO: 'ADVANCED',
-  ENTERPRISE: 'EXPERT',
 } as const
 
 /**
@@ -34,10 +24,9 @@ export const hasModelAccess = (
 
 /**
  * Get the maximum search model available for a plan
+ * Re-exported from centralized plan config for backward compatibility
  */
-export const getPlanSearchModel = (plan: Plan): SearchModel => {
-  return PLAN_TO_SEARCH_MODEL[plan]
-}
+export { getPlanSearchModel }
 
 /**
  * Check if a model is available for a specific plan

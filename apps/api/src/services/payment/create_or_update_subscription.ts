@@ -6,7 +6,7 @@ import { getPlanFromProductId } from '../../config/stripe'
 import { db } from '../../db/db'
 import { subscription } from '../../db/schema'
 import { credits as creditsTable } from '../../db/schema/credits'
-import { CREDIT_CONFIG } from './config'
+import { getPlanCredits, getPlanSearchModel } from '../../shared/plans'
 
 type SubscriptionResult = {
   planType: StripePlan
@@ -54,9 +54,8 @@ export const createOrUpdateSubscription = async (
   const stripePriceId = items[0].price.id
   const productId = items[0].plan.product as string
   const planType = getPlanFromProductId(productId)
-  // TODO: Remove search model
-  const searchModel =
-    planType === 'ESSENTIALS' || planType === 'PRO' ? 'ENHANCED' : 'BASIC'
+  // Search model derived from centralized plan config
+  const searchModel = getPlanSearchModel(planType)
   const status = stripeEvent.status
 
   // Check if subscription already exists to determine if this is new
@@ -104,9 +103,8 @@ export const createOrUpdateSubscription = async (
       },
     })
 
-  // Allocate credits for the subscription
-  const creditConfig = CREDIT_CONFIG.find((config) => config.plan === planType)
-  const credits = creditConfig?.credits ?? 0
+  // Allocate credits for the subscription from centralized config
+  const credits = getPlanCredits(planType)
 
   logger.info({
     msg: 'Allocating credits for subscription',

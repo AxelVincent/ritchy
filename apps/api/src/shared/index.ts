@@ -11,6 +11,7 @@ export * from './user-places'
 export * from './lists'
 export * from './searches'
 export * from './api-keys'
+export * from './plans'
 
 // Re-export types from route contracts that are used by frontend
 export type { Financial } from '../routes_web/places/enrichment/contract'

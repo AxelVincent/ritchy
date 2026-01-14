@@ -1,17 +1,11 @@
 import { useUserMe } from '@/api/queries/users/useUserMe'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
   Tooltip,
   TooltipContent,
@@ -19,135 +13,121 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { toast } from '@/hooks/use-toast'
-import type { Plan } from '@api/shared'
+import { cn } from '@/lib/utils'
+import {
+  ALL_PLANS,
+  type BillingPeriod,
+  type Currency,
+  PLAN_HIERARCHY,
+  type Plan,
+  getMonthlyEquivalentPrice,
+  getPlanConfig,
+  getPlanPrice,
+  getSavingsPercentage,
+} from '@api/shared'
 import { Link } from '@tanstack/react-router'
 import {
-  ArrowRightIcon,
+  ArrowRight,
   Building2,
-  CheckIcon,
+  Check,
+  ChevronDown,
+  Code2,
   Copy,
-  Info,
+  Rocket,
   Search,
+  Sparkles,
+  Target,
+  TrendingUp,
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 
-interface PricingTier {
-  name: string
-  plan: Plan | 'ENTERPRISE'
-  description: string
-  tagline: string
-  features: string[]
-  isPopular?: boolean
-  isEnterprise?: boolean
-  icon: React.ReactNode
-  seatCount: string
-  creditsPerMonth: string
-  leadLimit: string
-}
-
-// Currency-based pricing configuration
-const pricingByCurrency = {
-  usd: {
-    ESSENTIALS: {
-      monthlyPrice: 149,
-      quarterlyPrice: 406,
-      yearlyPrice: 1445,
-    },
-    PRO: {
-      monthlyPrice: 267,
-      quarterlyPrice: 723,
-      yearlyPrice: 2570,
-    },
-    ENTERPRISE: {
-      monthlyPrice: 699,
-      quarterlyPrice: 1890,
-      yearlyPrice: 6723,
-    },
+// Tier styling configuration
+const TIER_STYLES: Record<string, { gradient: string; accent: string }> = {
+  Rocket: {
+    gradient:
+      'from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900',
+    accent: 'text-slate-600 dark:text-slate-400',
   },
-  eur: {
-    ESSENTIALS: {
-      monthlyPrice: 129,
-      quarterlyPrice: 348,
-      yearlyPrice: 1238,
-    },
-    PRO: {
-      monthlyPrice: 229,
-      quarterlyPrice: 619,
-      yearlyPrice: 2198,
-    },
-    ENTERPRISE: {
-      monthlyPrice: 599,
-      quarterlyPrice: 1617,
-      yearlyPrice: 5750,
-    },
+  Zap: {
+    gradient:
+      'from-amber-100 to-amber-50 dark:from-amber-900 dark:to-amber-950',
+    accent: 'text-amber-600 dark:text-amber-400',
+  },
+  TrendingUp: {
+    gradient: 'from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-950',
+    accent: 'text-blue-600 dark:text-blue-400',
+  },
+  Search: {
+    gradient:
+      'from-emerald-100 to-emerald-50 dark:from-emerald-900 dark:to-emerald-950',
+    accent: 'text-emerald-600 dark:text-emerald-400',
+  },
+  Target: {
+    gradient:
+      'from-violet-100 to-violet-50 dark:from-violet-900 dark:to-violet-950',
+    accent: 'text-violet-600 dark:text-violet-400',
+  },
+  Building2: {
+    gradient: 'from-rose-100 to-rose-50 dark:from-rose-900 dark:to-rose-950',
+    accent: 'text-rose-600 dark:text-rose-400',
   },
 }
 
-const pricingTiers: PricingTier[] = [
-  {
-    name: 'Essentials',
-    plan: 'ESSENTIALS',
-    description: 'Perfect for entrepreneurs',
-    tagline: 'Prospecting made easy',
-    features: [
-      'Visual territory management',
-      'Complete business intelligence enrichment',
-      'Create personalised prospect lists',
-      'Repeat search to detect new prospects',
-      'Built-in email verifier',
-      'Prospect pipeline with custom statuses',
-      'Notes and progress tracking',
-      'CSV Export',
-      'Email support',
-    ],
-    isPopular: false,
-    icon: <Search className="h-6 w-6" />,
-    seatCount: '1 user seat',
-    creditsPerMonth: '1,000 credits',
-    leadLimit: 'Manage up to 1,000 leads',
-  },
-  {
-    name: 'Pro',
-    plan: 'PRO',
-    description: 'Built for small sales teams',
-    tagline: 'Fuel your growth',
-    features: [
-      'Team collaboration & lead sharing',
-      'Zapier integration',
-      'Onboarding session',
-      'Dedicated Slack/WhatsApp support channel',
-    ],
-    isPopular: true,
-    icon: <Zap className="h-6 w-6" />,
-    seatCount: '3 user seats',
-    creditsPerMonth: '3,000 credits',
-    leadLimit: 'Manage up to 10,000 leads',
-  },
-  {
-    name: 'Enterprise',
-    plan: 'ENTERPRISE',
-    description: 'Scale across your organization',
-    tagline: 'Dominate your market',
-    features: [
-      'Custom limits',
-      'Playbook included',
-      'Dedicated account manager',
-    ],
-    isEnterprise: false,
-    icon: <Building2 className="h-6 w-6" />,
-    seatCount: 'Unlimited user seats',
-    creditsPerMonth: '10,000 credits',
-    leadLimit: 'Manage up to 25,000 leads',
-  },
-]
+// Icon components
+const PLAN_ICONS: Record<string, React.ReactNode> = {
+  Rocket: <Rocket className="h-4 w-4" />,
+  Zap: <Zap className="h-4 w-4" />,
+  TrendingUp: <TrendingUp className="h-4 w-4" />,
+  Search: <Search className="h-4 w-4" />,
+  Target: <Target className="h-4 w-4" />,
+  Building2: <Building2 className="h-4 w-4" />,
+}
 
-// Plan hierarchy for determining upgrades vs downgrades
-const planHierarchy = {
-  FREE: 0,
-  ESSENTIALS: 1,
-  PRO: 2,
-  ENTERPRISE: 3,
+// Feature labels
+const FEATURE_LABELS: Record<string, string> = {
+  visualTerritoryManagement: 'Visual territory management',
+  businessEnrichment: 'Business enrichment',
+  emailVerifier: 'Email verifier',
+  prospectPipeline: 'Prospect pipeline',
+  notesTracking: 'Notes & tracking',
+  csvExport: 'CSV Export',
+  emailSupport: 'Email support',
+  repeatSearch: 'Repeat search',
+  personalizedLists: 'Personalised lists',
+  teamCollaboration: 'Team collaboration',
+  zapierIntegration: 'Zapier integration',
+  onboardingSession: 'Onboarding session',
+  dedicatedSupport: 'Dedicated support',
+  customLimits: 'Custom limits',
+  playbook: 'Playbook included',
+  accountManager: 'Account manager',
+  apiAccess: 'API access',
+  priorityEmailSupport: 'Priority email support',
+  whatsAppSupport: 'WhatsApp support',
+  slackChannel: 'Dedicated Slack channel',
+}
+
+// Get incremental features
+const getDisplayFeatures = (plan: Plan, planIndex: number): string[] => {
+  const config = getPlanConfig(plan)
+  const enabledFeatures = Object.entries(config.features)
+    .filter(([_, enabled]) => enabled)
+    .map(([key]) => FEATURE_LABELS[key])
+    .filter((label): label is string => !!label)
+
+  if (planIndex === 0) return enabledFeatures
+
+  const previousPlan = ALL_PLANS[planIndex - 1]
+  if (!previousPlan) return enabledFeatures
+
+  const previousConfig = getPlanConfig(previousPlan)
+  const previousFeatures = Object.entries(previousConfig.features)
+    .filter(([_, enabled]) => enabled)
+    .map(([key]) => FEATURE_LABELS[key])
+    .filter((label): label is string => !!label)
+
+  return enabledFeatures.filter((f) => !previousFeatures.includes(f))
 }
 
 interface PromoOffer {
@@ -163,11 +143,11 @@ interface AnnualOffer {
 }
 
 interface PricingCardsProps {
-  billingPeriod: 'monthly' | 'quarterly' | 'yearly'
+  billingPeriod: BillingPeriod
   activePromos?: PromoOffer[]
   annualOffer?: AnnualOffer
-  currency?: 'usd' | 'eur'
-  onCurrencyChange?: (currency: 'usd' | 'eur') => void
+  currency?: Currency
+  onCurrencyChange?: (currency: Currency) => void
 }
 
 export const PricingCards = ({
@@ -177,374 +157,367 @@ export const PricingCards = ({
 }: PricingCardsProps) => {
   const { data: me } = useUserMe()
   const [copiedPromo, setCopiedPromo] = useState<string | null>(null)
+  const [openApiDetails, setOpenApiDetails] = useState<string | null>(null)
 
-  // Get currency symbol based on currency prop
   const currencySymbol = currency === 'eur' ? '€' : '$'
-
-  // Check if user has any active subscription
   const hasActiveSubscription = me?.plan && me.plan !== 'FREE'
+  const currentPlan = me?.plan as Plan | undefined
 
-  // Function to get pricing for a specific plan and currency
-  const getPricing = (plan: string, currency: 'usd' | 'eur') => {
-    return pricingByCurrency[currency][
-      plan as keyof typeof pricingByCurrency.usd
-    ]
-  }
-
-  // Function to determine if this is an upgrade or downgrade
-  const getPlanAction = (tierPlan: string) => {
+  const getPlanAction = (tierPlan: Plan) => {
+    if (tierPlan === 'FREE') return 'Free forever'
     if (!hasActiveSubscription) return 'Get started'
 
-    const currentPlanLevel =
-      planHierarchy[me?.plan as keyof typeof planHierarchy] || 0
-    const tierPlanLevel =
-      planHierarchy[tierPlan as keyof typeof planHierarchy] || 0
+    const currentPlanLevel = PLAN_HIERARCHY[currentPlan as Plan] || 0
+    const tierPlanLevel = PLAN_HIERARCHY[tierPlan] || 0
 
-    if (tierPlanLevel > currentPlanLevel) return 'Upgrade plan'
-    if (tierPlanLevel < currentPlanLevel) return 'Downgrade plan'
-    return 'Manage subscription'
+    if (tierPlanLevel > currentPlanLevel) return 'Upgrade'
+    if (tierPlanLevel < currentPlanLevel) return 'Downgrade'
+    return 'Current plan'
   }
 
-  // Function to copy promo code to clipboard
   const copyPromoCode = (code: string) => {
     navigator.clipboard
       .writeText(code)
       .then(() => {
         setCopiedPromo(code)
-        toast({
-          title: `Promo code ${code} copied to clipboard!`,
-        })
-
-        // Reset the copied state after 2 seconds
-        setTimeout(() => {
-          setCopiedPromo(null)
-        }, 2000)
+        toast({ title: `Promo code ${code} copied!` })
+        setTimeout(() => setCopiedPromo(null), 2000)
       })
       .catch(() => {
-        toast({
-          title: 'Failed to copy promo code',
-        })
+        toast({ title: 'Failed to copy promo code' })
       })
+  }
+
+  const getFeatureSectionTitle = (planIndex: number): string => {
+    if (planIndex === 0) return 'Includes'
+    const previousPlan = ALL_PLANS[planIndex - 1]
+    if (!previousPlan) return 'Includes'
+    const previousConfig = getPlanConfig(previousPlan)
+    return `${previousConfig.displayName} +`
   }
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {pricingTiers.map((tier) => {
-          // Find applicable promo for this tier
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 max-w-[1400px] mx-auto pt-4">
+        {ALL_PLANS.map((planId, planIndex) => {
+          const config = getPlanConfig(planId)
+          const tierStyle = TIER_STYLES[config.icon]
+          const isFree = planId === 'FREE'
+          const isCurrentPlan = currentPlan === planId
+          const isPopular = config.popular
+
           const applicablePromo = activePromos.find(
-            (promo) => promo.planId === tier.plan,
+            (promo) => promo.planId === planId,
           )
+          const hasPromo = !!applicablePromo && !isFree
 
-          const hasPromo = !!applicablePromo
-
-          // Get pricing for current currency
-          const tierPricing = getPricing(tier.plan, currency)
-
-          // Get price based on billing period
-          let currentPrice = tierPricing.monthlyPrice
-          let periodsPerYear = 12
-          let periodLabel = 'per month'
-
-          if (billingPeriod === 'quarterly') {
-            currentPrice = tierPricing.quarterlyPrice
-            periodsPerYear = 4
-            periodLabel = 'per quarter'
-          } else if (billingPeriod === 'yearly') {
-            currentPrice = tierPricing.yearlyPrice
-            periodsPerYear = 1
-            periodLabel = 'per year'
-          }
-
-          // Calculate price with promo if applicable
+          const currentPrice = getPlanPrice(planId, currency, billingPeriod)
           const finalPrice = hasPromo
             ? Math.round(currentPrice * (1 - applicablePromo.discount / 100))
             : currentPrice
 
-          // Calculate monthly equivalent and savings for quarterly/yearly
           const monthlyEquivalent =
-            billingPeriod !== 'monthly'
-              ? Math.round((finalPrice / (12 / periodsPerYear)) * 100) / 100
+            billingPeriod !== 'monthly' && !isFree
+              ? getMonthlyEquivalentPrice(planId, currency, billingPeriod)
               : null
 
           const savingsPercentage =
-            billingPeriod !== 'monthly' && monthlyEquivalent
-              ? Math.round(
-                  ((tierPricing.monthlyPrice - monthlyEquivalent) /
-                    tierPricing.monthlyPrice) *
-                    100,
-                )
+            billingPeriod !== 'monthly' && !isFree
+              ? getSavingsPercentage(planId, currency, billingPeriod)
               : null
 
+          const displayFeatures = getDisplayFeatures(planId, planIndex)
+
           return (
-            <Card
-              key={tier.name}
-              className={`relative flex flex-col h-full ${
-                tier.isPopular
-                  ? 'border-primary shadow-lg ring-2 ring-primary/20'
-                  : ''
-              }`}
+            <div
+              key={config.name}
+              className={cn(
+                'relative flex flex-col rounded-xl border bg-card transition-all duration-200',
+                isCurrentPlan
+                  ? 'border-emerald-300 dark:border-emerald-700 ring-1 ring-emerald-200 dark:ring-emerald-800'
+                  : isPopular && !hasActiveSubscription
+                    ? 'border-blue-300 dark:border-blue-700 shadow-lg shadow-blue-500/20 ring-1 ring-blue-200 dark:ring-blue-800'
+                    : 'border-border hover:shadow-md hover:border-border/80',
+              )}
             >
-              {tier.isPopular && (
-                <Badge
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2"
-                  variant="default"
-                >
-                  Most Popular
-                </Badge>
-              )}
+              {/* Badge container */}
+              <div className="h-0 relative">
+                {isPopular && !hasActiveSubscription && (
+                  <div className="absolute -top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <Badge className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 shadow-md text-xs px-2.5 py-0.5">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Popular
+                    </Badge>
+                  </div>
+                )}
+                {isCurrentPlan && (
+                  <div className="absolute -top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                    <Badge
+                      variant="outline"
+                      className="bg-emerald-50 dark:bg-emerald-950 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-0.5"
+                    >
+                      <Check className="h-3 w-3 mr-1" />
+                      Current
+                    </Badge>
+                  </div>
+                )}
+              </div>
 
-              {/* Promo code alert */}
-              {hasPromo && (
-                <div className="absolute top-3 right-3">
-                  <Alert
-                    className="w-auto cursor-pointer transition-colors hover:bg-muted/50 p-2"
+              {/* Header with gradient */}
+              <div
+                className={cn(
+                  'p-4 bg-gradient-to-br rounded-t-xl',
+                  tierStyle.gradient,
+                )}
+              >
+                {/* Promo badge */}
+                {hasPromo && (
+                  <button
+                    type="button"
                     onClick={() => copyPromoCode(applicablePromo.code)}
+                    className="absolute top-2 right-2 z-10"
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      <Copy className="h-3 w-3" />
-                      <AlertDescription className="text-xs">
-                        {copiedPromo === applicablePromo.code ? (
-                          <>
-                            <CheckIcon className="h-3 w-3 inline mr-1" />
-                            Copied
-                          </>
-                        ) : (
-                          <>
-                            -{applicablePromo.discount}% {applicablePromo.code}
-                          </>
-                        )}
-                      </AlertDescription>
-                    </div>
-                  </Alert>
-                </div>
-              )}
+                    <Badge
+                      variant="secondary"
+                      className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs cursor-pointer hover:bg-amber-200 transition-colors"
+                    >
+                      {copiedPromo === applicablePromo.code ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3 mr-1" />
+                          {applicablePromo.discount}%
+                        </>
+                      )}
+                    </Badge>
+                  </button>
+                )}
 
-              {/* Fixed height header for consistent alignment */}
-              <CardHeader className="text-center pb-4 min-h-[280px] flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-center mb-4">
-                    {tier.icon}
-                  </div>
-                  <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                  <CardDescription className="text-sm mt-2">
-                    {tier.description}
-                  </CardDescription>
-                  <div className="mt-2">
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      {tier.tagline}
-                    </span>
-                  </div>
+                {/* Plan name */}
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={tierStyle.accent}>
+                    {PLAN_ICONS[config.icon]}
+                  </span>
+                  <h3 className="font-semibold text-base">
+                    {config.displayName}
+                  </h3>
                 </div>
 
-                {/* Fixed height pricing section - dynamic height based on billing period */}
-                <div
-                  className={`${billingPeriod === 'monthly' ? 'min-h-[120px]' : 'min-h-[160px]'} flex flex-col justify-end`}
-                >
-                  {/* Show original price if there's a promo */}
-                  {hasPromo && (
-                    <div className="text-lg line-through text-muted-foreground">
-                      {currencySymbol}
-                      {currentPrice}
-                    </div>
-                  )}
+                {/* Tagline */}
+                <p className="text-xs text-muted-foreground h-8 line-clamp-2">
+                  {config.tagline}
+                </p>
 
-                  {/* Show savings badge for quarterly/yearly */}
+                {/* Price section */}
+                <div className="h-16 flex flex-col justify-end">
                   {savingsPercentage && savingsPercentage > 0 && (
-                    <div className="mb-2">
-                      <Badge variant="emerald">Save {savingsPercentage}%</Badge>
-                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="w-fit bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border-0 text-[10px] px-1.5 py-0 mb-1"
+                    >
+                      Save {savingsPercentage}%
+                    </Badge>
                   )}
-
-                  <div className="text-4xl font-bold">
-                    {currencySymbol}
-                    {finalPrice}
+                  <div className="flex items-baseline gap-0.5">
+                    {hasPromo && (
+                      <span className="text-sm line-through text-muted-foreground mr-1">
+                        {currencySymbol}
+                        {currentPrice}
+                      </span>
+                    )}
+                    <span className="text-2xl font-bold tracking-tight">
+                      {isFree ? 'Free' : `${currencySymbol}${finalPrice}`}
+                    </span>
+                    {!isFree && (
+                      <span className="text-xs text-muted-foreground">
+                        /
+                        {billingPeriod === 'monthly'
+                          ? 'mo'
+                          : billingPeriod === 'quarterly'
+                            ? 'qtr'
+                            : 'yr'}
+                      </span>
+                    )}
                   </div>
-                  <Label className="text-muted-foreground text-sm">
-                    {periodLabel}
-                  </Label>
-
-                  {/* Show monthly equivalent for quarterly/yearly */}
-                  {monthlyEquivalent && (
-                    <Label className="text-muted-foreground text-xs block mt-1">
+                  {monthlyEquivalent ? (
+                    <p className="text-[10px] text-muted-foreground">
                       ~{currencySymbol}
                       {monthlyEquivalent}/month
-                    </Label>
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground">&nbsp;</p>
                   )}
                 </div>
-              </CardHeader>
+              </div>
 
-              {/* Flexible content that grows to fill available space */}
-              <CardContent className="flex-1 space-y-6">
-                {/* Seat count section */}
-                <div className="flex items-center gap-2 text-sm min-h-[24px]">
-                  <CheckIcon className="h-4 w-4 text-green-500" />
-                  <Label>{tier.seatCount}</Label>
-                </div>
-
-                {/* Unlimited searches section */}
-                <div className="flex items-start gap-3 text-sm">
-                  <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <Label>
-                    Unlimited keyword-based business searches powered by Google
-                    Maps
-                  </Label>
-                </div>
-
-                {/* Credits per month section with tooltip */}
-                <div className="flex items-start gap-3 text-sm">
-                  <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <div className="flex items-center gap-1">
-                    <Label>{tier.creditsPerMonth}</Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
-                      </TooltipTrigger>
-                      <TooltipContent
-                        className="bg-white border-0 shadow-xl rounded-xl p-0 max-w-xs"
-                        side="top"
-                        sideOffset={12}
-                      >
-                        <div className="p-5">
-                          <div className="font-semibold text-gray-800 mb-4 text-sm">
-                            Credit usage
-                          </div>
-                          <div className="space-y-3">
-                            <div className="flex justify-between space-x-2 items-center">
-                              <span className="text-sm text-gray-700">
-                                Lead import
-                              </span>
-                              <span className="text-sm font-medium text-blue-600">
-                                1 credit
-                              </span>
-                            </div>
-                            <div className="flex justify-between space-x-2 items-center">
-                              <span className="text-sm text-gray-700">
-                                Company enrichment
-                              </span>
-                              <span className="text-sm font-medium text-blue-600">
-                                1 credit
-                              </span>
-                            </div>
-                            <div className="flex justify-between space-x-2 items-center">
-                              <span className="text-sm text-gray-700">
-                                Contact enrichment
-                              </span>
-                              <span className="text-sm font-medium text-blue-600">
-                                5 credits
-                              </span>
-                            </div>
-                          </div>
+              {/* Stats section */}
+              <div className="p-4 space-y-2 border-b border-border/50">
+                <StatRow
+                  label="Credits"
+                  value={config.credits.toLocaleString()}
+                  tooltip={
+                    <div className="space-y-2">
+                      <p className="font-medium">Credit usage</p>
+                      <div className="space-y-1">
+                        <div className="flex justify-between gap-6">
+                          <span className="text-muted-foreground">
+                            Lead import
+                          </span>
+                          <span className="font-medium">1</span>
                         </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-
-                {/* Lead limit section */}
-                <div className="flex items-start gap-3 text-sm">
-                  <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <Label>{tier.leadLimit}</Label>
-                </div>
-
-                <Separator />
-
-                {/* Key features section */}
-                <div className="space-y-4">
-                  <Label className="font-semibold text-sm uppercase text-muted-foreground">
-                    {tier.plan === 'PRO'
-                      ? 'Everything in Essentials, plus:'
-                      : tier.plan === 'ENTERPRISE'
-                        ? 'Everything in Pro, plus:'
-                        : 'Key features:'}
-                  </Label>
-                  <div className="space-y-3">
-                    {tier.features.map((feature) => (
-                      <div
-                        key={feature}
-                        className="flex items-start gap-3 text-sm"
-                      >
-                        <CheckIcon className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <div className="flex items-center gap-1">
-                          <Label>{feature}</Label>
-                          {feature ===
-                            'Complete business intelligence enrichment' && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 cursor-help transition-colors" />
-                              </TooltipTrigger>
-                              <TooltipContent
-                                className="bg-white border-0 shadow-xl rounded-xl p-0 max-w-xs"
-                                side="top"
-                                sideOffset={12}
-                              >
-                                <div className="p-5">
-                                  <div className="font-semibold text-gray-800 mb-4 text-sm">
-                                    Enrichment
-                                  </div>
-                                  <div className="space-y-2 text-xs text-gray-600 leading-relaxed">
-                                    <div>
-                                      AI-powered business analysis (products,
-                                      services, market positioning)
-                                    </div>
-                                    <div>All verified email contacts</div>
-                                    <div>
-                                      Social media profiles (LinkedIn, Facebook,
-                                      Instagram)
-                                    </div>
-                                    <div>Website registration data</div>
-                                    <div>
-                                      Legal, juridical & financial data for
-                                      European companies (incoming)
-                                    </div>
-                                    <div>
-                                      Owner contact information (incoming)
-                                    </div>
-                                  </div>
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
+                        <div className="flex justify-between gap-6">
+                          <span className="text-muted-foreground">
+                            Company enrichment
+                          </span>
+                          <span className="font-medium">1</span>
+                        </div>
+                        <div className="flex justify-between gap-6">
+                          <span className="text-muted-foreground">
+                            Contact enrichment
+                          </span>
+                          <span className="font-medium">5</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
+                    </div>
+                  }
+                />
+                <StatRow
+                  label="Leads"
+                  value={config.leadLimit.toLocaleString()}
+                  tooltip="Maximum leads in your CRM"
+                />
 
-              {/* Fixed footer aligned at bottom */}
-              <CardFooter className="flex-col space-y-4 mt-auto">
-                {/* CTA Button */}
-                <Button
-                  variant={tier.isPopular ? 'default' : 'outline'}
-                  className="w-full"
-                  asChild
+                {/* API limits - Collapsible */}
+                <Collapsible
+                  open={openApiDetails === planId}
+                  onOpenChange={(open) =>
+                    setOpenApiDetails(open ? planId : null)
+                  }
                 >
-                  <Link
-                    to="/checkout"
-                    search={{
-                      plan: tier.plan,
-                      billingInterval: billingPeriod,
-                      currency: currency,
-                    }}
-                    className="flex items-center justify-center"
-                  >
-                    {getPlanAction(tier.plan)}
-                    <ArrowRightIcon className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                  <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full py-0.5">
+                    <Code2 className="h-3 w-3" />
+                    <span>API limits</span>
+                    <ChevronDown
+                      className={cn(
+                        'h-3 w-3 ml-auto transition-transform',
+                        openApiDetails === planId && 'rotate-180',
+                      )}
+                    />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Rate limit</span>
+                      <span className="font-medium tabular-nums">
+                        {config.rateLimit.perMinute}/min
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Concurrency</span>
+                      <span className="font-medium tabular-nums">
+                        {config.concurrency}
+                      </span>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
 
-                {/* No credit card required text */}
-                {!hasActiveSubscription && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    No credit card required
-                  </p>
+              {/* Features section */}
+              <div className="flex-1 p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  {getFeatureSectionTitle(planIndex)}
+                </p>
+                <ul className="space-y-1.5">
+                  {displayFeatures.map((feature) => (
+                    <li key={feature} className="flex items-start gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-muted-foreground leading-tight">
+                        {feature}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 pt-0 mt-auto">
+                {isFree ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled
+                  >
+                    Free forever
+                  </Button>
+                ) : isCurrentPlan ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled
+                  >
+                    Current plan
+                  </Button>
+                ) : (
+                  <Button
+                    variant={
+                      isPopular && !hasActiveSubscription
+                        ? 'default'
+                        : 'outline'
+                    }
+                    size="sm"
+                    className={cn(
+                      'w-full',
+                      isPopular &&
+                        !hasActiveSubscription &&
+                        'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0',
+                    )}
+                    asChild
+                  >
+                    <Link
+                      to="/checkout"
+                      search={{
+                        plan: planId,
+                        billingInterval: billingPeriod,
+                        currency: currency,
+                      }}
+                    >
+                      {getPlanAction(planId)}
+                      <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
                 )}
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
           )
         })}
       </div>
     </TooltipProvider>
   )
 }
+
+// Stat row component
+const StatRow = ({
+  label,
+  value,
+  tooltip,
+}: {
+  label: string
+  value: string
+  tooltip: React.ReactNode
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <div className="flex items-center justify-between cursor-help hover:bg-muted/50 -mx-1 px-1 py-0.5 rounded transition-colors">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium tabular-nums">{value}</span>
+      </div>
+    </TooltipTrigger>
+    <TooltipContent
+      side="top"
+      className="bg-popover text-popover-foreground border shadow-md text-xs"
+    >
+      {tooltip}
+    </TooltipContent>
+  </Tooltip>
+)

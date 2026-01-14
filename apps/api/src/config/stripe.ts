@@ -5,15 +5,29 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_PUBLIC_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
-  STRIPE_PRO_PRODUCT_ID: z.string().min(1),
+  // Product IDs
+  STRIPE_STARTER_PRODUCT_ID: z.string().min(1),
+  STRIPE_GROWTH_PRODUCT_ID: z.string().min(1),
   STRIPE_ESSENTIALS_PRODUCT_ID: z.string().min(1),
+  STRIPE_PRO_PRODUCT_ID: z.string().min(1),
   STRIPE_ENTERPRISE_PRODUCT_ID: z.string().min(1),
-  STRIPE_PRO_MONTHLY_PRICE_ID: z.string().min(1),
-  STRIPE_PRO_QUARTERLY_PRICE_ID: z.string().min(1),
-  STRIPE_PRO_YEARLY_PRICE_ID: z.string().min(1),
+  // Starter Price IDs
+  STRIPE_STARTER_MONTHLY_PRICE_ID: z.string().min(1),
+  STRIPE_STARTER_QUARTERLY_PRICE_ID: z.string().min(1),
+  STRIPE_STARTER_YEARLY_PRICE_ID: z.string().min(1),
+  // Growth Price IDs
+  STRIPE_GROWTH_MONTHLY_PRICE_ID: z.string().min(1),
+  STRIPE_GROWTH_QUARTERLY_PRICE_ID: z.string().min(1),
+  STRIPE_GROWTH_YEARLY_PRICE_ID: z.string().min(1),
+  // Essentials Price IDs
   STRIPE_ESSENTIALS_MONTHLY_PRICE_ID: z.string().min(1),
   STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID: z.string().min(1),
   STRIPE_ESSENTIALS_YEARLY_PRICE_ID: z.string().min(1),
+  // Pro Price IDs
+  STRIPE_PRO_MONTHLY_PRICE_ID: z.string().min(1),
+  STRIPE_PRO_QUARTERLY_PRICE_ID: z.string().min(1),
+  STRIPE_PRO_YEARLY_PRICE_ID: z.string().min(1),
+  // Enterprise Price IDs
   STRIPE_ENTERPRISE_MONTHLY_PRICE_ID: z.string().min(1),
   STRIPE_ENTERPRISE_QUARTERLY_PRICE_ID: z.string().min(1),
   STRIPE_ENTERPRISE_YEARLY_PRICE_ID: z.string().min(1),
@@ -29,24 +43,33 @@ export const STRIPE_CONFIG = {
   },
   PRICE: {
     MONTHLY: {
-      PRO: env.STRIPE_PRO_MONTHLY_PRICE_ID,
+      STARTER: env.STRIPE_STARTER_MONTHLY_PRICE_ID,
+      GROWTH: env.STRIPE_GROWTH_MONTHLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_MONTHLY_PRICE_ID,
+      PRO: env.STRIPE_PRO_MONTHLY_PRICE_ID,
       ENTERPRISE: env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID,
     },
     QUARTERLY: {
-      PRO: env.STRIPE_PRO_QUARTERLY_PRICE_ID,
+      STARTER: env.STRIPE_STARTER_QUARTERLY_PRICE_ID,
+      GROWTH: env.STRIPE_GROWTH_QUARTERLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_QUARTERLY_PRICE_ID,
+      PRO: env.STRIPE_PRO_QUARTERLY_PRICE_ID,
       ENTERPRISE: env.STRIPE_ENTERPRISE_QUARTERLY_PRICE_ID,
     },
     YEARLY: {
-      PRO: env.STRIPE_PRO_YEARLY_PRICE_ID,
+      STARTER: env.STRIPE_STARTER_YEARLY_PRICE_ID,
+      GROWTH: env.STRIPE_GROWTH_YEARLY_PRICE_ID,
       ESSENTIALS: env.STRIPE_ESSENTIALS_YEARLY_PRICE_ID,
+      PRO: env.STRIPE_PRO_YEARLY_PRICE_ID,
       ENTERPRISE: env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID,
     },
   },
   PRODUCT_IDS: {
-    PRO: env.STRIPE_PRO_PRODUCT_ID,
+    STARTER: env.STRIPE_STARTER_PRODUCT_ID,
+    GROWTH: env.STRIPE_GROWTH_PRODUCT_ID,
     ESSENTIALS: env.STRIPE_ESSENTIALS_PRODUCT_ID,
+    PRO: env.STRIPE_PRO_PRODUCT_ID,
+    ENTERPRISE: env.STRIPE_ENTERPRISE_PRODUCT_ID,
   },
 } as const
 
@@ -55,6 +78,24 @@ export const STRIPE_PLANS = {
     name: 'FREE',
     price: null, // Free plan has no price ID
     productId: null,
+  },
+  STARTER: {
+    name: 'STARTER',
+    price: {
+      monthly: env.STRIPE_STARTER_MONTHLY_PRICE_ID,
+      quarterly: env.STRIPE_STARTER_QUARTERLY_PRICE_ID,
+      yearly: env.STRIPE_STARTER_YEARLY_PRICE_ID,
+    },
+    productId: env.STRIPE_STARTER_PRODUCT_ID,
+  },
+  GROWTH: {
+    name: 'GROWTH',
+    price: {
+      monthly: env.STRIPE_GROWTH_MONTHLY_PRICE_ID,
+      quarterly: env.STRIPE_GROWTH_QUARTERLY_PRICE_ID,
+      yearly: env.STRIPE_GROWTH_YEARLY_PRICE_ID,
+    },
+    productId: env.STRIPE_GROWTH_PRODUCT_ID,
   },
   ESSENTIALS: {
     name: 'ESSENTIALS',

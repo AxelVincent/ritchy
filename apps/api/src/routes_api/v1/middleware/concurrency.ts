@@ -5,15 +5,7 @@ import {
 } from '../../../internal/redis/semaphore'
 import type { ApiAuthRequest } from '../../../middleware/api_key_auth'
 import { getUserPlan } from '../../../services/payment/queries/get_user_plan'
-import type { Plan } from '../../../shared'
-
-// Concurrency limits per plan (applied per account, not per API key)
-const CONCURRENCY_LIMITS: Record<Plan, number> = {
-  FREE: 1,
-  ESSENTIALS: 10,
-  PRO: 25,
-  ENTERPRISE: 50,
-}
+import { getPlanConcurrency } from '../../../shared/plans'
 
 // Cache semaphores per user account to avoid recreating
 const semaphoreCache = new Map<string, Semaphore>()
@@ -46,7 +38,7 @@ export const apiConcurrencyMiddleware = async (
 
   // Get user's plan to determine concurrency limit
   const plan = await getUserPlan(userId)
-  const maxConcurrent = CONCURRENCY_LIMITS[plan] ?? CONCURRENCY_LIMITS.FREE
+  const maxConcurrent = getPlanConcurrency(plan)
 
   // Semaphore is per user account (all API keys share the same limit)
   const semaphore = getOrCreateSemaphore(userId, maxConcurrent)

@@ -1,8 +1,5 @@
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from '../../../shared'
-
-// Plan enum
-export const PlanEnum = z.enum(['FREE', 'ESSENTIALS', 'PRO', 'ENTERPRISE'])
+import { ApiErrorResponseSchema, PlanEnum } from '../../../shared'
 
 // Response schema (success)
 export const UserMeDataSchema = z.object({
