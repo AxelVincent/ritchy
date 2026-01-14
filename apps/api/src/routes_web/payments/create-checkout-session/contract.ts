@@ -1,16 +1,13 @@
 import { z } from 'zod'
-import { ApiErrorResponseSchema } from '../../../shared'
+import {
+  ApiErrorResponseSchema,
+  PlanEnum as SharedPlanEnum,
+  SearchModelEnum as SharedSearchModelEnum,
+} from '../../../shared'
 
-// Plan enum
-export const PlanEnum = z.enum(['FREE', 'ESSENTIALS', 'PRO', 'ENTERPRISE'])
-
-// Search model enum
-export const SearchModelEnum = z.enum([
-  'BASIC',
-  'ENHANCED',
-  'ADVANCED',
-  'EXPERT',
-])
+// Re-export from shared for backward compatibility
+export const PlanEnum = SharedPlanEnum
+export const SearchModelEnum = SharedSearchModelEnum
 export type SearchModel = z.infer<typeof SearchModelEnum>
 
 // Request schema

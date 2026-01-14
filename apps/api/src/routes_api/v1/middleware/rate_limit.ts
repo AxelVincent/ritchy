@@ -3,15 +3,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { createRedisClient } from '../../../internal/redis/redis'
 import type { ApiAuthRequest } from '../../../middleware/api_key_auth'
 import { getUserPlan } from '../../../services/payment/queries/get_user_plan'
-import type { Plan } from '../../../shared'
-
-// Rate limits per plan (applied per account)
-const RATE_LIMITS: Record<Plan, { perMinute: number; perDay: number }> = {
-  FREE: { perMinute: 10, perDay: 100 },
-  ESSENTIALS: { perMinute: 30, perDay: 1000 },
-  PRO: { perMinute: 60, perDay: 5000 },
-  ENTERPRISE: { perMinute: 120, perDay: -1 }, // -1 = unlimited
-}
+import { getPlanRateLimit } from '../../../shared/plans'
 
 const redis = createRedisClient({ isPublic: false })
 
@@ -75,7 +67,7 @@ export const apiRateLimitMiddleware = async (
     const { userId } = (req as ApiAuthRequest).apiAuth
 
     const plan = await getUserPlan(userId)
-    const limits = RATE_LIMITS[plan] ?? RATE_LIMITS.FREE
+    const limits = getPlanRateLimit(plan)
 
     // Check per-minute limit
     const minuteKey = `api:rate:minute:${userId}`
@@ -95,28 +87,6 @@ export const apiRateLimitMiddleware = async (
         },
       })
       return
-    }
-
-    // Check per-day limit (skip if unlimited)
-    if (limits.perDay > 0) {
-      const dayKey = `api:rate:day:${userId}`
-      const dayResult = await checkRateLimit(dayKey, limits.perDay, 86400)
-
-      if (!dayResult.allowed) {
-        res.status(429).json({
-          success: false,
-          error: {
-            code: 'RATE_LIMITED',
-            message: `Daily limit exceeded. Maximum ${limits.perDay} requests per day.`,
-            details: {
-              retryAfter: dayResult.retryAfter,
-              limit: limits.perDay,
-              window: '24 hours',
-            },
-          },
-        })
-        return
-      }
     }
 
     next()

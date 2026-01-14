@@ -38,7 +38,14 @@ export const PhoneTypeEnum = z.enum([
 export type PhoneType = z.infer<typeof PhoneTypeEnum>
 
 // Plan types
-export const PlanEnum = z.enum(['FREE', 'ESSENTIALS', 'PRO', 'ENTERPRISE'])
+export const PlanEnum = z.enum([
+  'FREE',
+  'STARTER',
+  'GROWTH',
+  'ESSENTIALS',
+  'PRO',
+  'ENTERPRISE',
+])
 export type Plan = z.infer<typeof PlanEnum>
 
 // Search model types
