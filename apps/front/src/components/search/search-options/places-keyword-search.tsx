@@ -55,7 +55,7 @@ interface PlacesKeywordSearchProps {
   ) => void
   onLocationChange: (location: Location) => void
 }
-
+const DEFAULT_LIMIT = 20
 export const PlacesKeywordSearch = ({
   updateSearchParams,
   onLocationChange,
@@ -64,7 +64,7 @@ export const PlacesKeywordSearch = ({
   const { data: me } = useUserMe()
   const [isSearching, setIsSearching] = useState(false)
   const [autoEnrich, setAutoEnrich] = useState(true)
-  const [limit, setLimit] = useState(60)
+  const [limit, setLimit] = useState(DEFAULT_LIMIT)
   const createSearchMutation = useCreateSearch()
 
   const {
