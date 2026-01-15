@@ -12,15 +12,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { cn } from '@/lib/utils'
 import {
-  CheckCircle2,
-  Clock,
-  Info,
-  Loader2,
-  RotateCcw,
-  Sparkles,
-} from 'lucide-react'
+  getStatusTextColorClass,
+  resolveEnrichmentStatus,
+} from '@/lib/enrichment-status'
+import { cn } from '@/lib/utils'
+import { Clock, Info, Loader2, RotateCcw, Sparkles } from 'lucide-react'
 import { memo, useCallback } from 'react'
 
 interface ContactEnrichButtonProps {
@@ -72,19 +69,27 @@ export const ContactEnrichButton = memo(function ContactEnrichButton({
     )
   }
 
-  // Already enriched - show credits used if available
+  // Already enriched - show different states for results vs no results
   if (status?.status === 'completed') {
-    const creditsUsed = status.credits?.creditsUsed
+    const config = resolveEnrichmentStatus(status)
+    const Icon = config.icon
+    const creditsUsed = status.credits?.creditsUsed ?? 0
+    const isNoResults = config.displayStatus === 'completed_no_results'
 
     return (
       <div className={cn('flex items-center gap-2', className)}>
-        <CheckCircle2 className="h-4 w-4 text-green-500" />
-        <span className="text-green-600 text-sm">Enriched</span>
-        {creditsUsed !== undefined && creditsUsed > 0 && (
-          <Badge variant="secondary" className="text-xs">
-            {creditsUsed} credit{creditsUsed !== 1 ? 's' : ''}
-          </Badge>
-        )}
+        <Icon className={cn('h-4 w-4', config.iconClass)} aria-hidden="true" />
+        <span
+          className={cn(
+            'text-sm',
+            getStatusTextColorClass(config.displayStatus),
+          )}
+        >
+          {config.label}
+        </span>
+        <Badge variant={isNoResults ? 'amber' : 'emerald'} className="text-xs">
+          {creditsUsed} credit{creditsUsed !== 1 ? 's' : ''}
+        </Badge>
       </div>
     )
   }
