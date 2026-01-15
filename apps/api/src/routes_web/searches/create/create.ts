@@ -8,9 +8,7 @@ import { COMPANY_CREDITS } from '../../../services/enrichment/shared/config/cons
 import { getEnrichmentsByPlaceIds } from '../../../services/enrichment/shared/queries/get_enrichments_by_place_ids'
 import { upsertEnrichmentsBatch } from '../../../services/enrichment/shared/queries/upsert_enrichments_batch'
 import { setBatchCompanyEnrichmentStatus } from '../../../services/enrichment/shared/status/status_manager'
-import { consumeCredits } from '../../../services/payment/queries/consume_credits'
 import { getUserCredits } from '../../../services/payment/queries/get_user_credits'
-import { refundCredits } from '../../../services/payment/queries/refund_credits'
 import { getPlacesByUserPlaceIds } from '../../../services/places/queries/get_places_by_user_place_ids'
 import { populateSearchPlacesIfEmpty } from '../../../services/searches/populate-search-places'
 import type { CreateSearchApiResponse, CreateSearchRequest } from './contract'
@@ -149,60 +147,40 @@ export const createSearchHandler = async (
         }
 
         if (eligiblePlaces.length > 0) {
-          const totalCredits = eligiblePlaces.length * COMPANY_CREDITS
+          // Step 5: Batch upsert enrichment records
+          // Note: Credits are consumed per-enrichment in companyEnrichmentService
+          const eligiblePlaceIds = eligiblePlaces.map((p) => p.placeId)
+          const upsertedEnrichments =
+            await upsertEnrichmentsBatch(eligiblePlaceIds)
+          const enrichmentIdByPlaceId = new Map(
+            upsertedEnrichments.map((e) => [e.placeId, e.id]),
+          )
 
-          // Step 5: Consume credits (optimistic)
-          await consumeCredits(userId, totalCredits)
+          // Step 6: Batch set Redis status
+          await setBatchCompanyEnrichmentStatus(
+            eligiblePlaces.map(({ userPlaceId }) => ({
+              userPlaceId,
+              status: 'queued',
+              step: 'Queued for enrichment',
+              progress: 0,
+            })),
+          )
 
-          try {
-            // Step 6: Batch upsert enrichment records
-            const eligiblePlaceIds = eligiblePlaces.map((p) => p.placeId)
-            const upsertedEnrichments =
-              await upsertEnrichmentsBatch(eligiblePlaceIds)
-            const enrichmentIdByPlaceId = new Map(
-              upsertedEnrichments.map((e) => [e.placeId, e.id]),
-            )
-
-            // Step 7: Batch set Redis status
-            await setBatchCompanyEnrichmentStatus(
-              eligiblePlaces.map(({ userPlaceId }) => ({
+          // Step 7: Batch enqueue jobs
+          const jobData = eligiblePlaces
+            .map(({ userPlaceId, placeId }) => {
+              const enrichmentId = enrichmentIdByPlaceId.get(placeId)
+              if (!enrichmentId) return null
+              return {
                 userPlaceId,
-                status: 'queued',
-                step: 'Queued for enrichment',
-                progress: 0,
-              })),
-            )
-
-            // Step 8: Batch enqueue jobs
-            const jobData = eligiblePlaces
-              .map(({ userPlaceId, placeId }) => {
-                const enrichmentId = enrichmentIdByPlaceId.get(placeId)
-                if (!enrichmentId) return null
-                return {
-                  userPlaceId,
-                  enrichmentId,
-                  placeId,
-                  userId,
-                }
-              })
-              .filter((job): job is NonNullable<typeof job> => job !== null)
-
-            await enqueueBulkCompanyEnrichment(jobData)
-          } catch (error) {
-            // Compensate: refund credits on failure
-            logger.error({
-              msg: 'Failed to enqueue enrichment jobs, refunding credits',
-              event: 'auto_enrich_enqueue_failure',
-              metadata: {
+                enrichmentId,
+                placeId,
                 userId,
-                creditsToRefund: totalCredits,
-                error: error instanceof Error ? error.message : String(error),
-              },
+              }
             })
+            .filter((job): job is NonNullable<typeof job> => job !== null)
 
-            await refundCredits(userId, totalCredits)
-            throw error
-          }
+          await enqueueBulkCompanyEnrichment(jobData)
         }
 
         const alreadyEnrichedCount = userPlaceIds.length - eligiblePlaces.length
