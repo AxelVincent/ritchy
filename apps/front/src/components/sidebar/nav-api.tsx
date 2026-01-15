@@ -7,10 +7,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { Link, useMatch } from '@tanstack/react-router'
 
 export function NavApi() {
+  const { open } = useSidebar()
   const playgroundMatch = useMatch({
     from: '/_auth/api-playground',
     shouldThrow: false,
@@ -22,16 +24,20 @@ export function NavApi() {
   })
 
   return (
-    <SidebarGroup>
+    <SidebarGroup className="p-0">
       <SidebarGroupLabel className="flex items-center gap-2">
         API
-        <Badge variant="amber" className="px-1.5 py-0 text-[10px]">
-          Beta
-        </Badge>
+        {open && (
+          <Badge variant="amber" className="px-1.5 py-0 text-[10px]">
+            Beta
+          </Badge>
+        )}
       </SidebarGroupLabel>
-      <p className="px-2 pb-2 text-[10px] text-muted-foreground">
-        Official release: February 1st, 2026
-      </p>
+      {open && (
+        <p className="px-2 pb-2 text-[10px] text-muted-foreground">
+          Official release: February 1st, 2026
+        </p>
+      )}
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton

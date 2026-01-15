@@ -77,6 +77,13 @@ export const COUNTRY_IDENTIFIER_INFO = {
     officialSources: ['lbr.lu', 'guichet.lu'],
     extraInfo: null,
   },
+  NO: {
+    terms: 'Organisasjonsnummer, Foretaksregisteret, MVA',
+    format: '9 digits with modulus 11 check digit',
+    officialSources: ['brreg.no', 'proff.no', 'foretaksregisteret.brreg.no'],
+    extraInfo:
+      'The organisasjonsnummer is the official company registration number in Norway.',
+  },
 } as const
 
 // Helper function to detect placeholder values from LLM

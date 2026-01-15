@@ -19,6 +19,7 @@ const mapToPappersCountryCode = (isoCountryCode: string | null): string => {
     LU: 'LU',
     DE: 'DE',
     ES: 'ES',
+    NO: 'NO',
   }
 
   return countryCodeMapping[isoCountryCode] || isoCountryCode
@@ -86,6 +87,24 @@ const isValidCompanyNumber = (
       // Spanish CIF/NIF: 9 characters (alphanumeric), starts with letter or number
       // Format: X12345678 or 12345678X
       return /^[A-Z0-9]\d{7}[A-Z0-9]$/i.test(cleaned)
+    }
+
+    case 'NO': {
+      // Norwegian organisasjonsnummer: 9 digits with modulus 11 check digit
+      if (!/^\d{9}$/.test(cleaned)) return false
+
+      // Validate modulus 11 check digit
+      const weights = [3, 2, 7, 6, 5, 4, 3, 2]
+      const digits = cleaned.split('').map(Number)
+      const sum = digits
+        .slice(0, 8)
+        .reduce((acc, digit, i) => acc + digit * weights[i], 0)
+      const remainder = sum % 11
+      // If remainder is 1, check digit would be 10 which is invalid
+      if (remainder === 1) return false
+      const expectedCheckDigit = remainder === 0 ? 0 : 11 - remainder
+
+      return expectedCheckDigit === digits[8]
     }
 
     default: {

@@ -113,6 +113,7 @@ const getMultilingualSearchQuery = (countryCodes: string[]): string => {
     CH: 'Handelsregister MWST CHE Impressum Geschäftsbedingungen betrieben von',
     NL: 'KvK nummer BTW nummer handelsregister algemene voorwaarden beheerd door',
     LU: 'numéro matricule TVA LU mentions légales conditions générales géré par',
+    NO: 'organisasjonsnummer foretaksregisteret MVA NO Brønnøysundregistrene juridisk informasjon vilkår drevet av',
   }
 
   // Combine terms for all supported countries
@@ -142,7 +143,17 @@ export const extractCompanyIdentifiers = async (website: string) => {
     })
 
     // Generate multilingual search query
-    const supportedCountries = ['FR', 'UK', 'DE', 'ES', 'BE', 'CH', 'NL', 'LU']
+    const supportedCountries = [
+      'FR',
+      'UK',
+      'DE',
+      'ES',
+      'BE',
+      'CH',
+      'NL',
+      'LU',
+      'NO',
+    ]
     const searchQuery = getMultilingualSearchQuery(supportedCountries)
 
     logger.debug({
@@ -426,6 +437,12 @@ const hasRegistrationTerms = (content: string): boolean => {
     // Luxembourg
     'numéro matricule',
     'tva lu',
+
+    // Norwegian
+    'organisasjonsnummer',
+    'foretaksregisteret',
+    'brønnøysundregistrene',
+    'mva',
   ]
 
   return registrationTerms.some((term) => lowerContent.includes(term))
@@ -478,6 +495,12 @@ const hasBusinessNameTerms = (content: string): boolean => {
     'gestito da',
     'di proprietà di',
     'denominazione sociale',
+
+    // Norwegian
+    'drevet av',
+    'eid av',
+    'forretningsnavn',
+    'foretaksnavn',
   ]
 
   return businessNameTerms.some((term) => lowerContent.includes(term))

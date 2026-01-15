@@ -1,3 +1,4 @@
+import { useContactEnrichmentStatus } from '@/api/queries/enrichment/useContactEnrichmentStatus'
 import { CopyCell } from '@/components/data-table/columns/utils/ColumnCells'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,7 @@ import { useState } from 'react'
 import { SocialMediaList } from '../data-table/columns/utils/SocialMediaList'
 import { ContactEnrichButton } from './ContactEnrichButton'
 import { EmailDisplay } from './EmailDisplay'
+import { EnrichmentResultsFeedback } from './EnrichmentResultsFeedback'
 import { OfficerDetails } from './OfficerDetails'
 import {
   PhoneDisplay,
@@ -132,6 +134,13 @@ export const UnifiedContactCard = ({
   const [isSettingPrimary, setIsSettingPrimary] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Fetch enrichment status for physical contacts (only when expanded to save resources)
+  const isPhysicalContact = contact.type !== 'legal'
+  const { data: enrichmentStatus } = useContactEnrichmentStatus(
+    contact.id,
+    isPhysicalContact && isExpanded,
+  )
 
   const handleAddEmailClick = () => {
     if (!isExpanded) {
@@ -423,6 +432,11 @@ export const UnifiedContactCard = ({
             className="space-y-4 pt-0"
             aria-labelledby={`contact-name-${contact.id}`}
           >
+            {/* Enrichment Results Feedback - Shows when contact is enriched */}
+            {isPhysicalContact && (
+              <EnrichmentResultsFeedback status={enrichmentStatus} />
+            )}
+
             <EmailDisplay
               emails={contact.emails}
               onAddEmail={onAddEmail}
