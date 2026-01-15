@@ -18,6 +18,7 @@ export const PAPPERS_COUNTRY_CODES = z.enum([
   'LU',
   'DE',
   'ES',
+  'NO',
 ])
 
 const AddressSchema = z.object({
