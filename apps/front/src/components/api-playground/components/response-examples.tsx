@@ -358,7 +358,7 @@ interface ResponseViewProps {
 
 const ResponseView = ({ schema, example }: ResponseViewProps) => {
   return (
-    <Tabs defaultValue="docs" className="h-full flex flex-col">
+    <Tabs defaultValue="docs" className="flex flex-col h-full">
       <TabsList className="w-full justify-start bg-transparent h-auto p-0 border-b shrink-0">
         <TabsTrigger
           value="docs"
@@ -384,7 +384,7 @@ const ResponseView = ({ schema, example }: ResponseViewProps) => {
       </TabsList>
 
       {/* Documentation View */}
-      <TabsContent value="docs" className="mt-0 flex-1 overflow-hidden ">
+      <TabsContent value="docs" className="mt-0 flex-1 overflow-hidden min-h-0">
         <div className="border rounded-lg bg-muted/30 h-full overflow-auto">
           {schema ? (
             <SchemaDocView schema={schema} />
@@ -402,7 +402,10 @@ const ResponseView = ({ schema, example }: ResponseViewProps) => {
       </TabsContent>
 
       {/* Example View */}
-      <TabsContent value="example" className="mt-0 flex-1 overflow-hidden ">
+      <TabsContent
+        value="example"
+        className="mt-0 flex-1 overflow-hidden min-h-0"
+      >
         <div className="border rounded-lg bg-muted/30 h-full overflow-auto p-4">
           <JsonTreeViewer
             data={example}
@@ -414,7 +417,10 @@ const ResponseView = ({ schema, example }: ResponseViewProps) => {
       </TabsContent>
 
       {/* Raw Schema View */}
-      <TabsContent value="schema" className="mt-0 flex-1 overflow-hidden ">
+      <TabsContent
+        value="schema"
+        className="mt-0 flex-1 overflow-hidden min-h-0"
+      >
         <div className="border rounded-lg bg-muted/30 h-full overflow-auto p-4">
           <JsonTreeViewer
             data={schema}
@@ -457,9 +463,9 @@ export const ResponseExamples = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-420px)] min-h-[300px]">
-      <h3 className="font-medium mb-3 shrink-0">Response Schema</h3>
-      <Tabs defaultValue="200" className="flex flex-col flex-1 min-h-0">
+    <div className="flex flex-col">
+      <h3 className="font-medium mb-3">Response Schema</h3>
+      <Tabs defaultValue="200" className="flex flex-col">
         <TabsList className="shrink-0">
           {Object.keys(responseExamples).map((status) => (
             <TabsTrigger key={status} value={status} className="gap-1">
@@ -473,12 +479,12 @@ export const ResponseExamples = () => {
           <TabsContent
             key={status}
             value={status}
-            className="mt-3 flex-1 flex flex-col min-h-0 "
+            className="mt-3 flex flex-col"
           >
-            <div className="text-xs text-muted-foreground mb-2 shrink-0">
+            <div className="text-xs text-muted-foreground mb-2">
               {statusLabels[status]}
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="min-h-[300px]">
               <ResponseView
                 schema={getSchemaForStatus(status)}
                 example={example}

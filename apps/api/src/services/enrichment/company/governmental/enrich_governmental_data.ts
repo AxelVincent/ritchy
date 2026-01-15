@@ -149,7 +149,7 @@ export const enrichGovernmentalData = async ({
   let searchMethod = 'name_only'
   let waterfallMetadata = null
 
-  // Try company number waterfall (Perplexity → Qdrant → Pappers)
+  // Try company number waterfall (Qdrant → Pappers)
   logger.debug({
     msg: '[enrich_governmental_data] Starting company number waterfall',
     event: 'governmental_data_waterfall_start',
