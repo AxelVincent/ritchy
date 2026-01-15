@@ -298,11 +298,7 @@ export const exportUserPlaces = async (
       }
 
       // Populate search places if empty
-      await populateSearchPlacesIfEmpty(searchId, userId, {
-        model: searchResult[0].model,
-        keyword: searchResult[0].keyword,
-        rectangle: searchResult[0].rectangle,
-      })
+      await populateSearchPlacesIfEmpty(searchId, userId)
     }
 
     // Extract filter params
