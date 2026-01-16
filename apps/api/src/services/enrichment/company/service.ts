@@ -31,44 +31,63 @@ import { getBusinessName } from './queries/get_business_name'
 import { getBusinessWebsite } from './queries/get_business_website'
 import { getMainDomain } from './scraper/utils/get_main_domain'
 
-interface CompanyEnrichmentParams {
+/**
+ * Stream event type for real-time progress updates
+ */
+export interface StreamProgressEvent {
+  event: 'progress'
+  step: string
+  progress: number
+  timestamp: number
+}
+
+export type StreamCallback = (event: StreamProgressEvent) => void
+
+interface CompanyEnrichmentStreamingParams {
   userPlaceId: string
   enrichmentId: string
   placeId: string
   userId: string
+  onProgress?: StreamCallback
 }
 
 /**
- * Company enrichment service
- *
- * This is the company phase of enrichment, extracted from websiteEnrichmentManager.
- * It handles:
- * 1. Website scraping (homepage + subpages)
- * 2. WHOIS lookup
- * 3. Company data lookup (Pappers)
- * 4. Website description generation
- * 5. Contact creation from officers (via populateContactFromEnrichment)
- *
- * Officer-level enrichment (LinkedIn, Email, Phone) is handled separately
- * by the officer enrichment worker.
- *
- * Returns rich data including all enrichment results for external API use.
- * Idempotent - returns cached data if already enriched.
+ * Helper to emit progress event
+ */
+const emitProgress = (
+  onProgress: StreamCallback | undefined,
+  step: string,
+  progress: number,
+): void => {
+  if (onProgress) {
+    onProgress({
+      event: 'progress',
+      step,
+      progress,
+      timestamp: Date.now(),
+    })
+  }
+}
+
+/**
+ * Company enrichment service with optional streaming support
  */
 export const companyEnrichmentService = async ({
   userPlaceId,
   enrichmentId,
   placeId,
   userId,
-}: CompanyEnrichmentParams): Promise<CompanyEnrichmentResponse> => {
+  onProgress,
+}: CompanyEnrichmentStreamingParams): Promise<CompanyEnrichmentResponse> => {
   const startTime = Date.now()
 
   logger.info({
     msg: 'Starting company enrichment service',
-    event: 'company_enrichment_service_start',
+    event: 'company_enrichment_start',
     metadata: {
       userPlaceId,
       enrichmentId,
+      streaming: !!onProgress,
     },
   })
 
@@ -85,6 +104,7 @@ export const companyEnrichmentService = async ({
       event: 'company_enrichment_already_completed',
       metadata: { userPlaceId, enrichmentId },
     })
+    emitProgress(onProgress, 'Enrichment complete', 100)
     const data = await getFullCompanyEnrichmentData(userPlaceId)
     return {
       success: true,
@@ -99,10 +119,11 @@ export const companyEnrichmentService = async ({
       event: 'company_enrichment_in_progress',
       metadata: { userPlaceId, enrichmentId },
     })
+    emitProgress(onProgress, 'Enrichment in progress', 50)
     return {
       success: true,
       alreadyEnriched: true,
-      data: null, // In progress, data not yet available
+      data: null,
     }
   }
 
@@ -113,21 +134,23 @@ export const companyEnrichmentService = async ({
   await consumeCredits(userId, COMPANY_CREDITS)
 
   try {
-    // Step 1: Extract website (0-10%)
+    // Step 1: Looking up website
+    emitProgress(onProgress, 'Looking up website...', 5)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'processing',
-      'Extracting business website',
+      'Looking up website',
       5,
     )
 
     const website = await getBusinessWebsite(userPlaceId)
 
     if (!website) {
+      emitProgress(onProgress, 'No website found', 10)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'processing',
-        'No website found, using alternative sources',
+        'No website found',
         10,
       )
 
@@ -143,11 +166,12 @@ export const companyEnrichmentService = async ({
         .where(eq(enrichmentTable.id, enrichmentId))
 
       // Try governmental data enrichment
+      emitProgress(onProgress, 'Looking up company records...', 30)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'processing',
-        'Searching governmental databases',
-        40,
+        'Looking up company records',
+        30,
       )
 
       const governmentalDataResult = await enrichmentTracker.trackSubprocess(
@@ -166,19 +190,27 @@ export const companyEnrichmentService = async ({
       )
 
       if (governmentalDataResult.companyData) {
+        emitProgress(
+          onProgress,
+          `Found: ${governmentalDataResult.companyData.name}`,
+          50,
+        )
         logger.info({
           msg: 'Governmental data found (no website scenario)',
           event: 'governmental_data_found_no_website',
           metadata: { governmentalDataResult },
         })
+      } else {
+        emitProgress(onProgress, 'No company records found', 50)
       }
 
       // Create contacts from officers
+      emitProgress(onProgress, 'Creating contacts...', 70)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'processing',
-        'Creating contacts from officers',
-        80,
+        'Creating contacts',
+        70,
       )
 
       await enrichmentTracker.trackSubprocess('populate_contacts', async () => {
@@ -189,6 +221,7 @@ export const companyEnrichmentService = async ({
       })
 
       // Calculate score
+      emitProgress(onProgress, 'Calculating score...', 90)
       const enrichmentScore = await enrichmentTracker.trackSubprocess(
         'calculate_score',
         async () => calculateEnrichmentScore(enrichmentId),
@@ -205,10 +238,11 @@ export const companyEnrichmentService = async ({
         })
         .where(eq(enrichmentTable.id, enrichmentId))
 
+      emitProgress(onProgress, 'Enrichment complete', 100)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'completed',
-        'Company enrichment completed',
+        'Enrichment complete',
         100,
       )
 
@@ -235,13 +269,8 @@ export const companyEnrichmentService = async ({
       }
     }
 
-    // Step 2: Validate domain (10-15%)
-    await setCompanyEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      'Validating website domain',
-      12,
-    )
+    // Website found
+    emitProgress(onProgress, `Found: ${website}`, 10)
 
     const domain = getMainDomain(website)
 
@@ -257,10 +286,11 @@ export const companyEnrichmentService = async ({
 
     // Handle social media (quick path)
     if (isSocialMediaUrl(website)) {
+      emitProgress(onProgress, 'Processing social media profile...', 20)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'processing',
-        `Analyzing social profile: ${website}`,
+        'Processing social media profile',
         20,
       )
 
@@ -270,11 +300,12 @@ export const companyEnrichmentService = async ({
       })
 
       // Create contacts from officers
+      emitProgress(onProgress, 'Creating contacts...', 70)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'processing',
-        'Creating contacts from officers',
-        80,
+        'Creating contacts',
+        70,
       )
 
       await enrichmentTracker.trackSubprocess('populate_contacts', async () => {
@@ -285,6 +316,7 @@ export const companyEnrichmentService = async ({
       })
 
       // Calculate score
+      emitProgress(onProgress, 'Calculating score...', 90)
       const enrichmentScore = await enrichmentTracker.trackSubprocess(
         'calculate_score',
         async () => calculateEnrichmentScore(enrichmentId),
@@ -300,10 +332,11 @@ export const companyEnrichmentService = async ({
         })
         .where(eq(enrichmentTable.id, enrichmentId))
 
+      emitProgress(onProgress, 'Enrichment complete', 100)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'completed',
-        'Company enrichment completed',
+        'Enrichment complete',
         100,
       )
 
@@ -340,32 +373,19 @@ export const companyEnrichmentService = async ({
       })
     }
 
-    // Step 3: Prepare scraping (15-20%)
-    await setCompanyEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      'Preparing website scanner',
-      15,
-    )
-
+    // Clean up existing vectors
     const websiteVectors = await getWebsiteVectors(domain)
-
     if (websiteVectors.length > 0) {
-      await setCompanyEnrichmentStatus(
-        userPlaceId,
-        'processing',
-        'Initializing fresh scan',
-        17,
-      )
       await deleteWebsiteVectors(domain)
     }
 
-    // Step 4: Scrape homepage (18-30%)
+    // Step 2: Scrape website
+    emitProgress(onProgress, 'Scraping website...', 20)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'processing',
-      `Scanning homepage: ${website}`,
-      18,
+      'Scraping website',
+      20,
     )
 
     let scrapeResult: Awaited<ReturnType<typeof enqueueScraperJob>> | null =
@@ -401,10 +421,11 @@ export const companyEnrichmentService = async ({
         metadata: { website, userPlaceId },
       })
 
+      emitProgress(onProgress, 'Scraping failed, using fallback...', 30)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'processing',
-        'Using alternative data sources',
+        'Using fallback data sources',
         30,
       )
 
@@ -435,11 +456,12 @@ export const companyEnrichmentService = async ({
       }
 
       // Create contacts even if scraping failed
+      emitProgress(onProgress, 'Creating contacts...', 70)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'processing',
-        'Creating contacts from officers',
-        80,
+        'Creating contacts',
+        70,
       )
 
       await enrichmentTracker.trackSubprocess('populate_contacts', async () => {
@@ -463,10 +485,11 @@ export const companyEnrichmentService = async ({
         })
         .where(eq(enrichmentTable.id, enrichmentId))
 
+      emitProgress(onProgress, 'Scraping failed', 100)
       await setCompanyEnrichmentStatus(
         userPlaceId,
         'failed',
-        'Website scraping failed',
+        'Scraping failed',
         100,
         errorMessage,
       )
@@ -480,24 +503,9 @@ export const companyEnrichmentService = async ({
       }
     }
 
-    // Step 5: Analyze homepage and scrape subpages (30-55%)
-    await setCompanyEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      'Analyzing homepage content',
-      30,
-    )
-
     const { metadata, links } = scrapeResult
 
     // Determine crawl strategy
-    await setCompanyEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      'Identifying key pages to scan',
-      32,
-    )
-
     let crawlStrategy = links.internal
 
     if (links.internal.length > 5) {
@@ -509,18 +517,18 @@ export const companyEnrichmentService = async ({
     }
 
     // Scrape subpages
+    const totalPages = crawlStrategy.length + 1 // +1 for homepage
+    emitProgress(onProgress, `Scraping ${totalPages} pages...`, 25)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'processing',
-      `Scanning ${crawlStrategy.length} additional pages`,
-      35,
+      `Scraping ${totalPages} pages`,
+      25,
     )
 
-    let completedPages = 0
-    const totalPages = crawlStrategy.length
+    let completedPages = 1 // Homepage already done
 
-    // Process subpages in batches to prevent memory accumulation
-    // Unbounded Promise.allSettled() was causing all results to be held in memory simultaneously
+    // Process subpages in batches
     const SUBPAGE_BATCH_SIZE = 5
     const subpageResults: PromiseSettledResult<
       Awaited<ReturnType<typeof enqueueScraperJob>>
@@ -541,18 +549,22 @@ export const companyEnrichmentService = async ({
 
             completedPages++
 
-            // Update progress every 20% or at milestones
+            // Update progress every few pages
             if (
-              completedPages % Math.max(1, Math.floor(totalPages / 5)) === 0 ||
-              completedPages === totalPages ||
-              completedPages === 1
+              completedPages % Math.max(1, Math.floor(totalPages / 3)) === 0 ||
+              completedPages === totalPages
             ) {
               const progressPercent =
-                35 + Math.round((completedPages / totalPages) * 20)
+                25 + Math.round((completedPages / totalPages) * 25)
+              emitProgress(
+                onProgress,
+                `Scraped ${completedPages}/${totalPages} pages`,
+                progressPercent,
+              )
               await setCompanyEnrichmentStatus(
                 userPlaceId,
                 'processing',
-                `Scanned ${completedPages}/${totalPages} pages`,
+                `Scraped ${completedPages}/${totalPages} pages`,
                 progressPercent,
               )
             }
@@ -570,6 +582,8 @@ export const companyEnrichmentService = async ({
         result.status === 'fulfilled' && result.value != null,
     ).length
 
+    emitProgress(onProgress, `Scraped ${successfulSubpages + 1} pages`, 50)
+
     logger.info({
       msg: 'Subpage scraping completed',
       event: 'subpage_scraping_completed',
@@ -581,12 +595,13 @@ export const companyEnrichmentService = async ({
       },
     })
 
-    // Step 6: External data enrichment (55-75%)
+    // Step 3: External data enrichment
+    emitProgress(onProgress, 'Looking up company records...', 55)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'processing',
-      'Searching governmental databases',
-      58,
+      'Looking up company records',
+      55,
     )
 
     const [
@@ -614,13 +629,11 @@ export const companyEnrichmentService = async ({
     ])
 
     if (governmentalDataResult.companyData) {
-      await setCompanyEnrichmentStatus(
-        userPlaceId,
-        'processing',
-        'Processing official company data',
-        70,
+      emitProgress(
+        onProgress,
+        `Found: ${governmentalDataResult.companyData.name}`,
+        65,
       )
-
       logger.info({
         msg: 'Governmental data found',
         event: 'governmental_data_found',
@@ -630,14 +643,17 @@ export const companyEnrichmentService = async ({
           userPlaceId,
         },
       })
+    } else {
+      emitProgress(onProgress, 'No company records found', 65)
     }
 
-    // Step 7: Create contacts from officers (75-90%)
+    // Step 4: Create contacts from officers
+    emitProgress(onProgress, 'Creating contacts...', 75)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'processing',
-      'Creating contacts from officers',
-      78,
+      'Creating contacts',
+      75,
     )
 
     await enrichmentTracker.trackSubprocess('populate_contacts', async () => {
@@ -647,24 +663,18 @@ export const companyEnrichmentService = async ({
       })
     })
 
-    // Step 8: Calculate score and finalize (90-100%)
+    // Step 5: Calculate score and finalize
+    emitProgress(onProgress, 'Calculating score...', 90)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'processing',
-      'Calculating enrichment quality',
-      92,
+      'Calculating score',
+      90,
     )
 
     const enrichmentScore = await enrichmentTracker.trackSubprocess(
       'calculate_score',
       async () => calculateEnrichmentScore(enrichmentId),
-    )
-
-    await setCompanyEnrichmentStatus(
-      userPlaceId,
-      'processing',
-      'Saving enrichment results',
-      96,
     )
 
     await db
@@ -688,10 +698,11 @@ export const companyEnrichmentService = async ({
       })
       .where(eq(enrichmentTable.id, enrichmentId))
 
+    emitProgress(onProgress, 'Enrichment complete', 100)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'completed',
-      'Company enrichment completed',
+      'Enrichment complete',
       100,
     )
 
@@ -701,7 +712,7 @@ export const companyEnrichmentService = async ({
 
     logger.info({
       msg: `Company enrichment completed in ${duration / 1000} seconds`,
-      event: 'company_enrichment_service_completed',
+      event: 'company_enrichment_completed',
       metadata: {
         userPlaceId,
         enrichmentId,
@@ -726,10 +737,11 @@ export const companyEnrichmentService = async ({
   } catch (error) {
     const errorMessage = extractErrorMessage(error)
 
+    emitProgress(onProgress, errorMessage || 'Enrichment failed', 100)
     await setCompanyEnrichmentStatus(
       userPlaceId,
       'failed',
-      errorMessage || 'Company enrichment failed',
+      errorMessage || 'Enrichment failed',
       100,
       errorMessage,
     )
@@ -740,7 +752,7 @@ export const companyEnrichmentService = async ({
 
     logger.error({
       msg: 'Error in company enrichment service',
-      event: 'company_enrichment_service_error',
+      event: 'company_enrichment_error',
       metadata: {
         userPlaceId,
         enrichmentId,

@@ -1,5 +1,5 @@
 // Legacy: Full enrichment cost (company + all officers)
-export const CREDIT_COST_PER_ENRICHMENT = 5
+export const CREDIT_COST_PER_ENRICHMENT = 1
 export const TEST_SIZE = 5
 
 /**

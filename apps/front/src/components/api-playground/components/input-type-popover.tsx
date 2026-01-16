@@ -26,10 +26,10 @@ export const InputTypePopover = ({
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 px-3">
-          <CurrentIcon className="h-4 w-4 mr-2" />
+        <Button variant="outline" size="sm" className="h-9 px-2.5 text-xs">
+          <CurrentIcon className="h-3.5 w-3.5 mr-1.5" />
           {currentConfig.label}
-          <ChevronDown className="h-4 w-4 ml-2" />
+          <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">

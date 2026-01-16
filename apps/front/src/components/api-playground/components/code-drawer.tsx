@@ -86,9 +86,14 @@ export const CodeDrawer = ({
           {/* Code Tab */}
           <TabsContent
             value="code"
-            className="mt-0 px-6 py-4 flex flex-col flex-1 min-h-0 gap-6"
+            className="mt-0 px-6 py-4 flex flex-col flex-1 min-h-0 overflow-auto"
           >
-            <Button variant="outline" size="sm" asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="shrink-0 mb-6"
+            >
               <a
                 href="https://wa.me/33554547066"
                 target="_blank"
@@ -100,7 +105,7 @@ export const CodeDrawer = ({
             </Button>
 
             {/* Code Snippets */}
-            <div className="shrink-0">
+            <div className="shrink-0 mb-6">
               <CodeSnippetsPanel
                 codeSnippets={codeSnippets}
                 activeTab={activeCodeTab}
@@ -110,8 +115,10 @@ export const CodeDrawer = ({
               />
             </div>
 
-            {/* Response Examples - Takes remaining space */}
-            <ResponseExamples />
+            {/* Response Examples */}
+            <div className="shrink-0">
+              <ResponseExamples />
+            </div>
           </TabsContent>
 
           {/* API Keys Tab */}
