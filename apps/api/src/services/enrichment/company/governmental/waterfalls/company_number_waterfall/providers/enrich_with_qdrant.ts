@@ -10,79 +10,130 @@ import {
   type Result,
   createNoResultsError,
 } from '../../../../../shared/types/error_handling'
+import { isValidStrictCountryFormat } from '../../../company_number_validators'
 import type { CompanyNumberResult } from '../index'
 
 // const SUPPORTED_COUNTRIES = ['FR', 'UK', 'DE', 'ES', 'BE', 'CH', 'NL', 'LU']
 
-// Country-specific search terms and identifiers
+/**
+ * Country-specific company identifier information
+ * Used for AI extraction guidance and validation context
+ *
+ * IMPORTANT: These formats are for OFFICIAL national registration numbers,
+ * NOT Pappers internal IDs. Website extractions should match these formats.
+ */
 export const COUNTRY_IDENTIFIER_INFO = {
   FR: {
-    terms: "SIREN, SIRET, RCS, numéro d'immatriculation",
-    format: '9 digits (SIREN) or 14 digits (SIRET)',
+    terms: "SIREN, SIRET, RCS, numéro d'immatriculation, N° SIREN",
+    format: '9 digits (SIREN) or 14 digits (SIRET) with Luhn check digit',
+    pattern: 'SIREN: 123456789, SIRET: 12345678901234',
+    examples: ['732829320', '552032534', '55203253400646'],
     officialSources: [
       'infogreffe.fr',
       'pappers.fr',
       'societe.com',
       'annuaire-entreprises.data.gouv.fr',
     ],
+    websiteLocations: ['mentions légales', 'footer', 'contact', 'CGV'],
     extraInfo:
-      'The company number is the SIREN number for France. Keep the first 9 digits as the company number.',
+      'The company number is the SIREN (9 digits). SIRET = SIREN + NIC (5 digits). Both must pass Luhn algorithm validation.',
   },
   UK: {
-    terms: 'Company Number, Companies House number',
-    format: '8 digits (may have leading zeros) or 2 letters + 6 digits',
+    terms: 'Company Number, Companies House number, Registration Number, CRN',
+    format: '8 characters: either 8 digits OR 2-letter prefix + 6 digits',
+    pattern: 'England/Wales: 01234567, Scotland: SC123456, NI: NI123456',
+    examples: ['01234567', 'SC123456', 'NI123456', 'OC123456'],
     officialSources: [
       'companieshouse.gov.uk',
       'find-and-update.company-information.service.gov.uk',
     ],
-    extraInfo: null,
+    websiteLocations: ['footer', 'about us', 'legal', 'terms'],
+    extraInfo:
+      'Valid prefixes: SC (Scotland), NI (Northern Ireland), OC (LLP England/Wales), SO (LLP Scotland), NC (LLP NI), RC, IP, AC, FS, FC.',
   },
   DE: {
-    terms: 'Handelsregisternummer, HRB, HRA',
-    format: 'HRB/HRA followed by digits, or numeric ID',
+    terms: 'Handelsregisternummer, HRB, HRA, Registernummer, Amtsgericht',
+    format: 'Prefix (HRB/HRA/GnR/PR/VR) + 1-7 digits, or 4-8 digits only',
+    pattern: 'HRB 12345, HRA 54321, GnR 1234, 123456',
+    examples: ['HRB12345', 'HRA54321', 'GnR1234', '123456'],
     officialSources: [
       'handelsregister.de',
       'unternehmensregister.de',
       'northdata.de',
     ],
-    extraInfo: null,
+    websiteLocations: ['Impressum', 'Kontakt', 'footer'],
+    extraInfo:
+      'HRB = incorporated companies (GmbH, AG), HRA = partnerships/sole traders, GnR = cooperatives, VR = associations. Court context often included.',
   },
   ES: {
-    terms: 'CIF, NIF, Número de identificación fiscal',
-    format: '9 characters (letter + 7 digits + letter/digit)',
-    officialSources: ['rmc.es', 'einforma.com', 'axesor.es'],
-    extraInfo: null,
+    terms:
+      'CIF, NIF, Número de identificación fiscal, Código de identificación fiscal',
+    format: 'Letter + 7 digits + control character (9 characters total)',
+    pattern: 'B12345678 (SL), A12345670 (SA), Q2812345J (public)',
+    examples: ['B12345678', 'A28123456', 'Q2812345J', 'G12345670'],
+    officialSources: ['rmc.es', 'einforma.com', 'axesor.es', 'librebor.me'],
+    websiteLocations: ['aviso legal', 'footer', 'contacto', 'condiciones'],
+    extraInfo:
+      'First letter = entity type: A (SA), B (SL), C-H (other), N (foreign), P-S (public). Control char: A/B/E/H require digit, K/P/Q/S require letter A-J.',
   },
   BE: {
-    terms: "Numéro d'entreprise, Enterprise number, KBO/BCE number",
-    format: '10 digits (format: 0XXX.XXX.XXX)',
-    officialSources: ['kbo-bce.be', 'companyweb.be'],
-    extraInfo: null,
+    terms:
+      "Numéro d'entreprise, Ondernemingsnummer, Enterprise number, KBO/BCE, BTW/TVA",
+    format: '10 digits starting with 0 or 1, with modulo-97 check digit',
+    pattern: '0XXX.XXX.XXX or BE 0XXX.XXX.XXX',
+    examples: ['0123456749', 'BE0123456749', '0000000196'],
+    officialSources: ['kbo-bce.be', 'companyweb.be', 'staatsbladmonitor.be'],
+    websiteLocations: [
+      'mentions légales',
+      'footer',
+      'contact',
+      'algemene voorwaarden',
+    ],
+    extraInfo:
+      'Check digit = 97 - (first 8 digits mod 97). Often displayed with BE prefix for VAT purposes.',
   },
   CH: {
-    terms: 'CHE number, UID, Handelsregister',
-    format: 'CHE-XXX.XXX.XXX or 9 digits',
+    terms:
+      'CHE number, UID, Unternehmens-Identifikationsnummer, MWST, TVA, IVA',
+    format: 'CHE-XXX.XXX.XXX with modulo-11 check digit, or 9 digits',
+    pattern: 'CHE-123.456.789, CHE-123.456.789 MWST',
+    examples: ['CHE-109.322.551', 'CHE109322551', '109322551'],
     officialSources: ['zefix.ch', 'uid.admin.ch', 'moneyhouse.ch'],
-    extraInfo: null,
+    websiteLocations: ['Impressum', 'Kontakt', 'footer', 'AGB'],
+    extraInfo:
+      'VAT suffix varies by language region: MWST (German), TVA (French), IVA (Italian). Check digit uses modulo-11 algorithm.',
   },
   NL: {
-    terms: 'KVK nummer, Kamer van Koophandel number',
-    format: '8 digits',
-    officialSources: ['kvk.nl', 'openkvk.nl'],
-    extraInfo: null,
+    terms:
+      'KVK nummer, Kamer van Koophandel, Chamber of Commerce number, Handelsregister',
+    format: '8 digits exactly',
+    pattern: '12345678',
+    examples: ['12345678', '00000001', '99999999'],
+    officialSources: ['kvk.nl', 'openkvk.nl', 'companyinfo.nl'],
+    websiteLocations: ['footer', 'contact', 'algemene voorwaarden', 'over ons'],
+    extraInfo:
+      'No public check digit algorithm. Dutch VAT (BTW) number is different format.',
   },
   LU: {
-    terms: 'Numéro matricule, RCS Luxembourg',
-    format: 'Letter + 5-7 digits or 6-8 digits',
-    officialSources: ['lbr.lu', 'guichet.lu'],
-    extraInfo: null,
+    terms: 'Numéro matricule, RCS Luxembourg, Registre de Commerce',
+    format:
+      'Letter prefix (B/A/C/D/F/G/J) + 5-7 digits, or 6-8 digits for legacy',
+    pattern: 'B123456, A12345, J1234567',
+    examples: ['B123456', 'B1234567', 'A12345', '123456'],
+    officialSources: ['lbr.lu', 'guichet.lu', 'rcsl.lu'],
+    websiteLocations: ['mentions légales', 'footer', 'contact'],
+    extraInfo:
+      'B = commercial companies (SARL, SA), A = civil, C = branches, J = sole traders. No check digit.',
   },
   NO: {
-    terms: 'Organisasjonsnummer, Foretaksregisteret, MVA',
-    format: '9 digits with modulus 11 check digit',
+    terms: 'Organisasjonsnummer, Foretaksregisteret, MVA, Org.nr',
+    format: '9 digits with modulo-11 check digit (last digit)',
+    pattern: '123456789, NO 123456789 MVA (VAT)',
+    examples: ['923609016', '912345678'],
     officialSources: ['brreg.no', 'proff.no', 'foretaksregisteret.brreg.no'],
+    websiteLocations: ['footer', 'kontakt', 'om oss', 'juridisk informasjon'],
     extraInfo:
-      'The organisasjonsnummer is the official company registration number in Norway.',
+      'Check digit uses modulo-11 with weights [3,2,7,6,5,4,3,2]. Numbers requiring check digit 10 are invalid and not issued.',
   },
 } as const
 
@@ -207,6 +258,24 @@ export const enrichWithQdrant = async (
             transformed: transformedValue,
           },
         })
+      }
+
+      // Validate extracted company number against strict country format
+      // This ensures website-extracted numbers match official national formats
+      if (
+        !isValidStrictCountryFormat(transformedValue, searchParams.countryCode)
+      ) {
+        logger.info({
+          msg: '[company_number_waterfall] Extracted company number failed strict country format validation',
+          event: 'qdrant_invalid_country_format',
+          metadata: {
+            identifierType: type,
+            identifier: transformedValue,
+            countryCode: searchParams.countryCode,
+            placeName: place.name,
+          },
+        })
+        continue // Skip this identifier and try the next one
       }
 
       try {

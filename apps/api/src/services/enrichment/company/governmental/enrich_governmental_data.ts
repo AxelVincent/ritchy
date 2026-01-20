@@ -4,6 +4,7 @@ import type { Place } from '../../../../db/schema'
 import { PAPPERS_COUNTRY_CODES } from '../../../../external/pappers/international_company_v1'
 import { enqueuePappersCompanyJob } from '../../../../internal/bullmq/jobs/pappers/queue'
 import type { EnrichmentContext } from '../../shared/status/status_builder'
+import { isValidCompanyNumber } from './company_number_validators'
 import { insertEnrichmentCompany } from './insert_enrichment_company'
 import { runCompanyNumberWaterfall } from './waterfalls/company_number_waterfall'
 
@@ -23,96 +24,6 @@ const mapToPappersCountryCode = (isoCountryCode: string | null): string => {
   }
 
   return countryCodeMapping[isoCountryCode] || isoCountryCode
-}
-
-// Helper function to validate company number format based on country code
-const isValidCompanyNumber = (
-  companyNumber: string,
-  countryCode: string,
-): boolean => {
-  if (!companyNumber || typeof companyNumber !== 'string') {
-    return false
-  }
-
-  // Remove spaces and common separators for validation
-  const cleaned = companyNumber.replace(/[\s.-]/g, '')
-
-  // Country-specific validation rules
-  switch (countryCode) {
-    case 'FR': {
-      // French SIREN: 9 digits, SIRET: 14 digits
-      // Accept both formats
-      return /^\d{9}$/.test(cleaned) || /^\d{14}$/.test(cleaned)
-    }
-
-    case 'UK': {
-      // UK company number: typically 8 digits (may have leading zeros)
-      // Can also be 6-8 digits
-      return /^\d{6,8}$/.test(cleaned)
-    }
-
-    case 'DE': {
-      // German Handelsregisternummer: HRB followed by digits, or just digits
-      // Format: HRB XXXXX or just digits (typically 4-6 digits)
-      const hrbFormat = /^HRB\s*\d{4,6}$/i.test(companyNumber)
-      const digitsOnly = /^\d{4,8}$/.test(cleaned)
-      return hrbFormat || digitsOnly
-    }
-
-    case 'BE': {
-      // Belgian enterprise number: 10 digits
-      return /^\d{10}$/.test(cleaned)
-    }
-
-    case 'CH': {
-      // Swiss CHE number: CHE-XXX.XXX.XXX format or 9 digits
-      const cheFormat = /^CHE-\d{3}\.\d{3}\.\d{3}$/i.test(companyNumber)
-      const digitsOnly = /^\d{9}$/.test(cleaned)
-      return cheFormat || digitsOnly
-    }
-
-    case 'NL': {
-      // Dutch KVK number: 8 digits
-      return /^\d{8}$/.test(cleaned)
-    }
-
-    case 'LU': {
-      // Luxembourg RCS: various formats, typically 6-8 digits or B followed by digits
-      const rcsFormat = /^[BR]\d{5,7}$/i.test(companyNumber)
-      const digitsOnly = /^\d{6,8}$/.test(cleaned)
-      return rcsFormat || digitsOnly
-    }
-
-    case 'ES': {
-      // Spanish CIF/NIF: 9 characters (alphanumeric), starts with letter or number
-      // Format: X12345678 or 12345678X
-      return /^[A-Z0-9]\d{7}[A-Z0-9]$/i.test(cleaned)
-    }
-
-    case 'NO': {
-      // Norwegian organisasjonsnummer: 9 digits with modulus 11 check digit
-      if (!/^\d{9}$/.test(cleaned)) return false
-
-      // Validate modulus 11 check digit
-      const weights = [3, 2, 7, 6, 5, 4, 3, 2]
-      const digits = cleaned.split('').map(Number)
-      const sum = digits
-        .slice(0, 8)
-        .reduce((acc, digit, i) => acc + digit * weights[i], 0)
-      const remainder = sum % 11
-      // If remainder is 1, check digit would be 10 which is invalid
-      if (remainder === 1) return false
-      const expectedCheckDigit = remainder === 0 ? 0 : 11 - remainder
-
-      return expectedCheckDigit === digits[8]
-    }
-
-    default: {
-      // For unknown countries, basic validation: at least 3 characters
-      // This allows flexibility while catching obvious errors like "30"
-      return cleaned.length >= 3 && /^[A-Z0-9]+$/i.test(cleaned)
-    }
-  }
 }
 
 const CONFIDENCE_THRESHOLD = 70
@@ -207,7 +118,7 @@ export const enrichGovernmentalData = async ({
     if (
       !isValidCompanyNumber(bestMatch.company_number, parsedCountryCode.data)
     ) {
-      logger.error({
+      logger.warn({
         msg: '[enrich_governmental_data] Invalid company number format - rejecting match',
         event: 'governmental_data_invalid_company_number',
         metadata: {
