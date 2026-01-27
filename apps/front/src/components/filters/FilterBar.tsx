@@ -597,12 +597,14 @@ export const FilterBar = ({
         </PopoverContent>
       </Popover>
 
-      {/* AI Filter button */}
-      <AIFilterSearchBar
-        existingRules={rules}
-        onApplyFilters={onRulesChange}
-        filterOptions={filterOptions}
-      />
+      {/* AI Filter button - only shown in development, disabled in production */}
+      {import.meta.env.DEV && (
+        <AIFilterSearchBar
+          existingRules={rules}
+          onApplyFilters={onRulesChange}
+          filterOptions={filterOptions}
+        />
+      )}
 
       {/* Clear all button (only show if there are filters) */}
       {rules.length > 0 && (
