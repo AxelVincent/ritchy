@@ -1,4 +1,5 @@
 import { NavCustomLists } from '@/components/sidebar/nav-custom-lists'
+import { NavDeprecation } from '@/components/sidebar/nav-deprecation'
 import { NavUser } from '@/components/sidebar/nav-user'
 import {
   Sidebar,
@@ -30,6 +31,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavHistory />
       </SidebarContent>
       <NavCredits />
+      <NavDeprecation />
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>
