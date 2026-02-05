@@ -1,4 +1,5 @@
 import { useUserMe } from '@/api/queries/users/useUserMe'
+import { DeprecationNoticeProvider } from '@/components/deprecation/DeprecationNoticeContext'
 import { UpgradeModalProvider } from '@/components/marketing/UpgradeModalContext'
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -26,14 +27,16 @@ function AuthedLayout() {
         <PostHogIdentify />
         <ClerkRedirect />
         <AuthChecksAndRedirects>
-          <UpgradeModalProvider>
-            <SidebarProvider>
+          <DeprecationNoticeProvider>
+            <UpgradeModalProvider>
+              <SidebarProvider>
               <AppSidebar />
               <SidebarInset className="h-full w-full overflow-hidden">
                 <Outlet />
               </SidebarInset>
             </SidebarProvider>
-          </UpgradeModalProvider>
+            </UpgradeModalProvider>
+          </DeprecationNoticeProvider>
         </AuthChecksAndRedirects>
       </SignedIn>
 
