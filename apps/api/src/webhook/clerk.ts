@@ -6,9 +6,7 @@ import { CLERK_CONFIG } from '../config/clerk'
 import { eq } from 'drizzle-orm'
 import { db } from '../db/db'
 import { user, webhookEvent } from '../db/schema'
-import { credits as creditsTable } from '../db/schema/credits'
 import { sendSlackNotification } from '../external/slack/slack'
-import { CREDIT_CONFIG } from '../services/payment/config'
 import { deleteUser } from '../services/user/deleteUser'
 import { validateWebhookIdempotency } from '../utils/validate_webhook_idempotency'
 
@@ -130,9 +128,9 @@ export const clerkWebhook = async (
         async () => {
           switch (msg.type) {
             case 'user.created': {
-              logger.info({
-                msg: 'Processing user creation',
-                event: 'user_creation_started',
+              logger.warn({
+                msg: 'Signup blocked - new registrations are closed',
+                event: 'signup_blocked',
                 metadata: {
                   clerkId: userData.clerkId,
                   email: userData.email,
@@ -140,51 +138,14 @@ export const clerkWebhook = async (
                 },
               })
 
-              const [createdUser] = await db
-                .insert(user)
-                .values(userData)
-                .returning()
-
-              if (createdUser) {
-                const creditConfig = CREDIT_CONFIG.find(
-                  (config) => config.plan === 'FREE',
-                )
-                const credits = creditConfig?.credits ?? 0
-                await db.insert(creditsTable).values({
-                  userId: createdUser.id,
-                  credits,
-                })
-                logger.info({
-                  msg: 'Credits generated for new user',
-                  event: 'credits_generated',
-                  metadata: {
-                    userId: createdUser.id,
-                    credits,
-                  },
-                })
-              } else {
-                logger.error({
-                  msg: 'Failed to retrieve created user ID',
-                  event: 'user_creation_no_id',
-                  metadata: { clerkId: userData.clerkId },
-                })
-              }
-
               sendSlackNotification({
-                text: `🎉 New user registered!\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nPhone: ${userData.phoneNumber}`,
+                text: `🚫 Blocked signup attempt\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}`,
                 channel: 'users',
               })
 
-              logger.info({
-                msg: 'User created successfully',
-                event: 'user_created',
-                metadata: {
-                  clerkId: userData.clerkId,
-                  email: userData.email,
-                  name: `${userData.firstName} ${userData.lastName}`.trim(),
-                },
-              })
-              res.json({ received: true, message: 'User created successfully' })
+              res
+                .status(200)
+                .json({ received: true, message: 'Signups are closed. This service is shutting down.' })
               break
             }
             case 'user.updated': {
