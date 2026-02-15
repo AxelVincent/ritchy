@@ -24,14 +24,13 @@ function RouteComponent() {
     >
       <div className="text-3xl md:text-5xl">🐕</div>
       <div className="text-3xl md:text-6xl font-bold dark:text-white text-center">
-        Meet Ritchy
+        Ritchy
       </div>
-      <div className="font-extralight text-base md:text-4xl dark:text-neutral-200 py-4">
-        Your loyal companion for sales success
+      <div className="font-extralight text-base md:text-4xl dark:text-neutral-200 py-4 text-center">
+        This service is shutting down on February 28, 2026
       </div>
       <div className="text-sm md:text-lg text-muted-foreground text-center">
-        Start your free trial today -{' '}
-        <span className="font-bold">no credit card required</span>
+        New signups are no longer accepted. Existing users can still sign in.
       </div>
     </motion.div>
   )
@@ -48,6 +47,7 @@ function RouteComponent() {
                 headerTitle: 'hidden',
                 headerSubtitle: 'hidden',
                 logoBox: 'hidden',
+                footerAction: { display: 'none' },
               },
               layout: {
                 socialButtonsPlacement: 'bottom',
@@ -68,7 +68,14 @@ function RouteComponent() {
       </AuroraBackground>
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <SignIn fallbackRedirectUrl="/search" />
+          <SignIn
+            appearance={{
+              elements: {
+                footerAction: { display: 'none' },
+              },
+            }}
+            fallbackRedirectUrl="/search"
+          />
         </div>
       </div>
     </div>
