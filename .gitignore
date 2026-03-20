@@ -43,3 +43,5 @@ _temp
 
 # Qdrant
 qdrant_data/
+
+.claude

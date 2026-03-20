@@ -1,278 +1,271 @@
-# Lead Generation Tool
+# Ritchy API
 
-A powerful lead generation tool that leverages Google Maps research and website content analysis to create tailored emails for potential leads.
+Node.js + Express backend for the Ritchy lead generation and enrichment platform. Provides REST APIs, WebSocket real-time updates, job queue processing, and webhook handling.
 
-## Table of Contents
+## Technology Stack
 
-- [Features](#features)
-- [Technologies](#technologies)
-- [Installation](#installation)
-- [Docker Setup](#docker-setup)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Scripts](#scripts)
-- [Database](#database)
-- [Contributing](#contributing)
-- [License](#license)
+| Category | Technologies |
+|----------|-------------|
+| **Runtime** | Node.js 23, TypeScript 5.7 (strict) |
+| **Framework** | Express 4.21 |
+| **Database** | PostgreSQL 15 via Drizzle ORM 0.36 |
+| **Cache & Queue** | Redis 7.2, BullMQ 5.56 |
+| **Real-time** | Socket.IO 4.8 |
+| **Auth** | Clerk (JWT + webhooks via Svix) |
+| **Payments** | Stripe (subscriptions + webhooks) |
+| **Validation** | Zod |
+| **AI/LLM** | LangChain (OpenAI, Anthropic, Mistral, Google AI) |
+| **Vector DB** | Qdrant |
+| **Logging** | @ritchy/logger (Pino + Loki) |
+| **Metrics** | @ritchy/metrics (Prometheus + Grafana) |
 
-## Features
-
-- Google Maps research for lead discovery
-- Website content analysis for personalized outreach
-- Tailored email generation based on lead information
-- Database integration for lead management
-
-## Technologies
-
-- Node.js
-- Drizzle ORM
-- Biome (for linting and formatting)
-- Docker
-- PostgreSQL
-- Cheerio (for web scraping)
-
-## Architecture
-
-### Project Structure
+## Project Structure
 
 ```
-src/  
-├── routes_web/ #Presentation Layer
-├── db/ #Database Layer
-├── external/ #External service integrations  
-├── middleware/ #Express middleware  
-├── services/ #Business logic layer 
-├── utils/ #Shared utilities
-├── webhook/ #Webhook handlers  
-├── config/ #Configuration management  
-├── types/ #TypeScript type definitions  
-└── index.ts #Application entry point  
+src/
+|-- index.ts                    # Entry point, middleware stack, server setup
+|
+|-- config/                     # External service configurations (Zod-validated)
+|   |-- clerk.ts                # Clerk auth keys
+|   |-- drizzle.ts              # Database connection config
+|   |-- redis.ts                # Redis connection config
+|   |-- stripe.ts               # Stripe keys + plan pricing
+|   |-- llms.ts                 # LLM API keys (OpenAI, Anthropic, Mistral, Google AI)
+|   |-- langchain.ts            # LangSmith tracing config
+|   |-- basic_auth.ts           # QueueDash credentials
+|   |-- qdrant.ts               # Vector DB config
+|   |-- icypeas.ts              # IcyPeas config
+|   |-- pappers.ts              # Pappers config
+|   |-- forager.ts              # Forager config
+|   |-- brightdata.ts           # Brightdata config
+|   |-- million_verifier.ts     # Million Verifier config
+|   |-- contactout.ts           # ContactOut config
+|   |-- firecrawl.ts            # Firecrawl config
+|   |-- whois.ts                # WHOIS config
+|
+|-- db/                         # Database layer
+|   |-- db.ts                   # Drizzle instance
+|   |-- schema/                 # Table definitions (25+ tables)
+|   |-- migrate.ts              # Migration runner
+|   |-- monitoring.ts           # DB query metrics
+|
+|-- services/                   # Domain-driven business logic
+|   |-- enrichment/             # Core enrichment engine
+|   |   |-- company/            # Company enrichment
+|   |   |   |-- governmental/   # Business registry lookup (waterfall)
+|   |   |   |-- scraper/        # Website scraping + technology detection
+|   |   |-- contact/            # Contact enrichment
+|   |   |   |-- waterfalls/     # Email, phone, LinkedIn providers
+|   |   |-- shared/             # Status manager, config, shared types
+|   |-- payment/                # Subscription & credit management
+|   |-- api_keys/               # API key CRUD (AES-256 encryption)
+|   |-- contact/                # Contact CRUD
+|   |-- places/                 # Place data & semantic search
+|   |-- searches/               # Search history
+|   |-- user/                   # User management
+|
+|-- external/                   # Third-party service clients
+|   |-- google_maps/            # Google Places/Geocoding API
+|   |-- pappers/                # French company registry
+|   |-- forager/                # People & company data
+|   |-- icypeas/                # Email finding
+|   |-- brightdata/             # Web scraping
+|   |-- million_verifier/       # Email verification
+|   |-- contactout/             # People search
+|   |-- firecrawl/              # Website scraping
+|   |-- whois/                  # Domain WHOIS
+|   |-- qdrant/                 # Vector DB client
+|   |-- langchain/              # LLM tools & prompts
+|   |-- slack/                  # Notifications
+|
+|-- internal/                   # Infrastructure
+|   |-- bullmq/                 # Job queues & workers
+|   |-- redis/                  # Redis client, pub/sub, semaphore
+|   |-- rate_limiter/           # Request rate limiting
+|
+|-- middleware/                  # Express middleware
+|   |-- api_key_auth.ts         # API key Bearer token validation
+|   |-- basic_auth.ts           # Basic HTTP auth
+|
+|-- routes_web/                 # Clerk-authenticated endpoints (/web/*)
+|-- routes_api/                 # API key-authenticated endpoints (/api/v1/*)
+|-- webhook/                    # Stripe & Clerk webhook handlers
+|-- websocket/                  # Socket.IO namespaces (/enrichment)
+|-- metrics/                    # Prometheus metric definitions
+|-- types/                      # TypeScript type definitions
+|-- utils/                      # Utility functions
+|-- shared/                     # Shared helpers
 ```
 
-### Architecture Principles
+## API Routes
 
-#### Presentation Layer Structure
+### Web Routes (`/web/*`) - Clerk JWT Authentication
 
-The routes layer follows a resource-based organization with clear endpoint grouping:
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/web/users/me` | Current user profile + subscription |
+| GET/POST | `/web/user-places/` | Lead/place management (paginated, filterable) |
+| GET/POST/PUT/DELETE | `/web/contacts/` | Contact CRUD |
+| GET/POST/PUT/DELETE | `/web/lists/` | List management |
+| GET | `/web/searches/` | Search history |
+| GET | `/web/places/:id` | Place details with reviews |
+| POST | `/web/enrich/company` | Trigger company enrichment |
+| POST | `/web/enrich/contact` | Trigger contact enrichment |
+| POST | `/web/enrich/bulk` | Bulk enrichment |
+| GET | `/web/enrich/status/:id` | Enrichment status polling |
+| POST | `/web/payments/checkout` | Stripe checkout session |
+| POST/GET/DELETE | `/web/api-keys/` | API key management |
+| GET | `/web/api-keys/usage` | API usage analytics |
+| GET | `/web/api-keys/activity` | API activity log |
+| POST | `/web/filters/` | AI-powered filter generation |
 
-```
-routes_web/  
-├── resource_name/  
-│ ├── sub_resource/ # Nested resource endpoints  
-│ ├── index.ts # Route aggregation  
-│ ├── get_resource.ts # GET endpoint  
-│ ├── post_resource.ts # POST endpoint handlers    
-│ ├── put_resource.ts # PUT endpoint handlers  
-│ └── delete_resource.ts # DELETE endpoint handlers  
-└── index.ts # Main routes aggregation  
-```
+### Public API Routes (`/api/v1/*`) - API Key Authentication
 
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/enrich/` | Enrich a company |
+| GET | `/api/v1/enrich/status` | Check enrichment status |
 
-#### Data Access Layer Structure
+### Webhook Routes (`/webhook/*`) - Signature Verification
 
-The database layer provides a clean abstraction for data persistence:
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| POST | `/webhook/stripe` | Stripe SDK | Subscription lifecycle events |
+| POST | `/webhook/clerk` | Svix | User sync events |
 
-```
-db/
-├── schema.ts # Schema definitions
-├── db.ts # Connection management
-├── migrate.ts # Migration utilities
-└── versioned_db/ # Version history system
-   ├── client.ts # Versioned database client
-   ├── types.ts # Version history types
-   └── utils.ts # Version history utilities
-```
+### Utility Routes
 
-#### Integration Layer Structure
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/health` | None | Health check |
+| GET | `/metrics` | Basic Auth | Prometheus metrics |
+| - | `/queuedash` | Basic Auth | BullMQ dashboard |
+| WS | `/enrichment` | Clerk JWT | Real-time enrichment updates |
 
-External integrations are organized by service provider:
+## Middleware Stack
 
-```
-external/
-├── service_name/
-│ ├── client.ts # API client configuration
-│ ├── types.ts # Service-specific types
-│ ├── utils.ts # Service utilities
-│ └── handlers/ # Event handlers
-│    ├── event_type.ts # Specific event handling
-│    └── transformers.ts # Data transformation
-└── index.ts # Integration exports
-```
-#### Cross-cutting Concerns Structure
+Applied in order on every request:
 
-Middleware and utilities follow a functional organization:
+1. `express.json()` - Body parsing (10MB limit, rawBody capture for webhooks)
+2. `express.urlencoded()` - URL-encoded body parsing (10MB limit)
+3. `clerkMiddleware()` - Clerk session management
+4. `addRequestMetadata` - Request ID & IP tracking
+5. `createHttpMetricsMiddleware()` - Prometheus HTTP metrics
+6. `pinoHttp()` - Structured request logging
+7. `cors()` - Cross-origin support (credentials: true)
+8. `helmet()` - Security headers
+9. `rateLimit()` - Global rate limiting (100 req/15min per IP)
+10. `timeout()` - 5s request timeout
 
-```
-middleware/
-├── error_handler.ts # Error handling middleware
-├── validation.ts # Request validation
-├── authentication.ts # Auth middleware
-├── logging.ts # Request logging
-└── business_rules.ts # Business rule middleware
-```
+## Authentication
 
-#### Services Layer Structure
+| Layer | Method | Applied To |
+|-------|--------|-----------|
+| **Clerk JWT** | `clerkMiddleware()` + DB lookup | `/web/*` routes |
+| **API Key** | Bearer token + SHA-256 hash lookup | `/api/*` routes |
+| **Basic Auth** | Username/password | `/queuedash`, `/metrics` |
+| **Webhook Signatures** | HMAC verification | `/webhook/stripe`, `/webhook/clerk` |
+| **WebSocket** | Clerk JWT in handshake | Socket.IO `/enrichment` namespace |
 
-The API follows a domain-focused architecture with clear separation of concerns. Each domain is organized into four distinct layers:
-```
-services/
-├── domain_name/
-│ ├── queries/ # Data access functions
-│ ├── utils/ # Helper functions
-│ ├── validators/ # Validation logic
-│ └── .ts # Pure domain functions
-```
+## Enrichment Pipeline
 
-### 1. Domain Separation
-Each business domain has its own folder with complete separation of concerns.
+The enrichment engine uses a **waterfall pattern** - providers are tried in sequence until one succeeds:
 
-### 2. Layer Organization
-- **queries/**: Pure data access functions (get, create, update, delete)
-- **utils/**: Helper functions for data transformation and aggregation
-- **validators/**: Business rule validation and permission checking
-- **Root level**: Pure domain functions that orchestrate business logic
+### Company Enrichment (Phase 1)
 
-### 3. Naming Conventions
-- **Folders and files**: snake_case
-- **Functions**: snake_case
-- **Variables**: snake_case
-- **Types**: PascalCase (following TypeScript conventions)
+1. Website scraping (Firecrawl / Rust HTML Service)
+2. Company registry lookup (Pappers -> Forager)
+3. Technology detection (pattern matching)
+4. Social media extraction (LinkedIn, Facebook, Instagram)
+5. WHOIS domain data
+6. LLM analysis (LangChain)
 
-### 4. Function Categories
+### Contact Enrichment (Phase 2)
 
-#### Queries (Data Access)
-```typescript
-// apps/api/src/services/places/queries/get_place_by_id.ts
-export const get_place_by_id = async (
-  place_id: string,
-  user_id: string,
-): Promise<Place | null> => {
-  // Pure data access logic
-}
-```
+1. Email finding (IcyPeas -> Forager -> ContactOut)
+2. Email verification (Million Verifier)
+3. Phone lookup (Forager)
+4. LinkedIn profile (IcyPeas -> Brightdata + LLM)
 
-#### Utils (Helper Functions)
-```typescript
-// apps/api/src/services/places/utils/aggregate_place_data.ts
-export const aggregate_place_data = async (
-  places: PlaceBase[],
-  options: AggregationOptions,
-): Promise<Place[]> => {
-  // Data transformation and aggregation logic
-}
-```
+### Job Queue Architecture
 
-#### Validators (Business Rules)
-```typescript
-// apps/api/src/services/places/validators/validate_place_permissions.ts
-export const validate_place_update_permission = async (
-  user_id: string,
-  place_id: string,
-): Promise<void> => {
-  // Permission and business rule validation
-}
-```
+Each operation type has its own BullMQ queue with configurable concurrency:
 
-#### Pure Domain Functions (Business Logic)
-```typescript
-// apps/api/src/services/places/update_place_status.ts
-export const update_place_status = async (
-  place_id: string,
-  user_id: string,
-  new_status: StatusType,
-): Promise<Status> => {
-  // Orchestrate business logic using queries, utils, and validators
-}
-```
+| Queue | Default Concurrency | Env Variable |
+|-------|-------------------|--------------|
+| Scraper | 10 | `SCRAPER_CONCURRENCY` |
+| Company enrichment | 5 | `ENRICHMENT_COMPANY_CONCURRENCY` |
+| Contact enrichment | 10 | `ENRICHMENT_CONTACT_CONCURRENCY` |
+| Brightdata | 10 | `BRIGHTDATA_CONCURRENCY` |
 
-
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/lead-generation-tool.git
-   cd lead-generation-tool
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-   - Copy the example environment file:
-     ```bash
-     cp .env.example .env
-     ```
-   - Open the `.env` file and replace the dummy data with your actual configuration values.
-
-4. Set up the database:
-   ```bash
-   npm run db:generate
-   npm run db:migrate
-   ```
-
-## Docker Setup
-
-This project includes a `docker-compose.yml` file for easy containerization and deployment.
-
-To run the project using Docker:
-
-1. Make sure you have Docker and Docker Compose installed on your system.
-
-2. Build and start the containers:
-   ```bash
-   docker-compose up --build
-   ```
-
-   This command will build the Docker image and start the containers defined in the `docker-compose.yml` file.
-
-3. To stop the containers, use:
-   ```bash
-   docker-compose down
-   ```
-
-Note: The `docker-compose.yml` file likely includes services for both the application and the database. Make sure all necessary environment variables are properly set in your `.env` file or directly in the `docker-compose.yml` file.
-
-## Configuration
-
-This project uses environment variables for configuration. An example file `ex.env` is provided with dummy data. To configure the application:
-
-1. Copy `ex.env` to `.env`:
-   ```bash
-   cp ex.env .env
-   ```
-2. Open `.env` in a text editor and replace the dummy values with your actual configuration data.
-
-Important: Never commit your `.env` file to version control, as it may contain sensitive information.
-
-## Usage
-
-To start the development server:
-
-```bash
-npm run dev
-```
-
-## Scripts
-
-- `npm run dev`: Start the development server
-- `npm run scripts:example`: Run the example script
-- `npm run scripts:leadGenerator`: Run the lead generation script
-- `npm run db:generate`: Generate database schema
-- `npm run db:migrate`: Run database migrations
+Workers run in the same process as the API server (single-server mode). Real-time status updates are pushed via Redis pub/sub -> Socket.IO.
 
 ## Database
 
-This project uses Drizzle ORM with PostgreSQL. To manage the database:
+### Schema
 
-- Generate schema: `npm run db:generate`
-- Run migrations: `npm run db:migrate`
+25+ tables managed by Drizzle ORM. Key entities:
 
-## Contributing
+- **user** / **subscription** / **credits** - User accounts and billing
+- **place** / **user_place** - Google Places data and user associations
+- **enrichment** - Website enrichment (domain, social media, technology)
+- **enrichment_company** - Business registry data (officers, UBOs, financials)
+- **contact** / **contact_email** / **contact_phone** - Contact management
+- **list** / **list_place** - User-curated place lists
+- **search** / **search_place** - Saved searches
+- **api_key** / **api_usage** - API key management and usage tracking
+- **webhook_event** - Idempotent webhook processing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Migration Commands
 
-## License
+```bash
+# Generate migration from schema changes
+pnpm db:generate
 
-This project is licensed under the ISC License.
+# Apply pending migrations
+pnpm db:migrate
+```
+
+Migrations are in `drizzle/` folder, auto-generated by `drizzle-kit generate`.
+
+## Development
+
+```bash
+# Start dev server (with hot reload)
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Type checking
+pnpm typecheck
+
+# Tests
+pnpm test                    # Unit tests
+pnpm test:integration        # Integration tests (requires DB)
+pnpm test:integration:db:up  # Start test DB
+pnpm test:integration:db:down # Stop test DB
+
+# Local webhook forwarding
+pnpm webhook:stripe:dev      # Requires Stripe CLI
+pnpm webhook:clerk:dev       # Requires Svix CLI
+```
+
+## Environment Variables
+
+See `.env.example` for the full list. Key groups:
+
+| Group | Variables | Source |
+|-------|-----------|--------|
+| **Server** | `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `LOG_LEVEL` | - |
+| **Database** | `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` | Docker / Railway |
+| **Redis** | `REDISHOST`, `REDISPORT`, `REDISUSER`, `REDISPASSWORD` | Docker / Railway |
+| **Auth** | `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` | Clerk dashboard |
+| **Payments** | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_*_PRICE_ID` (15) | Stripe dashboard |
+| **Google** | `GOOGLE_PLACES_API_KEY`, `GOOGLE_GEOCODING_API_KEY` | Google Cloud |
+| **Enrichment** | `ICYPEAS_*`, `PAPPERS_*`, `FORAGER_*`, `BRIGHTDATA_*`, etc. | Provider dashboards |
+| **LLM** | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY`, `GOOGLE_AI_API_KEY` | Provider dashboards |
+| **Vector DB** | `QDRANT_API_KEY`, `QDRANT_URL`, `QDRANT_COLLECTION_NAME` | Qdrant |
+| **HTML Service** | `RUST_HTML_SERVICE_URL`, `RUST_HTML_SERVICE_API_KEY` | Internal |
+| **Monitoring** | `METRICS_USERNAME`, `METRICS_PASSWORD`, `SENTRY_AUTH_TOKEN` | - |
+| **Admin** | `QUEUE_DASH_USERNAME`, `QUEUE_DASH_PASSWORD`, `SLACK_BOT_TOKEN` | - |
