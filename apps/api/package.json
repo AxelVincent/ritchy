@@ -55,7 +55,7 @@
     "dayjs": "1.11.13",
     "dompurify": "3.2.6",
     "dotenv": "16.4.7",
-    "drizzle-orm": "0.36.4",
+    "drizzle-orm": "0.45.2",
     "express": "4.21.1",
     "express-rate-limit": "7.5.0",
     "helmet": "8.1.0",
