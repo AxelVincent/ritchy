@@ -24,8 +24,8 @@ importers:
   apps/api:
     dependencies:
       '@clerk/express':
-        specifier: 1.3.18
-        version: 1.3.18(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(svix@1.45.1)
+        specifier: 1.7.79
+        version: 1.7.79(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@langchain/anthropic':
         specifier: 1.1.3
         version: 1.1.3(@langchain/core@1.1.0(@opentelemetry/api@1.9.0)(openai@6.9.1(ws@8.18.3)(zod@3.25.76)))(zod@3.25.76)
@@ -308,7 +308,7 @@ importers:
         version: 0.42.1(zod@3.25.76)
       '@vitest/coverage-v8':
         specifier: 3.0.4
-        version: 3.0.4(@vitest/browser@3.1.2(playwright@1.57.0)(vite@5.4.16(@types/node@22.14.1))(vitest@3.2.4))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.14.1)(@vitest/browser@3.1.2)(@vitest/ui@2.1.8)(jsdom@26.0.0))
+        version: 3.0.4(@vitest/browser@3.1.2)(vitest@3.2.4)
       api:
         specifier: workspace:*
         version: link:../api
@@ -417,7 +417,7 @@ importers:
         version: 9.1.16(storybook@9.1.16(@testing-library/dom@10.4.1)(prettier@3.7.1)(vite@5.4.16(@types/node@22.14.1)))
       '@storybook/addon-vitest':
         specifier: ^9.1.5
-        version: 9.1.16(@vitest/browser@3.1.2(playwright@1.57.0)(vite@5.4.16(@types/node@22.14.1))(vitest@3.2.4))(@vitest/runner@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@9.1.16(@testing-library/dom@10.4.1)(prettier@3.7.1)(vite@5.4.16(@types/node@22.14.1)))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.14.1)(@vitest/browser@3.1.2)(@vitest/ui@2.1.8)(jsdom@26.0.0))
+        version: 9.1.16(@vitest/browser@3.1.2)(@vitest/runner@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@9.1.16(@testing-library/dom@10.4.1)(prettier@3.7.1)(vite@5.4.16(@types/node@22.14.1)))(vitest@3.2.4)
       '@storybook/react-vite':
         specifier: ^9.1.5
         version: 9.1.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rollup@4.53.3)(storybook@9.1.16(@testing-library/dom@10.4.1)(prettier@3.7.1)(vite@5.4.16(@types/node@22.14.1)))(typescript@5.6.3)(vite@5.4.16(@types/node@22.14.1))
@@ -802,24 +802,20 @@ packages:
     peerDependencies:
       storybook: ^0.0.0-0 || ^9.0.0 || ^9.1.0-0 || ^9.2.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0
 
-  '@clerk/backend@1.34.0':
-    resolution: {integrity: sha512-9rZ8hQJVpX5KX2bEpiuVXfpjhojQCiqCWADJDdCI0PCeKxn58Ep0JPYiIcczg4VKUc3a7jve9vXylykG2XajLQ==}
+  '@clerk/backend@2.33.6':
+    resolution: {integrity: sha512-5foMmTHEQFt4mDv7AN0RDwUHZhGcg/JYe5hnl9SU/LFS8ZHY29Z2HDtIBmzKgjRfOJTMKj1AM81LgK2UFsGm9Q==}
     engines: {node: '>=18.17.0'}
-    peerDependencies:
-      svix: ^1.62.0
-    peerDependenciesMeta:
-      svix:
-        optional: true
 
   '@clerk/clerk-react@5.19.1':
     resolution: {integrity: sha512-BCjqvUoKl36eOn5Y1v+liULXz3pBXuu8Is7a+pksIqpO2QnYTTYTyFCcb4/Lq8uW+Pnq2/xg7+SzCWqrk7xdBg==}
     engines: {node: '>=18.17.0'}
+    deprecated: 'This package is no longer supported. Please use @clerk/react instead. See the upgrade guide for more info: https://clerk.com/docs/guides/development/upgrading/upgrade-guides/core-3'
     peerDependencies:
       react: ^18 || ^19.0.0-0
       react-dom: ^18 || ^19.0.0-0
 
-  '@clerk/express@1.3.18':
-    resolution: {integrity: sha512-c6k02Z+enMcF4bgoRgh6s5ElTd0ep7exiVHRAzuNQm7turJK/dGjlQViUO3NLzTLVpx0DdgXFfG6MLW6t41Y+A==}
+  '@clerk/express@1.7.79':
+    resolution: {integrity: sha512-YUXDG6i2HKMzT76O6Dls0zrIxy3AUPIfHOOnX9aq+yy3xV+UsiBgUQJf4ws6Ehh8dXh/KapvbxOCSR88n/79nA==}
     engines: {node: '>=18.17.0'}
     peerDependencies:
       express: ^4.17.0 || ^5.0.0
@@ -836,37 +832,26 @@ packages:
       react-dom:
         optional: true
 
-  '@clerk/shared@2.22.0':
-    resolution: {integrity: sha512-VWBeddOJVa3sqUPdvquaaQYw4h5hACSG3EUDOW7eSu2F6W3BXUozyLJQPBJ9C0MuoeHhOe/DeV8x2KqOgxVZaQ==}
+  '@clerk/shared@3.47.8':
+    resolution: {integrity: sha512-cPURU1it/Eal4uXO9SOcHzw9sfE6Opi21W8EJUg+Ri80Q6JKtK8qBmyOpIyqgf09EanexhTzS4xrmYlvn2p7Iw==}
     engines: {node: '>=18.17.0'}
     peerDependencies:
-      react: ^18.0.0 || ^19.0.0 || ^19.0.0-0
-      react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-0
+      react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
+      react-dom: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
     peerDependenciesMeta:
       react:
         optional: true
       react-dom:
         optional: true
 
-  '@clerk/shared@3.36.0':
-    resolution: {integrity: sha512-Yp4tL/x/iVft40DnxBjT/g/kQilZ+i9mYrqC1Lk6fUnfZV8t7E54GX19JtJSSONzjHsH6sCv3BmJaF1f7Eomkw==}
-    engines: {node: '>=18.17.0'}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0 || ^19.0.0-0
-      react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-0
-    peerDependenciesMeta:
-      react:
-        optional: true
-      react-dom:
-        optional: true
-
-  '@clerk/types@4.101.3':
-    resolution: {integrity: sha512-QkYSiR8EDjLhQ3K9aCZ323knzZQggzhi3qxSdFrtI/C8Osyytua3Bu4TOGGRgYSSD4VO3s8WUz3wQf4Qe0ps/g==}
+  '@clerk/types@4.101.26':
+    resolution: {integrity: sha512-tUeiElAZoXu9Dxom9t6IjkEfsfP7aWSVf5x5mCoHnSr2w+wV4EtEwoLl9vexT5LL0di4qidROSfcrOnorzczIQ==}
     engines: {node: '>=18.17.0'}
 
   '@clerk/types@4.39.0':
     resolution: {integrity: sha512-WWEoXmcob6X80cZZZGobN8aKjHAjAoL0cgVyLX8UeQ+JW4kl1IfUmZQgDBFOafGEm2yUoKlKAP22bWPDqmbTJw==}
     engines: {node: '>=18.17.0'}
+    deprecated: 'This package is no longer supported. Please import types from @clerk/shared/types instead. See the upgrade guide for more info: https://clerk.com/docs/guides/development/upgrading/upgrade-guides/core-3'
 
   '@csstools/color-helpers@5.1.0':
     resolution: {integrity: sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA==}
@@ -901,11 +886,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.19.12':
     resolution: {integrity: sha512-bmoCYyWdEL3wDQIVbcyzRyeKLgk2WtWLTWz1ZIAZF/EGbNOwSA6ew3PftJ1PqMiOOGu0OyFMzG53L0zqIpPeNA==}
@@ -1794,6 +1779,7 @@ packages:
 
   '@fortawesome/react-fontawesome@0.2.2':
     resolution: {integrity: sha512-EnkrprPNqI6SXJl//m29hpaNzOp1bruISWaOiRtkMi/xSvHJlzc2j2JAYS7egxt/EbjSNV/k6Xy0AQI6vB2+1g==}
+    deprecated: v0.2.x is no longer supported. Unless you are still using FontAwesome 5, please update to v3.1.1 or greater.
     peerDependencies:
       '@fortawesome/fontawesome-svg-core': ~1 || ~6
       react: '>=16.3'
@@ -3209,6 +3195,7 @@ packages:
   '@snyk/github-codeowners@1.1.0':
     resolution: {integrity: sha512-lGFf08pbkEac0NYgVf4hdANpAgApRjNByLXB+WBip3qj1iendOIyAwP2GKkKbQMNVy2r1xxDf0ssfWscoiC+Vw==}
     engines: {node: '>=8.10'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     hasBin: true
 
   '@socket.io/component-emitter@3.1.2':
@@ -4065,6 +4052,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@vitejs/plugin-react@4.3.3':
     resolution: {integrity: sha512-NooDe9GpHGqNns1i8XDERg0Vsg5SSYRhRxxyTGogUdkdNt47jal+fbuYi+Yfq6pzRCKXyoPcWisfxE6RIM3GKA==}
@@ -4612,10 +4600,6 @@ packages:
     resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
 
-  cookie@1.0.2:
-    resolution: {integrity: sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA==}
-    engines: {node: '>=18'}
-
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
 
@@ -4632,6 +4616,7 @@ packages:
   cron-parser@4.9.0:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
+    deprecated: v4 is no longer maintained, upgrade to v5
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -4821,9 +4806,6 @@ packages:
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
-
-  dot-case@3.0.4:
-    resolution: {integrity: sha512-Kv5nKlh6yRrdrGvxeJ2e5y2eRUpkUosIW4A2AS38zwSz27zu7ufDwQPi5Jhs3XAlGNetl3bmnGhQsMtkKJnj3w==}
 
   dotenv@16.4.7:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
@@ -5331,11 +5313,13 @@ packages:
 
   glob@10.5.0:
     resolution: {integrity: sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@9.3.5:
     resolution: {integrity: sha512-e1LleDykUz2Iu+MTYdkSsuWX8lvAjAcs0Xef0lNIu0S2wOAzuTxCJtcd9S3cijlwYF18EsU3rzb8jPVobxDh9Q==}
     engines: {node: '>=16 || 14 >=14.17'}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   goober@2.1.18:
     resolution: {integrity: sha512-2vFqsaDVIT9Gz7N6kAL++pLpp41l3PfDuusHcjnGLfR6+huZkl6ziX+zgVC3ZxpqWhzH6pyDdGrCeDhMIvwaxw==}
@@ -5600,6 +5584,10 @@ packages:
     resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
     engines: {node: '>=14'}
 
+  js-cookie@3.0.7:
+    resolution: {integrity: sha512-z/wZZgDrkNV1eA0ULjM/F9/50Ya8fbzgKneSpoPsXSGd0KnpdtHfOZWK+GcwLk+EZbS4F9RBhU+K2RgzuDaItw==}
+    engines: {node: '>=20'}
+
   js-tiktoken@1.0.21:
     resolution: {integrity: sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g==}
 
@@ -5750,9 +5738,6 @@ packages:
 
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
-
-  lower-case@2.0.2:
-    resolution: {integrity: sha512-7fm3l3NAF9WfN6W3JOmf5drwpVqX78JtoGJ3A6W0a6ZnldM41w2fV5D490psKFTpMds8TJse/eHLFFsNHHjHgg==}
 
   lowercase-keys@2.0.0:
     resolution: {integrity: sha512-tqNXrS78oMOE73NMxK4EMLQsQowWf8jKooH9g7xPavRT706R6bkQJ6DY2Te7QukaZsulxa30wQ7bk0pm4XiHmA==}
@@ -6040,9 +6025,6 @@ packages:
     peerDependencies:
       react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
       react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
-
-  no-case@3.0.4:
-    resolution: {integrity: sha512-fgAN3jGAh+RoxUGZHTSOLJIqUc2wmoBwGR4tbpNAKmmovFoWq0OdRkb0VkldReO2a2iBT/OEulG9XSUc10r3zg==}
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
@@ -6860,13 +6842,6 @@ packages:
     resolution: {integrity: sha512-QlaZEqcAH3/RtNyet1IPIYPsEWAaYyXXv1Krsi+1L/QHppjX4Ifm8MQsBISz9vE8cHicIq3clogsheili5vhaQ==}
     engines: {node: '>= 18'}
 
-  snake-case@3.0.4:
-    resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
-
-  snakecase-keys@8.0.1:
-    resolution: {integrity: sha512-Sj51kE1zC7zh6TDlNNz0/Jn1n5HiHdoQErxO8jLtnyrkJW/M5PrI7x05uDgY3BO7OUQYKCvmeMurW6BPUdwEOw==}
-    engines: {node: '>=18'}
-
   socket.io-adapter@2.5.5:
     resolution: {integrity: sha512-eLDQas5dzPgOWCk9GuuJC2lBqItuhKI4uxGgo9aIV7MYbk2h9Q6uULEh8WBzThoI7l+qU9Ast9fVUmkqPP9wYg==}
 
@@ -6941,6 +6916,9 @@ packages:
 
   standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
+
+  standardwebhooks@1.0.0:
+    resolution: {integrity: sha512-BbHGOQK9olHPMvQNHWul6MYlrRTAOKn03rOe4A8O3CLWhNf4YHBqq2HJKKC+sfqpxiBY52pNeesD6jIiLDz8jg==}
 
   statuses@1.5.0:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
@@ -7308,10 +7286,6 @@ packages:
     resolution: {integrity: sha512-4dbzIzqvjtgiM5rw1k5rEHtBANKmdudhGyBEajN01fEyhaAIhsoKNy6y7+IN93IfpFtwY9iqi7kD+xwKhQsNJA==}
     engines: {node: '>=8'}
 
-  type-fest@4.41.0:
-    resolution: {integrity: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==}
-    engines: {node: '>=16'}
-
   type-is@1.6.18:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
     engines: {node: '>= 0.6'}
@@ -7427,6 +7401,7 @@ packages:
 
   uuid@10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@11.1.0:
@@ -7435,6 +7410,7 @@ packages:
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   validate-npm-package-license@3.0.4:
@@ -7620,6 +7596,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-fetch@3.6.20:
     resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
@@ -8060,15 +8037,12 @@ snapshots:
       - '@chromatic-com/cypress'
       - '@chromatic-com/playwright'
 
-  '@clerk/backend@1.34.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(svix@1.45.1)':
+  '@clerk/backend@2.33.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@clerk/shared': 3.36.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@clerk/types': 4.101.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      cookie: 1.0.2
-      snakecase-keys: 8.0.1
+      '@clerk/shared': 3.47.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/types': 4.101.26(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      standardwebhooks: 1.0.0
       tslib: 2.8.1
-    optionalDependencies:
-      svix: 1.45.1
     transitivePeerDependencies:
       - react
       - react-dom
@@ -8081,17 +8055,16 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       tslib: 2.4.1
 
-  '@clerk/express@1.3.18(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(svix@1.45.1)':
+  '@clerk/express@1.7.79(express@4.21.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@clerk/backend': 1.34.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(svix@1.45.1)
-      '@clerk/shared': 2.22.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@clerk/types': 4.101.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/backend': 2.33.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/shared': 3.47.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/types': 4.101.26(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       express: 4.21.1
-      tslib: 2.4.1
+      tslib: 2.8.1
     transitivePeerDependencies:
       - react
       - react-dom
-      - svix
 
   '@clerk/shared@2.19.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -8105,33 +8078,21 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@clerk/shared@2.22.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@clerk/types': 4.101.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      dequal: 2.0.3
-      glob-to-regexp: 0.4.1
-      js-cookie: 3.0.5
-      std-env: 3.10.0
-      swr: 2.3.6(react@18.3.1)
-    optionalDependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-
-  '@clerk/shared@3.36.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@clerk/shared@3.47.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       csstype: 3.1.3
       dequal: 2.0.3
       glob-to-regexp: 0.4.1
-      js-cookie: 3.0.5
+      js-cookie: 3.0.7
       std-env: 3.10.0
       swr: 2.3.4(react@18.3.1)
     optionalDependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@clerk/types@4.101.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@clerk/types@4.101.26(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@clerk/shared': 3.36.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@clerk/shared': 3.47.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - react
       - react-dom
@@ -10067,7 +10028,7 @@ snapshots:
     dependencies:
       storybook: 9.1.16(@testing-library/dom@10.4.1)(prettier@3.7.1)(vite@5.4.16(@types/node@22.14.1))
 
-  '@storybook/addon-vitest@9.1.16(@vitest/browser@3.1.2(playwright@1.57.0)(vite@5.4.16(@types/node@22.14.1))(vitest@3.2.4))(@vitest/runner@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@9.1.16(@testing-library/dom@10.4.1)(prettier@3.7.1)(vite@5.4.16(@types/node@22.14.1)))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.14.1)(@vitest/browser@3.1.2)(@vitest/ui@2.1.8)(jsdom@26.0.0))':
+  '@storybook/addon-vitest@9.1.16(@vitest/browser@3.1.2)(@vitest/runner@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(storybook@9.1.16(@testing-library/dom@10.4.1)(prettier@3.7.1)(vite@5.4.16(@types/node@22.14.1)))(vitest@3.2.4)':
     dependencies:
       '@storybook/global': 5.0.0
       '@storybook/icons': 1.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11799,7 +11760,7 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/coverage-v8@3.0.4(@vitest/browser@3.1.2(playwright@1.57.0)(vite@5.4.16(@types/node@22.14.1))(vitest@3.2.4))(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.14.1)(@vitest/browser@3.1.2)(@vitest/ui@2.1.8)(jsdom@26.0.0))':
+  '@vitest/coverage-v8@3.0.4(@vitest/browser@3.1.2)(vitest@3.2.4)':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -12411,8 +12372,6 @@ snapshots:
 
   cookie@0.7.2: {}
 
-  cookie@1.0.2: {}
-
   cookiejar@2.1.4: {}
 
   core-js@3.47.0: {}
@@ -12581,11 +12540,6 @@ snapshots:
       dom-serializer: 2.0.0
       domelementtype: 2.3.0
       domhandler: 5.0.3
-
-  dot-case@3.0.4:
-    dependencies:
-      no-case: 3.0.4
-      tslib: 2.8.1
 
   dotenv@16.4.7: {}
 
@@ -13497,6 +13451,8 @@ snapshots:
 
   js-cookie@3.0.5: {}
 
+  js-cookie@3.0.7: {}
+
   js-tiktoken@1.0.21:
     dependencies:
       base64-js: 1.5.1
@@ -13646,10 +13602,6 @@ snapshots:
       js-tokens: 4.0.0
 
   loupe@3.2.1: {}
-
-  lower-case@2.0.2:
-    dependencies:
-      tslib: 2.8.1
 
   lowercase-keys@2.0.0: {}
 
@@ -14070,11 +14022,6 @@ snapshots:
     dependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-
-  no-case@3.0.4:
-    dependencies:
-      lower-case: 2.0.2
-      tslib: 2.8.1
 
   node-abort-controller@3.1.1: {}
 
@@ -14938,17 +14885,6 @@ snapshots:
 
   smol-toml@1.5.2: {}
 
-  snake-case@3.0.4:
-    dependencies:
-      dot-case: 3.0.4
-      tslib: 2.8.1
-
-  snakecase-keys@8.0.1:
-    dependencies:
-      map-obj: 4.3.0
-      snake-case: 3.0.4
-      type-fest: 4.41.0
-
   socket.io-adapter@2.5.5:
     dependencies:
       debug: 4.3.7
@@ -15043,6 +14979,11 @@ snapshots:
   stackback@0.0.2: {}
 
   standard-as-callback@2.1.0: {}
+
+  standardwebhooks@1.0.0:
+    dependencies:
+      '@stablelib/base64': 1.0.1
+      fast-sha256: 1.3.0
 
   statuses@1.5.0: {}
 
@@ -15440,8 +15381,6 @@ snapshots:
   type-fest@0.6.0: {}
 
   type-fest@0.8.1: {}
-
-  type-fest@4.41.0: {}
 
   type-is@1.6.18:
     dependencies:
