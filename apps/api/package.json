@@ -53,7 +53,7 @@
     "cors": "2.8.5",
     "country-to-iso": "1.6.1",
     "dayjs": "1.11.13",
-    "dompurify": "3.2.6",
+    "dompurify": "3.4.0",
     "dotenv": "16.4.7",
     "drizzle-orm": "0.36.4",
     "express": "4.21.1",
