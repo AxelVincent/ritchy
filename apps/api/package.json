@@ -61,7 +61,7 @@
     "helmet": "8.1.0",
     "ioredis": "5.4.2",
     "jsdom": "26.0.0",
-    "libphonenumber-js": "^1.12.9",
+    "libphonenumber-js": "1.12.29",
     "lucide-react": "0.460.0",
     "pino-http": "10.3.0",
     "postgres": "3.4.4",
