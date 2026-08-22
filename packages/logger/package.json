@@ -22,12 +22,12 @@
     "check:fix": "biome check --apply ./src"
   },
   "dependencies": {
-    "dotenv": "16.4.7",
-    "pino": "9.5.0"
+    "dotenv": "17.4.2",
+    "pino": "10.3.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "pino-loki": "2.6.0",
+    "@biomejs/biome": "2.5.10",
+    "pino-loki": "3.0.0",
     "pino-pretty": "13.0.0",
     "tsup": "8.3.5"
   }
