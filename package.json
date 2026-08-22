@@ -17,13 +17,13 @@
     "unused": "knip"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "knip": "5.43.6",
+    "@biomejs/biome": "2.5.10",
+    "knip": "6.32.2",
     "turbo": "2.3.4",
-    "typescript": "5.7.2"
+    "typescript": "7.0.2"
   },
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@11.22.0",
   "engines": {
-    "node": "23.9.0"
+    "node": "24.19.0"
   }
 }
