@@ -65,7 +65,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "dayjs": "1.11.13",
-    "framer-motion": "12.15.0",
+    "motion": "12.15.0",
     "frimousse": "^0.2.0",
     "immer": "10.1.1",
     "libphonenumber-js": "^1.12.9",
