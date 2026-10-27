@@ -22,7 +22,7 @@ jobs:
       GH_TOKEN: ${{ secrets.RITCHY_GITHUB_CLAUDE_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.4.0
         with:
           fetch-depth: 1
 
